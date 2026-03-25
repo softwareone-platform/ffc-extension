@@ -1,0 +1,13 @@
+__pycache__
+app.egg-info
+*.pyc
+.coverage
+coverage.xml
+htmlcov
+.venv
+.cache
+.devcontainer
+LICENSE.txt
+.git
+.gitignore
+.github

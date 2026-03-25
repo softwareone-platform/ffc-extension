@@ -1,0 +1,26 @@
+@use '../node_modules/@swo/design-tokens/src/index' as *;
+@use '../node_modules/@swo/design-tokens/src/style' as *;
+//@import '../node_modules/@swo/design-tokens/src/lib/design-tokens-variables.scss';
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 300;
+}
+
+.navigation-host{
+  height: auto!important;
+}
+
+.container {
+  padding: var(--spacing-2);
+}
+
+.mono {
+  padding: 7px 15px;
+  font-family: monospace;
+  background: #e4e4e4;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+}

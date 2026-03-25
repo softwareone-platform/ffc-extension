@@ -1,0 +1,32 @@
+{
+  "name": "swo-optscale-e2e-operations-api-tests",
+  "version": "1.0.0",
+  "description": "E2E Playwright test framework for Operations API tests",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "playwright:show-report": "npx playwright show-report",
+    "playwright:debug": "npx playwright test --debug --workers=1 --grep @ui",
+    "playwright:test": "npx playwright test"
+  },
+  "author": "Steve Churchill",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.36.0",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.2.2",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1",
+    "uuid": "^11.0.5"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "printWidth": 140,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "jsxSingleQuote": true,
+  "arrowParens": "avoid",
+  "requirePragma": false,
+  "insertPragma": false,
+  "proseWrap": "preserve",
+  "importOrder": ["\\.(s?css)$", "\\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$", "<THIRD_PARTY_MODULES>", "^(@|~)\\/(.*)$", "^\\."],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "importOrderGroupNamespaceSpecifiers": true,
+  "overrides": [
+    {
+      "files": "*.ts",
+      "options": {
+        "importOrderParserPlugins": ["typescript", "decorators"]
+      }
+    },
+    {
+      "files": "*.d.ts",
+      "options": {
+        "importOrderParserPlugins": ["[\"typescript\", { \"dts\": true }]", "decorators"]
+      }
+    }
+  ]
+}
