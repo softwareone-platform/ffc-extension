@@ -1,0 +1,3 @@
+# Journal status validation
+JOURNAL_VALIDATION_BACKOFF_TIMES: list[float] = [0.15, 0.45, 1.05, 2.25, 4.65]
+OPERATIONS_SKIP_ID: str = "AGR-0000-0000-0000"
