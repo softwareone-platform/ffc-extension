@@ -1,4 +1,3 @@
-from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -19,7 +18,7 @@ from app.routers.accounts import (
     validate_required_conditions_before_update,
 )
 from app.schemas.accounts import AccountCreate
-from tests.types import JWTTokenFactory, ModelFactory
+from tests.types import ModelFactory
 
 
 @pytest.fixture
@@ -34,37 +33,6 @@ def mock_account_repo():
 
 async def test_get_accounts_without_token(api_client: AsyncClient):
     response = await api_client.get("/accounts")
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Unauthorized."
-
-
-async def test_get_account_with_invalid_token(api_client: AsyncClient):
-    response = await api_client.get(
-        "/accounts",
-        headers={"Authorization": "Bearer invalid.token.here"},
-    )
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Unauthorized."
-
-
-async def test_get_accounts_with_expired_token(
-    api_client: AsyncClient,
-    jwt_token_factory: JWTTokenFactory,
-    gcp_extension: System,
-):
-    expired_time = datetime.now(UTC) - timedelta(hours=1)
-    expired_token = jwt_token_factory(
-        str(gcp_extension.id),
-        gcp_extension.jwt_secret,
-        exp=expired_time,
-    )
-
-    response = await api_client.get(
-        "/accounts",
-        headers={"Authorization": f"Bearer {expired_token}"},
-    )
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Unauthorized."

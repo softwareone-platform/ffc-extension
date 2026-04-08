@@ -1,56 +1,72 @@
-import multiprocessing
-
 from pytest_mock import MockerFixture
 from typer.testing import CliRunner
 
 from app.cli import app
-from app.main import app as fastapi_app
 
 
 def test_serve(mocker: MockerFixture):
-    mocker.patch(
-        "app.commands.serve.get_logging_config",
-        return_value={"logging": "config"},
-    )
-    mocked_app = mocker.MagicMock()
-    mocked_standalone_app = mocker.patch(
-        "app.commands.serve.StandaloneApplication", return_value=mocked_app
-    )
+    mocked_settings = mocker.MagicMock()
+    mocker.patch("app.cli.get_settings", return_value=mocked_settings)
+    mocked_bootstrap = mocker.patch("app.commands.serve.bootstrap")
     runner = CliRunner()
     result = runner.invoke(app, ["serve"])
     assert result.exit_code == 0
-    mocked_standalone_app.assert_called_once_with(
-        fastapi_app,
-        {
-            "bind": "127.0.0.1:8000",
-            "workers": (multiprocessing.cpu_count() * 2) + 1,
-            "worker_class": "uvicorn.workers.UvicornWorker",
-            "logconfig_dict": {"logging": "config"},
-            "reload": False,
-        },
+    mocked_bootstrap.assert_called_once_with(
+        mocked_settings,
+        ziti_load_timeout_ms=20_000,
+        server_workers=mocker.ANY,
+        server_reload=False,
+        server_backlog=2048,
+        server_timeout_keep_alive=5,
+        server_limit_concurrency=None,
+        server_limit_max_requests=None,
+        events_metrics_collect_interval=5.0,
+        events_publishers_port=50000,
+        events_subscribers_port=50001,
     )
-    mocked_app.run.assert_called_once()
 
 
 def test_serve_with_options(mocker: MockerFixture):
-    mocker.patch(
-        "app.commands.serve.get_logging_config",
-        return_value={"logging": "config"},
-    )
-    mocker.patch("app.commands.serve.number_of_workers", return_value=4)
-    mocked_standalone_app = mocker.patch("app.commands.serve.StandaloneApplication")
+    mocked_settings = mocker.MagicMock()
+    mocker.patch("app.cli.get_settings", return_value=mocked_settings)
+    mocked_bootstrap = mocker.patch("app.commands.serve.bootstrap")
     runner = CliRunner()
     result = runner.invoke(
-        app, ["serve", "--host", "0.0.0.0", "--port", "8080", "--workers", "2", "--reload"]
+        app,
+        [
+            "serve",
+            "--ziti-load-timeout-ms",
+            "5000",
+            "--server-workers",
+            "2",
+            "--server-backlog",
+            "1024",
+            "--server-timeout-keep-alive",
+            "10",
+            "--server-limit-concurrency",
+            "13",
+            "--server-limit-max-requests",
+            "1001",
+            "--server-reload",
+            "--events-publishers-port",
+            "9000",
+            "--events-subscribers-port",
+            "9001",
+            "--events-metrics-collect-interval",
+            "12.4",
+        ],
     )
     assert result.exit_code == 0
-    mocked_standalone_app.assert_called_once_with(
-        fastapi_app,
-        {
-            "bind": "0.0.0.0:8080",
-            "workers": 2,
-            "worker_class": "uvicorn.workers.UvicornWorker",
-            "logconfig_dict": {"logging": "config"},
-            "reload": True,
-        },
+    mocked_bootstrap.assert_called_once_with(
+        mocked_settings,
+        ziti_load_timeout_ms=5000,
+        server_workers=2,
+        server_reload=True,
+        server_backlog=1024,
+        server_timeout_keep_alive=10,
+        server_limit_concurrency=13,
+        server_limit_max_requests=1001,
+        events_metrics_collect_interval=12.4,
+        events_publishers_port=9000,
+        events_subscribers_port=9001,
     )

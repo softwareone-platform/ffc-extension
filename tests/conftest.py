@@ -39,7 +39,6 @@ from app.enums import (
     SystemStatus,
     UserStatus,
 )
-from app.hasher import pbkdf2_sha256
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import ModelFactory
 
@@ -74,8 +73,6 @@ def test_settings() -> Settings:
     settings.optscale_auth_api_base_url = "https://opt-auth.ffc.com"
     settings.api_modifier_base_url = "https://api-modifier.ffc.com"
     settings.api_modifier_jwt_secret = "test_jwt_secrettest_jwt_secrettest_jwt_secretpyt"
-    settings.auth_access_jwt_secret = "auth_access_jwt_secretauth_access_jwt_secret"
-    settings.auth_refresh_jwt_secret = "auth_refresh_jwt_secretauth_refresh_jwt_secret"
     settings.opentelemetry_exporter = None
     settings.smtp_sender_email = "test@example.com"
     settings.smtp_sender_name = "Test Sender"
@@ -141,13 +138,11 @@ async def app_lifespan_manager(fastapi_app: FastAPI) -> AsyncGenerator[LifespanM
 
 @pytest.fixture
 async def api_client(
-    fastapi_app: FastAPI,
     app_lifespan_manager: LifespanManager,
-    db_session: AsyncSession,
 ) -> AsyncGenerator[AsyncClient]:
     async with AsyncClient(
         transport=ASGITransport(app=app_lifespan_manager.app),
-        base_url=f"http://localhost/{fastapi_app.root_path.removeprefix('/')}/",
+        base_url="http://localhost/ops/v1",
     ) as client:
         yield client
 
@@ -259,7 +254,6 @@ def system_factory(
     async def _system(
         name: str | None = None,
         external_id: str | None = None,
-        jwt_secret: str | None = None,
         owner: Account | None = None,
         status: SystemStatus = SystemStatus.ACTIVE,
     ) -> System:
@@ -267,7 +261,6 @@ def system_factory(
         system = System(
             name=name or faker.company(),
             external_id=external_id or str(uuid.uuid4()),
-            jwt_secret=jwt_secret or secrets.token_hex(32),
             owner=owner or await account_factory(),
             status=status,
         )
@@ -285,15 +278,11 @@ def accountuser_factory(db_session: AsyncSession):
         user_id: str,
         account_id: str,
         status: AccountUserStatus = AccountUserStatus.ACTIVE,
-        invitation_token: str | None = None,
-        invitation_token_expires_at: datetime | None = None,
     ) -> AccountUser:
         account_user = AccountUser(
             user_id=user_id,
             account_id=account_id,
             status=status,
-            invitation_token=invitation_token,
-            invitation_token_expires_at=invitation_token_expires_at,
         )
         db_session.add(account_user)
         await db_session.commit()
@@ -310,9 +299,6 @@ def user_factory(
     async def _user(
         name: str | None = None,
         email: str | None = None,
-        password: str | None = None,
-        pwd_reset_token: str | None = None,
-        pwd_reset_token_expires_at: datetime | None = None,
         status: UserStatus = UserStatus.ACTIVE,
         account: Account | None = None,
         accountuser_status: AccountUserStatus = AccountUserStatus.ACTIVE,
@@ -321,11 +307,7 @@ def user_factory(
         user = User(
             name=name or faker.name(),
             email=email or faker.email(),
-            password=pbkdf2_sha256.hash(password or "mySuperPass123$"),
-            last_used_account=account,
             status=status,
-            pwd_reset_token=pwd_reset_token,
-            pwd_reset_token_expires_at=pwd_reset_token_expires_at,
         )
 
         db_session.add(user)
@@ -344,19 +326,24 @@ def user_factory(
 
 @pytest.fixture
 def jwt_token_factory() -> Callable[
-    [str, str, str | None, datetime | None, datetime | None, datetime | None], str
+    [str, str, str | None, str | None, datetime | None, datetime | None, datetime | None], str
 ]:
     def _jwt_token(
-        subject: str,
-        secret: str,
-        account_id: str | None = None,
+        account_id: str = "ACC-1111-2222",
+        account_type: str = "Vendor",
+        user_id: str | None = "USR-0000-1111",
+        token_id: str | None = None,
         exp: datetime | None = None,
         nbf: datetime | None = None,
         iat: datetime | None = None,
     ) -> str:
         now = datetime.now(UTC)
         claims = {
-            "sub": subject,
+            "https://claims.softwareone.com/accountId": account_id,
+            "https://claims.softwareone.com/accountType": account_type,
+            "https://claims.softwareone.com/userId": user_id,
+            "https://claims.softwareone.com/apiTokenId": token_id,
+            "https://claims.softwareone.com/installationId": "EXI-0000-1111-2222",
             "iat": iat or now,
             "nbf": nbf or now,
             "exp": exp or now + timedelta(minutes=5),
@@ -366,7 +353,7 @@ def jwt_token_factory() -> Callable[
 
         return jwt.encode(
             claims,
-            secret,
+            secrets.token_hex(16),
             algorithm="HS256",
         )
 
@@ -375,20 +362,18 @@ def jwt_token_factory() -> Callable[
 
 @pytest.fixture
 def system_jwt_token_factory(
-    jwt_token_factory: Callable[
-        [str, str, str | None, datetime | None, datetime | None, datetime | None], str
-    ],
+    jwt_token_factory,
 ) -> Callable[[System], str]:
     def _system_jwt_token(system: System) -> str:
         now = datetime.now(UTC)
 
         return jwt_token_factory(
-            str(system.id),
-            system.jwt_secret,
-            None,
-            now + timedelta(minutes=5),
-            now,
-            now,
+            account_id=str(system.owner.external_id),
+            user_id=None,
+            token_id=system.external_id,
+            exp=now + timedelta(minutes=5),
+            nbf=now,
+            iat=now,
         )
 
     return _system_jwt_token
@@ -440,27 +425,35 @@ def datasource_expense_factory(
 
 @pytest.fixture
 async def aws_account(account_factory: ModelFactory[Account]) -> Account:
-    return await account_factory(name="AWS", type=AccountType.AFFILIATE)
+    return await account_factory(
+        name="AWS", type=AccountType.AFFILIATE, external_id="ACC-2222-2222"
+    )
 
 
 @pytest.fixture
 async def gcp_account(account_factory: ModelFactory[Account]) -> Account:
-    return await account_factory(name="GCP", type=AccountType.AFFILIATE)
+    return await account_factory(
+        name="GCP",
+        type=AccountType.AFFILIATE,
+        external_id="ACC-1111-1111",
+    )
 
 
 @pytest.fixture
 async def gcp_extension(system_factory: ModelFactory[System], gcp_account: Account) -> System:
-    return await system_factory(external_id="GCP", owner=gcp_account)
+    return await system_factory(external_id="TKN-1111-1111", owner=gcp_account)
 
 
 @pytest.fixture
 async def aws_extension(system_factory: ModelFactory[System], aws_account: Account) -> System:
-    return await system_factory(external_id="AWS", owner=aws_account)
+    return await system_factory(external_id="TKN-2222-2222", owner=aws_account)
 
 
 @pytest.fixture
 async def operations_account(account_factory: ModelFactory[Account]) -> Account:
-    return await account_factory(name="SoftwareOne", type=AccountType.OPERATIONS)
+    return await account_factory(
+        name="SoftwareOne", type=AccountType.OPERATIONS, external_id="ACC-0000-0000"
+    )
 
 
 @pytest.fixture
@@ -475,6 +468,7 @@ async def affiliate_account(
         new_entitlements_count=10,
         active_entitlements_count=15,
         terminated_entitlements_count=50,
+        external_id="ACC-3333-3333",
     )
 
 
@@ -482,7 +476,7 @@ async def affiliate_account(
 async def affiliate_system(
     system_factory: ModelFactory[System], affiliate_account: Account
 ) -> System:
-    return await system_factory(external_id="FFC", owner=affiliate_account)
+    return await system_factory(external_id="TKN-3333-3333", owner=affiliate_account)
 
 
 @pytest.fixture
@@ -501,7 +495,7 @@ def gcp_jwt_token(system_jwt_token_factory: Callable[[System], str], gcp_extensi
 async def ffc_extension(
     system_factory: ModelFactory[System], operations_account: Account
 ) -> System:
-    return await system_factory(external_id="FFC", owner=operations_account)
+    return await system_factory(external_id="TKN-0000-0000", owner=operations_account)
 
 
 @pytest.fixture

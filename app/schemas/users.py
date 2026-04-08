@@ -7,7 +7,7 @@ from pydantic import EmailStr, Field
 
 from app.enums import AccountUserStatus, UserStatus
 from app.schemas.accounts import AccountReference
-from app.schemas.core import BaseSchema, CommonEventsSchema, IdSchema, PasswordInputSchema
+from app.schemas.core import BaseSchema, CommonEventsSchema, IdSchema
 
 
 class UserBase(BaseSchema):
@@ -20,14 +20,6 @@ class UserCreate(UserBase):
 
 class UserReference(IdSchema, UserCreate):
     pass
-
-
-class UserAcceptInvitation(PasswordInputSchema):
-    invitation_token: str
-
-
-class UserResetPassword(PasswordInputSchema):
-    pwd_reset_token: str
 
 
 class UserUpdate(BaseSchema):
@@ -47,8 +39,6 @@ class AccountUserCreate(BaseSchema):
 class AccountUserRead(IdSchema, CommonEventsSchema, AccountUserBase):
     account: AccountReference
     user: UserReference
-    invitation_token: str | None
-    invitation_token_expires_at: datetime.datetime | None
     joined_at: datetime.datetime | None = None
 
 
@@ -72,6 +62,4 @@ class UserInvitationRead(IdSchema, CommonEventsSchema, UserCreate):
 
 class UserRead(IdSchema, CommonEventsSchema, UserCreate):
     status: UserStatus
-    last_login_at: datetime.datetime | None
-    last_used_account: AccountReference | None
     account_user: AccountUserReferenceWithAccount | None

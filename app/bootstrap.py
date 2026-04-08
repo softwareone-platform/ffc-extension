@@ -51,7 +51,7 @@ def bootstrap(
                     "description": "Check sockets",
                     "icon": "adobe.png",
                     "socket": "portal.standalone.ffc.admin",
-                    "href": "/static/index.js"
+                    "href": "/static/index.js",
                 },
                 {
                     "id": "organization",
@@ -60,9 +60,7 @@ def bootstrap(
                     "icon": "adobe.png",
                     "socket": "portal.standalone.ffc.admin",
                     "href": "/static/index.js",
-                    "data": {
-                        "test": "testing"
-                    }
+                    "data": {"test": "testing"},
                 },
                 {
                     "id": "admin",
@@ -70,7 +68,7 @@ def bootstrap(
                     "description": "Check sockets",
                     "icon": "adobe.png",
                     "socket": "portal.standalone.ffc",
-                    "href": "/static/index.js"
+                    "href": "/static/index.js",
                 },
                 {
                     "id": "header-action",
@@ -79,9 +77,7 @@ def bootstrap(
                     "icon": "adobe.png",
                     "socket": "portal.standalone.headerAction",
                     "href": "/static/index.js",
-                    "data": {
-                        "test": "testing"
-                    }
+                    "data": {"test": "testing"},
                 },
                 {
                     "id": "header-action",
@@ -90,17 +86,15 @@ def bootstrap(
                     "icon": "adobe.png",
                     "socket": "portal.standalone.headerAction.add",
                     "href": "/static/index.js",
-                    "data": {
-                        "test": "testing"
-                    }
+                    "data": {"test": "testing"},
                 },
                 {
                     "id": "modal",
                     "name": "Just a modal",
                     "description": "Check sockets",
                     "icon": "adobe.png",
-                    "href": "/static/index.js"
-                }
+                    "href": "/static/index.js",
+                },
             ],
         },
     }

@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 
 
-class OpenTelemetryExporter(str, enum.Enum):
+class OpenTelemetryExporter(enum.StrEnum):
     JAEGER = "jaeger"
     AZURE_APP_INSIGHTS = "azure_app_insights"
     CONSOLE = "console"
@@ -35,16 +35,7 @@ class Settings(BaseSettings):
     api_modifier_base_url: str
     api_modifier_jwt_secret: str
     secrets_encryption_key: str
-    auth_access_jwt_secret: str
-    auth_access_jwt_lifespan_minutes: int = 5
-    auth_refresh_jwt_secret: str
-    auth_refresh_jwt_lifespan_days: int = 7
-    invitation_token_length: int = 64
-    invitation_token_expires_days: int = 7
-    pwd_reset_token_length: int = 64
-    pwd_reset_token_length_expires_minutes: int = 15
 
-    system_jwt_token_max_lifespan_minutes: int = 5
     datasources_expenses_obsolete_after_months: int = 6
     billing_percentage: float = 1.0
     ffc_external_product_id: str = "FIN-0001-P1M"
@@ -70,7 +61,7 @@ class Settings(BaseSettings):
     cli_rich_logging: bool = True
     debug: bool = False
 
-    opentelemetry_exporter: OpenTelemetryExporter | None = OpenTelemetryExporter.JAEGER
+    opentelemetry_exporter: OpenTelemetryExporter | None = OpenTelemetryExporter.CONSOLE
     opentelemetry_connection_string: str | None = "http://jaeger:4318/v1/traces"
     opentelemetry_sqlalchemy_min_query_duration_ms: int | None = 100
 

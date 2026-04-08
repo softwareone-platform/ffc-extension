@@ -2,13 +2,13 @@ import enum
 
 
 @enum.unique
-class ActorType(str, enum.Enum):
+class ActorType(enum.StrEnum):
     USER = "user"
     SYSTEM = "system"
 
 
 @enum.unique
-class EntitlementStatus(str, enum.Enum):
+class EntitlementStatus(enum.StrEnum):
     NEW = "new"
     ACTIVE = "active"
     TERMINATED = "terminated"
@@ -16,14 +16,14 @@ class EntitlementStatus(str, enum.Enum):
 
 
 @enum.unique
-class SystemStatus(str, enum.Enum):
+class SystemStatus(enum.StrEnum):
     ACTIVE = "active"
     DISABLED = "disabled"
     DELETED = "deleted"
 
 
 @enum.unique
-class UserStatus(str, enum.Enum):
+class UserStatus(enum.StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
     DISABLED = "disabled"
@@ -31,7 +31,7 @@ class UserStatus(str, enum.Enum):
 
 
 @enum.unique
-class AccountUserStatus(str, enum.Enum):
+class AccountUserStatus(enum.StrEnum):
     INVITED = "invited"
     INVITATION_EXPIRED = "invitation-expired"
     ACTIVE = "active"
@@ -39,20 +39,20 @@ class AccountUserStatus(str, enum.Enum):
 
 
 @enum.unique
-class AccountType(str, enum.Enum):
+class AccountType(enum.StrEnum):
     OPERATIONS = "operations"
     AFFILIATE = "affiliate"
 
 
 @enum.unique
-class AccountStatus(str, enum.Enum):
+class AccountStatus(enum.StrEnum):
     ACTIVE = "active"
     DISABLED = "disabled"
     DELETED = "deleted"
 
 
 @enum.unique
-class DatasourceType(str, enum.Enum):
+class DatasourceType(enum.StrEnum):
     AWS_CNR = "aws_cnr"
     AZURE_CNR = "azure_cnr"
     AZURE_TENANT = "azure_tenant"
@@ -65,7 +65,7 @@ class DatasourceType(str, enum.Enum):
 
 
 @enum.unique
-class OrganizationStatus(str, enum.Enum):
+class OrganizationStatus(enum.StrEnum):
     ACTIVE = "active"
     CANCELLED = "cancelled"
     DELETED = "deleted"

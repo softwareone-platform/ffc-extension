@@ -1,4 +1,3 @@
-import secrets
 from datetime import UTC, datetime
 
 import pytest
@@ -32,7 +31,6 @@ def test_system_create_convert_schema_to_model():
     data = {
         "name": "Test System",
         "external_id": "test-system",
-        "jwt_secret": secrets.token_urlsafe(64),
         "description": "Test Description",
         "owner": {"id": "FACC-1234-5678"},
     }
@@ -43,7 +41,6 @@ def test_system_create_convert_schema_to_model():
     assert isinstance(system, System)
     assert system.name == data["name"]
     assert system.external_id == data["external_id"]
-    assert system.jwt_secret == data["jwt_secret"]
     assert system.description == data["description"]
     assert system.type == ActorType.SYSTEM
 
@@ -53,7 +50,6 @@ def test_system_read_convert_model_to_schema(gcp_extension: System):
         id="FTKN-1234-5678",
         name="Test System",
         external_id="test-system",
-        jwt_secret=secrets.token_urlsafe(64),
         description="Test Description",
         type=ActorType.SYSTEM,
         status=SystemStatus.ACTIVE,
