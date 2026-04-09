@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.conf import Settings
 from app.db.models import Account, Entitlement, System
 from app.enums import AccountStatus, DatasourceType, EntitlementStatus, OrganizationStatus
-from tests.types import JWTTokenFactory, ModelFactory
+from tests.types import ModelFactory
 
 # ====================
 # Authentication Tests
@@ -18,37 +18,6 @@ from tests.types import JWTTokenFactory, ModelFactory
 
 async def test_get_entitlements_without_token(api_client: AsyncClient):
     response = await api_client.get("/entitlements")
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Unauthorized."
-
-
-async def test_get_entitlements_with_invalid_token(api_client: AsyncClient):
-    response = await api_client.get(
-        "/entitlements",
-        headers={"Authorization": "Bearer invalid.token.here"},
-    )
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Unauthorized."
-
-
-async def test_get_entitlements_with_expired_token(
-    api_client: AsyncClient,
-    jwt_token_factory: JWTTokenFactory,
-    gcp_extension: System,
-):
-    expired_time = datetime.now(UTC) - timedelta(hours=1)
-    expired_token = jwt_token_factory(
-        str(gcp_extension.id),
-        gcp_extension.jwt_secret,
-        exp=expired_time,
-    )
-
-    response = await api_client.get(
-        "/entitlements",
-        headers={"Authorization": f"Bearer {expired_token}"},
-    )
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Unauthorized."

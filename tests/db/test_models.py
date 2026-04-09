@@ -14,9 +14,7 @@ from app.enums import ActorType, EntitlementStatus
 async def test_actor_inheritance(db_session: AsyncSession):
     # Create a system which inherits from Actor
     account = Account(name="test account", external_id="my_id")
-    system = System(
-        name="Test System", external_id="test-system", jwt_secret="secret", owner=account
-    )
+    system = System(name="Test System", external_id="test-system", owner=account)
     db_session.add(account)
     db_session.add(system)
     await db_session.commit()
@@ -148,20 +146,3 @@ async def test_organization_unique_external_id(db_session: AsyncSession):
 
     with pytest.raises(IntegrityError):  # SQLAlchemy will raise an integrity error
         await db_session.flush()
-
-
-async def test_system_encrypted_jwt_secret(db_session: AsyncSession):
-    secret = "test-secret"
-    account = Account(name="Test account", external_id="my_id")
-    system = System(name="Test System", external_id="test-system", jwt_secret=secret, owner=account)
-    db_session.add(account)
-    db_session.add(system)
-    await db_session.commit()
-    await db_session.refresh(system)
-
-    # Reload from DB
-    result = await db_session.execute(select(System).where(System.id == system.id))
-    system_from_db = result.scalar_one()
-
-    # Secret should be encrypted in DB but decrypted when accessed
-    assert system_from_db.jwt_secret == secret

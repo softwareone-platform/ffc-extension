@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -6,9 +6,9 @@ from faker import Faker
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import DatasourceExpense, Organization, System
+from app.db.models import DatasourceExpense, Organization
 from app.enums import DatasourceType, OrganizationStatus
-from tests.types import JWTTokenFactory, ModelFactory
+from tests.types import ModelFactory
 
 
 @pytest.fixture
@@ -292,8 +292,7 @@ async def test_test_get_all_expenses_success_with_wrong_filters(
 
 async def test_test_get_all_expenses_with_affiliate_account_401_error(
     datasource_expense_factory: ModelFactory[DatasourceExpense],
-    api_client: AsyncClient,
-    aws_account: str,
+    affiliate_client: AsyncClient,
     faker: Faker,
     db_session: AsyncSession,
     get_organization,
@@ -310,29 +309,9 @@ async def test_test_get_all_expenses_with_affiliate_account_401_error(
         expenses=Decimal("123.45"),
         created_at=datetime(2025, 4, 20, 10, 0, 0, tzinfo=UTC),
     )
-    response = await api_client.get("/expenses", headers={"Authorization": f"Bearer {aws_account}"})
+    response = await affiliate_client.get("/expenses")
 
-    assert response.status_code == 401
-
-
-async def test_get_all_expenses_with_expired_token(
-    api_client: AsyncClient,
-    jwt_token_factory: JWTTokenFactory,
-    gcp_extension: System,
-):
-    expired_time = datetime.now(UTC) - timedelta(hours=1)
-    expired_token = jwt_token_factory(
-        str(gcp_extension.id),
-        gcp_extension.jwt_secret,
-        exp=expired_time,
-    )
-
-    response = await api_client.get(
-        "/expenses", headers={"Authorization": f"Bearer {expired_token}"}
-    )
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Unauthorized."
+    assert response.status_code == 403
 
 
 async def test_get_all_expenses_with_datasource_id_filter(

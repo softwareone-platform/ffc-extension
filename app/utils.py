@@ -5,12 +5,12 @@ import json
 import logging
 import os
 import smtplib
-import subprocess
 import uuid
 from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
+from pathlib import Path
 
 import httpx
 from fastapi import HTTPException, status
@@ -112,40 +112,47 @@ def generate_invitation_email(id: str, name: str, token: str, expires: datetime)
     )
 
 
-def get_instance_external_id():
-    result = subprocess.run(
-        ["cat", "/proc/1/cpuset"],
-        capture_output=True,
-        stdin=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-    try:
-        result.check_returncode()
-    except subprocess.CalledProcessError:
-        return f"{uuid.getnode():012x}"
-
-    _, container_id = result.stdout.decode()[:-1].rsplit("/", 1)
+def _extract_container_id_from_cpuset(cpuset_content: str) -> str | None:
+    container_id = cpuset_content.strip().rsplit("/", 1)[-1]
     if len(container_id) == 64:
         return container_id[:12]
+    return None
 
-    result = subprocess.run(
-        ["grep", "overlay", "/proc/self/mountinfo"],
-        capture_output=True,
-        stdin=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+
+def _extract_container_id_from_mountinfo(mountinfo_content: str) -> str | None:
+    for line in mountinfo_content.splitlines():
+        if "upperdir=" not in line:
+            continue
+        start_idx = line.index("upperdir=") + len("upperdir=")
+        end_idx = line.find(",", start_idx)
+        dir_path = line[start_idx:] if end_idx == -1 else line[start_idx:end_idx]
+        parts = dir_path.rsplit("/", 2)
+        if len(parts) != 3:
+            continue
+        container_id = parts[1]
+        if len(container_id) == 64:
+            return container_id[:12]
+    return None
+
+
+def get_instance_external_id() -> str:
     try:
-        result.check_returncode()
-        mount = result.stdout.decode()
-        start_idx = mount.index("upperdir=") + len("upperdir=")
-        end_idx = mount.index(",", start_idx)
-        dir_path = mount[start_idx:end_idx]
-        _, container_id, _ = dir_path.rsplit("/", 2)
-        if len(container_id) != 64:
-            return f"{uuid.getnode():012x}"
-        return container_id[:12]
-    except (subprocess.CalledProcessError, ValueError):
-        return f"{uuid.getnode():012x}"
+        cpuset_content = Path("/proc/1/cpuset").read_text(encoding="utf-8")
+        cpuset_id = _extract_container_id_from_cpuset(cpuset_content)
+        if cpuset_id is not None:
+            return cpuset_id
+    except OSError:
+        pass
+
+    try:
+        mountinfo_content = Path("/proc/self/mountinfo").read_text(encoding="utf-8")
+        mountinfo_id = _extract_container_id_from_mountinfo(mountinfo_content)
+        if mountinfo_id is not None:
+            return mountinfo_id
+    except OSError:
+        pass
+
+    return f"{uuid.getnode():012x}"
 
 
 def get_jwt_token_claims(token: str) -> dict:
