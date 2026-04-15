@@ -1,0 +1,12 @@
+{
+  "shared": {
+    "grid": {
+      "columns": {
+        "actions": "Actions",
+        "activeOrganizations": "Active Organizations",
+        "organization": "Organization",
+        "entitlement": "Entitlement"
+      }
+    }
+  }
+}

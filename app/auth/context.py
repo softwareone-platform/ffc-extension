@@ -22,7 +22,7 @@ class AuthenticationContext:
 class MPTAuthContext:
     account_id: str
     account_type: str
-    installation_id: str
+    installation_id: str | None = None
     user_id: str | None = None
     token_id: str | None = None
 

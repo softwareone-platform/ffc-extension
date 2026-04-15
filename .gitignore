@@ -169,6 +169,10 @@ bandit.json
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
+pg_data/
+
+mpt_finops_operations.egg-info/
+
 # vscode
 .devcontainer/
 
@@ -195,3 +199,5 @@ taplo.toml
 *_identity.json
 
 /static/*
+/Users
+tsconfig.tsbuildinfo

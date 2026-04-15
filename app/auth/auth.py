@@ -11,7 +11,7 @@ from app.utils import get_jwt_token_claims
 security = HTTPBearer()
 
 
-async def resolve_installation(account_id: str) -> str:
+async def resolve_installation(account_id: str) -> str | None:
     settings = get_settings()
     query = f"and(eq(account.id,{account_id}),eq(status,Installed))"
     url = f"/integration/extensions/{settings.mpt_extension_id}/installations?{query}"
@@ -22,7 +22,8 @@ async def resolve_installation(account_id: str) -> str:
         response = await client.get(url)
         response.raise_for_status()
         data = response.json()
-        return data["data"][0]["id"]
+        if len(data["data"]) > 0:
+            return data["data"][0]["id"]
 
 
 async def get_auth_context(

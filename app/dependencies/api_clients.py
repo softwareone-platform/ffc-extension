@@ -35,7 +35,7 @@ OptscaleAuthClient = Annotated[
 
 
 def _get_installation_client(ctx: MPTAuthContext) -> MPTClient:
-    return get_installation_client(ctx.installation_id)
+    return get_installation_client(ctx.account_id)
 
 
 InstallationClient = Annotated[MPTClient, Depends(_get_installation_client)]

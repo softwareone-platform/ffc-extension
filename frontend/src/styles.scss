@@ -1,13 +1,18 @@
-@use '../node_modules/@swo/design-tokens/src/index' as *;
-@use '../node_modules/@swo/design-tokens/src/style' as *;
+@use "../node_modules/@swo/design-tokens/src/index" as *;
+@use "../node_modules/@swo/design-tokens/src/style" as *;
 //@import '../node_modules/@swo/design-tokens/src/lib/design-tokens-variables.scss';
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 300;
 }
 
-.navigation-host{
-  height: auto!important;
+.navigation-host {
+  height: auto !important;
 }
 
 .container {
@@ -24,3 +29,4 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   justify-content: space-between;
 }
+
