@@ -22,7 +22,7 @@ def command(
             help="Timeout (ms) waiting for Ziti to load.",
             show_default=True,
         ),
-    ] = 5000,
+    ] = 20_000,
     server_workers: Annotated[
         int,
         typer.Option(

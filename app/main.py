@@ -79,14 +79,16 @@ def setup_app():
         openapi_url="/bypass/openapi.json",
         lifespan=lifespan,
     )
-    app.mount(
-        "/static",
-        StaticFiles(
-            directory=Path(__file__).parent.parent.resolve() / "static",
-            html=True,
-        ),
-        name="static",
-    )
+    static_dir = Path(__file__).parent.parent.resolve() / "static"
+    if static_dir.exists():
+        app.mount(
+            "/static",
+            StaticFiles(
+                directory=static_dir,
+                html=True,
+            ),
+            name="static",
+        )
     fastapi_pagination.add_pagination(app)
 
     v1_router = APIRouter(prefix="/ops/v1")

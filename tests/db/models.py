@@ -29,7 +29,7 @@ class ParentModelForTests(Base, HumanReadablePKMixin):
 
 
 @enum.unique
-class DeletableModelStatus(str, enum.Enum):
+class DeletableModelStatus(enum.StrEnum):
     ACTIVE = "active"
     DELETED = "deleted"
 
@@ -65,7 +65,7 @@ class DeletableAuditModelForTests(Base, HumanReadablePKMixin, AuditableMixin):
 
 
 @enum.unique
-class NonDeletableModelStatus(str, enum.Enum):
+class NonDeletableModelStatus(enum.StrEnum):
     ACTIVE = "active"
     DISABLED = "disabled"
 

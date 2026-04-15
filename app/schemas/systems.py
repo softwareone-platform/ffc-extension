@@ -1,4 +1,3 @@
-import secrets
 from typing import Annotated
 
 from pydantic import Field
@@ -30,16 +29,6 @@ class SystemRead(IdSchema, CommonEventsSchema, SystemBase):
 
 class SystemCreate(SystemBase):
     owner: Annotated[IdSchema | None, Field(examples=["FACC-5810-4583"])] = None  # type: ignore[assignment]
-    jwt_secret: Annotated[
-        str | None,
-        Field(
-            min_length=64,
-            default_factory=lambda: secrets.token_hex(64),
-            examples=[
-                "3e3068bfcacd587f75137afdead8f96adb016734a68630cac9e7a008458782a38ef61217d17406832f8fede61a7773866430f52084f8cac59311386e1b673261"
-            ],
-        ),
-    ]
 
 
 class SystemUpdate(BaseSchema):
@@ -59,8 +48,3 @@ class SystemUpdate(BaseSchema):
     ] = None
     external_id: Annotated[str | None, Field(min_length=1, max_length=255)] = None
     description: Annotated[str | None, Field(max_length=2000)] = None
-    jwt_secret: Annotated[str | None, Field(min_length=64)] = None
-
-
-class SystemCreateResponse(SystemRead):
-    jwt_secret: str
