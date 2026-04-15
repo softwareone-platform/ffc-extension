@@ -50,40 +50,41 @@ def bootstrap(
                     "name": "FinOps for Cloud",
                     "description": "FinOps for Cloud",
                     "icon": "extension",
-                    "socket": "portal"
+                    "socket": "portal",
                 },
-                    {
-                        "id": "organizations",
-                        "name": "Organizations",
-                        "description": "This section shows all of the customers Organisations created in FinOps.",
-                        "icon": "adobe.png",
-                        "socket": "portal.ffc",
-                        "href": "/static/organizations.js"
-                    },
-                    {
-                        "id": "entitlements",
-                        "name": "Entitlements",
-                        "description": "This section provides visibility into what services and resources of organizations are entitled to use.",
-                        "icon": "adobe.png",
-                        "socket": "portal.ffc",
-                        "href": "/static/entitlements.js"
-                    },
-                        {
-                            "id": "add",
-                            "name": "Add",
-                            "description": "Add entitlement",
-                            "icon": "adobe.png",
-                            "socket": "portal.ffc.entitlements.actions",
-                            "href": "/static/modal.js"
-                        },
-
+                {
+                    "id": "organizations",
+                    "name": "Organizations",
+                    "description": "This section shows all of the customers Organisations "
+                    "created in FinOps.",
+                    "icon": "adobe.png",
+                    "socket": "portal.ffc",
+                    "href": "/static/organizations.js",
+                },
+                {
+                    "id": "entitlements",
+                    "name": "Entitlements",
+                    "description": "This section provides visibility into what services "
+                    "and resources of organizations are entitled to use.",
+                    "icon": "adobe.png",
+                    "socket": "portal.ffc",
+                    "href": "/static/entitlements.js",
+                },
+                {
+                    "id": "add",
+                    "name": "Add",
+                    "description": "Add entitlement",
+                    "icon": "adobe.png",
+                    "socket": "portal.ffc.entitlements.actions",
+                    "href": "/static/modal.js",
+                },
                 {
                     "id": "modal",
                     "name": "Add entitlement",
                     "description": "Wizard to test modals",
                     "icon": "adobe.png",
-                    "href": "/static/modal.js"
-                }
+                    "href": "/static/modal.js",
+                },
             ],
         },
     }
