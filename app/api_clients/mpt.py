@@ -43,8 +43,9 @@ class MPTExtensionAuth(httpx.Auth):
         """Builds the token refresh request."""
         return httpx.Request(
             "POST",
-            f"{self.client.settings.mpt_api_base_url}/integration/installations/{self.client.installation}/token",
+            f"{self.client.settings.mpt_api_base_url}/integration/installations/-/token",
             headers={"Authorization": f"Bearer {self.client.settings.mpt_extension_token}"},
+            params={"account.id": self.client.account_id},
         )
 
     def update_token(self, response: httpx.Response) -> None:
@@ -55,8 +56,8 @@ class MPTExtensionAuth(httpx.Auth):
 
 
 class MPTClient:
-    def __init__(self, installation: str) -> None:
-        self.installation = installation
+    def __init__(self, account_id: str) -> None:
+        self.account_id = account_id
         self.settings = get_settings()
         self.token_info: TokenInfo | None = None
 
@@ -191,5 +192,5 @@ class MPTClient:
 
 
 @cache
-def get_installation_client(installation_id: str) -> MPTClient:
-    return MPTClient(installation_id)
+def get_installation_client(account_id: str) -> MPTClient:
+    return MPTClient(account_id)

@@ -5,7 +5,7 @@ const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
 
 const ctx = await context({
-  entryPoints: ['./src/index.tsx'],
+  entryPoints: ['./src/organizations.tsx','./src/entitlements.tsx','./src/modal.tsx'],
   outdir: '../static',
   bundle: true,
   platform: 'browser',

@@ -1,0 +1,48 @@
+@use "@swo/design-tokens" as *;
+
+.modal {
+  &-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid;
+    border-image: linear-gradient(
+        259deg,
+        #00c9cd 16.32%,
+        #472aff 59.03%,
+        #392d9c 99.99%
+      )
+      1;
+
+    &-title {
+      font-family: var(--font-family-haas-grot-text), var(--font-family-arial);
+      font-size: 18px;
+      font-weight: 500;
+      font-style: normal;
+      line-height: 26px;
+      letter-spacing: normal;
+    }
+  }
+  &__container {
+    padding: var(--spacing-3);
+  }
+  &__content {
+    display: flex;
+    flex-direction: column;
+    // height: 100%;
+    overflow: auto;
+    flex-grow: 1;
+  }
+
+  &-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-top: 1px solid var(--gray-3);
+    
+    &__content {
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+}
