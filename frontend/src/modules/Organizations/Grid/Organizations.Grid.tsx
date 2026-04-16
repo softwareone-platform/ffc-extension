@@ -26,7 +26,7 @@ function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
 
-export default () => {
+export function OrganizationsGrid() {
   // const {auth, data} = useMPTContext();
   const defaultFilter = { operator: "neq", field: "status", value: "deleted" };
   const sort = [{ field: "event.created.at", direction: "desc" }];
