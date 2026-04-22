@@ -44,11 +44,11 @@ async def test_get_accounts_without_token(api_client: AsyncClient):
 
 
 async def test_can_create_accounts(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_extension: System,
     db_session: AsyncSession,
 ):
-    response = await operations_client.post(
+    response = await admin_client.post(
         "/accounts",
         json={"name": "Microsoft", "external_id": "ACC-9044-8753", "type": "affiliate"},
     )
@@ -73,24 +73,24 @@ async def test_can_create_accounts(
 
 
 async def test_create_accounts_type_not_affiliate(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_jwt_token: str,
     ffc_extension: System,
     db_session: AsyncSession,
 ):
-    response = await operations_client.post(
+    response = await admin_client.post(
         "/accounts",
         json={"name": "Microsoft", "external_id": "ACC-9044-8753", "type": "operations"},
     )
     assert response.status_code == 400
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         "/accounts",
         json={"external_id": "ACC-9044-8753", "type": "affiliate"},
     )
     assert response.status_code == 422
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         "/accounts",
         json={"name": "Microsoft", "type": "affiliate"},
     )
@@ -98,18 +98,18 @@ async def test_create_accounts_type_not_affiliate(
 
 
 async def test_create_accounts_incomplete_body(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_extension: System,
     db_session: AsyncSession,
 ):
-    response = await operations_client.post(
+    response = await admin_client.post(
         "/accounts",
         json={"name": "Microsoft", "external_id": "ACC-9044-8753"},
     )
     assert response.status_code == 422
 
 
-async def test_cannot_create_accounts_if_context_is_not_operations_account(
+async def test_cannot_create_accounts_if_context_is_not_admin_account(
     affiliate_account: Account, affiliate_client: AsyncClient
 ):
     response = await affiliate_client.post(
@@ -128,10 +128,10 @@ async def test_cannot_create_accounts_if_context_is_not_operations_account(
 
 async def test_get_account_by_id(
     affiliate_account: Account,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_extension: System,
 ):
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/accounts/{affiliate_account.id}",
     )
 
@@ -170,16 +170,16 @@ async def test_get_account_by_id_no_auth(
     assert response.status_code == 401
 
 
-async def test_get_invalid_account(operations_client: AsyncClient, ffc_jwt_token: str):
+async def test_get_invalid_account(admin_client: AsyncClient, ffc_jwt_token: str):
     id = "FACC-1369-9180"
-    response = await operations_client.get(f"/accounts/{id}")
+    response = await admin_client.get(f"/accounts/{id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == f"Account with ID `{id}` wasn't found."
 
 
-async def test_get_invalid_id_format(operations_client: AsyncClient, ffc_jwt_token: str):
-    response = await operations_client.get(
+async def test_get_invalid_id_format(admin_client: AsyncClient, ffc_jwt_token: str):
+    response = await admin_client.get(
         "/accounts/this-is-not-a-valid-uuid",
     )
 
@@ -190,8 +190,8 @@ async def test_get_invalid_id_format(operations_client: AsyncClient, ffc_jwt_tok
     assert detail["type"] == "string_pattern_mismatch"
 
 
-async def test_get_all_accounts(operations_client: AsyncClient, ffc_jwt_token: str):
-    response = await operations_client.get(
+async def test_get_all_accounts(admin_client: AsyncClient, ffc_jwt_token: str):
+    response = await admin_client.get(
         "/accounts",
         headers={"Authorization": f"Bearer {ffc_jwt_token}"},
     )
@@ -201,7 +201,7 @@ async def test_get_all_accounts(operations_client: AsyncClient, ffc_jwt_token: s
 
 
 async def test_get_all_accounts_single_page(
-    operations_account, api_client: AsyncClient, ffc_jwt_token: str
+    admin_account, api_client: AsyncClient, ffc_jwt_token: str
 ):
     response = await api_client.get(
         "/accounts",
@@ -216,17 +216,17 @@ async def test_get_all_accounts_single_page(
 
 async def test_get_all_account_multiple_pages(
     account_factory: ModelFactory[Account],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     for _ in range(11):
         await account_factory(
             name="SWO",
-            type=AccountType.OPERATIONS,
+            type=AccountType.ADMIN,
             status=AccountStatus.ACTIVE,
             external_id=str(uuid4()),
         )
 
-    first_page_response = await operations_client.get(
+    first_page_response = await admin_client.get(
         "/accounts",
         params={"limit": 5},
     )
@@ -237,7 +237,7 @@ async def test_get_all_account_multiple_pages(
     assert first_page_data["limit"] == 5
     assert first_page_data["offset"] == 0
 
-    second_page_response = await operations_client.get(
+    second_page_response = await admin_client.get(
         "/accounts",
         params={"limit": 3, "offset": 5},
     )
@@ -249,7 +249,7 @@ async def test_get_all_account_multiple_pages(
     assert second_page_data["limit"] == 3
     assert second_page_data["offset"] == 5
 
-    third_page_response = await operations_client.get(
+    third_page_response = await admin_client.get(
         "/accounts",
         params={"offset": 8},
     )
@@ -270,14 +270,14 @@ async def test_get_all_account_multiple_pages(
 # ====================
 
 
-async def test_validate_account_type_and_required_conditions_account_type_operations():
+async def test_validate_account_type_and_required_conditions_account_type_admin():
     account_repo = AccountRepository
 
-    data = AccountCreate(name="Microsoft", external_id=str(uuid4()), type=AccountType.OPERATIONS)
+    data = AccountCreate(name="Microsoft", external_id=str(uuid4()), type=AccountType.ADMIN)
     with pytest.raises(HTTPException) as exc_info:
         await validate_account_type_and_required_conditions(account_repo, data)
     assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "You cannot create an Account of type Operations."
+    assert exc_info.value.detail == "You cannot create an Account of type Admin."
 
 
 async def test_validate_account_type_and_required_conditions_account_deleted(
@@ -297,13 +297,13 @@ async def test_validate_account_type_and_required_conditions_account_deleted(
     )
 
 
-def test_validate_required_conditions_before_update_account_type_operations(
-    operations_account: Account,
+def test_validate_required_conditions_before_update_account_type_admin(
+    admin_account: Account,
 ):
     with pytest.raises(HTTPException) as exc_info:
-        validate_required_conditions_before_update(account=operations_account)
+        validate_required_conditions_before_update(account=admin_account)
     assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "You cannot update an Account of type Operations."
+    assert exc_info.value.detail == "You cannot update an Account of type Admin."
 
 
 def test_validate_required_conditions_before_update_account_deleted():
@@ -322,12 +322,12 @@ def test_validate_required_conditions_before_update_account_deleted():
 
 
 async def test_can_update_accounts_name(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_extension: System,
     affiliate_account: Account,
     db_session: AsyncSession,
 ):
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/accounts/{affiliate_account.id}",
         json={"name": "AWS"},
     )
@@ -349,12 +349,12 @@ async def test_can_update_accounts_name(
 
 
 async def test_update_account_empty_body(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_extension: System,
     affiliate_account: Account,
     db_session: AsyncSession,
 ):
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/accounts/{affiliate_account.id}",
         json={},
     )
@@ -363,12 +363,12 @@ async def test_update_account_empty_body(
 
 
 async def test_can_update_accounts_external_id(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     ffc_extension: System,
     affiliate_account: Account,
     db_session: AsyncSession,
 ):
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/accounts/{affiliate_account.id}",
         json={"external_id": "ACC-9044-8753"},
     )
@@ -409,10 +409,10 @@ async def test_cannot_update_if_status_is_not_active(
 
 
 async def test_cannot_update_disabled_accounts(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     affiliate_account: Account,
 ):
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/accounts/{affiliate_account.id}",
         json={"status": AccountStatus.DISABLED},
     )
@@ -430,7 +430,7 @@ async def test_cannot_update_disabled_accounts(
     }
 
 
-async def test_cannot_update_accounts_if_context_is_not_operations_account(
+async def test_cannot_update_accounts_if_context_is_not_admin_account(
     affiliate_account: Account, affiliate_client: AsyncClient
 ):
     response = await affiliate_client.put(
@@ -443,12 +443,12 @@ async def test_cannot_update_accounts_if_context_is_not_operations_account(
 
 
 async def test_can_only_updated_the_name_and_external_id(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     affiliate_account: Account,
 ):
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/accounts/{affiliate_account.id}",
-        json={"type": AccountType.OPERATIONS},
+        json={"type": AccountType.ADMIN},
     )
     data = response.json()
     assert response.status_code == 422
@@ -458,12 +458,12 @@ async def test_can_only_updated_the_name_and_external_id(
                 "type": "extra_forbidden",
                 "loc": ["body", "type"],
                 "msg": "Extra inputs are not permitted",
-                "input": "operations",
+                "input": "admin",
             }
         ]
     }
 
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/accounts/{affiliate_account.id}",
         json={"status": AccountStatus.DISABLED},
     )
@@ -487,8 +487,8 @@ async def test_can_only_updated_the_name_and_external_id(
 
 
 async def test_can_list_account_users(
-    operations_client: AsyncClient,
-    operations_account: Account,
+    admin_client: AsyncClient,
+    admin_account: Account,
     accountuser_factory: ModelFactory[AccountUser],
     user_factory: ModelFactory[User],
 ):
@@ -498,10 +498,10 @@ async def test_can_list_account_users(
         status=UserStatus.ACTIVE,
     )
     await accountuser_factory(
-        user_id=user.id, account_id=operations_account.id, status=AccountStatus.ACTIVE
+        user_id=user.id, account_id=admin_account.id, status=AccountStatus.ACTIVE
     )
 
-    response = await operations_client.get(f"/accounts/{operations_account.id}/users")
+    response = await admin_client.get(f"/accounts/{admin_account.id}/users")
     data = response.json()
     assert response.status_code == 200
     assert isinstance(data.get("items"), list)
@@ -530,18 +530,18 @@ async def test_list_account_users_deleted_not_included_for_affiliate(
 
 async def test_list_not_existing_account_id(
     affiliate_account: Account,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/accounts/{affiliate_account.id}/users",
     )
     assert response.status_code == 200
 
 
-async def test_cannot_access_not_existing_account_id_with_operations_account_context(
-    operations_client: AsyncClient,
+async def test_cannot_access_not_existing_account_id_with_admin_account_context(
+    admin_client: AsyncClient,
 ):
-    response = await operations_client.get(
+    response = await admin_client.get(
         "/accounts/FACC-8751-0928/users",
     )
     assert response.status_code == 404
@@ -550,10 +550,10 @@ async def test_cannot_access_not_existing_account_id_with_operations_account_con
 
 
 async def test_cannot_cheat_account_type_and_context(
-    affiliate_client: AsyncClient, operations_account: Account
+    affiliate_client: AsyncClient, admin_account: Account
 ):
     response = await affiliate_client.get(
-        f"/accounts/{operations_account.id}/users",
+        f"/accounts/{admin_account.id}/users",
     )
     assert response.status_code == 404
 
@@ -570,8 +570,8 @@ async def test_fetch_account_or_404_account_not_found(mock_account_repo: AsyncMo
 
 
 async def test_get_all_list_account_users_multiple_pages(
-    operations_client: AsyncClient,
-    operations_account: Account,
+    admin_client: AsyncClient,
+    admin_account: Account,
     accountuser_factory: ModelFactory[AccountUser],
     user_factory: ModelFactory[User],
     db_session: AsyncSession,
@@ -587,15 +587,15 @@ async def test_get_all_list_account_users_multiple_pages(
 
     for user_id in users_ids:
         await accountuser_factory(
-            user_id=user_id, account_id=operations_account.id, status=AccountStatus.ACTIVE
+            user_id=user_id, account_id=admin_account.id, status=AccountStatus.ACTIVE
         )
 
-    first_page_response = await operations_client.get(
-        f"/accounts/{operations_account.id}/users",
+    first_page_response = await admin_client.get(
+        f"/accounts/{admin_account.id}/users",
         params={"limit": 5},
     )
     first_page_data = first_page_response.json()
-    result = await db_session.execute(select(Account).where(Account.id == operations_account.id))
+    result = await db_session.execute(select(Account).where(Account.id == admin_account.id))
     assert result.one_or_none() is not None
     assert first_page_response.status_code == 200
     assert first_page_data["total"] == 30
@@ -603,8 +603,8 @@ async def test_get_all_list_account_users_multiple_pages(
     assert first_page_data["limit"] == 5
     assert first_page_data["offset"] == 0
     #
-    second_page_response = await operations_client.get(
-        f"/accounts/{operations_account.id}/users",
+    second_page_response = await admin_client.get(
+        f"/accounts/{admin_account.id}/users",
         params={"limit": 3, "offset": 5},
     )
     second_page_data = second_page_response.json()
@@ -615,8 +615,8 @@ async def test_get_all_list_account_users_multiple_pages(
     assert second_page_data["limit"] == 3
     assert second_page_data["offset"] == 5
 
-    third_page_response = await operations_client.get(
-        f"/accounts/{operations_account.id}/users",
+    third_page_response = await admin_client.get(
+        f"/accounts/{admin_account.id}/users",
         params={"offset": 8},
     )
     third_page_data = third_page_response.json()
@@ -637,8 +637,8 @@ async def test_get_all_list_account_users_multiple_pages(
 
 
 async def test_can_remove_user_from_account(
-    operations_client: AsyncClient,
-    operations_account: Account,
+    admin_client: AsyncClient,
+    admin_account: Account,
     accountuser_factory: ModelFactory[AccountUser],
     user_factory: ModelFactory[User],
 ):
@@ -648,16 +648,16 @@ async def test_can_remove_user_from_account(
         status=UserStatus.ACTIVE,
     )
     await accountuser_factory(
-        user_id=user.id, account_id=operations_account.id, status=AccountStatus.ACTIVE
+        user_id=user.id, account_id=admin_account.id, status=AccountStatus.ACTIVE
     )
 
-    response = await operations_client.delete(f"/accounts/{operations_account.id}/users/{user.id}")
+    response = await admin_client.delete(f"/accounts/{admin_account.id}/users/{user.id}")
     assert response.status_code == 204
 
 
 async def test_cannot_remove_user_from_account_without_auth(
     api_client: AsyncClient,
-    operations_account: Account,
+    admin_account: Account,
     accountuser_factory: ModelFactory[AccountUser],
     user_factory: ModelFactory[User],
 ):
@@ -667,42 +667,38 @@ async def test_cannot_remove_user_from_account_without_auth(
         status=UserStatus.ACTIVE,
     )
     await accountuser_factory(
-        user_id=user.id, account_id=operations_account.id, status=AccountStatus.ACTIVE
+        user_id=user.id, account_id=admin_account.id, status=AccountStatus.ACTIVE
     )
 
-    response = await api_client.delete(f"/accounts/{operations_account.id}/users/{user.id}")
+    response = await api_client.delete(f"/accounts/{admin_account.id}/users/{user.id}")
     assert response.status_code == 401
 
 
 async def test_remove_with_not_existing_user_id(
-    operations_client: AsyncClient,
-    operations_account: Account,
+    admin_client: AsyncClient,
+    admin_account: Account,
 ):
     wrong_user_id = "FUSR-4068-9870"
-    response = await operations_client.delete(
-        f"/accounts/{operations_account.id}/users/{wrong_user_id}"
-    )
+    response = await admin_client.delete(f"/accounts/{admin_account.id}/users/{wrong_user_id}")
     assert response.status_code == 400
     data = response.json()
     assert (
         data.get("detail")
-        == f"The User `{wrong_user_id}` does not belong to the Account with ID `{operations_account.id}`."  # noqa: E501
+        == f"The User `{wrong_user_id}` does not belong to the Account with ID `{admin_account.id}`."  # noqa: E501
     )
 
 
 async def test_remove_cheat_account_type_and_context(
-    affiliate_client: AsyncClient, operations_account: Account
+    affiliate_client: AsyncClient, admin_account: Account
 ):
     wrong_user_id = "FUSR-4068-9870"
-    response = await affiliate_client.delete(
-        f"/accounts/{operations_account.id}/users/{wrong_user_id}"
-    )
+    response = await affiliate_client.delete(f"/accounts/{admin_account.id}/users/{wrong_user_id}")
     assert response.status_code == 404
 
 
 async def test_cannot_remove_deleted_user_from_account(
-    operations_client: AsyncClient,
-    operations_account: Account,
+    admin_client: AsyncClient,
+    admin_account: Account,
     accountuser_factory: ModelFactory[AccountUser],
     user_factory: ModelFactory[User],
 ):
@@ -712,15 +708,15 @@ async def test_cannot_remove_deleted_user_from_account(
         status=UserStatus.ACTIVE,
     )
     await accountuser_factory(
-        user_id=user.id, account_id=operations_account.id, status=AccountStatus.DELETED
+        user_id=user.id, account_id=admin_account.id, status=AccountStatus.DELETED
     )
 
-    response = await operations_client.delete(f"/accounts/{operations_account.id}/users/{user.id}")
+    response = await admin_client.delete(f"/accounts/{admin_account.id}/users/{user.id}")
     assert response.status_code == 400
     data = response.json()
     assert (
         data.get("detail")
-        == f"The User `{user.id}` does not belong to the Account with ID `{operations_account.id}`."
+        == f"The User `{user.id}` does not belong to the Account with ID `{admin_account.id}`."
     )
 
 

@@ -6,7 +6,7 @@ from sqlalchemy import ColumnExpressionArgument, Select
 from app.db.handlers import NotFoundError
 from app.db.models import Account, Entitlement
 from app.dependencies.api_clients import OptscaleClient
-from app.dependencies.auth import CurrentAuthContext, check_operations_account
+from app.dependencies.auth import CurrentAuthContext, check_admin_account
 from app.dependencies.db import (
     AccountRepository,
     EntitlementRepository,
@@ -98,7 +98,7 @@ async def create_entitlement(
         if not data.owner:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Operations accounts must provide an owner for an Entitlement.",
+                detail="Admin accounts must provide an owner for an Entitlement.",
             )
         try:
             owner = await account_repo.get(
@@ -164,7 +164,7 @@ async def delete_entitlement_by_id(
 @router.post(
     "/{id}/redeem",
     response_model=EntitlementRead,
-    dependencies=[Depends(check_operations_account)],
+    dependencies=[Depends(check_admin_account)],
 )
 async def redeem_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],

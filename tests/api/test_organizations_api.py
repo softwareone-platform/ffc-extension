@@ -573,7 +573,7 @@ async def test_get_invalid_id_format(api_client: AsyncClient, ffc_jwt_token: str
 )
 async def test_update_organization_external_id(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
     updated_external_id: str,
@@ -585,7 +585,7 @@ async def test_update_organization_external_id(
         operations_external_id="initial_external_id",
     )
 
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/organizations/{db_org.id}",
         json={"operations_external_id": updated_external_id},
     )
@@ -621,7 +621,7 @@ async def test_update_organization_external_id(
 )
 async def test_update_organization_external_id_unique_for_non_deleted_objects(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
     org_to_update_status: OrganizationStatus,
@@ -643,7 +643,7 @@ async def test_update_organization_external_id_unique_for_non_deleted_objects(
         status=existing_org_status,
     )
 
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/organizations/{db_org.id}",
         json={"name": "organization_to_update", "operations_external_id": "existing_external_id"},
     )
@@ -685,7 +685,7 @@ async def test_update_organization_external_id_unique_for_non_deleted_objects(
 )
 async def test_update_organization_name(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
     updated_name: str,
@@ -705,7 +705,7 @@ async def test_update_organization_name(
 
         httpx_mock.add_response(
             method="PATCH",
-            headers={"Authorization": operations_client.headers["Authorization"]},
+            headers={"Authorization": admin_client.headers["Authorization"]},
             url=f"https://opt-api.ffc.com/organizations/{db_org.linked_organization_id}",
             status_code=api_modifier_status_code,
             json={
@@ -714,7 +714,7 @@ async def test_update_organization_name(
             },
         )
 
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/organizations/{db_org.id}",
         json={"name": updated_name},
     )
@@ -742,7 +742,7 @@ async def test_update_organization_name(
 )
 async def test_update_organization_both_fields(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
     api_modifier_status_code: int,
@@ -757,7 +757,7 @@ async def test_update_organization_both_fields(
 
     httpx_mock.add_response(
         method="PATCH",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"https://opt-api.ffc.com/organizations/{db_org.linked_organization_id}",
         status_code=api_modifier_status_code,
         json={
@@ -766,7 +766,7 @@ async def test_update_organization_both_fields(
         },
     )
 
-    response = await operations_client.put(
+    response = await admin_client.put(
         f"/organizations/{db_org.id}",
         json={"name": "updated_name", "operations_external_id": "updated_external_id"},
     )
@@ -799,7 +799,7 @@ async def test_update_organization_both_fields(
 )
 async def test_try_update_name_for_organization_without_linked_organization_id(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     db_session: AsyncSession,
     httpx_mock: HTTPXMock,
     set_operations_external_id: bool,
@@ -815,7 +815,7 @@ async def test_try_update_name_for_organization_without_linked_organization_id(
     if set_operations_external_id:
         json_payload["operations_external_id"] = "updated_external_id"
 
-    response = await operations_client.put(f"/organizations/{db_org.id}", json=json_payload)
+    response = await admin_client.put(f"/organizations/{db_org.id}", json=json_payload)
 
     assert not httpx_mock.get_request()
 
@@ -839,7 +839,7 @@ async def test_try_update_name_for_organization_without_linked_organization_id(
 async def test_delete_organization(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
 ):
@@ -849,7 +849,7 @@ async def test_delete_organization(
     )
     httpx_mock.add_response(
         method="PATCH",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{db_org.linked_organization_id}",
         status_code=200,
         json={
@@ -861,7 +861,7 @@ async def test_delete_organization(
     assert db_org.status == OrganizationStatus.ACTIVE
     assert db_org.deleted_at is None
 
-    response = await operations_client.delete(f"/organizations/{db_org.id}")
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
     assert response.status_code == 204
     assert bool(httpx_mock.get_request())
 
@@ -869,7 +869,7 @@ async def test_delete_organization(
     assert db_org.status == OrganizationStatus.DELETED
     assert db_org.deleted_at is not None
 
-    response = await operations_client.delete(f"/organizations/{db_org.id}")
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
     assert response.status_code == 400
     assert response.json()["detail"] == f"Organization {db_org.name} is already deleted."
 
@@ -877,7 +877,7 @@ async def test_delete_organization(
 async def test_delete_organization_optscale_issue(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
 ):
@@ -887,7 +887,7 @@ async def test_delete_organization_optscale_issue(
     )
     httpx_mock.add_response(
         method="PATCH",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{db_org.linked_organization_id}",
         status_code=500,
         text="Internal Server Error",
@@ -896,7 +896,7 @@ async def test_delete_organization_optscale_issue(
     assert db_org.status == OrganizationStatus.ACTIVE
     assert db_org.deleted_at is None
 
-    response = await operations_client.delete(f"/organizations/{db_org.id}")
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
 
     await db_session.refresh(db_org)
 

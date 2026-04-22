@@ -307,7 +307,7 @@ async def test_delete(
 
 async def test_deleted_by_user_id(
     db_session: AsyncSession,
-    operations_account: Account,
+    admin_account: Account,
     accountuser_factory: ModelFactory[AccountUser],
     user_factory: ModelFactory[User],
     mocker: MockerFixture,
@@ -319,7 +319,7 @@ async def test_deleted_by_user_id(
     )
     user_actor = await user_factory()
     account_user = await accountuser_factory(
-        user_id=user.id, account_id=operations_account.id, status=AccountStatus.ACTIVE
+        user_id=user.id, account_id=admin_account.id, status=AccountStatus.ACTIVE
     )
 
     db_session.add(account_user)

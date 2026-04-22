@@ -14,7 +14,7 @@
 # from app.db.models import System, User
 # from app.dependencies.auth import (
 #     authentication_required,
-#     check_operations_account,
+#     check_admin_account,
 #     get_authentication_context,
 # )
 # from app.enums import AccountType, AccountUserStatus, ActorType, SystemStatus, UserStatus
@@ -237,7 +237,7 @@
 #     context = mocker.Mock()
 #     context.account.type = (AccountType.AFFILIATE,)
 #     with pytest.raises(HTTPException) as exc_info:
-#         check_operations_account(context)
+#         check_admin_account(context)
 #     assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
 #     assert "You've found the door, but you don't have the key." in str(exc_info.value.detail)
 
@@ -246,13 +246,13 @@
 #     mocker: MockerFixture,
 # ):
 #     context = mocker.Mock()
-#     context.account.type = AccountType.OPERATIONS
-#     check_operations_account(context)
+#     context.account.type = AccountType.ADMIN
+#     check_admin_account(context)
 
 
 # def test_check_operations_account_no_auth_context():
 #     with pytest.raises(HTTPException) as exc_info:
-#         check_operations_account(None)
+#         check_admin_account(None)
 
 #     assert exc_info.value.status_code == 401
 

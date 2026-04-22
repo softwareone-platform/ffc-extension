@@ -5,11 +5,11 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from app.api_clients.optscale import UserDoesNotExist
 from app.dependencies.api_clients import APIModifierClient, OptscaleAuthClient, OptscaleClient
-from app.dependencies.auth import check_operations_account
+from app.dependencies.auth import check_admin_account
 from app.schemas.employees import EmployeeCreate, EmployeeRead
 from app.utils import wrap_http_error_in_502
 
-router = APIRouter(dependencies=[Depends(check_operations_account)])
+router = APIRouter(dependencies=[Depends(check_admin_account)])
 
 
 @router.post("", response_model=EmployeeRead, status_code=status.HTTP_201_CREATED)

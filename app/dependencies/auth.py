@@ -190,17 +190,17 @@ async def authentication_required(
         yield
 
 
-def check_operations_account(
+def check_admin_account(
     context: Annotated[AuthenticationContext | None, Depends(get_authentication_context)],
 ) -> None:
     """
-    This function ensures that the account type is of type OPERATIONS
+    This function ensures that the account type is of type ADMIN
     """
     if not context:
         raise UNAUTHORIZED_EXCEPTION
 
-    if context.account.type != models.AccountType.OPERATIONS:
-        # This API can only be consumed in the context of an Operations Account
+    if context.account.type != models.AccountType.ADMIN:
+        # This API can only be consumed in the context of an Admin Account
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You've found the door, but you don't have the key.",
