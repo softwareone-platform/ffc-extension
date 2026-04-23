@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 from dateutil.relativedelta import relativedelta
 
+from app.billing.constants import LOWER_BILLING_YEAR
 from app.billing.process_billing import process_billing
 from app.conf import get_settings
 
@@ -59,9 +60,9 @@ def command(
     billing_year = year if year is not None else previous_month.year
     billing_month = month if month is not None else previous_month.month
 
-    if billing_year < settings.lower_billing_year:
+    if billing_year < LOWER_BILLING_YEAR:
         typer.secho(
-            f"The billing year must be {settings.lower_billing_year} or later.",
+            f"The billing year must be {LOWER_BILLING_YEAR} or later.",
             fg=typer.colors.RED,
             err=True,
         )

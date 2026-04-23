@@ -19,7 +19,7 @@ def test_openapi(mocker: MockerFixture):
     result = runner.invoke(app, "openapi")
 
     assert result.exit_code == 0
-    mocked_open.assert_called_once_with(Path("ffc_operations_openapi_spec.yml"), "w")
+    mocked_open.assert_called_once_with(Path("ffc_extension_openapi_spec.yml"), "w")
     written_data = "".join(call.args[0] for call in mocked_open().write.call_args_list)
     assert written_data == yaml.dump(spec, indent=2)
 

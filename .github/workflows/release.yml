@@ -33,7 +33,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ${{ vars.REGISTRY_LOGIN_SERVER }}/ffc-operations
+        images: ${{ vars.REGISTRY_LOGIN_SERVER }}/ffc-extension
         tags: |
           type=semver,pattern={{major}}.{{minor}}.{{patch}},value=${{ steps.get_version.outputs.VERSION }}
           type=semver,pattern={{major}}.{{minor}},value=${{ steps.get_version.outputs.VERSION }}
@@ -53,6 +53,6 @@ jobs:
   dtrack:
     uses: softwareone-platform/ops-template/.github/workflows/dependency-track-python-uv.yml@v1
     with:
-      projectName: 'ffc-finops-operations'
+      projectName: 'ffc-extension'
     secrets:
       DEPENDENCYTRACK_APIKEY: ${{ secrets.DEPENDENCYTRACK_APIKEY }}

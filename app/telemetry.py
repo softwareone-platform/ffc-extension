@@ -72,7 +72,7 @@ def setup_telemetry(settings: Settings) -> None:  # pragma: no cover
         return
 
     resource = Resource(
-        attributes={"service.name": "ffc-operations-api"},
+        attributes={"service.name": "ffc-extension"},
     )
     trace_provider = TracerProvider(resource=resource)
 
