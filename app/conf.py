@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     mpt_extension_token: str
     mpt_api_rows_per_page: int = 100
 
+    exchange_rates_base_url: str
+    exchange_rates_api_token: str
+
     api_base_url: str = "https://api.finops.softwareone.com/ops/v1"
     cli_rich_logging: bool = True
     debug: bool = False
@@ -66,6 +69,15 @@ class Settings(BaseSettings):
     opentelemetry_sqlalchemy_min_query_duration_ms: int | None = 100
 
     msteams_notifications_webhook_url: str | None = None
+
+    mpt_product_id: str = "PRD-1111-1111"
+    ffc_billing_process_max_concurrency: int = 10
+    default_billed_percentage: int = 4
+
+    journal_validation_max_attempts: int = 5
+
+    # Billing command constraints
+    lower_billing_year: int = 2025
 
     @computed_field
     def postgres_async_url(self) -> PostgresDsn:

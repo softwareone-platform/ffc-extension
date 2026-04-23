@@ -3,9 +3,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from app.api_clients import api_modifier, optscale
+from app.api_clients import api_modifier, exchage_rates, optscale
 from app.api_clients.base import BaseAPIClient
-from app.api_clients.mpt import MPTClient, get_installation_client
+from app.api_clients.mpt import MPTClient, MPTExtensionAuth, get_installation_client
 from app.auth.auth import MPTAuthContext
 from app.dependencies.core import AppSettings
 
@@ -33,9 +33,19 @@ OptscaleAuthClient = Annotated[
     Depends(APIClientFactory(optscale.OptscaleAuthClient)),
 ]
 
+ExchangeRatesClient = Annotated[
+    exchage_rates.ExchangeRatesClient,
+    Depends(APIClientFactory(exchage_rates.ExchangeRatesClient)),
+]
+
 
 def _get_installation_client(ctx: MPTAuthContext) -> MPTClient:
     return get_installation_client(ctx.account_id)
 
 
+def _get_extension_client() -> MPTClient:
+    return MPTClient(MPTExtensionAuth())
+
+
 InstallationClient = Annotated[MPTClient, Depends(_get_installation_client)]
+ExtensionClient = Annotated[MPTClient, Depends(_get_extension_client)]

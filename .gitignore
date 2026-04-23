@@ -195,5 +195,7 @@ taplo.toml
 *_identity.json
 
 # extension's static files
-/static/*
-tsconfig.tsbuildinfo
+static/*
+
+# secret
+.secrets.yaml

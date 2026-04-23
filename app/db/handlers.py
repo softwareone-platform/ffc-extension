@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import suppress
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
 import sqlalchemy
-from sqlalchemy import ColumnExpressionArgument, Select, func, select, update
+from sqlalchemy import ColumnExpressionArgument, Select, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -409,13 +409,41 @@ class EntitlementHandler(ModelHandler[Entitlement]):
             },
         )
 
+    async def get_for_billing(
+        self,
+        organization_id: str,
+        datasource_id: str,
+        datasource_type: str,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> Entitlement | None:
+        where_clauses = [
+            Entitlement.datasource_id == datasource_id,
+            Entitlement.redeemed_by_id == organization_id,
+            Entitlement.linked_datasource_type == datasource_type,
+            Entitlement.redeemed_at < (end_date + timedelta(days=1)),
+            or_(
+                Entitlement.status == EntitlementStatus.ACTIVE,
+                Entitlement.terminated_at >= start_date,
+            ),
+        ]
+
+        return await self.first(where_clauses=where_clauses)
+
 
 class OrganizationHandler(ModelHandler[Organization]):
     """
     Handles CRUD operations for the Organization model.
     """
 
-    pass
+    async def get_by_billing_currency(
+        self,
+        billing_currency: str,
+    ) -> AsyncGenerator[Organization, None]:
+        where_clauses = [Organization.billing_currency == billing_currency]
+
+        async for organization in self.stream_scalars(extra_conditions=where_clauses):
+            yield organization
 
 
 class SystemHandler(ModelHandler[System]):
@@ -524,6 +552,30 @@ class DatasourceExpenseHandler(ModelHandler[DatasourceExpense]):
         self.default_options = [
             joinedload(DatasourceExpense.organization),
         ]
+
+    async def get_expenses_for_billing(
+        self,
+        organization_id: str,
+        year: int,
+        month: int,
+    ) -> AsyncGenerator[DatasourceExpense, None]:
+        where_clauses = [
+            DatasourceExpense.organization_id == organization_id,
+            DatasourceExpense.year == year,
+            DatasourceExpense.month == month,
+        ]
+        order_by = [
+            DatasourceExpense.linked_datasource_id,
+            DatasourceExpense.linked_datasource_type,
+            DatasourceExpense.datasource_id,
+            DatasourceExpense.datasource_name,
+            DatasourceExpense.day,
+        ]
+        async for expense in self.stream_scalars(
+            extra_conditions=where_clauses,
+            order_by=order_by,
+        ):
+            yield expense
 
 
 class AdditionalAdminRequestHandler(ModelHandler[AdditionalAdminRequest]):

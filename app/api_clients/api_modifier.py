@@ -26,7 +26,7 @@ class APIModifierJWTTokenAuth(httpx.Auth):
         self.settings = settings
 
     def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
-        # NOTE: Needs to be re-generated for each request as it exipres after a certain time
+        # NOTE: Needs to be re-generated for each request as it expires after a certain time
         jwt_token = self.get_api_modifier_jwt_token()
 
         request.headers["Authorization"] = f"Bearer {jwt_token}"

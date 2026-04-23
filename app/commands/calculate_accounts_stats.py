@@ -25,14 +25,14 @@ async def calculate_accounts_stats(settings: Settings):
     is not DELETED.
     """
     async with session_factory.begin() as session:
-        entitlment_handler = EntitlementHandler(session)
+        entitlement_handler = EntitlementHandler(session)
         account_handler = AccountHandler(session)
 
         accounts = await account_handler.query_db(
             where_clauses=[Account.status != AccountStatus.DELETED]
         )
         for account in accounts:
-            stats = await entitlment_handler.get_stats_by_account(account.id)
+            stats = await entitlement_handler.get_stats_by_account(account.id)
             await account_handler.update(
                 account,
                 data={

@@ -4,6 +4,7 @@ from app.commands import (
     create_operations_account,
     fetch_datasource_expenses,
     openapi,
+    process_billing,
     redeem_entitlements,
     serve,
     shell,
@@ -12,6 +13,7 @@ from app.commands import (
 __all__ = [
     "create_operations_account",
     "openapi",
+    "process_billing",
     "redeem_entitlements",
     "serve",
     "shell",

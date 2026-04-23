@@ -258,7 +258,7 @@ async def main(settings: Settings, organization_id: str | None = None) -> None:
         ]:
             async with OptscaleClient(settings) as optscale_client:
                 logger.info(
-                    f"Fetching {frq} datasources expenses for the organizations from Optscale"
+                    f"Fetching {frq} datasource's expenses for the organizations from Optscale"
                 )
                 expenses = await fetch_datasource_expenses(
                     organizations, optscale_client, day.year, day.month, day.day, is_daily=is_daily
@@ -267,7 +267,7 @@ async def main(settings: Settings, organization_id: str | None = None) -> None:
 
             async with session.begin():
                 logger.info(
-                    "Storing %s datasource expenses for %s organiziations for %s",
+                    "Storing %s datasource expenses for %s organizations for %s",
                     frq,
                     len(organizations),
                     today.strftime("%d %B %Y"),  # e.g. "20 March 2025"

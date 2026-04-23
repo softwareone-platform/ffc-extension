@@ -52,6 +52,8 @@ dependencies = [
     "snippettoni>=0.1.0,<0.2.0",
     "ipython>=8.37.0,<9.0.0",
     "mrok>=0.9.0",
+    "freezegun>=1.5.5,<2.0.0",
+    "responses>=0.26.0,<0.27.0",
 ]
 
 [dependency-groups]
@@ -111,7 +113,6 @@ select = [
     "UP",     # pyupgrade,
     "PT",     # flake8-pytest-style
     "T10",    # flake8-pytest-style
-    "RUF029", # unused-async
 ]
 ignore = [
     "PT001", # Use `@pytest.fixture()` over `@pytest.fixture`
