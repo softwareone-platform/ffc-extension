@@ -41,7 +41,7 @@ class MPTInstallationAuth(httpx.Auth):
             await token_response.aread()
             self.update_token(token_response)
 
-        request.headers["Authorization"] = f"Bearer {self.token_info.token}"
+        request.headers["Authorization"] = f"Bearer {self.token_info.token}"  # type: ignore
         yield request
 
     def build_token_request(self) -> httpx.Request:
@@ -211,45 +211,6 @@ class MPTClient:
 
             offset = offset + self.settings.mpt_api_rows_per_page
 
-    async def get_authorization(
-        self,
-        authorization_id: str,
-    ) -> dict[str, Any]:
-        return await self.get("catalog/authorizations/", id=authorization_id)
-
-    def get_authorizations_for_product(
-        self,
-    ) -> AsyncGenerator[dict[str, Any], None]:
-        return self.collection_iterator(
-            "catalog/authorizations", query=f"eq(product.id,{self.settings.mpt_product_id[0]})"
-        )
-
-    async def get_user(self, user_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("accounts/users", user_id, select=select)
-
-    async def get_account(self, account_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("accounts/accounts", account_id, select=select)
-
-    async def get_token(self, user_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("accounts/api-tokens", user_id, select=select)
-
-    async def get_order(self, order_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("commerce/orders", order_id, select=select)
-
-    async def get_task(self, task_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("system/tasks", task_id, select=select)
-
-    async def update_task(self, task_id: str, payload: dict) -> dict[str, Any]:
-        return await self.update("system/tasks", task_id, payload=payload)
-
-    async def start_task(self, task_id: str) -> dict[str, Any] | None:
-        return await self.run_object_action("system/tasks", task_id, "execute")
-
-    async def complete_task(
-        self, task_id: str, payload: dict | None = None
-    ) -> dict[str, Any] | None:
-        return await self.run_object_action("system/tasks", task_id, "complete", payload=payload)
-
     async def get_first(
         self,
         endpoint: str,
@@ -275,23 +236,54 @@ class MPTClient:
         page = await self.get_page(endpoint, limit=0, offset=0, query=query)
         return page["$meta"]["pagination"]["total"]
 
+    # Object specific methods
+
+    async def get_user(self, user_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("accounts/users", user_id, select=select)
+
+    async def get_account(self, account_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("accounts/accounts", account_id, select=select)
+
+    async def get_token(self, user_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("accounts/api-tokens", user_id, select=select)
+
+    async def get_task(self, task_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("system/tasks", task_id, select=select)
+
+    async def update_task(self, task_id: str, payload: dict) -> dict[str, Any]:
+        return await self.update("system/tasks", task_id, payload=payload)
+
+    async def start_task(self, task_id: str) -> dict[str, Any] | None:
+        return await self.run_object_action("system/tasks", task_id, "execute")
+
+    async def complete_task(
+        self, task_id: str, payload: dict | None = None
+    ) -> dict[str, Any] | None:
+        return await self.run_object_action("system/tasks", task_id, "complete", payload=payload)
+
+    async def get_order(self, order_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("commerce/orders", order_id, select=select)
+
     def get_orders(
         self, query: str | None = None, select: list[str] | None = None
     ) -> AsyncGenerator[dict[str, Any], None]:
         return self.collection_iterator("commerce/orders", query=query, select=select)
 
-    async def get_journal_by_authorization_external_id(
-        self, authorization_id: str, external_id: str
-    ) -> dict[str, Any] | None:
-        rql = (
-            "and("
-            f"eq(authorization.id,{authorization_id}),"
-            f"eq(externalIds.vendor,{external_id}),"
-            f"ne(status,{JournalStatus.DELETED.value})"
-            ")"
+    async def get_authorization(
+        self, authorization_id: str, select: list[str] | None = None
+    ) -> dict[str, Any]:
+        return await self.get(
+            "catalog/authorizations",
+            authorization_id,
+            select=select,
         )
 
-        return await self.get_first("billing/journals", query=rql)
+    def get_authorizations_for_product(
+        self,
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        return self.collection_iterator(
+            "catalog/authorizations", query=f"eq(product.id,{self.settings.mpt_product_id[0]})"
+        )
 
     async def count_active_agreements(
         self,
@@ -317,6 +309,19 @@ class MPTClient:
     ) -> AsyncGenerator[dict[str, Any], None]:
         rql = f"eq(externalIds.vendor,{organization_id})&select=parameters"
         return self.collection_iterator("commerce/agreements", rql)
+
+    async def get_journal_by_authorization_external_id(
+        self, authorization_id: str, external_id: str
+    ) -> dict[str, Any] | None:
+        rql = (
+            "and("
+            f"eq(authorization.id,{authorization_id}),"
+            f"eq(externalIds.vendor,{external_id}),"
+            f"ne(status,{JournalStatus.DELETED.value})"
+            ")"
+        )
+
+        return await self.get_first("billing/journals", query=rql)
 
     async def create_journal(
         self, authorization_id: str, external_id: str, name: str, due_date: datetime

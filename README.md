@@ -1,8 +1,8 @@
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=softwareone-platform_ffc-finops-operations&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=softwareone-platform_ffc-finops-operations) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=softwareone-platform_ffc-finops-operations&metric=coverage)](https://sonarcloud.io/summary/new_code?id=softwareone-platform_ffc-finops-operations)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=softwareone-platform_ffc-extension&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=softwareone-platform_ffc-extension) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=softwareone-platform_ffc-extension&metric=coverage)](https://sonarcloud.io/summary/new_code?id=softwareone-platform_ffc-extension)
 
-# SoftwareOne FinOps for Cloud Operations API
+# SoftwareOne FinOps for Cloud Extension
 
-The Operations API enables SoftwareOne to manage the FinOps for Cloud tool. It supports the provisioning and administration of FinOps for Cloud organizations and users, as well as the management of datasource entitlements.
+The FinOps for Cloud Extension enables SoftwareOne to manage the FinOps for Cloud tool. It supports the provisioning and administration of FinOps for Cloud organizations and users, as well as the management of datasource entitlements.
 
 # Create you .env file
 

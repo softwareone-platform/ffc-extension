@@ -23,7 +23,7 @@ def command(
             "-o",
             help="Output file",
         ),
-    ] = Path("ffc_operations_openapi_spec.yml"),
+    ] = Path("ffc_extension_openapi_spec.yml"),
     output_format: Annotated[
         OutputFormat,
         typer.Option(

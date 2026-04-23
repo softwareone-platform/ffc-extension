@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
-        env_prefix="ffc_operations_",
+        env_prefix="ffc_ext_",
         extra="ignore",
     )
 
@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     mpt_api_base_url: str
     mpt_extension_id: str
     mpt_extension_token: str
+    mpt_product_id: str
     mpt_api_rows_per_page: int = 100
 
     exchange_rates_base_url: str
@@ -70,10 +71,8 @@ class Settings(BaseSettings):
 
     msteams_notifications_webhook_url: str | None = None
 
-    mpt_product_id: str = "PRD-1111-1111"
     ffc_billing_process_max_concurrency: int = 10
     default_billed_percentage: int = 4
-
     journal_validation_max_attempts: int = 5
 
     # Billing command constraints

@@ -264,6 +264,7 @@ class ModelHandler[M: BaseModel]:
         )
         async for row in result:
             yield row
+
         await result.close()
 
     async def count(
@@ -440,9 +441,10 @@ class OrganizationHandler(ModelHandler[Organization]):
         self,
         billing_currency: str,
     ) -> AsyncGenerator[Organization, None]:
-        where_clauses = [Organization.billing_currency == billing_currency]
 
-        async for organization in self.stream_scalars(extra_conditions=where_clauses):
+        async for organization in self.stream_scalars(
+            extra_conditions=[Organization.billing_currency == billing_currency],
+        ):
             yield organization
 
 
@@ -559,21 +561,19 @@ class DatasourceExpenseHandler(ModelHandler[DatasourceExpense]):
         year: int,
         month: int,
     ) -> AsyncGenerator[DatasourceExpense, None]:
-        where_clauses = [
-            DatasourceExpense.organization_id == organization_id,
-            DatasourceExpense.year == year,
-            DatasourceExpense.month == month,
-        ]
-        order_by = [
-            DatasourceExpense.linked_datasource_id,
-            DatasourceExpense.linked_datasource_type,
-            DatasourceExpense.datasource_id,
-            DatasourceExpense.datasource_name,
-            DatasourceExpense.day,
-        ]
         async for expense in self.stream_scalars(
-            extra_conditions=where_clauses,
-            order_by=order_by,
+            extra_conditions=[
+                DatasourceExpense.organization_id == organization_id,
+                DatasourceExpense.year == year,
+                DatasourceExpense.month == month,
+            ],
+            order_by=[
+                DatasourceExpense.linked_datasource_id,
+                DatasourceExpense.linked_datasource_type,
+                DatasourceExpense.datasource_id,
+                DatasourceExpense.datasource_name,
+                DatasourceExpense.day,
+            ],
         ):
             yield expense
 
