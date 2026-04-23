@@ -38,30 +38,30 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: "backend/uv.lock"
 
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version-file: ".python-version"
+          python-version-file: "backend/.python-version"
 
       - name: Install the project dependancies
-        run: uv sync --all-extras --dev
+        run: uv --project backend sync --all-extras --dev
 
       - name: Create the .env file
         run: cp env.example .env
 
       - name: Run formatting checks
-        run: uv run ruff format --check --diff .
+        run: uv --project backend run ruff --config backend/pyproject.toml format --check --diff backend
 
       - name: Run linting
-        run: uv run ruff check .
+        run: uv --project backend run ruff --config backend/pyproject.toml check backend
 
       - name: Run security checks
-        run: uv run bandit -c pyproject.toml -r . -f json -o bandit.json
+        run: uv --project backend run bandit -c backend/pyproject.toml -r backend -f json -o bandit.json
 
       - name: Run tests
-        run: uv run pytest
+        run: uv --project backend run pytest --rootdir=backend -c backend/pyproject.toml backend
         env:
           FFC_EXT_POSTGRES_HOST: localhost
           FFC_EXT_POSTGRES_PORT: 5432
@@ -121,15 +121,4 @@ jobs:
         with:
           name: coverage-report
           path: htmlcov
-          retention-days: 10
-
-      - name: Generate openapi.json
-        run: uv run ffcops openapi -f json -o openapi.json
-
-      - name: Save openapi.json the artefacts
-        uses: actions/upload-artifact@v4
-        if: ${{ !env.ACT }}
-        with:
-          name: openapi-spec
-          path: openapi.json
           retention-days: 10

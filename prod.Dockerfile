@@ -19,6 +19,10 @@ ENV PATH="/root/.local/bin/:$PATH"
 # Install the project into `/app`
 WORKDIR /app
 
+# Project setup
+ENV UV_PROJECT=/app/backend
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 
@@ -27,8 +31,8 @@ ENV UV_LINK_MODE=copy
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=backend/uv.lock,target=backend/uv.lock \
+    --mount=type=bind,source=backend/pyproject.toml,target=backend/pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
 RUN echo 'alias pip="uv pip"' >> ~/.bashrc
@@ -40,7 +44,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:$PATH"
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
