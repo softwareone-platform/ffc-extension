@@ -135,7 +135,7 @@ async def test_get_datasources_for_organization_success(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=str(uuid.uuid4()),
@@ -152,7 +152,7 @@ async def test_get_datasources_for_organization_success(
         },
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources",
     )
 
@@ -181,10 +181,10 @@ async def test_get_datasources_for_organization_success(
 
 
 async def test_get_datasources_for_missing_organization(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org_id = "FORG-1234-5678-9012"
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org_id}/datasources",
     )
 
@@ -195,7 +195,7 @@ async def test_get_datasources_for_missing_organization(
 async def test_get_datasources_for_organization_with_no_datasources(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     org = await organization_factory(
@@ -209,7 +209,7 @@ async def test_get_datasources_for_organization_with_no_datasources(
         json={"cloud_accounts": []},
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources",
     )
 
@@ -219,13 +219,13 @@ async def test_get_datasources_for_organization_with_no_datasources(
 
 async def test_get_datasources_for_organization_with_no_organization_id(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=None,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources",
     )
 
@@ -238,7 +238,7 @@ async def test_get_datasources_for_organization_with_no_organization_id(
 async def test_get_datasources_for_organization_with_optscale_error(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     org = await organization_factory(
@@ -252,7 +252,7 @@ async def test_get_datasources_for_organization_with_optscale_error(
         status_code=500,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources",
     )
 
@@ -269,7 +269,7 @@ async def test_get_datasource_by_id_success(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=str(uuid.uuid4()),
@@ -284,7 +284,7 @@ async def test_get_datasource_by_id_success(
         json=datasource_data,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources/{datasource_data['id']}",
     )
 
@@ -301,10 +301,10 @@ async def test_get_datasource_by_id_success(
 
 
 async def test_get_datasource_by_id_for_missing_organization(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org_id = "FORG-1234-5678-9012"
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org_id}/datasources/{uuid.uuid4()}",
     )
 
@@ -315,7 +315,7 @@ async def test_get_datasource_by_id_for_missing_organization(
 async def test_get_datasource_by_id_for_missing_datasource(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     org = await organization_factory(
@@ -330,7 +330,7 @@ async def test_get_datasource_by_id_for_missing_datasource(
         status_code=404,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources/{datasource_id}",
     )
 
@@ -340,13 +340,13 @@ async def test_get_datasource_by_id_for_missing_datasource(
 
 async def test_get_datasource_by_id_for_organization_with_no_organization_id(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=None,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/datasources/{uuid.uuid4()}",
     )
 
@@ -360,7 +360,7 @@ async def test_force_reimport_datasource(
     organization_factory: ModelFactory[Organization],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=str(uuid.uuid4()),
@@ -379,7 +379,7 @@ async def test_force_reimport_datasource(
         status_code=200,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
     )
 
@@ -389,13 +389,13 @@ async def test_force_reimport_datasource(
 async def test_force_reimport_datasource_no_linked_organization_id(
     organization_factory: ModelFactory[Organization],
     test_settings: Settings,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=None,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{org.id}/datasources/{str(uuid.uuid4())}/force-reimport",
     )
 
@@ -409,7 +409,7 @@ async def test_force_reimport_datasource_optscale_error(
     organization_factory: ModelFactory[Organization],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=str(uuid.uuid4()),
@@ -428,7 +428,7 @@ async def test_force_reimport_datasource_optscale_error(
         status_code=400,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
     )
 

@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.conf import get_settings
 from app.db.base import configure_db_engine, verify_db_connection
-from app.dependencies.auth import authentication_required, check_operations_account
+from app.dependencies.auth import authentication_required, check_admin_account
 from app.openapi import generate_openapi_spec
 from app.routers import (
     accounts,
@@ -106,7 +106,7 @@ def setup_app():
     v1_router.include_router(
         expenses.router,
         prefix="/expenses",
-        dependencies=[Depends(check_operations_account)],
+        dependencies=[Depends(check_admin_account)],
         tags=["Billing"],
     )
     v1_router.include_router(

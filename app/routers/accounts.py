@@ -11,7 +11,7 @@ from app.db.models import Account, AccountUser, User
 from app.dependencies.auth import (
     CurrentAuthContext,
     authentication_required,
-    check_operations_account,
+    check_admin_account,
 )
 from app.dependencies.db import (
     AccountRepository,
@@ -77,7 +77,7 @@ def validate_required_conditions_before_update(account: Account):
     if account.type != AccountType.AFFILIATE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot update an Account of type Operations.",
+            detail="You cannot update an Account of type Admin.",
         )
     if account.status == AccountStatus.DELETED:
         raise HTTPException(
@@ -100,7 +100,7 @@ async def validate_account_type_and_required_conditions(
     if data.type != AccountType.AFFILIATE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot create an Account of type Operations.",
+            detail="You cannot create an Account of type Admin.",
         )
     if await account_repo.first(
         where_clauses=[
@@ -138,7 +138,7 @@ async def fetch_account_or_404(id: AccountId, account_repo: AccountRepository) -
         },
     },
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(check_operations_account)],
+    dependencies=[Depends(check_admin_account)],
 )
 async def create_account(
     data: Annotated[
@@ -171,7 +171,7 @@ async def create_account(
             "content": {"application/json": {"example": examples.ACCOUNT_RESPONSE}},
         },
     },
-    dependencies=[Depends(check_operations_account)],
+    dependencies=[Depends(check_admin_account)],
 )
 async def get_account_by_id(
     account: Annotated[Account, Depends(fetch_account_or_404)],
@@ -197,7 +197,7 @@ async def get_account_by_id(
             },
         },
     },
-    dependencies=[Depends(check_operations_account)],
+    dependencies=[Depends(check_admin_account)],
 )
 async def get_accounts(
     account_repo: AccountRepository,
@@ -215,7 +215,7 @@ async def get_accounts(
             "content": {"application/json": {"example": examples.ACCOUNT_UPDATE_RESPONSE}},
         },
     },
-    dependencies=[Depends(check_operations_account)],
+    dependencies=[Depends(check_admin_account)],
 )
 async def update_account(
     data: Annotated[
@@ -238,7 +238,7 @@ async def update_account(
 
     The following conditions must be verified before proceeding with the operation of updating
     an account.
-    1. The Account type must be OPERATIONS, otherwise a 403 error will be returned
+    1. The Account type must be ADMIN, otherwise a 403 error will be returned
     2. The Account status must be Active
     3. Only Accounts classified as of type “Affiliate” can be updated.
     4. Only the name and the external_id of the account can be modified.

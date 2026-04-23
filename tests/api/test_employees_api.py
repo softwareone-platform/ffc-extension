@@ -190,7 +190,7 @@ async def test_get_employees_for_organization_success(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org = await organization_factory(
         linked_organization_id=str(uuid.uuid4()),
@@ -246,7 +246,7 @@ async def test_get_employees_for_organization_success(
         },
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/employees",
     )
 
@@ -275,10 +275,10 @@ async def test_get_employees_for_organization_success(
 
 
 async def test_get_employees_for_missing_organization(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
 ):
     org_id = "FORG-1234-5678-9012"
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org_id}/employees",
     )
 
@@ -289,7 +289,7 @@ async def test_get_employees_for_missing_organization(
 async def test_get_employees_for_organization_with_no_employees(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     org = await organization_factory(
@@ -303,7 +303,7 @@ async def test_get_employees_for_organization_with_no_employees(
         json={"employees": []},
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/employees",
     )
 
@@ -313,14 +313,14 @@ async def test_get_employees_for_organization_with_no_employees(
 
 async def test_get_employees_for_organization_with_no_organization_id(
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     org = await organization_factory(
         linked_organization_id=None,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/employees",
     )
 
@@ -333,7 +333,7 @@ async def test_get_employees_for_organization_with_no_organization_id(
 async def test_get_employees_for_organization_with_optscale_error(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     org = await organization_factory(
@@ -347,7 +347,7 @@ async def test_get_employees_for_organization_with_optscale_error(
         status_code=500,
     )
 
-    response = await operations_client.get(
+    response = await admin_client.get(
         f"/organizations/{org.id}/employees",
     )
 
@@ -363,7 +363,7 @@ async def test_get_employees_for_organization_with_optscale_error(
 async def test_make_employee_admin(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     user_id = str(uuid.uuid4())
@@ -408,7 +408,7 @@ async def test_make_employee_admin(
             "resource_id": org.linked_organization_id,
         },
     )
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{org.id}/employees/{user_id}/make-admin",
     )
     assert response.status_code == 204
@@ -417,7 +417,7 @@ async def test_make_employee_admin(
 async def test_make_user_admin_not_found(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     user_id = str(uuid.uuid4())
@@ -432,7 +432,7 @@ async def test_make_user_admin_not_found(
         status_code=404,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{org.id}/employees/{user_id}/make-admin",
     )
     assert response.status_code == 502
@@ -442,7 +442,7 @@ async def test_make_user_admin_not_found(
 async def test_make_user_admin_error_assigning_role(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
 ):
     user_id = str(uuid.uuid4())
@@ -478,7 +478,7 @@ async def test_make_user_admin_error_assigning_role(
             "resource_id": org.linked_organization_id,
         },
     )
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{org.id}/employees/{user_id}/make-admin",
     )
     assert response.status_code == 502

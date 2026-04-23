@@ -474,9 +474,9 @@ async def aws_extension(system_factory: ModelFactory[System], aws_account: Accou
 
 
 @pytest.fixture
-async def operations_account(account_factory: ModelFactory[Account]) -> Account:
+async def admin_account(account_factory: ModelFactory[Account]) -> Account:
     return await account_factory(
-        name="SoftwareOne", type=AccountType.OPERATIONS, external_id="ACC-0000-0000"
+        name="SoftwareOne", type=AccountType.ADMIN, external_id="ACC-0000-0000"
     )
 
 
@@ -516,10 +516,8 @@ def gcp_jwt_token(system_jwt_token_factory: Callable[[System], str], gcp_extensi
 
 
 @pytest.fixture
-async def ffc_extension(
-    system_factory: ModelFactory[System], operations_account: Account
-) -> System:
-    return await system_factory(external_id="TKN-0000-0000", owner=operations_account)
+async def ffc_extension(system_factory: ModelFactory[System], admin_account: Account) -> System:
+    return await system_factory(external_id="TKN-0000-0000", owner=admin_account)
 
 
 @pytest.fixture
@@ -573,7 +571,7 @@ def affiliate_client(api_client: AsyncClient, gcp_jwt_token: str) -> AsyncClient
 
 
 @pytest.fixture
-def operations_client(api_client: AsyncClient, ffc_jwt_token: str) -> AsyncClient:
+def admin_client(api_client: AsyncClient, ffc_jwt_token: str) -> AsyncClient:
     api_client.headers["Authorization"] = f"Bearer {ffc_jwt_token}"
     return api_client
 

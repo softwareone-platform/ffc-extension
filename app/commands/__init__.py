@@ -1,7 +1,7 @@
 from app.commands import (
     calculate_accounts_stats,
     cleanup_obsolete_datasource_expenses,
-    create_operations_account,
+    create_admin_account,
     fetch_datasource_expenses,
     openapi,
     process_billing,
@@ -11,7 +11,7 @@ from app.commands import (
 )
 
 __all__ = [
-    "create_operations_account",
+    "create_admin_account",
     "openapi",
     "process_billing",
     "redeem_entitlements",

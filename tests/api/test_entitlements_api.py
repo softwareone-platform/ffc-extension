@@ -123,7 +123,7 @@ async def test_create_entitlement_by_affiliate_with_redeem_at(
     assert error_msg == "Affiliate accounts cannot provide a redeem_at for an Entitlement."
 
 
-async def test_create_entitlement_by_operations_with_owner(
+async def test_create_entitlement_by_admin_with_owner(
     api_client: AsyncClient,
     ffc_jwt_token: str,
     affiliate_account: Account,
@@ -146,7 +146,7 @@ async def test_create_entitlement_by_operations_with_owner(
     assert entitlement["redeem_at"] is not None
 
 
-async def test_create_entitlement_by_operations_without_owner(
+async def test_create_entitlement_by_admin_without_owner(
     api_client: AsyncClient,
     ffc_jwt_token: str,
 ):
@@ -162,14 +162,14 @@ async def test_create_entitlement_by_operations_without_owner(
 
     assert response.status_code == 400
     error = response.json()["detail"]
-    assert error == "Operations accounts must provide an owner for an Entitlement."
+    assert error == "Admin accounts must provide an owner for an Entitlement."
 
 
 @pytest.mark.parametrize(
     "account_status",
     [AccountStatus.DELETED, AccountStatus.DISABLED],
 )
-async def test_create_entitlement_by_operations_with_not_active_owner(
+async def test_create_entitlement_by_admin_with_not_active_owner(
     api_client: AsyncClient,
     ffc_jwt_token: str,
     account_factory: ModelFactory[Account],
@@ -194,11 +194,11 @@ async def test_create_entitlement_by_operations_with_not_active_owner(
     assert error == f"No Active Affiliate Account has been found with ID {affiliate.id}."
 
 
-async def test_create_entitlement_by_operations_with_owner_not_affiliate(
+async def test_create_entitlement_by_admin_with_owner_not_affiliate(
     api_client: AsyncClient,
     ffc_jwt_token: str,
     account_factory: ModelFactory[Account],
-    operations_account: Account,
+    admin_account: Account,
 ):
     response = await api_client.post(
         "/entitlements",
@@ -207,13 +207,13 @@ async def test_create_entitlement_by_operations_with_owner_not_affiliate(
             "name": "AWS",
             "affiliate_external_id": "EXTERNAL_ID_987123",
             "datasource_id": "ds-id",
-            "owner": {"id": operations_account.id},
+            "owner": {"id": admin_account.id},
         },
     )
 
     assert response.status_code == 400
     error = response.json()["detail"]
-    assert error == (f"No Active Affiliate Account has been found with ID {operations_account.id}.")
+    assert error == (f"No Active Affiliate Account has been found with ID {admin_account.id}.")
 
 
 # ================
@@ -448,7 +448,7 @@ async def test_get_entitlement_by_id(
     assert data["events"]["updated"]["by"]["name"] == gcp_extension.name
 
 
-async def test_get_entitlement_by_id_operations(
+async def test_get_entitlement_by_id_admin(
     entitlement_gcp: Entitlement,
     api_client: AsyncClient,
     ffc_jwt_token: str,
@@ -615,7 +615,7 @@ async def test_terminate_non_existant_entitlement(
 
 
 async def test_redeem_entitlement_success(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
     organization_factory,
     db_session: AsyncSession,
@@ -641,7 +641,7 @@ async def test_redeem_entitlement_success(
         },
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": organization.id},
@@ -674,7 +674,7 @@ async def test_redeem_entitlement_success(
 
 
 async def test_redeem_entitlement_with_set_redeem_at(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp_with_redeem_at: Entitlement,
     organization_factory,
     db_session: AsyncSession,
@@ -703,7 +703,7 @@ async def test_redeem_entitlement_with_set_redeem_at(
         },
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp_with_redeem_at.id}/redeem",
         json={
             "organization": {"id": organization.id},
@@ -747,7 +747,7 @@ async def test_redeem_entitlement_by_affiliate(
 
 
 async def test_redeem_non_new_entitlement(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
     db_session: AsyncSession,
 ):
@@ -756,7 +756,7 @@ async def test_redeem_non_new_entitlement(
     await db_session.commit()
     await db_session.refresh(entitlement_gcp)
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": "FORG-123456789012"},
@@ -775,10 +775,10 @@ async def test_redeem_non_new_entitlement(
 
 
 async def test_redeem_entitlement_organization_doesnt_exist(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
 ):
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": "FORG-1001-0110"},
@@ -796,7 +796,7 @@ async def test_redeem_entitlement_organization_doesnt_exist(
 
 
 async def test_redeem_entitlement_inactive_organization(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
     organization_factory,
     db_session: AsyncSession,
@@ -808,7 +808,7 @@ async def test_redeem_entitlement_inactive_organization(
         status=OrganizationStatus.CANCELLED,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": organization.id},
@@ -827,7 +827,7 @@ async def test_redeem_entitlement_inactive_organization(
 
 
 async def test_redeem_entitlement_datasource_organization_mismatch(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
     organization_factory,
     test_settings: Settings,
@@ -852,7 +852,7 @@ async def test_redeem_entitlement_datasource_organization_mismatch(
         },
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": organization.id},
@@ -872,7 +872,7 @@ async def test_redeem_entitlement_datasource_organization_mismatch(
 
 
 async def test_redeem_entitlement_datasource_doesnt_exist(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
     organization_factory,
     test_settings: Settings,
@@ -891,7 +891,7 @@ async def test_redeem_entitlement_datasource_doesnt_exist(
         status_code=404,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": organization.id},
@@ -911,7 +911,7 @@ async def test_redeem_entitlement_datasource_doesnt_exist(
 
 
 async def test_redeem_entitlement_datasource_unexpected_http_error(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_gcp: Entitlement,
     organization_factory,
     test_settings: Settings,
@@ -930,7 +930,7 @@ async def test_redeem_entitlement_datasource_unexpected_http_error(
         status_code=500,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/redeem",
         json={
             "organization": {"id": organization.id},
@@ -945,10 +945,10 @@ async def test_redeem_entitlement_datasource_unexpected_http_error(
     assert response.status_code == 502
 
 
-async def test_redeem_non_existent_entitlement(operations_client: AsyncClient):
+async def test_redeem_non_existent_entitlement(admin_client: AsyncClient):
     entitlement_id = "FENT-1234-5678-9012"
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_id}/redeem",
         json={
             "organization": {"id": "FORG-123456789012"},
@@ -970,13 +970,13 @@ async def test_redeem_non_existent_entitlement(operations_client: AsyncClient):
 
 
 async def test_delete_entitlement_success(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_factory: ModelFactory[Entitlement],
     db_session: AsyncSession,
 ):
     entitlement = await entitlement_factory(status=EntitlementStatus.NEW)
 
-    response = await operations_client.delete(f"/entitlements/{entitlement.id}")
+    response = await admin_client.delete(f"/entitlements/{entitlement.id}")
 
     assert response.status_code == 204
     await db_session.refresh(entitlement)
@@ -988,14 +988,14 @@ async def test_delete_entitlement_success(
     [EntitlementStatus.ACTIVE, EntitlementStatus.TERMINATED, EntitlementStatus.DELETED],
 )
 async def test_delete_entitlement_invalid_status(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     entitlement_factory: ModelFactory[Entitlement],
     db_session: AsyncSession,
     entitlement_status: EntitlementStatus,
 ):
     entitlement = await entitlement_factory(status=entitlement_status)
 
-    response = await operations_client.delete(f"/entitlements/{entitlement.id}")
+    response = await admin_client.delete(f"/entitlements/{entitlement.id}")
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Only Entitlements in status `new` can be deleted."

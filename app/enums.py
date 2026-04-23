@@ -40,6 +40,7 @@ class AccountUserStatus(enum.StrEnum):
 
 @enum.unique
 class AccountType(enum.StrEnum):
+    ADMIN = "admin"
     OPERATIONS = "operations"
     AFFILIATE = "affiliate"
 

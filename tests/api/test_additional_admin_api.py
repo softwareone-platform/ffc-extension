@@ -14,7 +14,7 @@ FAKE_LINKED_ORG_ID = "1bf8f888-d88b-8d88-8e8f-88fefa8f888"
 
 
 async def test_add_additional_admin_request(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
@@ -50,20 +50,20 @@ async def test_add_additional_admin_request(
 
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{organization.linked_organization_id}/employees",
         status_code=409,
         text="Conflict",
     )
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_auth_api_base_url}/users/{FAKE_USER_ID}/assignment_register",
         status_code=201,
     )
 
     with caplog.at_level(logging.INFO):
-        response = await operations_client.post(
+        response = await admin_client.post(
             f"/organizations/{organization.id}/add-admin",
             json={
                 "email": "peter.parker@spiderman.com",
@@ -97,9 +97,9 @@ async def test_cannot_add_additional_admin_with_affiliate_account(
     assert response.status_code == 403
 
 
-async def test_cannot_add_additional_admin_with_no_existing_org(operations_client: AsyncClient):
+async def test_cannot_add_additional_admin_with_no_existing_org(admin_client: AsyncClient):
     organization_id = "FORG-6636-4936-8593"
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{organization_id}/add-admin",
         json={
             "email": "peter.parker@spiderman.com",
@@ -111,7 +111,7 @@ async def test_cannot_add_additional_admin_with_no_existing_org(operations_clien
 
 
 async def test_cannot_add_additional_admin_with_a_deleted_org(
-    operations_client: AsyncClient, organization_factory: ModelFactory[Organization]
+    admin_client: AsyncClient, organization_factory: ModelFactory[Organization]
 ):
     organization = await organization_factory(
         name="ACME CO",
@@ -119,7 +119,7 @@ async def test_cannot_add_additional_admin_with_a_deleted_org(
         linked_organization_id=FAKE_LINKED_ORG_ID,
         status=OrganizationStatus.DELETED,
     )
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{organization.id}/add-admin",
         json={
             "email": "peter.parker@spiderman.com",
@@ -133,7 +133,7 @@ async def test_cannot_add_additional_admin_with_a_deleted_org(
 
 
 async def test_add_additional_admin_with_no_existing_user(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
     test_settings: Settings,
@@ -152,7 +152,7 @@ async def test_add_additional_admin_with_no_existing_user(
     )
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.api_modifier_base_url}/users",
         status_code=201,
         json={
@@ -182,7 +182,7 @@ async def test_add_additional_admin_with_no_existing_user(
 
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_auth_api_base_url}/users/{FAKE_USER_ID}/assignment_register",
         status_code=201,
     )
@@ -193,7 +193,7 @@ async def test_add_additional_admin_with_no_existing_user(
         status_code=201,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{organization.id}/add-admin",
         json={
             "email": "peter.parker@spiderman.com",
@@ -211,7 +211,7 @@ async def test_add_additional_admin_with_no_existing_user(
 
 # api_modifier.APIModifierClient.create_user Exception
 async def test_add_additional_admin_request_error_create_user(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
     test_settings: Settings,
@@ -230,12 +230,12 @@ async def test_add_additional_admin_request_error_create_user(
 
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.api_modifier_base_url}/users",
         status_code=403,
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{organization.id}/add-admin",
         json={
             "email": "peter.parker@spiderman.com",
@@ -250,7 +250,7 @@ async def test_add_additional_admin_request_error_create_user(
 
 # optscale_client.create_org_employee Exception
 async def test_add_additional_admin_request_error_in_create_org_employee(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
     test_settings: Settings,
@@ -287,14 +287,14 @@ async def test_add_additional_admin_request_error_in_create_org_employee(
 
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{organization.linked_organization_id}/employees",
         status_code=403,
         text="Error",
     )
 
     with caplog.at_level(logging.INFO):
-        response = await operations_client.post(
+        response = await admin_client.post(
             f"/organizations/{organization.id}/add-admin",
             json={
                 "email": "peter.parker@spiderman.com",
@@ -312,7 +312,7 @@ async def test_add_additional_admin_request_error_in_create_org_employee(
 
 # optscale_auth_client.make_user_admin Exception
 async def test_add_additional_admin_request_error_in_make_user_admin(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
     test_settings: Settings,
@@ -347,7 +347,7 @@ async def test_add_additional_admin_request_error_in_make_user_admin(
     )
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{organization.linked_organization_id}/employees",
         status_code=409,
         text="Conflict",
@@ -355,14 +355,14 @@ async def test_add_additional_admin_request_error_in_make_user_admin(
 
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_auth_api_base_url}/users/{FAKE_USER_ID}/assignment_register",
         status_code=403,
         text="Error",
     )
 
     with caplog.at_level(logging.INFO):
-        response = await operations_client.post(
+        response = await admin_client.post(
             f"/organizations/{organization.id}/add-admin",
             json={
                 "email": "peter.parker@spiderman.com",
@@ -379,7 +379,7 @@ async def test_add_additional_admin_request_error_in_make_user_admin(
 
 # optscale_client.reset_password Exception
 async def test_add_additional_admin_error_in_reset_password(
-    operations_client: AsyncClient,
+    admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
     httpx_mock: HTTPXMock,
     test_settings: Settings,
@@ -398,7 +398,7 @@ async def test_add_additional_admin_error_in_reset_password(
     )
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.api_modifier_base_url}/users",
         status_code=201,
         json={
@@ -428,7 +428,7 @@ async def test_add_additional_admin_error_in_reset_password(
 
     httpx_mock.add_response(
         method="POST",
-        headers={"Authorization": operations_client.headers["Authorization"]},
+        headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_auth_api_base_url}/users/{FAKE_USER_ID}/assignment_register",
         status_code=201,
     )
@@ -440,7 +440,7 @@ async def test_add_additional_admin_error_in_reset_password(
         text="Error",
     )
 
-    response = await operations_client.post(
+    response = await admin_client.post(
         f"/organizations/{organization.id}/add-admin",
         json={
             "email": "peter.parker@spiderman.com",

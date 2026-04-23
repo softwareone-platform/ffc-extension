@@ -11,7 +11,7 @@ from app.api_clients.optscale import UserDoesNotExist
 from app.db.handlers import ConstraintViolationError, NotFoundError
 from app.db.models import AdditionalAdminRequest, Organization
 from app.dependencies.api_clients import APIModifierClient, OptscaleAuthClient, OptscaleClient
-from app.dependencies.auth import check_operations_account
+from app.dependencies.auth import check_admin_account
 from app.dependencies.db import AdditionalAdminRequestRepository, OrganizationRepository
 from app.dependencies.path import OrganizationId
 from app.enums import DatasourceType, OrganizationStatus
@@ -30,7 +30,7 @@ from app.schemas.organizations import (
 )
 from app.utils import wrap_exc_in_http_response, wrap_http_error_in_502
 
-router = APIRouter(dependencies=[Depends(check_operations_account)])
+router = APIRouter(dependencies=[Depends(check_admin_account)])
 logger = logging.getLogger(__name__)
 
 

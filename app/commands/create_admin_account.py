@@ -10,31 +10,31 @@ from app.db.models import Account
 from app.enums import AccountStatus, AccountType
 
 
-async def create_operations_account(settings: Settings, external_id: str):
+async def create_admin_account(settings: Settings, external_id: str):
     async with session_factory.begin() as session:
         account_handler = AccountHandler(session)
         instance = await account_handler.first(
             where_clauses=[
-                Account.type == AccountType.OPERATIONS,
+                Account.type == AccountType.ADMIN,
                 Account.status != AccountStatus.DELETED,
             ]
         )
         if instance:
             print(
-                "[orange3]The Operations Account already exist: [/orange3]"
+                "[orange3]The Admin Account already exist: [/orange3]"
                 f"[blue]{instance.id} - {instance.name}[/blue]."
             )
             return
 
         account = Account(
             name="SoftwareOne",
-            type=AccountType.OPERATIONS,
+            type=AccountType.ADMIN,
             status=AccountStatus.ACTIVE,
             external_id=external_id,
         )
         account = await account_handler.create(account)
         print(
-            "[green]The Operations Account has been created: [/green]"
+            "[green]The Admin Account has been created: [/green]"
             f"[blue]{account.id} - {account.name}[/blue]."
         )
 
@@ -46,4 +46,4 @@ def command(
     """
     Create the SoftwareOne Operations Account.
     """
-    asyncio.run(create_operations_account(ctx.obj, external_id))
+    asyncio.run(create_admin_account(ctx.obj, external_id))
