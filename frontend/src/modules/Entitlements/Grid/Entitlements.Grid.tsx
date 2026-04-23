@@ -20,7 +20,7 @@ import {
 import { Paths, RqlQuery } from "@swo/rql-client";
 import { Entity } from "@swo/service";
 import { DisplayValue } from "@swo/design-system/utils";
-import { useFixedT } from "../../../hooks/useFixedT";
+import { useFixedT } from "../../../shared/hooks/useFixedT";
 
 function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
