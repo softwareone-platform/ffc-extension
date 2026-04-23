@@ -1,13 +1,22 @@
 import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { OrganizationDetails } from "./Details/Organization.Details";
 
 // import { app } from "@/config";
 
 // TODO: Out of scope for v4. Back in v5
 // const Analytics = lazy(() => import('@/Modules/Analytics').then(m => ({ default: m.Analytics })));
 const OrganizationsGrid = lazy(() =>
-  import("./Grid/Organizations.Grid").then((m) => ({ default: m.OrganizationsGrid })),
+  import("./Grid/Organizations.Grid").then((m) => ({
+    default: m.OrganizationsGrid,
+  })),
 );
+const Details = lazy(() =>
+  import("./Details/Organization.Details").then((m) => ({
+    default: m.OrganizationDetails,
+  })),
+);
+
 
 export function Organizations() {
   //   const user = useUserData();
@@ -34,27 +43,10 @@ export function Organizations() {
             </div>
           }
         >
-          {/* TODO: Out of scope for v4. Back in v5 */}
-          {/* <Route path={'analytics/*'} element={<Analytics />} /> */}
-          {/* <Route path={"overrides/*"} element={<Override />} />
-          <Route path={"custom-ledgers/*"} element={<CustomLedger />} />
-          <Route path={"invoices/*"} element={<Invoice />} />
-          <Route path={"credit-memos/*"} element={<CreditMemo />} />
-          <Route path={"journals/*"} element={<Journal />} />
-          <Route path={"ledgers/*"} element={<Ledger />} />
-          <Route path={"statements/*"} element={<Statement />} />
-          <Route
-            index
-            element={
-              <Navigate to={role === "Client" ? "statements" : "journals"} />
-            }
-          /> */}
-
-          <Route
-            path={"*"}
-            element={<OrganizationsGrid />
-            }
-          />
+          {/* <Route path={"*"} index element={<OrganizationsGrid />} /> */}
+          <Route path={"/"} index element={<OrganizationsGrid />} />
+          <Route path=":organizationId/details" element={<Details />} />
+          {/* <Route path=":organizationId/details" element={<Details />} /> */}
         </Route>
       </Routes>
     </Suspense>

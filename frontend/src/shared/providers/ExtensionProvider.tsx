@@ -1,6 +1,12 @@
-import { I18nextProvider } from "react-i18next";
-import { PropsWithChildren, useEffect, useMemo, useState } from "react";
-import { StatusChipLocalisationProvider } from "@swo/mp-status-chip/context";
+import { I18nextProvider } from 'react-i18next';
+import {
+  PropsWithChildren,
+  useEffect,
+  useMemo,
+  useState
+  } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StatusChipLocalisationProvider } from '@swo/mp-status-chip/context';
 // import "../styles.scss";
 import type { i18n } from "i18next";
 
@@ -16,6 +22,13 @@ type RegionalSettings = {
   timeZone: string;
   firstDayOfWeek: number;
 };
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 1000 * 60 * 5, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false },
+    mutations: { retry: false },
+  },
+});
 
 export function ExtensionsProvider({
   children,
@@ -56,10 +69,12 @@ export function ExtensionsProvider({
   }
 
   return (
-    <DesignSystemOptionsProvider value={providerValue}>
-      <StatusChipLocalisationProvider languageCode={language}>
-        <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
-      </StatusChipLocalisationProvider>
-    </DesignSystemOptionsProvider>
+    <QueryClientProvider client={queryClient}>
+      <DesignSystemOptionsProvider value={providerValue}>
+        <StatusChipLocalisationProvider languageCode={language}>
+          <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+        </StatusChipLocalisationProvider>
+      </DesignSystemOptionsProvider>
+    </QueryClientProvider>
   );
 }
