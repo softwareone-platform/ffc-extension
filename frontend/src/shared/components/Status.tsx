@@ -7,10 +7,6 @@ function capitalizeFirstLetter(statusName: string) {
   );
 }
 
-export function GridStatusCell<T>({ item }: { item: T & { status: string } }) {
-  return (
-    <GridCellSimple>
-      <StatusChip status={capitalizeFirstLetter(item.status)} />
-    </GridCellSimple>
-  );
+export function Status<T>({ item }: { item: T & { status: string } }) {
+  return <StatusChip status={capitalizeFirstLetter(item.status)} />;
 }

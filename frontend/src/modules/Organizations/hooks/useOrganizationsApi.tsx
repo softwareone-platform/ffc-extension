@@ -47,8 +47,8 @@ export function useOrganizationsApi() {
   );
 
   const get = useCallback(
-    async (entityId: string, query?: RqlQuery<Entity<OrganizationRead>>) => {
-      return  http<ListResponse<Entity<OrganizationRead>>>({
+    async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
+      return  http<OrganizationRead>({
         method: "GET",
         url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
       });

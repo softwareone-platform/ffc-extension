@@ -1,8 +1,11 @@
 import { Card } from "@swo/design-system/card";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useOrganizationsApi } from "../hooks/useOrganizationsApi";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { Navigation } from "@swo/design-system/navigation";
+import { Status } from "../../../shared/components/Status";
+import { OrganizationRead } from "@swo/ffc-api-model";
 
 export function OrganizationDetails() {
   const { organizationId } = useParams();
@@ -37,13 +40,36 @@ export function OrganizationDetails() {
     // },
   });
 
+  useEffect(() => {
+    console.log(entity);
+  }, [entity]);
+
   return (
     <>
-      <Card>Top nav {organizationId}</Card>
+      <Card className={"organization-details-header"}>
+        {entity && entity.id && (
+          <>
+            <h1>{entity?.name}</h1>
+            <Status<OrganizationRead> item={entity}></Status>
+          </>
+        )}
+
+        <Link to={"/"}>Back</Link>
+      </Card>
+      <Navigation.TopBar
+        items={[
+          { label: "General", path: `/${entity?.id}` },
+          { label: "Senders", path: "/email-settings/senders" },
+        ]}
+      ></Navigation.TopBar>
 
       <Card>
         <h1>Organization details</h1>
+        <p>
+          Top nav {organizationId} {entity?.name}{" "}
+        </p>
         <p>This is where the details of the organization would be displayed.</p>
+        <pre>{}</pre>
       </Card>
     </>
   );
