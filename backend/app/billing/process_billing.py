@@ -78,8 +78,8 @@ async def process_billing(
         if authorization_id:
             authorization = await mpt_client.get_authorization(authorization_id)
             processor = AuthorizationProcessor(year, month, authorization, dry_run)
-            await processor.process()
-            return
+            response = [await processor.process()]
+
         else:
             tasks = []
             semaphore = asyncio.Semaphore(int(settings.ffc_billing_process_max_concurrency))
@@ -91,9 +91,7 @@ async def process_billing(
 
             logger.info(f"Processing {len(tasks)} authorizations for {product_id}")
             response = list(await asyncio.gather(*tasks))
-            await send_notifications(
-                results=response, year=year, month=month, cutoff_day=cutoff_day
-            )
+        await send_notifications(results=response, year=year, month=month, cutoff_day=cutoff_day)
     finally:
         await mpt_client.httpx_client.aclose()
 
@@ -236,11 +234,11 @@ class AuthorizationProcessor:
                 )
                 self.logger.error(error_msg)
                 raise JournalStatusError(error_msg, journal_id)
-        except ValueError:
+        except ValueError as error:
             journal_status = journal["status"]
             error_msg = f"Found the journal {journal_id} with status {journal_status}"
             self.logger.error(error_msg)
-            raise JournalStatusError(error_msg, journal_id)
+            raise JournalStatusError(error_msg, journal_id) from error
 
     async def process(self) -> ProcessResultInfo:
         """
@@ -314,7 +312,6 @@ class AuthorizationProcessor:
                             journal,
                             journal_external_id,
                         )
-                        await self.maybe_call(self._safe_unlink, filepath)
                         result_info = ProcessResultInfo(
                             authorization_id=self.authorization_id,
                             result=ProcessResult.JOURNAL_GENERATED,
@@ -337,6 +334,8 @@ class AuthorizationProcessor:
                     result_info.message = str(error)
                     result_info.journal_id = error.journal_id
                     return result_info
+                finally:
+                    await self.maybe_call(self._safe_unlink, filepath)
 
             except HTTPStatusError as error:
                 status = error.response.status_code
@@ -985,4 +984,4 @@ def split_entitlement_days_into_ranges(entitlement_days: set[int]):
     return ranges
 
 
-VALID_JOURNAL_STATUSES = frozenset(JournalStatus)
+VALID_JOURNAL_STATUSES = frozenset({JournalStatus.DRAFT, JournalStatus.VALIDATED})

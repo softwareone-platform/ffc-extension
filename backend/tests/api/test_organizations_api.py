@@ -1,13 +1,13 @@
 import pytest
-from app.conf import Settings
-from app.db.models import Organization, System
-from app.enums import OrganizationStatus
 from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.conf import Settings
+from app.db.models import Organization, System
+from app.enums import OrganizationStatus
 from tests.types import ModelFactory
 
 # =================

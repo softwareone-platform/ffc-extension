@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, Mock
 
 import httpx
 import pytest
+
 from app.api_clients.exchage_rates import ExchangeRatesClient
 from app.billing.exceptions import ExchangeRatesClientError
 

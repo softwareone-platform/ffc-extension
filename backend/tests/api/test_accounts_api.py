@@ -2,6 +2,12 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException, status
+from httpx import AsyncClient
+from pytest_mock import MockerFixture
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.db.handlers import NotFoundError
 from app.db.models import Account, AccountUser, System, User
 from app.dependencies.db import AccountRepository
@@ -12,12 +18,6 @@ from app.routers.accounts import (
     validate_required_conditions_before_update,
 )
 from app.schemas.accounts import AccountCreate
-from fastapi import HTTPException, status
-from httpx import AsyncClient
-from pytest_mock import MockerFixture
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from tests.types import ModelFactory
 
 

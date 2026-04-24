@@ -5,18 +5,18 @@ from decimal import Decimal
 
 import pytest
 import time_machine
-from app.cli import app
-from app.commands import fetch_datasource_expenses
-from app.conf import Settings
-from app.db.handlers import DatasourceExpenseHandler
-from app.db.models import DatasourceExpense, Organization
-from app.enums import DatasourceType, OrganizationStatus
 from fastapi import status
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import AsyncSession
 from typer.testing import CliRunner
 
+from app.cli import app
+from app.commands import fetch_datasource_expenses
+from app.conf import Settings
+from app.db.handlers import DatasourceExpenseHandler
+from app.db.models import DatasourceExpense, Organization
+from app.enums import DatasourceType, OrganizationStatus
 from tests.fixtures.mock_api_clients import MockOptscaleClient
 from tests.types import ModelFactory
 

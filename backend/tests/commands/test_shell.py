@@ -1,6 +1,7 @@
-from app.cli import app
 from pytest_mock import MockerFixture
 from typer.testing import CliRunner
+
+from app.cli import app
 
 
 def test_shell(mocker: MockerFixture):

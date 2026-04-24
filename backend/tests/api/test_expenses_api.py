@@ -2,12 +2,12 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
-from app.db.models import DatasourceExpense, Organization
-from app.enums import DatasourceType, OrganizationStatus
 from faker import Faker
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models import DatasourceExpense, Organization
+from app.enums import DatasourceType, OrganizationStatus
 from tests.types import ModelFactory
 
 

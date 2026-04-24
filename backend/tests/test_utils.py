@@ -1,6 +1,7 @@
+from pytest_mock import MockerFixture
+
 from app.conf import Settings
 from app.utils import send_email
-from pytest_mock import MockerFixture
 
 
 def test_send_email_success(test_settings: Settings, mocker: MockerFixture):

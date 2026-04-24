@@ -1,13 +1,14 @@
 from datetime import UTC, datetime
 
 import pytest
-from app.db.human_readable_pk import HumanReadablePKMixin
-from app.db.models import Account, Actor, Entitlement, Organization, System
-from app.enums import ActorType, EntitlementStatus
 from pytest_mock import MockerFixture
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.human_readable_pk import HumanReadablePKMixin
+from app.db.models import Account, Actor, Entitlement, Organization, System
+from app.enums import ActorType, EntitlementStatus
 
 
 async def test_actor_inheritance(db_session: AsyncSession):

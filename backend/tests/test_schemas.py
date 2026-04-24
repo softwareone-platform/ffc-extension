@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 
 import pytest
+from pydantic import ValidationError
+
 from app.db.models import Account, Actor, Entitlement, Organization, System
 from app.enums import AccountType, ActorType, EntitlementStatus, OrganizationStatus, SystemStatus
 from app.schemas.core import ActorRead, convert_model_to_schema, convert_schema_to_model
@@ -12,7 +14,6 @@ from app.schemas.organizations import (
     OrganizationUpdate,
 )
 from app.schemas.systems import SystemCreate, SystemRead
-from pydantic import ValidationError
 
 
 def test_actor_read_convert_model_to_schema():

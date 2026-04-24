@@ -1,6 +1,7 @@
 import pytest
-from app.conf import Settings
 from pytest_mock import MockerFixture
+
+from app.conf import Settings
 
 
 @pytest.fixture(autouse=True)

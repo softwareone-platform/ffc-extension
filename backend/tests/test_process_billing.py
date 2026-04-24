@@ -9,11 +9,12 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import httpx
 import pytest
 import typer
+from freezegun import freeze_time
+
 from app.billing.dataclasses import CurrencyConversionInfo, ProcessResultInfo, Refund
 from app.billing.enum import ProcessResult
 from app.billing.exceptions import ExchangeRatesClientError, JournalStatusError, JournalSubmitError
 from app.billing.notification_helper import check_results
-from freezegun import freeze_time
 
 # - test evaluate_journal_status()
 

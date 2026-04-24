@@ -1,11 +1,11 @@
 import uuid
 
-from app.conf import Settings
-from app.db.models import Organization
 from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 
+from app.conf import Settings
+from app.db.models import Organization
 from tests.types import ModelFactory
 
 

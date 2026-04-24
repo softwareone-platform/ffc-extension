@@ -1,13 +1,14 @@
 import pytest
+from pytest_mock import MockerFixture
+from sqlalchemy.ext.asyncio import AsyncSession
+from typer.testing import CliRunner
+
 from app.cli import app
 from app.commands.create_admin_account import create_admin_account
 from app.conf import Settings
 from app.db.handlers import AccountHandler
 from app.db.models import Account
 from app.enums import AccountStatus, AccountType
-from pytest_mock import MockerFixture
-from sqlalchemy.ext.asyncio import AsyncSession
-from typer.testing import CliRunner
 
 
 async def test_create_admin_account(
