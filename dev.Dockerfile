@@ -1,11 +1,28 @@
 FROM python:3.12
 
-# The uv installer requires curl (and certificates) to download the release archive
+# Install basic utilites
 RUN apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates curl vim postgresql-client netcat-openbsd; \
     apt-get autoremove --purge -y; \
     apt-get clean -y; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+
+# Install Node.js
+
+ENV NODE_VERSION=24
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash \
+    && . "$HOME/.nvm/nvm.sh" \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
+
+
+# Install Claude code
+
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
 
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
@@ -45,7 +62,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
 # setup default PYTEST opts to get config from the right place
-ENV PYTEST_ADDOPTS="--rootdir=/app/backend -c /app/backend/pyproject.toml /app/backend"
+ENV PYTEST_ADDOPTS="--rootdir=/app/backend -c /app/backend/pyproject.toml --cov-config /app/backend/pyproject.toml /app/backend"
 
 # Place executables in the environment at the front of the path
 ENV PATH="/opt/venv/bin:$PATH"
