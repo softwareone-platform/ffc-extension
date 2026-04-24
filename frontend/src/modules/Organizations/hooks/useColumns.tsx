@@ -1,14 +1,16 @@
-import { DisplayValue } from '@swo/design-system/utils';
-import { GridCellSimple, GridCellTitleSubtitle, GridColumnDefinition } from '@swo/design-system/grid';
-import { GridStatusCell } from '../../../shared/components/GridStatusCell';
-import { OrganizationRead } from '@swo/ffc-api-model';
-import { Paths } from '@swo/rql-client';
-import { useFixedT } from '../../../shared/hooks/useFixedT';
-import { useMemo } from 'react';
+import { DisplayValue } from "@swo/design-system/utils";
+import {
+  GridCellSimple,
+  GridCellTitleSubtitle,
+  GridColumnDefinition,
+} from "@swo/design-system/grid";
+import { Status } from "../../../shared/components/Status";
+import { OrganizationRead } from "@swo/ffc-api-model";
+import { Paths } from "@swo/rql-client";
+import { useFixedT } from "../../../shared/hooks/useFixedT";
+import { useMemo } from "react";
 
 import { Link } from "react-router";
-
-
 
 type Columns = Array<
   Omit<GridColumnDefinition<OrganizationRead>, "fields"> & {
@@ -17,7 +19,7 @@ type Columns = Array<
 >;
 
 export function useColumns(): Columns {
-const tColumns = useFixedT("shared:grid:columns");
+  const tColumns = useFixedT("shared:grid:columns");
 
   return useMemo(() => {
     return [
@@ -34,7 +36,7 @@ const tColumns = useFixedT("shared:grid:columns");
       },
       {
         name: "currency",
-        title: "Currency",
+        title: tColumns("currency"),
         fields: ["currency"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>{item.currency}</GridCellSimple>
@@ -65,9 +67,10 @@ const tColumns = useFixedT("shared:grid:columns");
         name: "status",
         title: "Status",
         fields: ["status"],
-        // cell: (item: OrganizationRead) => <GridCellSimple>{item.status}</GridCellSimple>,
         cell: (item: OrganizationRead) => (
-          <GridStatusCell<OrganizationRead> item={item} />
+          <GridCellSimple>
+            <Status<OrganizationRead> item={item}></Status>
+          </GridCellSimple>
         ),
         initialWidth: 150,
       },
@@ -76,8 +79,8 @@ const tColumns = useFixedT("shared:grid:columns");
         title: tColumns("link"),
         fields: ["name", "id", "linked_organization_id"],
         cell: (item: OrganizationRead) => (
-          <GridCellSimple>            
-            <Link to={`/${item.id}/details`}>View details</Link>
+          <GridCellSimple>
+            <Link to={`/${item.id}`}>View details</Link>
           </GridCellSimple>
         ),
       },

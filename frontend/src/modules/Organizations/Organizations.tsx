@@ -44,8 +44,8 @@ export function Organizations() {
           }
         >
           {/* <Route path={"*"} index element={<OrganizationsGrid />} /> */}
-          <Route path={"/"} index element={<OrganizationsGrid />} />
-          <Route path=":organizationId/details" element={<Details />} />
+          <Route index element={<OrganizationsGrid />} />
+          <Route path=":organizationId" element={<Details />} />
           {/* <Route path=":organizationId/details" element={<Details />} /> */}
         </Route>
       </Routes>

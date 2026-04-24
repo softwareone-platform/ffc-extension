@@ -9,7 +9,7 @@ export default () => {
     <ExtensionsProvider i18n={i18n}>
       <BrowserRouter>
         <Routes>
-          <Route path={`/`} element={<Organizations />} />
+          <Route path={`*`} element={<Organizations />} />
         </Routes>
       </BrowserRouter>
     </ExtensionsProvider>

@@ -23,9 +23,12 @@ type RegionalSettings = {
   firstDayOfWeek: number;
 };
 
+const STALE_TIME = 5000;
+// const STALE_TIME = 1000 * 60 * 5;
+
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 5, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false },
+    queries: { staleTime: STALE_TIME, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false },
     mutations: { retry: false },
   },
 });
