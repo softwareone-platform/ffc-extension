@@ -169,9 +169,6 @@ bandit.json
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-# vscode
-.devcontainer/
-
 # Postgres data
 pg_data/
 test_pg_data/
