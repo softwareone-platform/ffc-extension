@@ -10,6 +10,7 @@ RUN apt-get update; \
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
 RUN curl -sS https://starship.rs/install.sh | sh -s -- --yes
 RUN echo 'eval "$(starship init bash)"' >> ~/.bashrc
+COPY starship.toml /root/.config/starship.toml
 
 # Install Node.js
 
