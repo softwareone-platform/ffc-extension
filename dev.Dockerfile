@@ -7,6 +7,10 @@ RUN apt-get update; \
     apt-get clean -y; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+RUN curl -sS https://starship.rs/install.sh | sh -s -- --yes
+RUN echo 'eval "$(starship init bash)"' >> ~/.bashrc
+COPY starship.toml /root/.config/starship.toml
 
 # Install Node.js
 
@@ -65,7 +69,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PYTEST_ADDOPTS="--rootdir=/app/backend -c /app/backend/pyproject.toml --cov-config /app/backend/pyproject.toml /app/backend"
 
 # Place executables in the environment at the front of the path
-ENV PATH="/opt/venv/bin:$PATH"
+RUN echo 'export PATH="/opt/venv/bin:$PATH"' >> ~/.bashrc
 
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
