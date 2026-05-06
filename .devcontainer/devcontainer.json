@@ -16,7 +16,7 @@
   "workspaceFolder": "/app",
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind",
-    "source=claude-state-${devcontainerId},target=/root/.claude,type=volume",
+    "source=claude-state,target=/root/.claude,type=volume",
     "source=jetbrains-cache,target=/root/.cache/JetBrains,type=volume",
     "source=jetbrains-share,target=/root/.local/share/JetBrains,type=volume",
     "source=jetbrains-config,target=/root/.config/JetBrains,type=volume"

@@ -8,22 +8,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "adaptive-cards-py"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jsonschema" },
-    { name = "mypy" },
-    { name = "pydantic" },
-    { name = "requests" },
-    { name = "result" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/41/f9/9fdbd4f386dcf0ba5997f58aeb71c6f1f6c1a2a799fa713fc09c60f8c4be/adaptive_cards_py-0.3.0.tar.gz", hash = "sha256:209b29e4d12e099dc70b2a0700022304bf30c07d36e2d58b54be627c69cb21c9", size = 169907, upload-time = "2025-03-22T10:08:00.223Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/81/fe628c9815b9dd79a22c150e35240a770dc1df014afea208ee58a92c0034/adaptive_cards_py-0.3.0-py3-none-any.whl", hash = "sha256:1a1b62f044c5fec2e13119f6b51162d8cb7e4fba6c8303b55b84721cb6a79166", size = 90271, upload-time = "2025-03-22T10:07:59.126Z" },
-]
-
-[[package]]
 name = "aiofiles"
 version = "24.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -912,7 +896,6 @@ name = "ffc-extension"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "adaptive-cards-py" },
     { name = "aiofiles" },
     { name = "alembic" },
     { name = "asyncpg" },
@@ -985,7 +968,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "adaptive-cards-py", specifier = ">=0.3.0,<0.3.1" },
     { name = "aiofiles", specifier = ">=24.1.0,<25" },
     { name = "alembic", specifier = ">=1.14.1,<2" },
     { name = "asyncpg", specifier = ">=0.30.0,<1" },
@@ -2873,15 +2855,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9f/b4/b7e040379838cc71bf5aabdb26998dfbe5ee73904c92c1c161faf5de8866/responses-0.26.0.tar.gz", hash = "sha256:c7f6923e6343ef3682816ba421c006626777893cb0d5e1434f674b649bac9eb4", size = 81303, upload-time = "2026-02-19T14:38:05.574Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ce/04/7f73d05b556da048923e31a0cc878f03be7c5425ed1f268082255c75d872/responses-0.26.0-py3-none-any.whl", hash = "sha256:03ec4409088cd5c66b71ecbbbd27fe2c58ddfad801c66203457b3e6a04868c37", size = 35099, upload-time = "2026-02-19T14:38:03.847Z" },
-]
-
-[[package]]
-name = "result"
-version = "0.17.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a3/47/2175be65744aa4d8419c27bd3a7a7d65af5bcad7a4dc6a812c00778754f0/result-0.17.0.tar.gz", hash = "sha256:b73da420c0cb1a3bf741dbd41ff96dedafaad6a1b3ef437a9e33e380bb0d91cf", size = 20180, upload-time = "2024-06-02T16:39:54.51Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/90/19110ce9374c3db619e2df0816f2c58e4ddc5cdad5f7284cd81d8b30b7cb/result-0.17.0-py3-none-any.whl", hash = "sha256:49fd668b4951ad15800b8ccefd98b6b94effc789607e19c65064b775570933e8", size = 11689, upload-time = "2024-06-02T16:39:52.715Z" },
 ]
 
 [[package]]
