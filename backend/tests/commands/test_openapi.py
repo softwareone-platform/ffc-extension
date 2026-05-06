@@ -3,9 +3,10 @@ import shlex
 from pathlib import Path
 
 import yaml
-from app.cli import app
 from pytest_mock import MockerFixture
 from typer.testing import CliRunner
+
+from app.cli import app
 
 
 def test_openapi(mocker: MockerFixture):

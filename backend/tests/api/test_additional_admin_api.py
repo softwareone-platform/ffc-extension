@@ -1,12 +1,12 @@
 import logging
 
 from _pytest.logging import LogCaptureFixture
-from app import Settings
-from app.db.models import Organization
-from app.enums import OrganizationStatus
 from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 
+from app import Settings
+from app.db.models import Organization
+from app.enums import OrganizationStatus
 from tests.types import ModelFactory
 
 FAKE_USER_ID = "1bf6f063-d90b-4d45-8e7f-62fefa9f5471"

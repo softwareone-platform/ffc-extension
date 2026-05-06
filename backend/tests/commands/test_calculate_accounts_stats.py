@@ -1,8 +1,9 @@
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.commands.calculate_accounts_stats import calculate_accounts_stats
 from app.conf import Settings
 from app.enums import AccountStatus, EntitlementStatus
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.parametrize(

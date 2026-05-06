@@ -11,6 +11,16 @@ import httpx
 import jwt
 import pytest
 import responses
+from asgi_lifespan import LifespanManager
+from faker import Faker
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+from pytest_asyncio import is_async_test
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+)
+
 from app.api_clients.base import BaseAPIClient
 from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
@@ -39,16 +49,6 @@ from app.enums import (
     SystemStatus,
     UserStatus,
 )
-from asgi_lifespan import LifespanManager
-from faker import Faker
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from pytest_asyncio import is_async_test
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-)
-
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import ModelFactory
 
@@ -2533,3 +2533,41 @@ def process_result_with_error():
 def temp_charges_file():
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
         yield f.name
+
+
+MSTEAMS_FAKE_WEBHOOK_URL = "https://localhost/webhook"
+
+
+@pytest.fixture()
+def _no_real_http_post(mocker):
+    """Replace ``httpx.AsyncClient.post`` with an ``AsyncMock`` returning a
+    fake 202 response. Opt-in (not autouse): tests that do not need it must
+    not pull it in, otherwise FastAPI integration tests using ASGI transport
+    would have their POSTs intercepted too.
+    """
+    mock_response = mocker.MagicMock()
+    mock_response.status_code = 202
+    mock_response.text = ""
+    return mocker.patch(
+        "httpx.AsyncClient.post",
+        new=mocker.AsyncMock(return_value=mock_response),
+    )
+
+
+@pytest.fixture()
+def configured_webhook(mocker):
+    mocked_settings = mocker.MagicMock()
+    mocked_settings.msteams_notifications_webhook_url = MSTEAMS_FAKE_WEBHOOK_URL
+    mocker.patch("app.notifications.get_settings", return_value=mocked_settings)
+    return mocked_settings
+
+
+@pytest.fixture()
+def send_notification_spy(mocker):
+    """Observes calls to ``app.notifications.send_notification`` without
+    replacing it. Pair with ``_no_real_http_post`` to keep the underlying
+    POST offline.
+    """
+    import app.notifications as notifications_module
+
+    return mocker.spy(notifications_module, "send_notification")

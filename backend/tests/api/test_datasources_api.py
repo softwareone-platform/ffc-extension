@@ -2,12 +2,12 @@ import uuid
 from typing import Any
 
 import pytest
-from app.conf import Settings
-from app.db.models import Organization
-from app.enums import DatasourceType
 from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 
+from app.conf import Settings
+from app.db.models import Organization
+from app.enums import DatasourceType
 from tests.types import ModelFactory
 
 # ===========================

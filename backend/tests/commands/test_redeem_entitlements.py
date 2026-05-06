@@ -2,17 +2,18 @@ from datetime import UTC, datetime
 
 import pytest
 import time_machine
+from httpx import HTTPStatusError, ReadTimeout
+from pytest_httpx import HTTPXMock
+from pytest_mock import MockerFixture
+from sqlalchemy.ext.asyncio import AsyncSession
+from typer.testing import CliRunner
+
 from app.cli import app
 from app.commands.redeem_entitlements import fetch_datasources_for_organization, redeem_entitlements
 from app.conf import Settings
 from app.db.models import Entitlement, Organization
 from app.enums import DatasourceType, EntitlementStatus
 from app.notifications import ColumnHeader
-from httpx import HTTPStatusError, ReadTimeout
-from pytest_httpx import HTTPXMock
-from pytest_mock import MockerFixture
-from sqlalchemy.ext.asyncio import AsyncSession
-from typer.testing import CliRunner
 
 
 @time_machine.travel("2025-03-07T10:00:00Z", tick=False)

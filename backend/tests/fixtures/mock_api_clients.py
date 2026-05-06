@@ -4,13 +4,14 @@ from typing import Any, Protocol, TypeVar
 
 import httpx
 import pytest
+from fastapi import status
+from pydantic.v1.utils import deep_update
+from pytest_httpx import HTTPXMock
+
 from app.api_clients.base import BaseAPIClient
 from app.api_clients.optscale import OptscaleClient
 from app.conf import Settings
 from app.db.models import Organization
-from fastapi import status
-from pydantic.v1.utils import deep_update
-from pytest_httpx import HTTPXMock
 
 C = TypeVar("C", bound=BaseAPIClient)
 

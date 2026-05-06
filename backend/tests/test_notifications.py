@@ -1,5 +1,8 @@
 import pytest
 from adaptive_cards import card_types as ct
+from pytest_httpx import HTTPXMock
+from pytest_mock import MockerFixture
+
 from app.notifications import (
     NotificationDetails,
     send_error,
@@ -8,15 +11,13 @@ from app.notifications import (
     send_notification,
     send_warning,
 )
-from pytest_httpx import HTTPXMock
-from pytest_mock import MockerFixture
 
 
 @pytest.mark.parametrize(
     ("function", "color", "icon"),
     [
         (send_info, ct.Colors.ACCENT, "\U0001f44d"),
-        (send_warning, ct.Colors.WARNING, "\u2622"),
+        (send_warning, ct.Colors.WARNING, "\u26a0\ufe0f"),
         (send_error, ct.Colors.ATTENTION, "\U0001f4a3"),
         (send_exception, ct.Colors.ATTENTION, "\U0001f525"),
     ],

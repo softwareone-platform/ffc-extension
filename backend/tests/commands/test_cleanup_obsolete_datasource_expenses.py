@@ -3,15 +3,15 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import time_machine
-from app.cli import app
-from app.commands import cleanup_obsolete_datasource_expenses
-from app.conf import Settings
-from app.db.models import DatasourceExpense, Organization
 from pytest_mock import MockerFixture
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typer.testing import CliRunner
 
+from app.cli import app
+from app.commands import cleanup_obsolete_datasource_expenses
+from app.conf import Settings
+from app.db.models import DatasourceExpense, Organization
 from tests.types import ModelFactory
 
 

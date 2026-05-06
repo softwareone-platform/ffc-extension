@@ -1,4 +1,8 @@
 import pytest
+from pytest_mock import MockerFixture
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
+
 from app.auth.context import AuthenticationContext
 from app.db.handlers import (
     AccountUserHandler,
@@ -9,10 +13,6 @@ from app.db.handlers import (
 )
 from app.db.models import Account, AccountUser, Base, User
 from app.enums import AccountStatus, AccountUserStatus, UserStatus
-from pytest_mock import MockerFixture
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
-
 from tests.db.models import (
     DeletableAuditModelForTests,
     DeletableModelForTests,

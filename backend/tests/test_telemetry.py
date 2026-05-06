@@ -1,9 +1,10 @@
+from pytest_mock import MockerFixture
+
 from app.telemetry import (
     setup_fastapi_instrumentor,
     setup_sqlalchemy_instrumentor,
     setup_telemetry,
 )
-from pytest_mock import MockerFixture
 
 
 def test_setup_telemetry(mocker: MockerFixture):

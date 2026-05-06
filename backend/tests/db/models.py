@@ -1,9 +1,10 @@
 import enum
 
-from app.db.human_readable_pk import HumanReadablePKMixin
-from app.db.models import AuditableMixin, Base
 from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.human_readable_pk import HumanReadablePKMixin
+from app.db.models import AuditableMixin, Base
 
 
 class ModelForTests(Base, HumanReadablePKMixin):

@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 from adaptive_cards import card_types as ct
@@ -13,6 +14,11 @@ from app.conf import get_settings
 
 logger = logging.getLogger(__name__)
 
+TITLE_PREFIX_INFO = "\U0001f44d"  # 👍
+TITLE_PREFIX_WARNING = "\u26a0\ufe0f"  # ⚠
+TITLE_PREFIX_ERROR = "\U0001f4a3"  # 💣
+TITLE_PREFIX_EXCEPTION = "\U0001f525"  # 🔥
+
 
 @dataclass
 class ColumnHeader:
@@ -23,8 +29,13 @@ class ColumnHeader:
 
 class NotificationDetails:
     def __init__(self, header: tuple[str | ColumnHeader, ...], rows: list[tuple[str, ...]]):
-        if not all(len(t) == len(header) for t in rows):
-            raise ValueError("All rows must have the same number of columns as the header.")
+        header_len = len(header)
+        for i, row in enumerate(rows):
+            if len(row) != header_len:
+                raise ValueError(
+                    f"Row {i} has {len(row)} columns; expected {header_len}. "
+                    f"All rows must have the same number of columns as the header."
+                )
         self.header = header
         self.rows = rows
 
@@ -63,7 +74,7 @@ class NotificationDetails:
         items.append(ColumnSet(columns=header_columns))
 
         # Data rows
-        for _idx, row in enumerate(self.rows):
+        for row in self.rows:
             row_columns = []
             for col_idx, value in enumerate(row):
                 col = self.header[col_idx]
@@ -96,19 +107,15 @@ class NotificationDetails:
         return Container(items=items)
 
 
-async def send_notification(
+def build_card_payload(
+    *,
     title: str,
     text: str,
-    title_color: ct.Colors = ct.Colors.DEFAULT,
+    title_color: ct.Colors,
     details: NotificationDetails | None = None,
     open_url: str | None = None,
-) -> None:
-    settings = get_settings()
-    if not settings.msteams_notifications_webhook_url:  # pragma: no cover
-        logger.warning("MSTeams notifications are disabled.")
-        return
-
-    card_items = [
+) -> dict[str, Any]:
+    card_items: list[Any] = [
         TextBlock(
             text=title,
             size=ct.FontSize.LARGE,
@@ -125,7 +132,7 @@ async def send_notification(
     if details:
         card_items.append(details.to_container())
 
-    card_actions = []
+    card_actions: list[ActionOpenUrl] = []
     if open_url:
         card_actions.append(ActionOpenUrl(title="Open", url=open_url))
 
@@ -143,6 +150,24 @@ async def send_notification(
             },
         ],
     }
+    return message
+
+
+async def send_notification(
+    title: str,
+    text: str,
+    title_color: ct.Colors = ct.Colors.DEFAULT,
+    details: NotificationDetails | None = None,
+    open_url: str | None = None,
+) -> None:
+    settings = get_settings()
+    if not settings.msteams_notifications_webhook_url:  # pragma: no cover
+        logger.warning("MSTeams notifications are disabled.")
+        return
+
+    message = build_card_payload(
+        title=title, text=text, title_color=title_color, details=details, open_url=open_url
+    )
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -150,7 +175,7 @@ async def send_notification(
             json=message,
             headers={"Content-Type": "application/json"},
         )
-        if response.status_code != 202:
+        if response.status_code not in (200, 202):
             logger.error(
                 f"Failed to send notification to MSTeams: {response.status_code} - {response.text}"
             )
@@ -163,7 +188,7 @@ async def send_info(
     open_url: str | None = None,
 ) -> None:
     await send_notification(
-        f"\U0001f44d {title}",
+        f"{TITLE_PREFIX_INFO} {title}",
         text,
         title_color=ct.Colors.ACCENT,
         details=details,
@@ -178,7 +203,7 @@ async def send_warning(
     open_url: str | None = None,
 ) -> None:
     await send_notification(
-        f"\u2622 {title}",
+        f"{TITLE_PREFIX_WARNING} {title}",
         text,
         title_color=ct.Colors.WARNING,
         details=details,
@@ -193,7 +218,7 @@ async def send_error(
     open_url: str | None = None,
 ) -> None:
     await send_notification(
-        f"\U0001f4a3 {title}",
+        f"{TITLE_PREFIX_ERROR} {title}",
         text,
         title_color=ct.Colors.ATTENTION,
         details=details,
@@ -208,7 +233,7 @@ async def send_exception(
     open_url: str | None = None,
 ) -> None:
     await send_notification(
-        f"\U0001f525 {title}",
+        f"{TITLE_PREFIX_EXCEPTION} {title}",
         text,
         title_color=ct.Colors.ATTENTION,
         details=details,
