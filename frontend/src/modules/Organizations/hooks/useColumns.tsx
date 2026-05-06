@@ -10,7 +10,7 @@ import { Paths } from "@swo/rql-client";
 import { useFixedT } from "../../../shared/hooks/useFixedT";
 import { useMemo } from "react";
 
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 type Columns = Array<
   Omit<GridColumnDefinition<OrganizationRead>, "fields"> & {
