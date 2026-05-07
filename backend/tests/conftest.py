@@ -2571,3 +2571,27 @@ def send_notification_spy(mocker):
     import app.notifications as notifications_module
 
     return mocker.spy(notifications_module, "send_notification")
+
+
+@pytest.fixture()
+def msteams_post_mock(_no_real_http_post):
+    """The ``AsyncMock`` that ``_no_real_http_post`` substitutes for
+    ``httpx.AsyncClient.post``. Use this fixture (instead of injecting
+    ``_no_real_http_post`` directly) when a test needs to inspect the
+    captured POST calls — its leading underscore signals "side-effect only"
+    to ruff (PT019), so accessing the value through this wrapper keeps
+    lint clean.
+    """
+    return _no_real_http_post
+
+
+@pytest.fixture()
+def _no_msteams_pacing(mocker):
+    """Replace ``app.notifications.asyncio.sleep`` with an ``AsyncMock`` so
+    chunked sends don't block on the inter-message pacing delay during tests.
+    Opt-in: tests that observe sleep calls themselves must not pull this in.
+    """
+    return mocker.patch(
+        "app.notifications.asyncio.sleep",
+        new_callable=mocker.AsyncMock,
+    )
