@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     HashRouter,
@@ -31,60 +31,11 @@ const routes: RouteDef[] = [
 const DEFAULT_PATH = routes[0].path;
 
 const StickyNav: React.FC = () => {
-    const navRef = useRef<HTMLElement>(null);
-    const [navOffset, setNavOffset] = useState(0);
-    const [navHeight, setNavHeight] = useState(0);
     const [isAddOpen, setIsAddOpen] = useState(false);
-
-    useEffect(() => {
-        if (navRef.current) {
-            setNavHeight(navRef.current.offsetHeight);
-        }
-    }, []);
-
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            const data = event.data;
-            if (!data || data.type !== 'parent-scroll') return;
-
-            const {
-                iframeTop,
-                iframeHeight,
-                viewportHeight,
-                headerBottom = 0,
-            } = data as {
-                iframeTop: number;
-                iframeHeight: number;
-                viewportHeight: number;
-                headerBottom?: number;
-            };
-
-            const desiredTopInsideIframe = Math.max(0, headerBottom - iframeTop);
-            const navH = navRef.current?.offsetHeight ?? navHeight;
-            const wrapperH =
-                (navRef.current?.parentElement as HTMLElement | null)?.offsetHeight ??
-                iframeHeight;
-            const maxOffset = Math.max(0, wrapperH - navH);
-            const visibleBottomCap = Math.max(
-                0,
-                Math.min(iframeHeight, viewportHeight - iframeTop) - navH
-            );
-            const target = Math.min(desiredTopInsideIframe, maxOffset, visibleBottomCap);
-            setNavOffset(target > 0 ? target : 0);
-        };
-
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, [navHeight]);
 
     return (
         <>
-            <nav
-                ref={navRef as React.RefObject<HTMLElement>}
-                id="myNav"
-                role="tablist"
-                style={{ ['--nav-offset' as never]: `${navOffset}px` }}
-            >
+            <nav id="myNav" role="tablist">
                 <div className="entitlements-app__tabs">
                     {routes.map((route) => (
                         <NavLink
@@ -109,12 +60,6 @@ const StickyNav: React.FC = () => {
                     </Button>
                 </div>
             </nav>
-            {/* Spacer to reserve nav height since nav is absolutely positioned */}
-            <div
-                className="entitlements-app__nav-spacer"
-                style={{ height: navHeight }}
-                aria-hidden="true"
-            />
             <AddOrganizationModal
                 isOpen={isAddOpen}
                 onClose={() => setIsAddOpen(false)}

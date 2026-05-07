@@ -1,5 +1,15 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
 .entitlements-app {
   position: relative;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #myNav {
@@ -9,15 +19,13 @@
   gap: 8px;
   border-bottom: 1px solid #ddd;
   margin-bottom: 16px;
-  position: absolute;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
   background: #fff;
   z-index: 10;
   padding: 0 20px;
-  will-change: transform;
-  transform: translateY(var(--nav-offset, 0px));
 
   .entitlements-app__tabs {
     display: flex;
@@ -55,9 +63,5 @@
 
 .entitlements-app__tabpanel {
   margin: 20px;
-}
-
-.entitlements-app__nav-spacer {
-  // Height set inline because it depends on measured nav height.
 }
 
