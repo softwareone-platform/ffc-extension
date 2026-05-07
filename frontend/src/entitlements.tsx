@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
     HashRouter,
-    NavLink,
     Navigate,
     Route,
     Routes,
@@ -15,11 +14,10 @@ import {
     AddOrganizationFormValues,
     AddOrganizationModal,
 } from './components/AddOrganizationModal';
+import { AppNav, AppNavItem } from './shared/components/AppNav';
 import './entitlements.scss';
 
-type RouteDef = {
-    path: string;
-    label: string;
+type RouteDef = AppNavItem & {
     element: React.ReactNode;
 };
 
@@ -30,27 +28,30 @@ const routes: RouteDef[] = [
 
 const DEFAULT_PATH = routes[0].path;
 
-const StickyNav: React.FC = () => {
+const AppShell: React.FC = () => {
     const [isAddOpen, setIsAddOpen] = useState(false);
+
+    useEffect(() => {
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage(
+                { type: 'child-modal', isOpen: isAddOpen },
+                '*'
+            );
+        }
+        // eslint-disable-next-line no-console
+        console.log('[entitlements] modal state ->', isAddOpen);
+    }, [isAddOpen]);
+
+    const navItems = useMemo<AppNavItem[]>(
+        () => routes.map(({ path, label }) => ({ path, label })),
+        []
+    );
 
     return (
         <>
-            <nav id="myNav" role="tablist">
-                <div className="entitlements-app__tabs">
-                    {routes.map((route) => (
-                        <NavLink
-                            key={route.path}
-                            to={route.path}
-                            role="tab"
-                            className={({ isActive }) =>
-                                `entitlements-app__tab${isActive ? ' is-active' : ''}`
-                            }
-                        >
-                            {route.label}
-                        </NavLink>
-                    ))}
-                </div>
-                <div className="entitlements-app__nav-actions">
+            <AppNav
+                items={navItems}
+                actions={
                     <Button
                         type="primary"
                         onClick={() => setIsAddOpen(true)}
@@ -58,8 +59,15 @@ const StickyNav: React.FC = () => {
                     >
                         Add organization
                     </Button>
-                </div>
-            </nav>
+                }
+            >
+                <Routes>
+                    {routes.map((route) => (
+                        <Route key={route.path} path={route.path} element={route.element} />
+                    ))}
+                    <Route path="*" element={<Navigate to={DEFAULT_PATH} replace />} />
+                </Routes>
+            </AppNav>
             <AddOrganizationModal
                 isOpen={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
@@ -76,15 +84,7 @@ const StickyNav: React.FC = () => {
 const App: React.FC = () => (
     <HashRouter>
         <div className="entitlements-app">
-            <StickyNav />
-            <div role="tabpanel" className="entitlements-app__tabpanel">
-                <Routes>
-                    {routes.map((route) => (
-                        <Route key={route.path} path={route.path} element={route.element} />
-                    ))}
-                    <Route path="*" element={<Navigate to={DEFAULT_PATH} replace />} />
-                </Routes>
-            </div>
+            <AppShell />
         </div>
     </HashRouter>
 );
@@ -93,4 +93,3 @@ setup((element: Element) => {
     const root = createRoot(element);
     root.render(<App />);
 });
-

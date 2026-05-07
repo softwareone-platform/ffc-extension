@@ -12,47 +12,6 @@ body,
   overflow-x: hidden;
 }
 
-#myNav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid #ddd;
-  margin-bottom: 16px;
-  position: sticky;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  z-index: 10;
-  padding: 0 20px;
-
-  .entitlements-app__tabs {
-    display: flex;
-    gap: 8px;
-  }
-
-  .entitlements-app__nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .entitlements-app__tab {
-    padding: 15px 20px;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    cursor: pointer;
-    font-weight: 400;
-    text-decoration: none;
-    color: inherit;
-
-    &.is-active {
-      border-bottom-color: #1976d2;
-      font-weight: 600;
-    }
-  }
-}
 
 .add-organization-form {
   display: flex;
@@ -60,8 +19,3 @@ body,
   gap: 16px;
   padding: 8px 0;
 }
-
-.entitlements-app__tabpanel {
-  margin: 20px;
-}
-
