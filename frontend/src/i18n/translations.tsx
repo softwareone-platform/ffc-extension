@@ -8,33 +8,37 @@ import { languageCodes } from '@swo/countries/languageCodes';
 const i18n: ReturnType<typeof i18next.createInstance> = i18next.createInstance();
 
 i18n.use(
-  resourcesToBackend(async (language: string) => {
-    const validLanguage = languageCodes.find(l => l.includes(language))?.replace('-', '_');
-    if (!validLanguage) {
-      return;
-    }
+    resourcesToBackend(async (language: string) => {
+        const validLanguage = languageCodes.find((l) => l.includes(language))?.replace('-', '_');
+        if (!validLanguage) {
+            return;
+        }
 
-    const resource = language.startsWith('en') ? await import(`./en.json`) : await import(`./${validLanguage}/${validLanguage}.json`);
+        const resource = language.startsWith('en')
+            ? await import(`./en.json`)
+            : await import(`./${validLanguage}/${validLanguage}.json`);
 
-    const translations = resource.default ?? {};
+        const translations = resource.default ?? {};
 
-    console.log(`Loaded translations for language ${language}:`, translations);
+        console.log(`Loaded translations for language ${language}:`, translations);
 
-    i18n.addResourceBundle(language, 'mpt', translations, true);
+        i18n.addResourceBundle(language, 'mpt', translations, true);
 
-    return translations;
-  })
+        return translations;
+    }),
 );
-i18n.on('failedLoading', (lng, _ns, msg) => console.error(`[i18n] Failed to load language ${lng} with error:`, msg));
+i18n.on('failedLoading', (lng, _ns, msg) =>
+    console.error(`[i18n] Failed to load language ${lng} with error:`, msg),
+);
 i18n.init({
-  lng: 'en',
-  fallbackLng: 'en',
-  interpolation: {
-    escapeValue: false,
-  },
-  defaultNS: 'mpt',
-  nsSeparator: ';',
-  keySeparator: ':',
+    lng: 'en',
+    fallbackLng: 'en',
+    interpolation: {
+        escapeValue: false,
+    },
+    defaultNS: 'mpt',
+    nsSeparator: ';',
+    keySeparator: ':',
 } as InitOptions);
 
 // type typeOfi18nT = Extract<ZodI18nMapOption, 't'>;

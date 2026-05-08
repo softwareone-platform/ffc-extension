@@ -8,6 +8,15 @@
     "emitDeclarationOnly": false,
     "declarationDir": "../static",
     "outDir": "../static",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": "./src",
+    "paths": {
+      "~app/*": ["app/*"],
+      "~features/*": ["features/*"],
+      "~shared/*": ["shared/*"],
+      "~styles/*": ["styles/*"],
+      "~i18n/*": ["i18n/*"]
+    }
   }
 }
+

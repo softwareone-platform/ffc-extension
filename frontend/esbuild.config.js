@@ -1,18 +1,37 @@
 import { context } from 'esbuild';
 import { sassPlugin } from 'esbuild-sass-plugin';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
+const routeBasePath = JSON.stringify(process?.env?.ROUTE_BASE_PATH ?? "");
 
 const ctx = await context({
-  entryPoints: ['./src/organizations.tsx','./src/entitlements.tsx','./src/modal.tsx'],
+  entryPoints: [
+    './src/entries/organizations.tsx',
+    './src/entries/entitlements.tsx',
+    './src/entries/modal.tsx',
+  ],
   outdir: '../static',
+  outbase: './src/entries',
   bundle: true,
   platform: 'browser',
   mainFields: ["browser", "module", "main"],
   format: 'esm',
   sourcemap: true,
   allowOverwrite: true,
+  // Keep these in sync with `compilerOptions.paths` in tsconfig.json.
+  alias: {
+    '~app': srcDir('app'),
+    '~features': srcDir('features'),
+    '~shared': srcDir('shared'),
+    '~styles': srcDir('styles'),
+    '~i18n': srcDir('i18n'),
+  },
   define: {
     "process.env.NODE_ENV": env,
   },

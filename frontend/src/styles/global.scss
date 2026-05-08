@@ -1,0 +1,60 @@
+@use '../../node_modules/@swo/design-tokens/src/index' as *;
+@use '../../node_modules/@swo/design-tokens/src/style' as *;
+
+// --- typography & resets -------------------------------------------------
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 300;
+}
+
+// --- host overrides ------------------------------------------------------
+.navigation-host {
+    height: auto !important;
+}
+
+// --- app shell -----------------------------------------------------------
+.entitlements-app {
+    position: relative;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+// --- shared utilities ----------------------------------------------------
+.container {
+    padding: var(--spacing-2);
+}
+
+.mono {
+    padding: 7px 15px;
+    font-family: monospace;
+    background: #e4e4e4;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+}
+
+// --- feature snippets ----------------------------------------------------
+.organization-details-header {
+    margin-bottom: var(--spacing-3);
+}
+
+.add-organization-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+}
