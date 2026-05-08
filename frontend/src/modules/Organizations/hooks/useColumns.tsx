@@ -29,7 +29,7 @@ export function useColumns(): Columns {
         fields: ["name", "id", "linked_organization_id"],
         cell: (item: OrganizationRead) => (
           <GridCellTitleSubtitle
-            title={item.name}
+            title={<Link to={`/${item.id}`}>{item.name}</Link>}
             subtitle={`${item.id} | ${item.linked_organization_id}`}
           />
         ),
@@ -75,14 +75,13 @@ export function useColumns(): Columns {
         initialWidth: 150,
       },
       {
-        name: "link",
-        title: tColumns("link"),
-        fields: ["name", "id", "linked_organization_id"],
+        name: "actions",
+        title: tColumns("actions"),
+        fields: [],
         cell: (item: OrganizationRead) => (
-          <GridCellSimple>
-            <Link to={`/${item.id}`}>View details</Link>
-          </GridCellSimple>
+          <></>
         ),
+        initialWidth: 100,
       },
     ];
   }, []);
