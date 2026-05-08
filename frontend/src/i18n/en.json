@@ -1,12 +1,36 @@
 {
   "shared": {
     "grid": {
+      "views": {
+        "activeOrganizations": "Active Organizations",
+        "deletedOrganizations": "Deleted Organizations",
+        "activeEntitlements": "Active Entitlements"
+      },
       "columns": {
         "actions": "Actions",
-        "activeOrganizations": "Active Organizations",
-        "activeEntitlements": "Active Entitlements",
+        "currency": "Currency",
         "organization": "Organization",
-        "entitlement": "Entitlement"
+        "entitlement": "Entitlement",
+        "dataSource": "Data Source",
+        "type": "Type",
+        "email": "Email",
+        "displayName": "Display Name",
+        "rolesCount": "Roles Count",
+        "user": "User",
+        "name": "Name",
+        "id": "ID"
+      },
+      "fields": {
+        "id": "ID",
+        "name": "Name",
+        "currency": "Currency",
+        "billingCurrency": "Billing Currency",
+        "operationsAdditionalId": "Operations Additional ID",
+        "status": "Status",
+        "type": "Type",
+        "displayName": "Display Name",
+        "email": "Email",
+        "rolesCount": "Roles Count"
       }
     }
   }

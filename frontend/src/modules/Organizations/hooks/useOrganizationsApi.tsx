@@ -3,8 +3,7 @@ import { Entity } from "@swo/service";
 
 import { useCallback, useMemo } from "react";
 import { http } from "@mpt-extension/sdk";
-import { OrganizationRead } from "@swo/ffc-api-model";
-import { CallApiParams } from "@swo/design-system/grid";
+import { DatasourceRead, EmployeeRead, OrganizationRead } from "@swo/ffc-api-model";
 import { AxiosRequestConfig } from "axios";
 
 export interface ListResponse<T> {
@@ -16,39 +15,23 @@ export interface ListResponse<T> {
 const rootPath = "/ops/v1/organizations";
 
 export function useOrganizationsApi() {
-  //   const ORG_URL = `/ops/v1/organizations?${query}`;
   const list = useCallback(
     async (
       query: RqlQuery<Entity<OrganizationRead>>,
       config?: AxiosRequestConfig<ListResponse<Entity<OrganizationRead>>>,
     ) => {
-      //   const response = await http<ListResponse<OrganizationRead>>({
-      //     method: "GET",
-      //     url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
-      //     signal: controller?.signal,
-      //   });
-
       return http<ListResponse<Entity<OrganizationRead>>>({
         method: "GET",
         url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
-        // `${rootPath}${query ? `?${query.toString()}` : ""}`,
         ...config,
       });
-
-      // if (response.status > 300) {
-      //   throw new Error("Failed to fetch data");
-      // }
-
-      // const { items, total } = response.data;
-
-      // return { data: items, total };
     },
     [rootPath],
   );
 
   const get = useCallback(
     async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
-      return  http<OrganizationRead>({
+      return http<OrganizationRead>({
         method: "GET",
         url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
       });
@@ -56,5 +39,27 @@ export function useOrganizationsApi() {
     [rootPath],
   );
 
-  return useMemo(() => ({ list, get }), [list, get]);
+  const listOrganizationEmployees = useCallback(
+    async (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
+      return http({
+        method: "GET",
+        url: `${rootPath}/${organizationId}/employees${query ? `?${query.toString()}` : ""}`,
+      });
+    },
+    [rootPath],
+  );
+  const listOrganizationDataSources = useCallback(
+    async (organizationId: string, query?: RqlQuery<DatasourceRead>) => {
+      return http({
+        method: "GET",
+        url: `${rootPath}/${organizationId}/datasources${query ? `?${query.toString()}` : ""}`,
+      });
+    },
+    [rootPath],
+  );
+
+  return useMemo(
+    () => ({ list, get, listOrganizationEmployees, listOrganizationDataSources }),
+    [list, get, listOrganizationEmployees, listOrganizationDataSources],
+  );
 }
