@@ -11,6 +11,21 @@
   "bracketSameLine": false,
   "arrowParens": "always",
   "endOfLine": "lf",
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrder": [
+    "^react$",
+    "^react-dom(/.*)?$",
+    "<THIRD_PARTY_MODULES>",
+    "^@swo/(.*)$",
+    "^@mpt-extension/(.*)$",
+    "^@/(.*)$",
+    "^~(.*)$",
+    "^[./]"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "importOrderCaseInsensitive": true,
+  "importOrderSideEffects": false,
   "overrides": [
     {
       "files": ["*.json", "*.yml", "*.yaml"],

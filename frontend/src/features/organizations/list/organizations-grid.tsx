@@ -1,10 +1,11 @@
 import { Card } from '@swo/design-system/card';
-import { Entity } from '@swo/service';
 import { Grid } from '@swo/design-system/grid';
 import { OrganizationRead } from '@swo/ffc-api-model';
+import { Entity } from '@swo/service';
+
 import { useFixedT } from '~shared/hooks/use-fixed-t';
+
 import { useGridConfig } from './organizations-grid.config';
-// import '../../../styles.scss';
 
 export function OrganizationsGrid() {
     // const {auth, data} = useMPTContext();
@@ -16,13 +17,6 @@ export function OrganizationsGrid() {
     return (
         <Card testId={'ffc-extension__organizations-grid'} title={tProperties('organizations')}>
             <Grid<Entity<OrganizationRead>> {...gridProps} />
-            <br></br>
-            <br></br>
-            <br></br>
-            <br></br>
-            <br></br>
-            <br></br>
-            <br></br>test1
         </Card>
     );
 }

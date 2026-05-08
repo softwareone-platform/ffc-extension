@@ -1,7 +1,8 @@
-import { useOrganizationsApi } from '../api/use-organizations-api';
-import { useReactQueryRqlGrid } from '~shared/hooks/use-react-query-rql-grid';
 import { OrganizationRead } from '@swo/ffc-api-model';
 import { Entity } from '@swo/service';
+
+import { useOrganizationsApi } from '~organizations/api';
+import { useReactQueryRqlGrid } from '~shared/hooks/use-react-query-rql-grid';
 
 export interface AxiosResponseData<T> {
     data: T | null;

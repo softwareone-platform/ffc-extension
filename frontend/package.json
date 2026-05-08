@@ -15,7 +15,9 @@
     "dev": "vite",
     "build:prod": "tsc -b && vite build",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,scss,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,scss,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,scss,md}\"",
+    "lint": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\" --fix"
   },
   "files": [
     "../static"

@@ -1,4 +1,3 @@
-import { GridCellSimple } from '@swo/design-system/grid';
 import { StatusChip } from '@swo/mp-status-chip';
 
 function capitalizeFirstLetter(statusName: string) {

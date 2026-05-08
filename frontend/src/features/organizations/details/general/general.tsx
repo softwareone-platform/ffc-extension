@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
-import { useOrganizationDetailsApi } from '../api/use-organization-details-api';
+
+import { useOrganizationDetailsApi } from '~organizations/api';
 
 export function OrganizationGeneralDetails() {
     const { organizationId } = useParams();

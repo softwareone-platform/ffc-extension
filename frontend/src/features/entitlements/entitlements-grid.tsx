@@ -1,30 +1,32 @@
-import { useMemo, useCallback } from 'react';
-// import {useMPTContext, useMPTModal} from '@mpt-extension/sdk-react';
-import { http } from '@mpt-extension/sdk';
+import { useMemo } from 'react';
+
 import { Card } from '@swo/design-system/card';
-import { EntitlementRead } from '@swo/ffc-api-model';
-import { StatusChip } from '@swo/mp-status-chip';
 import {
+    CallApiParams,
     Grid,
     GridCellSimple,
-    GridDefaultConfiguration,
-    GridViewDefinition,
-    GridColumnDefinition,
-    GridFieldDefinition,
     GridCellTitleSubtitle,
-    CallApiParams,
+    GridColumnDefinition,
+    GridDefaultConfiguration,
+    GridFieldDefinition,
+    GridViewDefinition,
     useGridWithRql,
 } from '@swo/design-system/grid';
+import { EntitlementRead } from '@swo/ffc-api-model';
+import { StatusChip } from '@swo/mp-status-chip';
 import { Paths, RqlQuery } from '@swo/rql-client';
 import { Entity } from '@swo/service';
-import { DisplayValue } from '@swo/design-system/utils';
+
+// import {useMPTContext, useMPTModal} from '@mpt-extension/sdk-react';
+import { http } from '@mpt-extension/sdk';
+
 import { useFixedT } from '~shared/hooks/use-fixed-t';
 
 function capitalizeFirstLetter(val: string): string {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
 
-export default () => {
+export default function EntitlementsGrid() {
     // const {auth, data} = useMPTContext();
     const defaultFilter = { operator: 'neq', field: 'status', value: 'deleted' };
     const sort = [{ field: 'event.created.at', direction: 'desc' }];
@@ -177,4 +179,4 @@ export default () => {
             <Grid<Entity<EntitlementRead>> {...gridProps} />
         </Card>
     );
-};
+}

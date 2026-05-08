@@ -8,7 +8,6 @@ const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
-const routeBasePath = JSON.stringify(process?.env?.ROUTE_BASE_PATH ?? "");
 
 const ctx = await context({
   entryPoints: [
@@ -28,6 +27,7 @@ const ctx = await context({
   alias: {
     '~app': srcDir('app'),
     '~features': srcDir('features'),
+    '~organizations': srcDir('features/organizations'),
     '~shared': srcDir('shared'),
     '~styles': srcDir('styles'),
     '~i18n': srcDir('i18n'),

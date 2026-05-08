@@ -22,55 +22,55 @@ export const router = createHashRouter([
         children: [
             { index: true, loader: () => redirect('/entitlements') },
             {
-                path: 'entitlements',
-                lazy: lazyComponent(
-                    () => import('~features/entitlements/entitlements-grid'),
-                    'default' as never,
-                ),
-            },
-            {
-                path: 'organizations',
+                // Top-level layout: renders the shared PageShell (Entitlements /
+                // Organizations tabs + "Add organization" action) for list pages.
+                lazy: lazyComponent(() => import('~app/layouts'), 'MainLayout'),
                 children: [
                     {
-                        index: true,
+                        path: 'entitlements',
+                        lazy: lazyComponent(
+                            () => import('~features/entitlements/entitlements-grid'),
+                            'default' as never,
+                        ),
+                    },
+                    {
+                        path: 'organizations',
                         lazy: lazyComponent(
                             () => import('~features/organizations/list/organizations-grid'),
                             'OrganizationsGrid',
                         ),
                     },
+                ],
+            },
+            {
+                path: 'organizations/:organizationId',
+                lazy: lazyComponent(
+                    () => import('~features/organizations/details/details-layout'),
+                    'OrganizationDetailsLayout',
+                ),
+                children: [
+                    { index: true, loader: () => redirect('general') },
                     {
-                        path: ':organizationId',
-                        // Hide the parent AppNav while inside the Details layout.
-                        handle: { hideAppNav: true },
+                        path: 'general',
                         lazy: lazyComponent(
-                            () => import('~features/organizations/details/details-layout'),
-                            'OrganizationDetailsLayout',
+                            () => import('~features/organizations/details/general/general'),
+                            'OrganizationGeneralDetails',
                         ),
-                        children: [
-                            { index: true, loader: () => redirect('general') },
-                            {
-                                path: 'general',
-                                lazy: lazyComponent(
-                                    () => import('~features/organizations/details/general'),
-                                    'OrganizationGeneralDetails',
-                                ),
-                            },
-                            {
-                                path: 'data-sources',
-                                lazy: lazyComponent(
-                                    () =>
-                                        import('~features/organizations/details/data-sources/data-sources'),
-                                    'OrganizationDataSources',
-                                ),
-                            },
-                            {
-                                path: 'users',
-                                lazy: lazyComponent(
-                                    () => import('~features/organizations/details/users/users'),
-                                    'OrganizationUsers',
-                                ),
-                            },
-                        ],
+                    },
+                    {
+                        path: 'data-sources',
+                        lazy: lazyComponent(
+                            () =>
+                                import('~features/organizations/details/data-sources/data-sources'),
+                            'OrganizationDataSources',
+                        ),
+                    },
+                    {
+                        path: 'users',
+                        lazy: lazyComponent(
+                            () => import('~features/organizations/details/users/users'),
+                            'OrganizationUsers',
+                        ),
                     },
                 ],
             },

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+
 import { Button } from '@swo/design-system/button';
-import { Modal } from '@swo/design-system/modal';
 import { Input } from '@swo/design-system/input';
+import { Modal } from '@swo/design-system/modal';
 
 export interface AddOrganizationFormValues {
     name: string;

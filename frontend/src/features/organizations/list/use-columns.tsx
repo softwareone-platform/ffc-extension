@@ -1,16 +1,18 @@
-import { DisplayValue } from '@swo/design-system/utils';
+import { useMemo } from 'react';
+
+import { Link } from 'react-router-dom';
+
 import {
     GridCellSimple,
     GridCellTitleSubtitle,
     GridColumnDefinition,
 } from '@swo/design-system/grid';
-import { Status } from '~shared/components/entity-status-chip';
+import { DisplayValue } from '@swo/design-system/utils';
 import { OrganizationRead } from '@swo/ffc-api-model';
 import { Paths } from '@swo/rql-client';
-import { useFixedT } from '~shared/hooks/use-fixed-t';
-import { useMemo } from 'react';
 
-import { Link } from 'react-router-dom';
+import { Status } from '~shared/components/entity-status-chip';
+import { useFixedT } from '~shared/hooks/use-fixed-t';
 
 type Columns = Array<
     Omit<GridColumnDefinition<OrganizationRead>, 'fields'> & {
@@ -76,7 +78,7 @@ export function useColumns(): Columns {
                 name: 'actions',
                 title: tColumns('actions'),
                 fields: [],
-                cell: (item: OrganizationRead) => <></>,
+                cell: (_item: OrganizationRead) => <></>,
                 initialWidth: 100,
             },
         ];

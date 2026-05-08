@@ -1,10 +1,12 @@
-import { GridFieldDefinition } from '@swo/design-system/grid';
-import { getStatusLabel } from '@swo/mp-status-chip';
-import { useFixedT } from '~shared/hooks/use-fixed-t';
 import { useMemo } from 'react';
 
+import { GridFieldDefinition } from '@swo/design-system/grid';
+import { getStatusLabel } from '@swo/mp-status-chip';
+
+import { useFixedT } from '~shared/hooks/use-fixed-t';
+
 export function useFields() {
-    const tColumns = useFixedT('shared:grid:columns');
+    const _tColumns = useFixedT('shared:grid:columns');
     const tFields = useFixedT('shared:grid:fields');
 
     return useMemo(

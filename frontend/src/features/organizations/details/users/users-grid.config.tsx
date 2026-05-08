@@ -1,10 +1,6 @@
-import { EmployeeRead } from '@swo/ffc-api-model';
-import { GridFieldDefinition } from '@swo/design-system/grid';
-import { Paths } from '@swo/rql-client';
-import { useFixedT } from '~shared/hooks/use-fixed-t';
 import { useMemo } from 'react';
-import { useOrganizationsApi } from '../../api/use-organizations-api';
-import { useReactQueryRqlGrid } from '~shared/hooks/use-react-query-rql-grid';
+
+import { GridFieldDefinition } from '@swo/design-system/grid';
 import {
     GridCellSimple,
     GridCellTitleSubtitle,
@@ -12,6 +8,13 @@ import {
     UseAsyncGridConfig,
     useGridAsync,
 } from '@swo/design-system/grid';
+import { EmployeeRead } from '@swo/ffc-api-model';
+import { Paths } from '@swo/rql-client';
+
+import { useOrganizationsApi } from '~organizations/api';
+import { useFixedT } from '~shared/hooks/use-fixed-t';
+import { useReactQueryRqlGrid } from '~shared/hooks/use-react-query-rql-grid';
+
 // import { useAsyncOptions } from "../hooks/useAsyncOptions";
 
 // import { useViews } from "../hooks/useViews";

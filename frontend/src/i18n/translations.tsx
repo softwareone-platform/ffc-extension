@@ -1,5 +1,6 @@
-import i18next, { InitOptions, TOptions } from 'i18next';
+import i18next, { InitOptions } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
+
 // import { z } from 'zod';
 // import { ZodI18nMapOption, makeZodI18nMap } from 'zod-i18n-map';
 

@@ -1,10 +1,12 @@
+import { useCallback, useMemo } from 'react';
+
+import { AxiosRequestConfig } from 'axios';
+
+import { DatasourceRead, EmployeeRead, OrganizationRead } from '@swo/ffc-api-model';
 import { RqlQuery } from '@swo/rql-client';
 import { Entity } from '@swo/service';
 
-import { useCallback, useMemo } from 'react';
 import { http } from '@mpt-extension/sdk';
-import { DatasourceRead, EmployeeRead, OrganizationRead } from '@swo/ffc-api-model';
-import { AxiosRequestConfig } from 'axios';
 
 export interface ListResponse<T> {
     total: number;
@@ -26,18 +28,15 @@ export function useOrganizationsApi() {
                 ...config,
             });
         },
-        [rootPath],
+        [],
     );
 
-    const get = useCallback(
-        async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
-            return http<OrganizationRead>({
-                method: 'GET',
-                url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ''}`,
-            });
-        },
-        [rootPath],
-    );
+    const get = useCallback(async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
+        return http<OrganizationRead>({
+            method: 'GET',
+            url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ''}`,
+        });
+    }, []);
 
     const listOrganizationEmployees = useCallback(
         async (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
@@ -55,7 +54,7 @@ export function useOrganizationsApi() {
                 url: `${rootPath}/${organizationId}/datasources${query ? `?${query.toString()}` : ''}`,
             });
         },
-        [rootPath],
+        [],
     );
 
     return useMemo(

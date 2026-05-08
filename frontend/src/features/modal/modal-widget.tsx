@@ -1,12 +1,11 @@
-import React from 'react';
 import { Button } from '@swo/design-system/button';
-import './modal-widget.scss';
+
 import { useMPTModal } from '@mpt-extension/sdk-react';
 
-// const { auth, data } = useMPTContext();
+import './modal-widget.scss';
 
-export default () => {
-    const { open, close } = useMPTModal();
+export default function ModalWidget() {
+    const { close } = useMPTModal();
     return (
         <>
             <div className="modal-header modal__container">
@@ -32,4 +31,4 @@ export default () => {
             </div>
         </>
     );
-};
+}

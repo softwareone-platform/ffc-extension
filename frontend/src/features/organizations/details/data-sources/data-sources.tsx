@@ -1,5 +1,6 @@
-import { DataSourcesGrid } from './data-sources-grid';
 import { useParams } from 'react-router-dom';
+
+import { DataSourcesGrid } from './data-sources-grid';
 
 export function OrganizationDataSources() {
     const { organizationId } = useParams();

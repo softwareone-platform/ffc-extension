@@ -1,14 +1,15 @@
-import { buildRqlQuery, GridDefaultConfiguration } from '@swo/design-system/grid';
+import { useCallback, useMemo, useRef, useState } from 'react';
+
 import {
     DefaultError,
-    keepPreviousData,
     QueryKey,
     useQuery,
     useQueryClient,
     UseQueryOptions,
 } from '@tanstack/react-query';
+
+import { buildRqlQuery, GridDefaultConfiguration } from '@swo/design-system/grid';
 import { RqlQuery } from '@swo/rql-client';
-import { useCallback, useMemo, useRef, useState } from 'react';
 
 interface StateRef<TEntity extends object, TOptions> {
     options: TOptions;
