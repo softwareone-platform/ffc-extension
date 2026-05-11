@@ -8,6 +8,8 @@ import { I18nextProvider } from 'react-i18next';
 import { DesignSystemOptionsProvider, type LanguageCode } from '@swo/design-system/utils';
 import { StatusChipLocalisationProvider } from '@swo/mp-status-chip/context';
 
+import { MPTContextProvider } from '~shared/providers/mpt-context-provider';
+
 // import { i18n } from "~i18n/translations";
 
 type RegionalSettings = {
@@ -66,7 +68,9 @@ export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18
         <QueryClientProvider client={queryClient}>
             <DesignSystemOptionsProvider value={providerValue}>
                 <StatusChipLocalisationProvider languageCode={LANGUAGE}>
-                    <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+                    <I18nextProvider i18n={i18n}>
+                        <MPTContextProvider>{children}</MPTContextProvider>
+                    </I18nextProvider>
                 </StatusChipLocalisationProvider>
             </DesignSystemOptionsProvider>
         </QueryClientProvider>

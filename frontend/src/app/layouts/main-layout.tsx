@@ -9,6 +9,7 @@ import {
     AddOrganizationModal,
 } from '~features/organizations/components/add-organization-modal';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
+import { useMPT, useStandAloneApp } from '~shared/providers/mpt-context-provider';
 
 const NAV_ITEMS: PageShellNavItem[] = [
     { path: '/entitlements', label: 'Entitlements' },
@@ -38,21 +39,30 @@ export function MainLayout() {
 
     const navItems = useMemo(() => NAV_ITEMS, []);
 
+    const mpt = useMPT();
+    useEffect(() => {
+        console.log('[entitlements] MPT context:', mpt);
+    }, [mpt]);
+
+    const standAloneApp = useStandAloneApp();
+
     return (
         <>
             <PageShell>
-                <PageShell.Header
-                    items={navItems}
-                    actions={
-                        <Button
-                            type="primary"
-                            onClick={() => setIsAddOpen(true)}
-                            testId="add-organization-button"
-                        >
-                            Add organization
-                        </Button>
-                    }
-                />
+                {standAloneApp && (
+                    <PageShell.Header
+                        items={navItems}
+                        actions={
+                            <Button
+                                type="primary"
+                                onClick={() => setIsAddOpen(true)}
+                                testId="add-organization-button"
+                            >
+                                Add organization
+                            </Button>
+                        }
+                    />
+                )}
                 <PageShell.Content>
                     <Outlet />
                 </PageShell.Content>
