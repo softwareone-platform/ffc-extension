@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 
 import { i18n } from '~i18n/translations';
-import { ExtensionsProvider } from '~shared/providers/extensions-provider';
+import { ExtensionsProvider } from '~shared/providers/ExtensionsProvider';
 
 import '~styles/global.scss';
 

@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { GridFieldDefinition } from '@swo/design-system/grid';
 import { getStatusLabel } from '@swo/mp-status-chip';
 
-import { useFixedT } from '~shared/hooks/use-fixed-t';
+import { useFixedT } from '~shared/hooks/useFixedT';
 
 export function useFields() {
     const _tColumns = useFixedT('shared:grid:columns');

@@ -20,7 +20,7 @@ import { Entity } from '@swo/service';
 // import {useMPTContext, useMPTModal} from '@mpt-extension/sdk-react';
 import { http } from '@mpt-extension/sdk';
 
-import { useFixedT } from '~shared/hooks/use-fixed-t';
+import { useFixedT } from '~shared/hooks/useFixedT';
 
 function capitalizeFirstLetter(val: string): string {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);

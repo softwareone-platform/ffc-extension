@@ -12,7 +12,7 @@ import { OrganizationRead } from '@swo/ffc-api-model';
 import { Paths } from '@swo/rql-client';
 
 import { Status } from '~shared/components/entity-status-chip';
-import { useFixedT } from '~shared/hooks/use-fixed-t';
+import { useFixedT } from '~shared/hooks/useFixedT';
 
 type Columns = Array<
     Omit<GridColumnDefinition<OrganizationRead>, 'fields'> & {

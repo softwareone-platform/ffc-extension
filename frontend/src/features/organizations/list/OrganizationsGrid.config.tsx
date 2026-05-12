@@ -4,10 +4,10 @@ import { UseAsyncGridConfig, useGridAsync } from '@swo/design-system/grid';
 import { OrganizationRead } from '@swo/ffc-api-model';
 import { Entity } from '@swo/service';
 
-import { useAsyncOptions } from './use-async-options';
-import { useColumns } from './use-columns';
-import { useFields } from './use-fields';
-import { useViews } from './use-views';
+import { useAsyncOptions } from './useAsyncOptions';
+import { useColumns } from './useColumns';
+import { useFields } from './useFields';
+import { useViews } from './useViews';
 
 const _defaultFilter = {
     operator: 'and',

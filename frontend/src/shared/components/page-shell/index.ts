@@ -1,7 +1,7 @@
-export { PageShell } from './page-shell';
+export { PageShell } from './PageShell';
 export type {
     PageShellNavItem,
     PageShellProps,
     PageShellHeaderProps,
     PageShellContentProps,
-} from './page-shell';
+} from './PageShell';

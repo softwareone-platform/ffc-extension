@@ -7,9 +7,9 @@ import { Button } from '@swo/design-system/button';
 import {
     AddOrganizationFormValues,
     AddOrganizationModal,
-} from '~features/organizations/components/add-organization-modal';
+} from '~features/organizations/components/AddOrganizationModal';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
-import { useMPT, useStandAloneApp } from '~shared/providers/mpt-context-provider';
+import { useMPT, useStandAloneApp } from '~shared/providers/MPTContextProvider';
 
 const NAV_ITEMS: PageShellNavItem[] = [
     { path: '/entitlements', label: 'Entitlements' },

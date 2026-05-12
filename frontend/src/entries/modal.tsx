@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 
-import Modal from '~features/modal/modal-widget';
+import Modal from '~features/modal/ModalWidget';
 
 import '~styles/global.scss';
 

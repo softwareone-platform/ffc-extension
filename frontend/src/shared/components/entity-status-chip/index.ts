@@ -1,1 +1,1 @@
-export { Status } from './entity-status-chip';
+export { Status } from './EntityStatusChip';

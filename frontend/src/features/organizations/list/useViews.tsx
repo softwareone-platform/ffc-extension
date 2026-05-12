@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useFixedT } from '~shared/hooks/use-fixed-t';
+import { useFixedT } from '~shared/hooks/useFixedT';
 
 export function useViews() {
     const tView = useFixedT('shared:grid:views');

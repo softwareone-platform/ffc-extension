@@ -8,7 +8,7 @@ import { I18nextProvider } from 'react-i18next';
 import { DesignSystemOptionsProvider, type LanguageCode } from '@swo/design-system/utils';
 import { StatusChipLocalisationProvider } from '@swo/mp-status-chip/context';
 
-import { MPTContextProvider } from '~shared/providers/mpt-context-provider';
+import { MPTContextProvider } from '~shared/providers/MPTContextProvider';
 
 // import { i18n } from "~i18n/translations";
 

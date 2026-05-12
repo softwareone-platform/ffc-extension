@@ -12,8 +12,8 @@ import { EmployeeRead } from '@swo/ffc-api-model';
 import { Paths } from '@swo/rql-client';
 
 import { useOrganizationsApi } from '~organizations/api';
-import { useFixedT } from '~shared/hooks/use-fixed-t';
-import { useReactQueryRqlGrid } from '~shared/hooks/use-react-query-rql-grid';
+import { useFixedT } from '~shared/hooks/useFixedT';
+import { useReactQueryRqlGrid } from '~shared/hooks/useReactQueryRqlGrid';
 
 // import { useAsyncOptions } from "../hooks/useAsyncOptions";
 

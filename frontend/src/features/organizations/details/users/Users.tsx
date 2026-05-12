@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 
-import { UsersGrid } from './users-grid';
+import { UsersGrid } from './UsersGrid';
 
 export function OrganizationUsers() {
     const { organizationId } = useParams();

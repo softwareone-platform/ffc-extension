@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@swo/design-system/button';
-import './modal.scss';
+import './ModalWidget.scss';
 import { useMPTModal } from '@mpt-extension/sdk-react';
 
 // const { auth, data } = useMPTContext();

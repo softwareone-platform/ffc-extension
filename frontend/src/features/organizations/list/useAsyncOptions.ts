@@ -2,7 +2,7 @@ import { OrganizationRead } from '@swo/ffc-api-model';
 import { Entity } from '@swo/service';
 
 import { useOrganizationsApi } from '~organizations/api';
-import { useReactQueryRqlGrid } from '~shared/hooks/use-react-query-rql-grid';
+import { useReactQueryRqlGrid } from '~shared/hooks/useReactQueryRqlGrid';
 
 export interface AxiosResponseData<T> {
     data: T | null;

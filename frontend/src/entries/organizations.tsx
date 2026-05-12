@@ -2,13 +2,13 @@ import { createRoot } from 'react-dom/client';
 
 import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
 
-import { OrganizationDataSources } from '~features/organizations/details/data-sources/data-sources';
-import { OrganizationDetailsLayout } from '~features/organizations/details/details-layout';
-import { OrganizationGeneralDetails } from '~features/organizations/details/general/general';
-import { OrganizationUsers } from '~features/organizations/details/users/users';
-import { OrganizationsGrid } from '~features/organizations/list/organizations-grid';
+import { OrganizationDataSources } from '~features/organizations/details/data-sources/DataSources';
+import { OrganizationDetailsLayout } from '~features/organizations/details/DetailsLayout';
+import { OrganizationGeneralDetails } from '~features/organizations/details/general/General';
+import { OrganizationUsers } from '~features/organizations/details/users/Users';
+import { OrganizationsGrid } from '~features/organizations/list/OrganizationsGrid';
 import { i18n } from '~i18n/translations';
-import { ExtensionsProvider } from '~shared/providers/extensions-provider';
+import { ExtensionsProvider } from '~shared/providers/ExtensionsProvider';
 
 import '~styles/global.scss';
 

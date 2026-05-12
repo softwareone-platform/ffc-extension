@@ -18,7 +18,7 @@ const lazyComponent =
 export const router = createHashRouter([
     {
         path: '/',
-        lazy: lazyComponent(() => import('~app/app-shell'), 'AppShell'),
+        lazy: lazyComponent(() => import('~app/AppShell'), 'AppShell'),
         children: [
             { index: true, loader: () => redirect('/entitlements') },
             {
@@ -29,14 +29,14 @@ export const router = createHashRouter([
                     {
                         path: 'entitlements',
                         lazy: lazyComponent(
-                            () => import('~features/entitlements/entitlements-grid'),
+                            () => import('~features/entitlements/EntitlementsGrid'),
                             'default' as never,
                         ),
                     },
                     {
                         path: 'organizations',
                         lazy: lazyComponent(
-                            () => import('~features/organizations/list/organizations-grid'),
+                            () => import('~features/organizations/list/OrganizationsGrid'),
                             'OrganizationsGrid',
                         ),
                     },
@@ -45,7 +45,7 @@ export const router = createHashRouter([
             {
                 path: 'organizations/:organizationId',
                 lazy: lazyComponent(
-                    () => import('~features/organizations/details/details-layout'),
+                    () => import('~features/organizations/details/DetailsLayout'),
                     'OrganizationDetailsLayout',
                 ),
                 children: [
@@ -53,7 +53,7 @@ export const router = createHashRouter([
                     {
                         path: 'general',
                         lazy: lazyComponent(
-                            () => import('~features/organizations/details/general/general'),
+                            () => import('~features/organizations/details/general/General'),
                             'OrganizationGeneralDetails',
                         ),
                     },
@@ -61,14 +61,14 @@ export const router = createHashRouter([
                         path: 'data-sources',
                         lazy: lazyComponent(
                             () =>
-                                import('~features/organizations/details/data-sources/data-sources'),
+                                import('~features/organizations/details/data-sources/DataSources'),
                             'OrganizationDataSources',
                         ),
                     },
                     {
                         path: 'users',
                         lazy: lazyComponent(
-                            () => import('~features/organizations/details/users/users'),
+                            () => import('~features/organizations/details/users/Users'),
                             'OrganizationUsers',
                         ),
                     },

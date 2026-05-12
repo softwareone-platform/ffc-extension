@@ -3,9 +3,9 @@ import { Grid } from '@swo/design-system/grid';
 import { OrganizationRead } from '@swo/ffc-api-model';
 import { Entity } from '@swo/service';
 
-import { useFixedT } from '~shared/hooks/use-fixed-t';
+import { useFixedT } from '~shared/hooks/useFixedT';
 
-import { useGridConfig } from './organizations-grid.config';
+import { useGridConfig } from './OrganizationsGrid.config';
 
 export function OrganizationsGrid() {
     // const {auth, data} = useMPTContext();

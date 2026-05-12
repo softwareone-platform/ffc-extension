@@ -8,7 +8,7 @@ import { OrganizationRead } from '@swo/ffc-api-model';
 import { Status } from '~shared/components/entity-status-chip';
 import { PageShell } from '~shared/components/page-shell';
 
-import './details-layout.scss';
+import './DetailsLayout.scss';
 
 import { useOrganizationDetailsApi } from '~organizations/api';
 

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { useOrganizationsApi } from './use-organizations-api';
+import { useOrganizationsApi } from './useOrganizationsApi';
 
 export function useOrganizationDetailsApi(organizationId: string | undefined) {
     const { get } = useOrganizationsApi();
