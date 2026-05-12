@@ -17,7 +17,7 @@ export function Organizations() {
       <Routes>
         <Route
           element={
-            <div data-testid={"billing"}>
+            <div data-testid={"ffc-organizations"}>
               <Suspense fallback={<></>}>
                 <Outlet></Outlet>
               </Suspense>

@@ -1,0 +1,180 @@
+import DataSourceIcon from '../../../shared/components/DataSourceIcon';
+import { EntitlementRead } from '@swo/ffc-api-model';
+import { EntityReferenceCell } from '@swo/design-system/entity-reference-cell';
+import { GridFieldDefinition } from '@swo/design-system/grid';
+import { Link } from 'react-router';
+import { mapAxiosResponseDataList } from '../../Organizations/hooks/useAsyncOptions';
+import { Paths } from '@swo/rql-client';
+import { Status } from '../../../shared/components/Status';
+import { useEntitlementsApi } from '../hooks/useEntitlementsApi';
+import { useFixedT } from '../../../shared/hooks/useFixedT';
+import { useMemo } from 'react';
+import { useReactQueryRqlGrid } from '../../../shared/hooks/useReactQueryRqlGrid';
+import {
+  GridCellSimple,
+  GridCellTitleSubtitle,
+  GridColumnDefinition,
+  UseAsyncGridConfig,
+  useGridAsync,
+} from "@swo/design-system/grid";
+
+const defaultFilter = {
+  operator: "and",
+  value: [{ operator: "eq", field: "status", value: "active" }],
+};
+const sort = [{ field: "event.created.at", direction: "desc" }];
+
+type Columns = Array<
+  Omit<GridColumnDefinition<EntitlementRead>, "fields"> & {
+    fields: Paths<EntitlementRead>[];
+  }
+>;
+
+export function useColumns(): Columns {
+  const tColumns = useFixedT("shared:grid:columns");
+
+  return useMemo(() => {
+    return [
+      {
+        name: "name",
+        title: tColumns("entitlement"),
+        fields: ["name", "id"],
+        cell: (item: EntitlementRead) => (
+            <GridCellTitleSubtitle
+            title={<Link to={`/${item.id}`}>{item.name}</Link>}
+            subtitle={item.id}
+          />
+          // <GridCellTitleSubtitle title={item.name} subtitle={item.id} />
+        ),
+        initialWidth: 350,
+      },
+      {
+        name: "affiliate_external_id",
+        title: tColumns("affiliate_external_id"),
+        fields: ["affiliate_external_id"],
+        cell: (item: EntitlementRead) => (
+          // <GridCellSimple>{item.affiliate_external_id}</GridCellSimple>
+
+          <GridCellTitleSubtitle
+            title={item.owner.name}
+            subtitle={item.owner.id}
+          />
+        ),
+        initialWidth: 150,
+      },
+
+      {
+        name: "data_source",
+        title: tColumns("data_source"),
+        fields: [
+          "linked_datasource_name",
+          "linked_datasource_id",
+          "linked_datasource_type",
+        ],
+        cell: (item: EntitlementRead) => (
+          <GridCellSimple>
+            {item.linked_datasource_id && (
+              <EntityReferenceCell
+                primaryContent={item.linked_datasource_name as string}
+                secondaryContent={item.linked_datasource_id as string}
+                secondaryContentMaxHeight={50}
+                icon={
+                  <DataSourceIcon
+                    name={item.linked_datasource_type as string}
+                    size={48}
+                  />
+                }
+              />
+            )}
+          </GridCellSimple>
+        ),
+        initialWidth: 250,
+      },
+      {
+        name: "organization",
+        title: tColumns("organization"),
+        fields: [],
+        cell: (item: EntitlementRead) => (
+          <>
+            {item.events.redeemed && (
+              <GridCellTitleSubtitle
+                title={item.events.redeemed?.by.name}
+                subtitle={item.events.redeemed?.by.id}
+              />
+            )}
+          </>
+        ),
+        initialWidth: 150,
+      },
+      {
+        name: "status",
+        title: tColumns("status"),
+        fields: ["status"],
+        cell: (item: EntitlementRead) => (
+          <GridCellSimple>
+            <Status<EntitlementRead> item={item}></Status>
+          </GridCellSimple>
+        ),
+        initialWidth: 100,
+      },
+    ];
+  }, []);
+}
+
+export function useFields() {
+  const tColumns = useFixedT("shared:grid:columns");
+  const tFields = useFixedT("shared:grid:fields");
+
+  return useMemo(
+    (): GridFieldDefinition[] => [
+      {
+        title: tFields("id"),
+        name: "id",
+      },
+      { title: tFields("entitlement"), name: "name" },
+      {
+        title: tFields("affiliate_external_id"),
+        name: "affiliate_external_id",
+      },
+    ],
+    [tFields],
+  );
+}
+
+export function useAsyncOptions() {
+  const { list } = useEntitlementsApi();
+  const baseQueryKey: any = "EntitlementsList";
+  return useReactQueryRqlGrid<
+    EntitlementRead,
+    Awaited<ReturnType<typeof list>>
+  >(baseQueryKey, (query) => ({
+    queryKey: [baseQueryKey, query.toString()],
+    queryFn: () => list(query),
+    select: mapAxiosResponseDataList<EntitlementRead>,
+  }));
+}
+
+export function useGridConfig() {
+  const columns = useColumns();
+  const fields = useFields();
+  // const views = useViews();
+  const asyncOptions = useAsyncOptions();
+
+  const config = useMemo(
+    () =>
+      ({
+        id: "grid__entitlements-details-users",
+        // memoizeId: 'gridWithRqlStory',
+        // views,
+        columns,
+        fields,
+        isDefaultView: true,
+        selectedView: "default",
+        ...asyncOptions,
+      }) as UseAsyncGridConfig<EntitlementRead>,
+    [columns, defaultFilter, sort, fields, asyncOptions],
+  );
+
+  const gridProps = useGridAsync(config);
+  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+}

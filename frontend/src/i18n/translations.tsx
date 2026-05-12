@@ -18,8 +18,6 @@ i18n.use(
 
     const translations = resource.default ?? {};
 
-    console.log(`Loaded translations for language ${language}:`, translations);
-
     i18n.addResourceBundle(language, 'mpt', translations, true);
 
     return translations;

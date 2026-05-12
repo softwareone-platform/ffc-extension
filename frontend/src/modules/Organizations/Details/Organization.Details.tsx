@@ -6,6 +6,8 @@ import { lazy, useEffect, useMemo } from "react";
 import { Navigation } from "@swo/design-system/navigation";
 import { Status } from "../../../shared/components/Status";
 import { OrganizationRead } from "@swo/ffc-api-model";
+import { EntityReference } from "@swo/design-system/entity-reference";
+import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 
 const OrganizationGeneralDetails = lazy(() =>
   import("./General").then((m) => ({
@@ -30,39 +32,30 @@ export function OrganizationDetails() {
   //   const baseQueryKey = useBaseQueryKey("Journal");
   const entityQueryKey = useMemo(
     () => ["Organizations", "Details", organizationId],
-    ["Organizations", organizationId],
+    [organizationId],
   );
   const { data: entity, isLoading } = useQuery({
     queryKey: entityQueryKey,
-    queryFn: () =>
-      get(
-        organizationId!
-      ),
-    select: (res) => res.data
+    queryFn: () => get(organizationId!),
+    select: (res) => res.data,
   });
 
-  useEffect(() => {
-    console.log(entity);
-  }, [entity]);
-
   return (
-    <>
-      <Card className={"organization-details-header"}>
+    <OrganizationsProvider organization={entity!}>
+      <Card className={"details-header"}>
         {entity && entity.id && (
-          <>
-            <h1>{entity?.name}</h1>
-            <Status<OrganizationRead> item={entity}></Status>
-          </>
+          <EntityReference
+            primaryContent={entity.name}
+            secondaryContent={entity.id}
+          />
         )}
         <Link to={"/"}>Back</Link>
       </Card>
       <Navigation.TopBar
         items={[
-          { label: "General", path: `/${entity?.id}/general` },
-          { label: "Data Sources", path: `/${entity?.id}/data-sources` },
-          { label: "Users", path: `/${entity?.id}/users` }
-          // { label: "Details", path: `/${entity?.id}/details` },
-          // { label: "Audit Trail", path: `/${entity?.id}/audit-trail` },
+          { label: "General", path: `/${organizationId}/general` },
+          { label: "Data Sources", path: `/${organizationId}/data-sources` },
+          { label: "Users", path: `/${organizationId}/users` },
         ]}
       ></Navigation.TopBar>
 
@@ -73,11 +66,15 @@ export function OrganizationDetails() {
             index
             element={<OrganizationGeneralDetails />}
           />
-          <Route path="data-sources" index element={<OrganizationDataSources />} />
+          <Route
+            path="data-sources"
+            index
+            element={<OrganizationDataSources />}
+          />
           <Route path="users" index element={<OrganizationUsers />} />
           <Route path="*" element={<Navigate to={"../general"} replace />} />
         </Routes>
       </Card>
-    </>
+    </OrganizationsProvider>
   );
 }

@@ -1,12 +1,7 @@
-import { I18nextProvider } from 'react-i18next';
-import {
-  PropsWithChildren,
-  useEffect,
-  useMemo,
-  useState
-  } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StatusChipLocalisationProvider } from '@swo/mp-status-chip/context';
+import { I18nextProvider } from "react-i18next";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StatusChipLocalisationProvider } from "@swo/mp-status-chip/context";
 // import "../styles.scss";
 import type { i18n } from "i18next";
 
@@ -23,12 +18,17 @@ type RegionalSettings = {
   firstDayOfWeek: number;
 };
 
-const STALE_TIME = 5000;
-// const STALE_TIME = 1000 * 60 * 5;
+// const STALE_TIME = 5000;
+const STALE_TIME = 1000 * 60 * 5;
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: STALE_TIME, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false },
+    queries: {
+      staleTime: STALE_TIME,
+      retry: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
     mutations: { retry: false },
   },
 });
@@ -40,7 +40,7 @@ export function ExtensionsProvider({
   const [isLoaded, setIsLoaded] = useState(false);
   const language: LanguageCode = "en-US";
   const regionalSettings: RegionalSettings = {
-    dateFormat: "MM/DD/YYYY",
+    dateFormat: "d MMM yyyy",
     timeFormat: "HH:mm:ss",
     timeZone: "UTC",
     firstDayOfWeek: 0,
@@ -56,8 +56,6 @@ export function ExtensionsProvider({
       if (!language) {
         return;
       }
-
-      console.log(`Setting language to ${language}`);
 
       await i18n.changeLanguage(language);
 

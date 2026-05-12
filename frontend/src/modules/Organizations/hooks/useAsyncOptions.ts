@@ -31,6 +31,7 @@ export function ensureArray<TArray extends unknown[]>(
   return value;
 }
 
+// TODO: move to shared utils
 export function mapAxiosResponseDataList<T>(
   res: AxiosResponseData<ListResponse<T>>,
 ) {
@@ -38,8 +39,6 @@ export function mapAxiosResponseDataList<T>(
   const limit = res?.data?.limit ?? 0;
   const total = res?.data?.total;
   const data = ensureArray(res?.data?.items);
-
-  console.log("Mapping response data...", { offset, limit, total, data, res });
   if (limit && data.length < limit && total === undefined) {
     return { data, total: offset + data.length };
   }

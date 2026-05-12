@@ -89,15 +89,14 @@ export function useReactQueryRqlGrid<
   }, [queryClient]);
 
   const refresh = useCallback(async () => {
-    console.log("Refreshing data...", stateRef.current);
     setIsSilentRefresh(false);
-    console.log("Invalidating queries with key:", stateRef.current.baseQueryKey);
-    console.log(queryClient.getQueryCache().getAll());
-    queryClient.invalidateQueries({ queryKey: stateRef.current.options.queryKey });
+
+    queryClient.invalidateQueries({
+      queryKey: stateRef.current.options.queryKey,
+    });
   }, [queryClient]);
 
   const silentRefresh = useCallback(async () => {
-    console.log("Silent Refreshing data...", stateRef.current);
     setIsSilentRefresh(true);
     queryClient.invalidateQueries({ queryKey: stateRef.current.baseQueryKey });
   }, [queryClient]);

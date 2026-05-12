@@ -13,6 +13,9 @@ const ctx = await context({
   format: 'esm',
   sourcemap: true,
   allowOverwrite: true,
+  loader: {
+    '.svg': 'dataurl'
+  },
   define: {
     "process.env.NODE_ENV": env,
   },

@@ -12,6 +12,7 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { GridCellDate } from "../../../shared/components/Grid/GridCellDate";
 // import { useAsyncOptions } from "../hooks/useAsyncOptions";
 
 // import { useViews } from "../hooks/useViews";
@@ -62,6 +63,25 @@ export function useColumns(): Columns {
         initialWidth: 150,
       },
       {
+        name: "last_login",
+        title: tColumns("lastLogin"),
+        fields: ["last_login"],
+        cell: (item: EmployeeRead) => (
+          // <GridCellSimple>{item.last_login}</GridCellSimple>
+          <GridCellDate value={item.last_login} />
+        ),
+        initialWidth: 150,
+      },
+      {
+        name: "created_at",
+        title: tColumns("createdAt"),
+        fields: ["created_at"],
+        cell: (item: EmployeeRead) => (
+          <GridCellDate value={item.created_at} />
+        ),
+        initialWidth: 150,
+      },
+      {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
@@ -84,7 +104,8 @@ export function useFields() {
       },
       { title: tFields("email"), name: "email" },
       { title: tFields("displayName"), name: "display_name" },
-      { title: tFields("rolesCount"), name: "roles_count" },
+      { title: tFields("lastLogin"), name: "last_login" },
+      { title: tFields("createdAt"), name: "created_at" },
     ],
     [tFields],
   );

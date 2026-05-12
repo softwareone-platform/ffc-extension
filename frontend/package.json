@@ -26,6 +26,7 @@
     "@swo/ffc-api-model": "./swo-ffc-api-model-5.0.0-rc.1.tgz",
     "@swo/mp-api-model": "^5.2.524",
     "@swo/mp-status-chip": "^5.0.10",
+    "@swo/mp-timestamps": "^6.0.2",
     "@swo/rql-client": "^5.0.13",
     "@swo/service": "^5.0.2",
     "@tanstack/react-query": "^5.99.2",

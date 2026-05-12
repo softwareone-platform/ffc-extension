@@ -1,5 +1,7 @@
 import { DatasourceRead } from "@swo/ffc-api-model";
-import { GridFieldDefinition } from "@swo/design-system/grid";
+import {
+  GridFieldDefinition,
+} from "@swo/design-system/grid";
 import { Paths } from "@swo/rql-client";
 import { useFixedT } from "../../../shared/hooks/useFixedT";
 import { useMemo } from "react";
@@ -11,6 +13,10 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
+import DataSourceIcon from "../../../shared/components/DataSourceIcon";
+import { GridCellCurrency } from "../../../shared/components/Grid/GridCellCurrency";
+import { useOrganizationContext } from "../providers/OrganizationsProvider";
 
 const defaultFilter = {
   operator: "and",
@@ -26,23 +32,24 @@ type Columns = Array<
 
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
+  const tDataSourceType = useFixedT("shared:grid:dataSourceType");
+  const organization = useOrganizationContext();
 
   return useMemo(() => {
     return [
       {
-        name: "id",
-        title: tColumns("id"),
-        fields: ["id"],
-        cell: (item: DatasourceRead) => (
-          <GridCellSimple>{item.id}</GridCellSimple>
-        ),
-      },
-      {
         name: "name",
-        title: tColumns("name"),
+        title: tColumns("dataSource"),
         fields: ["name"],
         cell: (item: DatasourceRead) => (
-          <GridCellSimple>{item.name}</GridCellSimple>
+          <GridCellSimple>
+            <EntityReferenceCell
+              primaryContent={item.name}
+              secondaryContent={item.id}
+              secondaryContentMaxHeight={50}
+              icon={<DataSourceIcon name={item.type} size={48} />}
+            />
+          </GridCellSimple>
         ),
       },
       {
@@ -50,22 +57,55 @@ export function useColumns(): Columns {
         title: tColumns("type"),
         fields: ["type"],
         cell: (item: DatasourceRead) => (
-          <GridCellSimple>{item.type}</GridCellSimple>
+          <GridCellSimple>{tDataSourceType(item.type)}</GridCellSimple>
         ),
       },
       {
-        name: "actions",
-        title: tColumns("actions"),
-        fields: [],
-        cell: (item: DatasourceRead) => <></>,
-        initialWidth: 100,
+        name: "parent_id",
+        title: tColumns("parent_id"),
+        fields: ["parent_id"],
+        cell: (item: DatasourceRead) => (
+          <GridCellSimple>{item.parent_id}</GridCellSimple>
+        ),
+      },
+      {
+        name: "resources_charged_this_month",
+        title: tColumns("resources_charged_this_month"),
+        fields: ["resources_charged_this_month"],
+        cell: (item: DatasourceRead) => (
+          <GridCellCurrency
+            value={item.resources_charged_this_month}
+            currency={""}
+          />
+        ),
+      },
+      {
+        name: "expenses_so_far_this_month",
+        title: tColumns("expenses_so_far_this_month"),
+        fields: ["expenses_so_far_this_month"],
+        cell: (item: DatasourceRead) => (
+          <GridCellCurrency
+            value={item.expenses_so_far_this_month}
+            currency={organization?.currency || ""}
+          />
+        ),
+      },
+      {
+        name: "expenses_forecast_this_month",
+        title: tColumns("expenses_forecast_this_month"),
+        fields: ["expenses_forecast_this_month"],
+        cell: (item: DatasourceRead) => (
+          <GridCellCurrency
+            value={item.expenses_forecast_this_month}
+            currency={organization?.currency || ""}
+          />
+        ),
       },
     ];
-  }, []);
+  }, [tColumns, tDataSourceType, organization]);
 }
 
 export function useFields() {
-  const tColumns = useFixedT("shared:grid:columns");
   const tFields = useFixedT("shared:grid:fields");
 
   return useMemo(
