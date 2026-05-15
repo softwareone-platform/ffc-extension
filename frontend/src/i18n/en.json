@@ -75,6 +75,7 @@
       "created": "Created",
       "updated": "Updated",
       "redeemed": "Redeemed",
+      "terminated": "Terminated",
       "expensesInfo": "Expenses information",
       "currency": "Currency",
       "billingCurrency": "Billing currency"

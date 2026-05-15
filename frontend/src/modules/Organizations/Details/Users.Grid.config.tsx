@@ -1,4 +1,5 @@
 import { EmployeeRead } from "@swo/ffc-api-model";
+import { GridCellDate } from "../../../shared/components/Grid/GridCellDate";
 import { GridFieldDefinition } from "@swo/design-system/grid";
 import { Paths } from "@swo/rql-client";
 import { useFixedT } from "../../../shared/hooks/useFixedT";
@@ -12,7 +13,6 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
-import { GridCellDate } from "../../../shared/components/Grid/GridCellDate";
 // import { useAsyncOptions } from "../hooks/useAsyncOptions";
 
 // import { useViews } from "../hooks/useViews";
@@ -36,7 +36,7 @@ export function useColumns(): Columns {
     return [
       {
         name: "email",
-        title: tColumns("organization"),
+        title: tColumns("email"),
         fields: ["email"],
         cell: (item: EmployeeRead) => (
           <GridCellSimple>{item.email}</GridCellSimple>
@@ -76,9 +76,7 @@ export function useColumns(): Columns {
         name: "created_at",
         title: tColumns("createdAt"),
         fields: ["created_at"],
-        cell: (item: EmployeeRead) => (
-          <GridCellDate value={item.created_at} />
-        ),
+        cell: (item: EmployeeRead) => <GridCellDate value={item.created_at} />,
         initialWidth: 150,
       },
       {
@@ -118,7 +116,7 @@ export function useAsyncOptions(organizationId: string) {
     EmployeeRead,
     Awaited<ReturnType<typeof listOrganizationEmployees>>
   >(baseQueryKey, (query) => ({
-    queryKey: [baseQueryKey, query.toString()],
+    queryKey: [baseQueryKey, query.toString(), organizationId],
     queryFn: () => listOrganizationEmployees(organizationId, query),
     select: (res) => {
       return { data: res.data, total: undefined };

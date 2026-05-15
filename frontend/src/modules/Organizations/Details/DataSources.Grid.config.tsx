@@ -1,10 +1,12 @@
+import DataSourceIcon from "../../../shared/components/DataSourceIcon";
 import { DatasourceRead } from "@swo/ffc-api-model";
-import {
-  GridFieldDefinition,
-} from "@swo/design-system/grid";
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
+import { GridCellCurrency } from "../../../shared/components/Grid/GridCellCurrency";
+import { GridFieldDefinition } from "@swo/design-system/grid";
 import { Paths } from "@swo/rql-client";
 import { useFixedT } from "../../../shared/hooks/useFixedT";
 import { useMemo } from "react";
+import { useOrganizationContext } from "../providers/OrganizationsProvider";
 import { useOrganizationsApi } from "../hooks/useOrganizationsApi";
 import { useReactQueryRqlGrid } from "../../../shared/hooks/useReactQueryRqlGrid";
 import {
@@ -13,10 +15,6 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
-import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import DataSourceIcon from "../../../shared/components/DataSourceIcon";
-import { GridCellCurrency } from "../../../shared/components/Grid/GridCellCurrency";
-import { useOrganizationContext } from "../providers/OrganizationsProvider";
 
 const defaultFilter = {
   operator: "and",
@@ -128,7 +126,7 @@ export function useAsyncOptions(organizationId: string) {
     DatasourceRead,
     Awaited<ReturnType<typeof listOrganizationDataSources>>
   >(baseQueryKey, (query) => ({
-    queryKey: [baseQueryKey, query.toString()],
+    queryKey: [baseQueryKey, query.toString(), organizationId],
     queryFn: () => listOrganizationDataSources(organizationId, query),
     select: (res) => {
       return { data: res.data, total: undefined };

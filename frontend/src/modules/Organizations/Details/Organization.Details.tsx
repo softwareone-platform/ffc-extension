@@ -1,13 +1,19 @@
+import { Button } from "@swo/design-system/button";
 import { Card } from "@swo/design-system/card";
-import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { useOrganizationsApi } from "../hooks/useOrganizationsApi";
-import { lazy, useEffect, useMemo } from "react";
-import { Navigation } from "@swo/design-system/navigation";
-import { Status } from "../../../shared/components/Status";
-import { OrganizationRead } from "@swo/ffc-api-model";
 import { EntityReference } from "@swo/design-system/entity-reference";
+import { lazy, useMemo } from "react";
+import { Navigation } from "@swo/design-system/navigation";
 import { OrganizationsProvider } from "../providers/OrganizationsProvider";
+import { useOrganizationsApi } from "../hooks/useOrganizationsApi";
+import { useQuery } from "@tanstack/react-query";
+
+import {
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
 const OrganizationGeneralDetails = lazy(() =>
   import("./General").then((m) => ({
@@ -40,6 +46,8 @@ export function OrganizationDetails() {
     select: (res) => res.data,
   });
 
+  let navigate = useNavigate();
+
   return (
     <OrganizationsProvider organization={entity!}>
       <Card className={"details-header"}>
@@ -49,7 +57,9 @@ export function OrganizationDetails() {
             secondaryContent={entity.id}
           />
         )}
-        <Link to={"/"}>Back</Link>
+        <Button type="outline" onClick={() => navigate("/")}>
+          Back
+        </Button>
       </Card>
       <Navigation.TopBar
         items={[

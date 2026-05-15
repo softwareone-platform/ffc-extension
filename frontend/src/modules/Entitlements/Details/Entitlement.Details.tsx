@@ -1,5 +1,11 @@
 import { Card } from "@swo/design-system/card";
-import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { lazy, useMemo } from "react";
@@ -30,6 +36,7 @@ export function EntitlementDetails() {
     queryFn: () => get(entitlementId!),
     select: (res) => res.data,
   });
+  let navigate = useNavigate();
 
   const tProperties = useFixedT("shared:grid:columns");
 
@@ -42,7 +49,10 @@ export function EntitlementDetails() {
             secondaryContent={entity.id}
           />
         )}
-        <Link to={"/"}>Back</Link>
+        {/* <Link to={"/"}>Back</Link> */}
+        <Button type="outline" onClick={() => navigate("/")}>
+          Back
+        </Button>
       </Card>
       <Navigation.Highlights>
         {entity && entity.id && (
@@ -83,8 +93,7 @@ export function EntitlementDetails() {
         items={[{ label: "General", path: `/${entity?.id}/general` }]}
       >
         <Navigation.TopBar.Actions>
-          <Button>Primary action</Button>
-          <Button type="secondary">Button</Button>
+          <Button isDisabled={true}>Redeem</Button>
         </Navigation.TopBar.Actions>
       </Navigation.TopBar>
 
