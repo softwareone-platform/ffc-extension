@@ -9,11 +9,11 @@ import { useColumns } from './useColumns';
 import { useFields } from './useFields';
 import { useViews } from './useViews';
 
-const _defaultFilter = {
-    operator: 'and',
-    value: [{ operator: 'eq', field: 'status', value: 'active' }],
-};
-const _sort = [{ field: 'event.created.at', direction: 'desc' }];
+// const _defaultFilter = {
+//     operator: 'and',
+//     value: [{ operator: 'eq', field: 'status', value: 'active' }],
+// };
+// const _sort = [{ field: 'event.created.at', direction: 'desc' }];
 
 export function useGridConfig() {
     const columns = useColumns();

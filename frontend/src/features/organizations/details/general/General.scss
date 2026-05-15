@@ -1,0 +1,23 @@
+.properties-section {
+  display: grid;
+  grid-template-columns: max-content auto;
+  gap: var(--spacing-2);
+  margin: 0 var(--spacing-1);
+
+  dt,
+  dd {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    min-height: var(--spacing-3);
+  }
+
+  dt {
+    font-weight: normal;
+    min-width: 80px;
+  }
+  dd {
+    min-width: 200px;
+    font-weight: 500;
+  }
+}

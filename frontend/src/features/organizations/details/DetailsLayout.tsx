@@ -11,6 +11,7 @@ import { PageShell } from '~shared/components/page-shell';
 import './DetailsLayout.scss';
 
 import { useOrganizationDetailsApi } from '~organizations/api';
+import { OrganizationsProvider } from '../providers/OrganizationsProvider';
 
 const TABS: Array<{ id: string; label: string; segment: string }> = [
     { id: 'general', label: 'General', segment: 'general' },
@@ -69,6 +70,7 @@ export function OrganizationDetailsLayout() {
                 }}
             />
             <PageShell.Content>
+                <OrganizationsProvider organization={entity!}>
                 <Tabs
                     selectedTabId={selectedTabId}
                     onTabChange={(id) => {
@@ -84,6 +86,7 @@ export function OrganizationDetailsLayout() {
                         </Tab>
                     ))}
                 </Tabs>
+                </OrganizationsProvider>
             </PageShell.Content>
         </PageShell>
     );

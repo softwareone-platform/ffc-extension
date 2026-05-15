@@ -25,7 +25,7 @@ const STALE_TIME = 5000;
 const LANGUAGE: LanguageCode = 'en-US';
 
 const REGIONAL_SETTINGS: RegionalSettings = {
-    dateFormat: 'MM/DD/YYYY',
+    dateFormat: "d MMM yyyy",
     timeFormat: 'HH:mm:ss',
     timeZone: 'UTC',
     firstDayOfWeek: 0,

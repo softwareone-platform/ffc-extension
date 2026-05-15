@@ -45,7 +45,7 @@ export function useOrganizationsApi() {
                 url: `${rootPath}/${organizationId}/employees${query ? `?${query.toString()}` : ''}`,
             });
         },
-        [rootPath],
+        [],
     );
     const listOrganizationDataSources = useCallback(
         async (organizationId: string, query?: RqlQuery<DatasourceRead>) => {

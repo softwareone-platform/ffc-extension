@@ -14,6 +14,7 @@
       "~app/*": ["app/*"],
       "~features/*": ["features/*"],
       "~organizations/*": ["features/organizations/*"],
+      "~entitlements/*": ["features/entitlements/*"],
       "~shared/*": ["shared/*"],
       "~styles/*": ["styles/*"],
       "~i18n/*": ["i18n/*"]

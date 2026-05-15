@@ -28,6 +28,7 @@ const ctx = await context({
     '~app': srcDir('app'),
     '~features': srcDir('features'),
     '~organizations': srcDir('features/organizations'),
+    '~entitlements': srcDir('features/entitlements'),
     '~shared': srcDir('shared'),
     '~styles': srcDir('styles'),
     '~i18n': srcDir('i18n'),

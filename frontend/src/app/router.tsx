@@ -29,8 +29,8 @@ export const router = createHashRouter([
                     {
                         path: 'entitlements',
                         lazy: lazyComponent(
-                            () => import('~features/entitlements/EntitlementsGrid'),
-                            'default' as never,
+                            () => import('~features/entitlements/list/EntitlementsGrid'),
+                            'EntitlementsGrid',
                         ),
                     },
                     {
