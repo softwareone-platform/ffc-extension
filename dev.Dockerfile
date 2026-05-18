@@ -37,6 +37,9 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 # Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
 
+# Set vim as the default editor
+ENV EDITOR=vim
+
 # Install the project into `/app`
 WORKDIR /app
 

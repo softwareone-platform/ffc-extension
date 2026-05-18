@@ -53,6 +53,14 @@ class AccountStatus(enum.StrEnum):
 
 
 @enum.unique
+class AccountIntegration(enum.StrEnum):
+    AWS = "aws"
+    GOOGLE = "google"
+    MICROSOFT = "microsoft"
+    SOFTWAREONE = "softwareone"
+
+
+@enum.unique
 class DatasourceType(enum.StrEnum):
     AWS_CNR = "aws_cnr"
     AZURE_CNR = "azure_cnr"

@@ -40,6 +40,7 @@ from app.db.models import (
     User,
 )
 from app.enums import (
+    AccountIntegration,
     AccountStatus,
     AccountType,
     AccountUserStatus,
@@ -156,6 +157,7 @@ def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Acco
     async def _account(
         name: str | None = None,
         type: str | None = None,
+        integration: AccountIntegration | None = None,
         external_id: str | None = None,
         status: AccountStatus | None = None,
         created_by: Actor | None = None,
@@ -167,6 +169,7 @@ def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Acco
         account = Account(
             type=type or AccountType.AFFILIATE,
             name=name or "AWS",
+            integration=integration,
             external_id=external_id or str(faker.uuid4()),
             status=status or AccountStatus.ACTIVE,
             created_by=created_by,
@@ -481,6 +484,7 @@ async def affiliate_account(
     return await account_factory(
         name="Microsoft",
         type=AccountType.AFFILIATE,
+        integration=AccountIntegration.MICROSOFT,
         created_by=ffc_extension,
         updated_by=ffc_extension,
         new_entitlements_count=10,

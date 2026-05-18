@@ -28,6 +28,7 @@ from sqlalchemy.orm import (
 
 from app.db.human_readable_pk import HumanReadablePKMixin
 from app.enums import (
+    AccountIntegration,
     AccountStatus,
     AccountType,
     AccountUserStatus,
@@ -134,6 +135,12 @@ class Account(Base, HumanReadablePKMixin, AuditableMixin):
         server_default=AccountType.AFFILIATE.value,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    integration: Mapped[AccountIntegration] = mapped_column(
+        Enum(AccountIntegration, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=True,
+        default=None,
+        server_default=None,
+    )
     status: Mapped[AccountStatus] = mapped_column(
         Enum(AccountStatus, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,

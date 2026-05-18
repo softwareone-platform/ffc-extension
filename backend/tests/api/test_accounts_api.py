@@ -50,7 +50,12 @@ async def test_can_create_accounts(
 ):
     response = await admin_client.post(
         "/accounts",
-        json={"name": "Microsoft", "external_id": "ACC-9044-8753", "type": "affiliate"},
+        json={
+            "name": "Microsoft",
+            "external_id": "ACC-9044-8753",
+            "type": "affiliate",
+            "integration": "microsoft",
+        },
     )
     assert response.status_code == 201
     data = response.json()
@@ -58,6 +63,7 @@ async def test_can_create_accounts(
     assert data["name"] == "Microsoft"
     assert data["external_id"] == "ACC-9044-8753"
     assert data["type"] == "affiliate"
+    assert data["integration"] == "microsoft"
     assert data["status"] == "active"
     assert data["events"]["created"]["at"] is not None
     assert data["events"]["created"]["by"]["id"] == str(ffc_extension.id)
@@ -142,6 +148,7 @@ async def test_get_account_by_id(
     assert data["name"] == affiliate_account.name
     assert data["external_id"] == affiliate_account.external_id
     assert data["type"] == affiliate_account.type
+    assert data["integration"] == affiliate_account.integration
     assert data["status"] == affiliate_account.status
     assert data["events"]["created"]["at"] is not None
     assert data["events"]["created"]["by"]["id"] == str(ffc_extension.id)
