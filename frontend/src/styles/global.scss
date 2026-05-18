@@ -50,19 +50,19 @@ h6 {
 
 
 // --- temporary overrides (MZ) ---------------------------------------------
-
-html,
-body,
-#root {
-    height: auto;
-    margin: 0;
-}
-.navigation-host {
-  height: auto !important;
-
-  & > div {
-    padding: var(--spacing-3) 0;
-    scrollbar-gutter: auto;
-  }
-
-}
+//
+//html,
+//body,
+//#root {
+//    height: auto;
+//    margin: 0;
+//}
+//.navigation-host {
+//  height: auto !important;
+//
+//  & > div {
+//    padding: var(--spacing-3) 0;
+//    scrollbar-gutter: auto;
+//  }
+//
+//}

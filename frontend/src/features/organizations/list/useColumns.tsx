@@ -1,5 +1,5 @@
 import { DisplayValue } from '@swo/design-system/utils';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { OrganizationRead } from '@swo/ffc-api-model';
 import { Paths } from '@swo/rql-client';
 import { useMemo } from 'react';
@@ -28,7 +28,7 @@ export function useColumns(): Columns {
         fields: ["name", "id", "linked_organization_id"],
         cell: (item: OrganizationRead) => (
           <GridCellTitleSubtitle
-            title={<Link to={`/${item.id}`}>{item.name}</Link>}
+            title={<Link to={`${item.id}/general`}>{item.name}</Link>}
             subtitle={`${item.id} | ${item.linked_organization_id}`}
           />
         ),
@@ -77,7 +77,7 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: (item: OrganizationRead) => (
+        cell: (_item: OrganizationRead) => (
           <></>
         ),
         initialWidth: 100,
