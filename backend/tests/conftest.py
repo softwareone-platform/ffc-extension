@@ -84,12 +84,6 @@ def test_settings() -> Settings:
     settings.api_modifier_base_url = "https://api-modifier.ffc.com"
     settings.api_modifier_jwt_secret = "test_jwt_secrettest_jwt_secrettest_jwt_secretpyt"
     settings.opentelemetry_exporter = None
-    settings.smtp_sender_email = "test@example.com"
-    settings.smtp_sender_name = "Test Sender"
-    settings.smtp_host = "smtp.example.com"
-    settings.smtp_port = 587
-    settings.smtp_user = "user"
-    settings.smtp_password = "password"
     settings.cli_rich_logging = False
     settings.msteams_notifications_webhook_url = "https://example.com/webhook"
     return settings

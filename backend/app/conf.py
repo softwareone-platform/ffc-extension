@@ -34,7 +34,6 @@ class Settings(BaseSettings):
 
     api_modifier_base_url: str
     api_modifier_jwt_secret: str
-    secrets_encryption_key: str
 
     datasources_expenses_obsolete_after_months: int = 6
     billing_percentage: float = 1.0
@@ -44,13 +43,6 @@ class Settings(BaseSettings):
     optscale_rest_api_base_url: str
     optscale_cluster_secret: str
     optscale_read_timeout: int = 90
-
-    smtp_host: str
-    smtp_port: int = 587
-    smtp_user: str
-    smtp_password: str
-    smtp_sender_email: str
-    smtp_sender_name: str
 
     mpt_api_base_url: str
     mpt_extension_id: str
