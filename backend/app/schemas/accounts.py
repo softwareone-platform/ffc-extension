@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import Field, computed_field
 
-from app.enums import AccountStatus, AccountType
+from app.enums import AccountIntegration, AccountStatus, AccountType
 from app.schemas.core import BaseSchema, CommonEventsSchema, IdSchema
 
 
@@ -39,10 +39,12 @@ class AccountBase(BaseSchema):
 
 class AccountCreate(AccountBase):
     type: AccountType
+    integration: AccountIntegration | None = None
 
 
 class AccountUpdate(BaseSchema):
     name: Annotated[str | None, Field(min_length=1, max_length=255, examples=["Microsoft"])] = None
+    integration: AccountIntegration | None = None
     external_id: Annotated[
         str | None, Field(min_length=1, max_length=255, examples=["ACC-9044-8753"])
     ] = None
@@ -51,6 +53,7 @@ class AccountUpdate(BaseSchema):
 class AccountReference(IdSchema):
     name: Annotated[str, Field(max_length=255, examples=["Microsoft"])]
     type: AccountType
+    integration: AccountIntegration | None
 
 
 # Importing here to avoid circular imports
@@ -62,6 +65,7 @@ class AccountRead(IdSchema, CommonEventsSchema, AccountBase):
     active_entitlements_count: int = Field(default=0, exclude=True)
     terminated_entitlements_count: int = Field(default=0, exclude=True)
     account_user: AccountUserReferenceWithUser | None
+    integration: AccountIntegration | None = None
     status: AccountStatus
     type: AccountType
 
