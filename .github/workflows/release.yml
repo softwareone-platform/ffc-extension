@@ -9,20 +9,16 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-
     - name: 'Get the version'
       id: get_version
       run: echo  "VERSION=${GITHUB_REF/refs\/tags\//}" >> "$GITHUB_OUTPUT"
-
     - name: 'Login to ACR'
       uses: docker/login-action@v3
       with:
@@ -51,8 +47,38 @@ jobs:
       run: echo ${{ steps.docker_build.outputs.digest }}
 
   dtrack:
-    uses: softwareone-platform/ops-template/.github/workflows/dependency-track-python-uv.yml@v1
-    with:
-      projectName: 'ffc-extension'
-    secrets:
-      DEPENDENCYTRACK_APIKEY: ${{ secrets.DEPENDENCYTRACK_APIKEY }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Get the major version
+      id: get_version
+      run: echo "MAJOR=${GITHUB_REF/refs\/tags\//}" |cut -d"." -f1 >> "$GITHUB_OUTPUT"
+    - name: Install uv and set up its cache
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "backend/uv.lock"
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: "backend/.python-version"
+    - name: Install the project dependancies
+      run: uv --project backend sync --all-extras --dev
+    - name: Install cyclonedx-bom
+      run: uv --project backend tool install cyclonedx-bom
+    - name: Generate SBOM
+      run: uv --project backend tool run --from cyclonedx-bom cyclonedx-py environment backend/.venv > sbom.json
+    - name: Upload SBOM
+      uses: DependencyTrack/gh-upload-sbom@v3
+      with:
+        serverHostname: 'dependency-track.s1.team'
+        protocol: 'https'
+        apiKey: ${{ secrets.DEPENDENCYTRACK_APIKEY }}
+        projectName: 'ff-extension'
+        projectVersion: ${{ steps.get_version.outputs.MAJOR }}
+        bomFilename: "sbom.json"
+        autoCreate: true
