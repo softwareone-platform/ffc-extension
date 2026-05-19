@@ -4,7 +4,7 @@ import { DatasourceRead } from '@swo/ffc-api-model';
 import { useGridConfig } from './DataSourcesGrid.config';
 
 export function DataSourcesGrid({ organizationId }: { organizationId: string }) {
-    const { silentRefresh, ...gridProps } = useGridConfig(organizationId);
+    const { ...gridProps } = useGridConfig(organizationId);
 
     return <Grid<DatasourceRead> {...gridProps} />;
 }

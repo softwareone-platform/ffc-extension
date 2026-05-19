@@ -4,7 +4,7 @@ import { EmployeeRead } from '@swo/ffc-api-model';
 import { useGridConfig } from './UsersGrid.config';
 
 export function UsersGrid({ organizationId }: { organizationId: string }) {
-    const { silentRefresh, ...gridProps } = useGridConfig(organizationId);
+    const { ...gridProps } = useGridConfig(organizationId);
 
     return <Grid<EmployeeRead> {...gridProps} />;
 }

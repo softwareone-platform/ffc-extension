@@ -29,5 +29,5 @@ export function useViews() {
         },
       },
     ];
-  }, []);
+  }, [tView]);
 }

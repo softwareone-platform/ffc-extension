@@ -13,15 +13,6 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
-// import { useAsyncOptions } from "~organizations/hooks/useAsyncOptions";
-
-// import { useViews } from "~organizations/hooks/useViews";
-
-const defaultFilter = {
-  operator: "and",
-  value: [{ operator: "eq", field: "status", value: "active" }],
-};
-const sort = [{ field: "event.created.at", direction: "desc" }];
 
 type Columns = Array<
   Omit<GridColumnDefinition<EmployeeRead>, "fields"> & {
@@ -83,15 +74,14 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: (item: EmployeeRead) => <></>,
+        cell: () => <></>,
         initialWidth: 100,
       },
     ];
-  }, []);
+  }, [tColumns]);
 }
 
 export function useFields() {
-  const tColumns = useFixedT("shared:grid:columns");
   const tFields = useFixedT("shared:grid:fields");
 
   return useMemo(
@@ -111,7 +101,7 @@ export function useFields() {
 
 export function useAsyncOptions(organizationId: string) {
   const { listOrganizationEmployees } = useOrganizationsApi();
-  const baseQueryKey: any = "OrganizationUsers";
+  const baseQueryKey: unknown[] = ["OrganizationUsers"];
   return useReactQueryRqlGrid<
     EmployeeRead,
     Awaited<ReturnType<typeof listOrganizationEmployees>>
@@ -142,7 +132,7 @@ export function useGridConfig(organizationId: string) {
         selectedView: "default",
         ...asyncOptions,
       }) as UseAsyncGridConfig<EmployeeRead>,
-    [columns, defaultFilter, sort, fields, asyncOptions],
+    [columns, fields, asyncOptions],
   );
 
   const gridProps = useGridAsync(config);

@@ -5,8 +5,9 @@ import { useMPTModal } from '@mpt-extension/sdk-react';
 
 // const { auth, data } = useMPTContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export default () => {
-  const { open, close } = useMPTModal();
+  const { close } = useMPTModal();
   return (
     <>
       <div className="modal-header modal__container">

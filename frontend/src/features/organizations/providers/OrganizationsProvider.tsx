@@ -6,6 +6,7 @@ const OrganizationContext = createContext<OrganizationRead | undefined>(
   {} as OrganizationRead,
 );
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useOrganizationContext = () => {
   const context = useContext(OrganizationContext);
 //   if (context === undefined) {

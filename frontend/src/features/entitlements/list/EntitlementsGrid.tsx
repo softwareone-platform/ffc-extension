@@ -10,7 +10,7 @@ export function EntitlementsGrid() {
 
   //TODO: proper translation name
   const tProperties = useFixedT("shared:grid:columns");
-  const { silentRefresh, ...gridProps } = useGridConfig();
+  const { ...gridProps } = useGridConfig();
 
   return (
     <Card

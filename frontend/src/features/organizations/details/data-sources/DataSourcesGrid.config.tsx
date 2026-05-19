@@ -115,7 +115,7 @@ export function useFields() {
 
 export function useAsyncOptions(organizationId: string) {
   const { listOrganizationDataSources } = useOrganizationsApi();
-  const baseQueryKey: any = "OrganizationDataSources";
+  const baseQueryKey: unknown[] = ["OrganizationDataSources"];
   return useReactQueryRqlGrid<
     DatasourceRead,
     Awaited<ReturnType<typeof listOrganizationDataSources>>

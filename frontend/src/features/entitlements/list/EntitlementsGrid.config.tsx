@@ -137,7 +137,7 @@ export function useFields() {
 
 export function useAsyncOptions() {
   const { list } = useEntitlementsApi();
-  const baseQueryKey: any = "EntitlementsList";
+  const baseQueryKey: unknown[] = ["EntitlementsList"];
   return useReactQueryRqlGrid<
     EntitlementRead,
     Awaited<ReturnType<typeof list>>

@@ -12,7 +12,7 @@ export function OrganizationsGrid() {
 
     //TODO: proper translation name
     const tProperties = useFixedT('shared:grid:columns');
-    const { silentRefresh, ...gridProps } = useGridConfig();
+    const { ...gridProps } = useGridConfig();
 
     return (
         <Card testId={'ffc-extension__organizations-grid'} title={tProperties('organizations')}>

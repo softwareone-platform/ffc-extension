@@ -17,7 +17,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,scss,md}\"",
     "lint": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\" --fix"
+    "lint:fix": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\" --fix",
+    "check:all": "npm-run-all lint format:check"
   },
   "files": [
     "../static"

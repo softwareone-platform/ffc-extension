@@ -24,7 +24,7 @@ export function EntitlementsGeneralDetails() {
     () => ["Entitlements", "Details", entitlementId],
     [ entitlementId],
   );
-  const { data: entity, isLoading } = useQuery({
+  const { data: entity } = useQuery({
     queryKey: entityQueryKey,
     queryFn: () => get(entitlementId!),
     select: (res) => res.data,
