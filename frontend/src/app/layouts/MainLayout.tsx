@@ -9,7 +9,7 @@ import {
     AddOrganizationModal,
 } from '~features/organizations/components/AddOrganizationModal';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
-import { useMPT, useStandAloneApp } from '~shared/providers/MPTContextProvider';
+import { useStandAloneApp } from '~shared/providers/MPTContextProvider';
 
 const NAV_ITEMS: PageShellNavItem[] = [
     { path: '/entitlements', label: 'Entitlements' },
@@ -20,6 +20,7 @@ export function MainLayout() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const navItems = useMemo(() => NAV_ITEMS, []);
     const standAloneApp = useStandAloneApp();
+    // const standAloneApp = true; // --- FORCE STANDALONE MODE FOR TESTING ---
 
     useEffect(() => {
         if (window.parent && window.parent !== window) {
