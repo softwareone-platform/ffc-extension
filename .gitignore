@@ -187,5 +187,9 @@ taplo.toml
 # extension's static files
 static/*
 
+# IDE specific files
+.idea/
+.vscode/
+
 # secret
 .secrets.yaml

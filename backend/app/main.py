@@ -79,7 +79,7 @@ def setup_app():
         openapi_url="/bypass/openapi.json",
         lifespan=lifespan,
     )
-    static_dir = Path(__file__).parent.parent.resolve() / "static"
+    static_dir = Path(__file__).parent.parent.parent.resolve() / "static"
     if static_dir.exists():
         app.mount(
             "/static",
