@@ -1,0 +1,37 @@
+version: 1.0.0
+openapi: /bypass/openapi.json
+events:
+  - event: platform.commerce.order.status_changed
+    condition: "and(eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
+    path: "/events/commerce/orders"
+    task: true
+plugs:
+- id: "{{ settings.ui_plugs_prefix }}"
+  name: FinOps for Cloud{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
+  description: FinOps for Cloud
+  icon: extension
+  socket: portal
+- id: organizations
+  name: Organizations
+  description: This section shows all of the customers Organisations created in FinOps.
+  icon: adobe.png
+  socket: portal.{{ settings.ui_plugs_prefix }}
+  href: "/static/organizations.js"
+- id: entitlements
+  name: Entitlements
+  description: This section provides visibility into what services and resources of
+    organizations are entitled to use.
+  icon: adobe.png
+  socket: portal.{{ settings.ui_plugs_prefix }}
+  href: "/static/entitlements.js"
+- id: add
+  name: Add
+  description: Add entitlement
+  icon: adobe.png
+  socket: portal.{{ settings.ui_plugs_prefix }}.entitlements.actions
+  href: "/static/modal.js"
+- id: modal
+  name: Add entitlement
+  description: Wizard to test modals
+  icon: adobe.png
+  href: "/static/modal.js"

@@ -5,10 +5,9 @@ import pathlib
 import httpx
 from mrok.agent import ziticorn
 
-from app import __version__
 from app.conf import Settings
 from app.logging import get_logging_config
-from app.utils import get_instance_external_id
+from app.utils import get_instance_external_id, get_meta
 
 logger = logging.getLogger(__name__)
 
@@ -40,53 +39,7 @@ def bootstrap(
 
     data = {
         "externalId": external_id,
-        "meta": {
-            "version": __version__,
-            "openapi": "/public/v1/openapi.json",
-            "events": [],
-            "plugs": [
-                {
-                    "id": "ffc",
-                    "name": "FinOps for Cloud",
-                    "description": "FinOps for Cloud",
-                    "icon": "extension",
-                    "socket": "portal",
-                },
-                {
-                    "id": "organizations",
-                    "name": "Organizations",
-                    "description": "This section shows all of the customers Organisations "
-                    "created in FinOps.",
-                    "icon": "adobe.png",
-                    "socket": "portal.ffc",
-                    "href": "/static/organizations.js",
-                },
-                {
-                    "id": "entitlements",
-                    "name": "Entitlements",
-                    "description": "This section provides visibility into what services "
-                    "and resources of organizations are entitled to use.",
-                    "icon": "adobe.png",
-                    "socket": "portal.ffc",
-                    "href": "/static/entitlements.js",
-                },
-                {
-                    "id": "add",
-                    "name": "Add",
-                    "description": "Add entitlement",
-                    "icon": "adobe.png",
-                    "socket": "portal.ffc.entitlements.actions",
-                    "href": "/static/modal.js",
-                },
-                {
-                    "id": "modal",
-                    "name": "Add entitlement",
-                    "description": "Wizard to test modals",
-                    "icon": "adobe.png",
-                    "href": "/static/modal.js",
-                },
-            ],
-        },
+        "meta": get_meta(),
     }
     for evtinfo in data["meta"]["events"]:
         msg = (
