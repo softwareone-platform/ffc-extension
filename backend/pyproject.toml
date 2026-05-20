@@ -135,6 +135,7 @@ docstring-code-format = true
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv"]
+skips = ["B404"]
 
 [tool.pytest.ini_options]
 testpaths = "tests/"

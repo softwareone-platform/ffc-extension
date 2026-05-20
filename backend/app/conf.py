@@ -70,6 +70,8 @@ class Settings(BaseSettings):
     # Billing command constraints
     lower_billing_year: int = 2025
 
+    ui_plugs_prefix: str = "ffc"
+
     @computed_field
     def postgres_async_url(self) -> PostgresDsn:
         return PostgresDsn.build(

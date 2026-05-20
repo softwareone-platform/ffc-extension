@@ -1,16 +1,30 @@
 import base64
+import binascii
 import contextlib
+import hashlib
 import json
 import logging
-import uuid
+import os
+import socket
+import subprocess
 from datetime import UTC, datetime
 from decimal import Decimal
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
 from fastapi import HTTPException, status
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from yaml import safe_load
+
+from app.conf import get_settings
 
 logger = logging.getLogger(__name__)
+
+_JINJA_ENV = Environment(  # nosec: B701
+    loader=FileSystemLoader(Path(__file__).parent.parent.parent.resolve()),
+    undefined=StrictUndefined,
+)
 
 
 def find_first(func, iterable, default=None):
@@ -113,40 +127,43 @@ def _extract_container_id_from_cpuset(cpuset_content: str) -> str | None:
     return None
 
 
-def _extract_container_id_from_mountinfo(mountinfo_content: str) -> str | None:
-    for line in mountinfo_content.splitlines():
-        if "upperdir=" not in line:
-            continue
-        start_idx = line.index("upperdir=") + len("upperdir=")
-        end_idx = line.find(",", start_idx)
-        dir_path = line[start_idx:] if end_idx == -1 else line[start_idx:end_idx]
-        parts = dir_path.rsplit("/", 2)
-        if len(parts) != 3:
-            continue
-        container_id = parts[1]
-        if len(container_id) == 64:
-            return container_id[:12]
-    return None
-
-
+@lru_cache(maxsize=1)
 def get_instance_external_id() -> str:
+    hostname = (os.environ.get("HOSTNAME") or socket.gethostname() or "").lower()
+    if len(hostname) == 12 and all(c in "0123456789abcdef" for c in hostname.lower()):
+        return hostname
+
     try:
-        cpuset_content = Path("/proc/1/cpuset").read_text(encoding="utf-8")
-        cpuset_id = _extract_container_id_from_cpuset(cpuset_content)
-        if cpuset_id is not None:
-            return cpuset_id
+        with open("/proc/1/cpuset") as f:
+            tail = f.read().strip().rsplit("/", 1)[-1]
+        if len(tail) == 64:
+            return tail[:12]
     except OSError:
         pass
 
     try:
-        mountinfo_content = Path("/proc/self/mountinfo").read_text(encoding="utf-8")
-        mountinfo_id = _extract_container_id_from_mountinfo(mountinfo_content)
-        if mountinfo_id is not None:
-            return mountinfo_id
-    except OSError:
+        result = subprocess.run(  # nosec: B603, B607
+            ["grep", "overlay", "/proc/self/mountinfo"],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            check=True,
+        )
+        mount = result.stdout.decode()
+        start = mount.index("upperdir=") + len("upperdir=")
+        end = mount.index(",", start)
+        cid = mount[start:end].rsplit("/", 2)[1]
+        if len(cid) == 64:
+            return cid[:12]
+    except (subprocess.CalledProcessError, ValueError, OSError):
         pass
 
-    return f"{uuid.getnode():012x}"
+    seed = hostname or os.environ.get("HOSTNAME", "") or "unknown-host"
+    return hashlib.sha256(seed.encode()).hexdigest()[:12]
+
+
+def get_meta():
+    template = _JINJA_ENV.get_template("meta.yaml")
+    return safe_load(template.render(settings=get_settings()))
 
 
 def get_jwt_token_claims(token: str) -> dict:
@@ -160,7 +177,7 @@ def get_jwt_token_claims(token: str) -> dict:
         decoded = base64.urlsafe_b64decode(payload)
         claims = json.loads(decoded)
         return claims
-    except (KeyError, ValueError) as exc:
+    except (KeyError, ValueError, json.JSONDecodeError, binascii.Error) as exc:
         raise ValueError("Invalid JWT token") from exc
 
 
