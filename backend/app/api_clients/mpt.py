@@ -48,7 +48,7 @@ class MPTInstallationAuth(httpx.Auth):
         """Builds the token refresh request."""
         return httpx.Request(
             "POST",
-            f"{self.settings.mpt_api_base_url}integration/installations/-/token",
+            f"{self.settings.mpt_api_base_url}/integration/installations/-/token",
             headers={"Authorization": f"Bearer {self.settings.mpt_extension_token}"},
             params={"account.id": self.account_id},
         )
