@@ -41,7 +41,8 @@
         "ms-python.python",
         "charliermarsh.ruff",
         "ms-python.mypy-type-checker",
-        "anthropic.claude-code"
+        "anthropic.claude-code",
+        "knisterpeter.vscode-commitizen"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/opt/venv/bin/python"

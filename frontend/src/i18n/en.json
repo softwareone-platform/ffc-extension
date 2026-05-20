@@ -1,13 +1,84 @@
 {
+  "organization": {
+    "details": {
+      "general": {
+        "title": "General",
+        "properties": {
+          "limit": "Limit",
+          "forecastThisMonth": "Expenses this month forsecast",
+          "expensesThisMonth": "Expenses this month",
+          "expensesLastMonth": "Expenses last month",
+          "possibleSavings": "Possible monthly savings"
+        }
+      }
+    }
+  },
   "shared": {
     "grid": {
+      "views": {
+        "activeOrganizations": "Active Organizations",
+        "deletedOrganizations": "Deleted Organizations",
+        "activeEntitlements": "Active Entitlements"
+      },
       "columns": {
         "actions": "Actions",
-        "activeOrganizations": "Active Organizations",
-        "activeEntitlements": "Active Entitlements",
+        "currency": "Currency",
         "organization": "Organization",
+        "organizations": "Organizations",
+        "entitlement": "Entitlement",
+        "entitlements": "Entitlements",
+        "dataSource": "Data Source",
+        "type": "Type",
+        "email": "Email",
+        "displayName": "Display Name",
+        "rolesCount": "Roles Count",
+        "user": "User",
+        "name": "Name",
+        "id": "ID",
+        "parent_id": "Parent data source",
+        "resources_charged_this_month": "Resources Charged (this month)",
+        "expenses_so_far_this_month": "Expenses to date (this month)",
+        "expenses_forecast_this_month": "Expenses forecast (this month)",
+        "lastLogin": "Last login",
+        "createdAt": "Created",
+        "affiliate_external_id": "Affiliate",
+        "data_source": "Data Source",
+        "status": "Status"
+      },
+      "fields": {
+        "id": "ID",
+        "name": "Name",
+        "currency": "Currency",
+        "billingCurrency": "Billing Currency",
+        "operationsAdditionalId": "Operations Additional ID",
+        "status": "Status",
+        "type": "Type",
+        "displayName": "Display Name",
+        "email": "Email",
+        "rolesCount": "Roles Count",
+        "affiliate_external_id": "Affiliate External ID",
         "entitlement": "Entitlement"
+      },
+      "dataSourceType": {
+        "azure_cnr": "Azure subscription",
+        "aws_cnr": "AWS subscription",
+        "gcp_cnr": "GCP subscription"
       }
+    },
+    "details": {
+      "additionalIds": "Additional IDs",
+      "references": "References"
+    },
+    "properties": {
+      "linkedDataSource": "Linked data source",
+      "affiliate_external_id": "Affiliate external ID",
+      "created": "Created",
+      "updated": "Updated",
+      "redeemed": "Redeemed",
+      "terminated": "Terminated",
+      "expensesInfo": "Expenses information",
+      "currency": "Currency",
+      "billingCurrency": "Billing currency"
     }
   }
 }
