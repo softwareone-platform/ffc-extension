@@ -211,6 +211,7 @@ class OptscaleAuthClient(BaseAPIClient):
                 "user_info": "true",
             },
         )
+        logger.info(f"GET USER INFO: {response.status_code}")
         response.raise_for_status()
         response_data = response.json()
 

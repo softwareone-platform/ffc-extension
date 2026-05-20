@@ -16,9 +16,11 @@ from app.routers import (
     accounts,
     employees,
     entitlements,
+    events,
     expenses,
     organizations,
 )
+from app.schemas.core import ExtensionContext
 from app.telemetry import setup_fastapi_instrumentor
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,7 @@ async def lifespan(app: FastAPI):
     app.debug = settings.debug
     configure_db_engine(settings)
     await verify_db_connection(settings)
+    app.app.state.ctx = ExtensionContext.from_identity_file()
     yield
 
 
@@ -135,6 +138,7 @@ def setup_app():
     )
 
     app.include_router(v1_router)
+    app.include_router(events.router)
 
     settings = get_settings()
 
