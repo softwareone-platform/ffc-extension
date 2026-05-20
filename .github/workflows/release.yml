@@ -60,8 +60,9 @@ jobs:
           latest=false
     - name: Build and push docker image
       id: docker_build
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
+        context: .
         file: prod.Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}

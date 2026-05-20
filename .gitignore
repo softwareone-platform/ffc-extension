@@ -186,6 +186,7 @@ taplo.toml
 
 # extension's static files
 static/*
+!static/.gitkeep
 
 # IDE specific files
 .idea/
