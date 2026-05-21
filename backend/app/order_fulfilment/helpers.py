@@ -1,4 +1,3 @@
-import copy
 import logging
 import secrets
 from datetime import UTC, date, datetime, timedelta
@@ -8,10 +7,6 @@ from app.api_clients.mpt import MPTClient
 from app.api_clients.optscale import OptscaleAuthClient, UserDoesNotExist
 from app.db.handlers import OrganizationHandler
 from app.db.models import Organization
-from app.order_fulfilment.constants import (
-    MPT_ORDER_STATUS_PROCESSING,
-    PURCHASE_TEMPLATE_NAME,
-)
 from app.order_fulfilment.error import ERR_ADMIN_CONTACT, ERR_CURRENCY, ERR_ORGANIZATION_NAME
 from app.order_fulfilment.parameters import (
     PARAM_ADMIN_CONTACT,
@@ -29,7 +24,6 @@ from app.parameters import (
     get_fulfillment_parameter,
     set_is_new_user,
 )
-from app.utils import find_first
 
 logger = logging.getLogger(__name__)
 
@@ -60,36 +54,6 @@ def check_order_parameters(order) -> tuple[dict, bool]:
     return order, validation_succeeded
 
 
-def get_subscription_by_line_and_item_id(subscriptions, item_id, line_id):
-    """
-    Return a subscription by line id and sku.
-
-    Args:
-        subscriptions (list): a list of subscription obects.
-        vendor_external_id (str): the item SKU
-        line_id (str): the id of the order line that should contain the given SKU.
-
-    Returns:
-        dict: the corresponding subscription if it is found, None otherwise.
-    """
-    for subscription in subscriptions:
-        item = find_first(
-            lambda x: x["id"] == line_id and x["item"]["id"] == item_id,
-            subscription["lines"],
-        )
-
-        if item:
-            return subscription
-    return None
-
-
-def set_template(order, template):
-    """Return a copy of the order with the provided template assigned."""
-    updated_order = copy.deepcopy(order)
-    updated_order["template"] = template
-    return updated_order
-
-
 def get_parameter_updates(order, settings):
     """Build default fulfillment parameter values when they are missing in the order."""
     updates = {}
@@ -118,29 +82,6 @@ def get_parameter_updates(order, settings):
         updates[PARAM_TRIAL_END_DATE] = trial_end_date.strftime("%Y-%m-%d")
 
     return updates
-
-
-async def start_processing_order_template(
-    ext_client: MPTClient, order: dict, product_id: str
-) -> dict:
-    """Ensure the order uses the processing template expected for purchase flow."""
-    template = await ext_client.get_product_template_or_default(
-        product_id=product_id,
-        status=MPT_ORDER_STATUS_PROCESSING,
-        name=PURCHASE_TEMPLATE_NAME,
-    )
-    current_template_id = order.get("template", {}).get("id")
-    if template["id"] != current_template_id:
-        order = set_template(order=order, template=template)
-        order = await ext_client.update_order(
-            order_id=order["id"],
-            template=template,
-        )
-        logger.info(
-            f"{order['id']}: processing template set to {PURCHASE_TEMPLATE_NAME} ({template['id']})"
-        )
-    logger.info(f"{order['id']}: processing template is ok, continue")
-    return order
 
 
 async def create_employee(
@@ -216,29 +157,3 @@ async def get_or_create_organization(
         f"{order}: Updating agreement {agreement_id} external id to {organization.id}",
     )
     return organization
-
-
-async def create_order_subscription(ext_client: MPTClient, order: dict, organization: Organization):
-    """Create missing subscriptions for each order line and bind them to the organization."""
-    for line in order["lines"]:
-        order_subscription = get_subscription_by_line_and_item_id(
-            order["subscriptions"],
-            line["item"]["id"],
-            line["id"],
-        )
-        if not order_subscription:
-            subscription = {
-                "name": f"Subscription for {line['item']['name']}",
-                "parameters": {},
-                "externalIds": {"vendor": organization.id},
-                "lines": [
-                    {
-                        "id": line["id"],
-                    },
-                ],
-            }
-            subscription = await ext_client.create_subscription(
-                order_id=order["id"],
-                subscription=subscription,
-            )
-            logger.info(f"{order}: subscription {line['id']} ({subscription['id']}) created")
