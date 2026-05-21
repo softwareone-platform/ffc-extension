@@ -10,17 +10,17 @@ from app.dependencies.api_clients import (
     OptscaleAuthClient,
 )
 from app.dependencies.core import ExtensionContext
-from app.order_fulfilment.constants import (
+from app.fulfilment.constants import (
     MPT_ORDER_STATUS_QUERYING,
 )
-from app.order_fulfilment.helpers import (
+from app.fulfilment.helpers import (
     check_order_parameters,
     create_employee,
     get_or_create_organization,
     get_parameter_updates,
 )
-from app.order_fulfilment.subscriptions import create_order_subscription
-from app.order_fulfilment.templates import start_processing_order_template
+from app.fulfilment.subscriptions import create_order_subscription
+from app.fulfilment.templates import start_processing_order_template
 from app.parameters import set_fulfillment_parameter
 from app.schemas.core import EventResponse
 
@@ -86,7 +86,7 @@ async def validate_and_move_to_querying_if_needed(
     return order, True
 
 
-async def process_order_happy_path(
+async def fulfill_order(
     *,
     api_modifier_client: APIModifierClient,
     ext_client: MPTClient,

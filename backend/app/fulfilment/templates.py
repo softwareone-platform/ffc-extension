@@ -2,7 +2,7 @@ import copy
 import logging
 
 from app.api_clients.mpt import MPTClient
-from app.order_fulfilment.constants import (
+from app.fulfilment.constants import (
     MPT_ORDER_STATUS_PROCESSING,
     PURCHASE_TEMPLATE_NAME,
 )

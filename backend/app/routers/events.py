@@ -11,16 +11,16 @@ from app.dependencies.api_clients import (
 )
 from app.dependencies.core import AppSettings, ExtensionContext
 from app.dependencies.db import OrganizationRepository
-from app.order_fulfilment.constants import (
+from app.fulfilment.constants import (
     MPT_ORDER_STATUS_PROCESSING,
 )
-from app.order_fulfilment.order import (
+from app.fulfilment.order import (
     apply_fulfillment_defaults_if_needed,
-    process_order_happy_path,
+    fulfill_order,
     start_task_and_get_order,
     validate_and_move_to_querying_if_needed,
 )
-from app.order_fulfilment.recovery import handle_exception
+from app.fulfilment.recovery import handle_exception
 from app.schemas.core import Event, EventResponse
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ async def process_order(
             return EventResponse.ok()
         # 6 Start Order 'happy path' processing
 
-        return await process_order_happy_path(
+        return await fulfill_order(
             api_modifier_client=api_modifier_client,
             ext_client=ext_client,
             optscale_auth_client=optscale_auth_client,

@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 from app.api_clients.mpt import MPTClient
-from app.order_fulfilment.error import ERR_DUE_DATE_IS_REACHED
+from app.fulfilment.error import ERR_DUE_DATE_IS_REACHED
 from app.parameters import (
     get_due_date,
 )

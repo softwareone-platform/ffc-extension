@@ -7,8 +7,8 @@ from app.api_clients.mpt import MPTClient
 from app.api_clients.optscale import OptscaleAuthClient, UserDoesNotExist
 from app.db.handlers import OrganizationHandler
 from app.db.models import Organization
-from app.order_fulfilment.error import ERR_ADMIN_CONTACT, ERR_CURRENCY, ERR_ORGANIZATION_NAME
-from app.order_fulfilment.parameters import (
+from app.fulfilment.error import ERR_ADMIN_CONTACT, ERR_CURRENCY, ERR_ORGANIZATION_NAME
+from app.fulfilment.parameters import (
     PARAM_ADMIN_CONTACT,
     PARAM_CURRENCY,
     PARAM_ORGANIZATION_NAME,
