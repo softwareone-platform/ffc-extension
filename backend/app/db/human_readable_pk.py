@@ -27,7 +27,7 @@ class HumanReadablePKMixin:
         """
 
         random_number = (
-            f"{random.randint(10 ** (cls.PK_NUM_LENGTH - 1), 10**cls.PK_NUM_LENGTH - 1)}"  # nosec: B311
+            f"{random.randint(10 ** (cls.PK_NUM_LENGTH - 1), 10**cls.PK_NUM_LENGTH - 1)}"  # noqa: S311
         )
         grouped_number = "-".join(
             random_number[i : i + cls.PK_GROUP_SIZE]

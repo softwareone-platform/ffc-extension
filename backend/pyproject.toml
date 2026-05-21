@@ -57,7 +57,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "bandit>=1.8.0,<2.0",
     "faker>=33.1.0,<34.0",
     "mypy>=1.14.0,<1.16.0",
     "pre-commit>=4.0.1,<5.0",
@@ -117,6 +116,7 @@ select = [
     "UP",     # pyupgrade,
     "PT",     # flake8-pytest-style
     "T10",    # flake8-pytest-style
+    "S",      # flake8-bandit (replaces bandit)
 ]
 ignore = [
     "PT001", # Use `@pytest.fixture()` over `@pytest.fixture`
@@ -124,7 +124,11 @@ ignore = [
     "PT023", # @pytest.mark.parametrize` is missing required arguments
     "B008",  # do not perform function calls in argument defaults
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    "S404",  # `subprocess` module is possibly insecure (was B404 in bandit)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S"] # bandit previously excluded tests entirely
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
@@ -132,10 +136,6 @@ known-first-party = ["app"]
 [tool.ruff.format]
 quote-style = "double"
 docstring-code-format = true
-
-[tool.bandit]
-exclude_dirs = ["tests", ".venv"]
-skips = ["B404"]
 
 [tool.pytest.ini_options]
 testpaths = "tests/"

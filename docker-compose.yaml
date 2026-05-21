@@ -13,11 +13,9 @@ services:
       FFC_EXT_POSTGRES_HOST: db
     env_file:
       - .env
-    ports:
-      - "8000:8000"
     volumes:
       - .:/app
-    
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:

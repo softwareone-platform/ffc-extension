@@ -194,3 +194,7 @@ static/*
 
 # secret
 .secrets.yaml
+
+# claude local settings
+
+.claude/settings.local.json
