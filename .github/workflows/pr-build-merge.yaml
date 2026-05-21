@@ -57,9 +57,6 @@ jobs:
       - name: Run linting
         run: uv --project backend run ruff check backend
 
-      - name: Run security checks
-        run: uv --project backend run bandit -c backend/pyproject.toml -r backend -f json -o bandit.json
-
       - name: Run tests
         run: uv --project backend run pytest --rootdir=backend -c backend/pyproject.toml backend
         env:

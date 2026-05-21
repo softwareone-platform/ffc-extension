@@ -21,7 +21,7 @@ from app.conf import get_settings
 
 logger = logging.getLogger(__name__)
 
-_JINJA_ENV = Environment(  # nosec: B701
+_JINJA_ENV = Environment(  # noqa: S701
     loader=FileSystemLoader(Path(__file__).parent.parent.parent.resolve()),
     undefined=StrictUndefined,
 )
@@ -142,8 +142,8 @@ def get_instance_external_id() -> str:
         pass
 
     try:
-        result = subprocess.run(  # nosec: B603, B607
-            ["grep", "overlay", "/proc/self/mountinfo"],
+        result = subprocess.run(  # noqa: S603
+            ["grep", "overlay", "/proc/self/mountinfo"],  # noqa: S607
             capture_output=True,
             stdin=subprocess.DEVNULL,
             check=True,

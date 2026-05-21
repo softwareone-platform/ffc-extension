@@ -1,40 +1,28 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
   "name": "FFC Extension",
-  // Update the 'dockerComposeFile' list if you have more compose files or use different names.
-  // The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
   "dockerComposeFile": [
     "../docker-compose.yaml",
     "docker-compose.yml"
   ],
-  // The 'service' property is the name of the service for the container that VS Code should
-  // use. Update this value and .devcontainer/docker-compose.yml to the real service name.
   "service": "app",
-  // The optional 'workspaceFolder' property is the path VS Code should open by default when
-  // connected. This is typically a file mount in .devcontainer/docker-compose.yml
   "workspaceFolder": "/app",
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind",
-    "source=claude-state,target=/root/.claude,type=volume",
-    "source=jetbrains-cache,target=/root/.cache/JetBrains,type=volume",
-    "source=jetbrains-share,target=/root/.local/share/JetBrains,type=volume",
-    "source=jetbrains-config,target=/root/.config/JetBrains,type=volume"
+    "source=${localEnv:HOME}/.config/starship.toml,target=/root/.config/starship.toml,type=bind",
+    "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume",
+    "source=prek-cache-${devcontainerId},target=/root/.cache/prek,type=volume",
+    "source=jetbrains-cache-${devcontainerId},target=/root/.cache/JetBrains,type=volume",
+    "source=jetbrains-share-${devcontainerId},target=/root/.local/share/JetBrains,type=volume",
+    "source=jetbrains-config-${devcontainerId},target=/root/.config/JetBrains,type=volume"
   ],
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-  // Uncomment the next line if you want start specific services in your Docker Compose config.
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/root/.claude",
+    "PREK_HOME": "/root/.cache/prek"
+  },
   "runServices": [
     "db",
     "test_db"
   ],
-  // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
-  // "shutdownAction": "none",
-  // Uncomment the next line to run commands after the container is created.
-  // "postCreateCommand": "cat /etc/os-release",
-  // Configure tool-specific properties.
   "customizations": {
     "vscode": {
       "extensions": [
@@ -45,6 +33,7 @@
         "knisterpeter.vscode-commitizen"
       ],
       "settings": {
+        "python.terminal.activateEnvironment": false,
         "python.defaultInterpreterPath": "/opt/venv/bin/python"
       }
     },
@@ -56,6 +45,4 @@
       ]
     }
   }
-  // Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
-  // "remoteUser": "devcontainer"
 }
