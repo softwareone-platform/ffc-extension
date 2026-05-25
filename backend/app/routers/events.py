@@ -21,6 +21,7 @@ from app.fulfilment.order import (
     validate_and_move_to_querying_if_needed,
 )
 from app.fulfilment.recovery import handle_exception
+from app.fulfilment.templates import initialize_templates
 from app.schemas.core import Event, EventResponse
 
 logger = logging.getLogger(__name__)
@@ -38,24 +39,6 @@ async def process_order(
     optscale_auth_client: OptscaleAuthClient,
     api_modifier_client: APIModifierClient,
 ) -> EventResponse:
-    """
-        try:
-        fetch order is in progress
-        set task in progress
-        get or create organization
-        get or create user
-        complete order
-        complete task
-        return ok
-    except:
-      if now < due_date:
-            reschedule task
-            return reschedule
-      else:
-          fail order
-          OK task con descrizione fail raggiunta la due date
-          return ok e scriviamo nel task che l'ordine e' fallito.
-    """
     logger.info(f"--------PAYLOAD {event}")
 
     order_id = event.object.id
@@ -68,7 +51,9 @@ async def process_order(
     order: dict[str, Any] = {}
 
     try:
-        # 1. Set task to Processing & fetch order
+        # 1. Fetch templates
+        await initialize_templates(ext_client, product_id)
+        # 2. Set task to Processing & fetch order
         order = await start_task_and_get_order(
             task_id=task_id,
             order_id=order_id,
@@ -77,28 +62,27 @@ async def process_order(
             client=client,
         )
 
-        # 2. Check status — skip if not processing
+        # 3. Check status — skip if not processing
         if order["status"] != MPT_ORDER_STATUS_PROCESSING:
             await ext_client.complete_task(task_id)
             return EventResponse.ok()
 
-        # 3. setting fulfillment's parameters
+        # 4. Setting fulfillment's parameters
         order = await apply_fulfillment_defaults_if_needed(
             ext_client=ext_client,
             order=order,
             settings=settings,
         )
-        # check order parameters & move order to Query if parameters are invalid
+        # 5. Check order parameters & move order to Query if parameters are invalid
         order, is_valid = await validate_and_move_to_querying_if_needed(
             order=order,
             ext_client=ext_client,
-            product_id=product_id,
         )
         if not is_valid:
             await ext_client.complete_task(task_id)
             return EventResponse.ok()
-        # 6 Start Order 'happy path' processing
 
+        # 6. Start Order 'happy path' processing
         return await fulfill_order(
             api_modifier_client=api_modifier_client,
             ext_client=ext_client,
@@ -106,7 +90,6 @@ async def process_order(
             order=order,
             order_id=order_id,
             organization_repo=organization_repo,
-            product_id=product_id,
             task_id=task_id,
         )
 

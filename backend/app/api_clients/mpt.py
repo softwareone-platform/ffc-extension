@@ -337,6 +337,9 @@ class MPTClient:
             select=select,
         )
 
+    def get_templates_by_product_id(self, product_id: str) -> AsyncGenerator[dict[str, Any], None]:
+        return self.collection_iterator(f"/catalog/products/{product_id}/templates")
+
     async def get_product_template_or_default(self, product_id, status, name=None):
         name_or_default_filter = "eq(default,true)"
         if name:

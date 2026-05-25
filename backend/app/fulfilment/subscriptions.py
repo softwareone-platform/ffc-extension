@@ -7,14 +7,16 @@ from app.utils import find_first
 logger = logging.getLogger(__name__)
 
 
-def get_subscription_by_line_and_item_id(subscriptions, item_id, line_id):
+def get_subscription_by_line_and_item_id(
+    subscriptions: list, item_id: str, line_id: str
+) -> dict | None:
     """
     Return a subscription by line id and sku.
-
     Args:
-        subscriptions (list): a list of subscription obects.
-        vendor_external_id (str): the item SKU
+        subscriptions (list): a list of subscription objects.
+        item_id (str): the item SKU
         line_id (str): the id of the order line that should contain the given SKU.
+
 
     Returns:
         dict: the corresponding subscription if it is found, None otherwise.
@@ -53,4 +55,6 @@ async def create_order_subscription(ext_client: MPTClient, order: dict, organiza
                 order_id=order["id"],
                 subscription=subscription,
             )
-            logger.info(f"{order}: subscription {line['id']} ({subscription['id']}) created")
+            logger.info(
+                "%s: subscription %s (%s) created", order["id"], line["id"], subscription["id"]
+            )

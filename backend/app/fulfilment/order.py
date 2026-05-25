@@ -10,17 +10,10 @@ from app.dependencies.api_clients import (
     OptscaleAuthClient,
 )
 from app.dependencies.core import ExtensionContext
-from app.fulfilment.constants import (
-    MPT_ORDER_STATUS_QUERYING,
-)
-from app.fulfilment.helpers import (
-    check_order_parameters,
-    create_employee,
-    get_or_create_organization,
-    get_parameter_updates,
-)
+from app.fulfilment.parameters import check_order_parameters, get_parameter_updates
+from app.fulfilment.provisioning import create_employee, get_or_create_organization
 from app.fulfilment.subscriptions import create_order_subscription
-from app.fulfilment.templates import start_processing_order_template
+from app.fulfilment.templates import resolve_template_id, start_processing_order_template
 from app.parameters import set_fulfillment_parameter
 from app.schemas.core import EventResponse
 
@@ -60,7 +53,6 @@ async def start_task_and_get_order(
 async def validate_and_move_to_querying_if_needed(
     *,
     order: dict[str, Any],
-    product_id: str,
     ext_client: ExtensionClient,
 ) -> tuple[dict[str, Any], bool]:
     """
@@ -69,17 +61,13 @@ async def validate_and_move_to_querying_if_needed(
     order_with_validation_errors, validation_succeeded = check_order_parameters(order)
     order_id = order["id"]
     if not validation_succeeded:
-        template = await ext_client.get_product_template_or_default(
-            product_id=product_id,
-            status=MPT_ORDER_STATUS_QUERYING,
-        )
-        # Persist validation errors before moving the order back to Query.
+        template_id = resolve_template_id("OrderQuerying", None)
         await ext_client.update_order(
             order_id=order_id,
             parameters=order_with_validation_errors["parameters"],
         )
         querying_order = await ext_client.set_status_to_querying(
-            order_id=order_id, payload=template
+            order_id=order_id, payload={"template": {"id": template_id}}
         )
         logger.info("%s: ordering parameters are invalid, move to querying", querying_order["id"])
         return order_with_validation_errors, False
@@ -94,23 +82,17 @@ async def fulfill_order(
     order: dict[str, Any],
     order_id: str,
     organization_repo: OrganizationHandler,
-    product_id: str,
     task_id: str,
 ) -> EventResponse:
-    order = await start_processing_order_template(ext_client, order, product_id)
-    logger.info(f"-------------Processing order {order_id}")
-    # 8 create employee
+    order = await start_processing_order_template(ext_client, order)
     order = await create_employee(api_modifier_client, ext_client, optscale_auth_client, order)
-
-    # 9 get or create organization
 
     organization = await get_or_create_organization(ext_client, order, organization_repo)
 
-    # Create subscription
     await create_order_subscription(ext_client, order, organization)
 
-    # Complete order
     await ext_client.complete_order(order_id=order_id)
-    # 7. Complete task
+
     await ext_client.complete_task(task_id)
+
     return EventResponse.ok()

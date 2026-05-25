@@ -39,10 +39,12 @@ async def handle_exception(
             payload={"description": f"{description} - {now.isoformat()} - {error_message}"},
         )
         return EventResponse.reschedule(seconds=300)
-    logger.info(
-        f"Switch order {order_id} to failed status. "
-        f"Reason: due date is reached {due_date.strftime('%Y-%m-%d')}"
+    logger.exception(
+        "Switch order %s to failed status. Reason: due is reached %s",
+        order_id,
+        due_date.strftime("%Y-%m-%d"),
     )
+
     await ext_client.fail_order(
         order_id=order_id,
         payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
