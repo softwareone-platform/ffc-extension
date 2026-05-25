@@ -198,3 +198,6 @@ static/*
 # claude local settings
 
 .claude/settings.local.json
+
+frontend/test-results/
+frontend/coverage/
