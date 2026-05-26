@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 
-import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 
 import { EntitlementsDetailsLayout } from '~features/entitlements/details/DetailsLayout';
 import { EntitlementsGeneralDetails } from '~features/entitlements/details/general/General';
@@ -22,7 +22,7 @@ setup((element: Element) => {
     const root = createRoot(element);
     root.render(
         <ExtensionsProvider i18n={i18n}>
-            <HashRouter>
+            <BrowserRouter>
                 <Routes>
                     <Route element={<Outlet />}>
                         <Route index element={<EntitlementsGrid />} />
@@ -32,7 +32,7 @@ setup((element: Element) => {
                         </Route>
                     </Route>
                 </Routes>
-            </HashRouter>
+            </BrowserRouter>
         </ExtensionsProvider>,
     );
 });

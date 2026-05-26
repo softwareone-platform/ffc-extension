@@ -10,6 +10,7 @@
     "outDir": "../static",
     "skipLibCheck": true,
     "baseUrl": "./src",
+    "types": ["node", "jest"],
     "paths": {
       "~app/*": ["app/*"],
       "~features/*": ["features/*"],
@@ -21,4 +22,3 @@
     }
   }
 }
-

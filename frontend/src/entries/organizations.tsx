@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 
-import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 
 import { OrganizationDataSources } from '~features/organizations/details/data-sources/DataSources';
 import { OrganizationDetailsLayout } from '~features/organizations/details/DetailsLayout';
@@ -23,7 +23,7 @@ setup((element: Element) => {
     const root = createRoot(element);
     root.render(
         <ExtensionsProvider i18n={i18n}>
-            <HashRouter>
+            <BrowserRouter>
                 <Routes>
                     <Route element={<Outlet />}>
                         <Route index element={<OrganizationsGrid />} />
@@ -35,7 +35,7 @@ setup((element: Element) => {
                         </Route>
                     </Route>
                 </Routes>
-            </HashRouter>
+            </BrowserRouter>
         </ExtensionsProvider>,
     );
 });

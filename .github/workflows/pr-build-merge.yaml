@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  validate-backend:
     services:
       db:
         image: postgres:17
@@ -76,6 +76,62 @@ jobs:
           echo "deletions=$DELETIONS" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage.xml
+
+
+  validate-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Setup Node.js 24
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: frontend/package-lock.json
+    - name: Configure npm authentication
+      run: |
+        cat <<EOF > ~/.npmrc
+        //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/registry/:username=github
+        //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/registry/:_password="${NPM_TOKEN_BASE64}"
+        //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/registry/:email=github@softwareone.com
+        //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/:username=github
+        //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/:_password="${NPM_TOKEN_BASE64}"
+        //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/:email=github@softwareone.com
+        EOF
+      env:
+        NPM_TOKEN_BASE64: ${{ secrets.AZURE_DEVOPS_NPM_TOKEN_BASE64 }}
+    - name: Install dependencies
+      run: cd frontend && npm ci
+    - name: Run Unit Tests with Coverage
+      run: cd frontend && npm run test:coverage
+    - name: Build and validate frontend
+      run: cd frontend && npm run check:all
+    - name: Upload frontend coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-coverage
+        path: frontend/coverage/lcov.info
+
+  teams:
+    needs: [validate-backend, validate-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Notify Microsoft Teams
         if: ${{ github.event_name == 'pull_request' }}
         uses: softwareone-platform/notify-pr-teams-action@v4
@@ -96,6 +152,25 @@ jobs:
           pr_status: ${{ github.event.pull_request.state }}
           is_merged: ${{ github.event.pull_request.merged }}
 
+  quality-check:
+    needs: [validate-backend, validate-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@v6
@@ -111,11 +186,3 @@ jobs:
           pollingTimeoutSec: 600
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Save code coverage report in the artefacts
-        uses: actions/upload-artifact@v4
-        if: ${{ !env.ACT }}
-        with:
-          name: coverage-report
-          path: htmlcov
-          retention-days: 10
