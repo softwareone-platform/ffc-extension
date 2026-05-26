@@ -15,7 +15,13 @@ export default {
   collectCoverage: true,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   collectCoverageFrom: ['<rootDir>/**/*.{js,jsx,ts,tsx}'],
-  coverageReporters: ['text', 'cobertura', 'html', 'lcov', 'text-summary'],
+  coverageReporters: [
+    'text',
+    'cobertura',
+    'html',
+    ['lcov', { projectRoot: '..', file: '../../lcov.info' }],
+    'text-summary',
+  ],
   coverageDirectory: '<rootDir>/../coverage',
   coveragePathIgnorePatterns: [
     '\\.d\\.ts',
