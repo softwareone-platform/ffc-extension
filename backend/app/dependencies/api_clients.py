@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from app.api_clients import api_modifier, exchage_rates, optscale
+from app.api_clients import api_modifier, exchage_rates, ffc_api, optscale
 from app.api_clients.base import BaseAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth, get_installation_client
 from app.auth.auth import MPTAuthContext
@@ -31,6 +31,10 @@ OptscaleClient = Annotated[
 OptscaleAuthClient = Annotated[
     optscale.OptscaleAuthClient,
     Depends(APIClientFactory(optscale.OptscaleAuthClient)),
+]
+FFCAPIClient = Annotated[
+    ffc_api.FFCAPIClient,
+    Depends(APIClientFactory(ffc_api.FFCAPIClient)),
 ]
 
 ExchangeRatesClient = Annotated[

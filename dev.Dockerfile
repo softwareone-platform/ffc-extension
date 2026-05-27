@@ -2,7 +2,7 @@ FROM python:3.12
 
 # Install basic utilites
 RUN apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates curl vim postgresql-client netcat-openbsd; \
+    apt-get install -y --no-install-recommends ca-certificates curl vim postgresql-client netcat-openbsd less; \
     apt-get autoremove --purge -y; \
     apt-get clean -y; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*

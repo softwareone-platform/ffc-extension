@@ -5,19 +5,25 @@ from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi_pagination import create_page
 from sqlalchemy import Select
 
 from app.api_clients.optscale import UserDoesNotExist
 from app.db.handlers import ConstraintViolationError, NotFoundError
 from app.db.models import AdditionalAdminRequest, Organization
-from app.dependencies.api_clients import APIModifierClient, OptscaleAuthClient, OptscaleClient
+from app.dependencies.api_clients import (
+    APIModifierClient,
+    FFCAPIClient,
+    OptscaleAuthClient,
+    OptscaleClient,
+)
 from app.dependencies.auth import check_admin_account
 from app.dependencies.db import AdditionalAdminRequestRepository, OrganizationRepository
 from app.dependencies.path import OrganizationId
 from app.enums import DatasourceType, OrganizationStatus
 from app.openapi import examples
-from app.pagination import LimitOffsetPage, paginate
-from app.rql import OrganizationRules, RQLQuery
+from app.pagination import LimitOffsetPage, LimitOffsetParams, paginate
+from app.rql import OrganizationRules, RQLPassthrough, RQLQuery
 from app.schemas.core import convert_model_to_schema
 from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
@@ -240,30 +246,42 @@ async def force_reimport_datasource(
         await optscale_client.force_reimport_datasource(datasource_id)
 
 
-@router.get("/{organization_id}/employees", response_model=list[EmployeeRead])
+@router.get(
+    "/{organization_id}/employees",
+    response_model=LimitOffsetPage[EmployeeRead],
+)
 async def get_employees_by_organization_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
-    optscale_client: OptscaleClient,
+    ffc_api_client: FFCAPIClient,
+    params: Annotated[LimitOffsetParams, Depends()],
+    rql: Annotated[str | None, Depends(RQLPassthrough())],
 ):
     validate_linked_organization_id(organization)
     with wrap_http_error_in_502(f"Error fetching employees for organization {organization.name}"):
-        response = await optscale_client.fetch_users_for_organization(
-            organization_id=organization.linked_organization_id  # type: ignore
+        response = await ffc_api_client.fetch_users_for_organization(
+            organization.linked_organization_id,
+            limit=params.limit,
+            offset=params.offset,
+            rql=rql,
         )
 
-    users = response.json()["employees"]
-
-    return [
-        EmployeeRead(
-            id=user["id"],
-            email=user["user_email"],
-            display_name=user["user_display_name"],
-            created_at=user["created_at"],
-            last_login=user["last_login"],
-            roles_count=len(user["assignments"]),
-        )
-        for user in users
-    ]
+    users = response.json()
+    return create_page(
+        [
+            EmployeeRead(
+                id=user["id"],
+                email=user["auth_user"]["email"],
+                display_name=user["name"],
+                created_at=user["created_at"],
+                last_login=user["auth_user"]["last_login"],
+                roles_count=user["roles"] + 1,  # optscale omits member role
+                roles=user["auth_user"]["assignments"],
+            )
+            for user in users["items"]
+        ],
+        params=params,
+        total=users["total"],
+    )
 
 
 @router.post(

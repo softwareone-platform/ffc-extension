@@ -82,6 +82,7 @@ def test_settings() -> Settings:
     settings.optscale_cluster_secret = "test_cluster_secret"
     settings.optscale_rest_api_base_url = "https://opt-api.ffc.com"
     settings.optscale_auth_api_base_url = "https://opt-auth.ffc.com"
+    settings.optscale_ffc_api_base_url = "https://opt-ffc-api.ffc.com"
     settings.api_modifier_base_url = "https://api-modifier.ffc.com"
     settings.api_modifier_jwt_secret = "test_jwt_secrettest_jwt_secrettest_jwt_secretpyt"
     settings.opentelemetry_exporter = None
