@@ -12,6 +12,7 @@ from app.schemas.core import BaseSchema, CommonEventsSchema, IdSchema
 
 class UserBase(BaseSchema):
     name: Annotated[str, Field(max_length=255, examples=["Lady Gaga"])]
+    external_id: Annotated[str, Field(min_length=1, max_length=255, examples=["USR-0478-4883"])]
 
 
 class UserCreate(UserBase):

@@ -48,3 +48,8 @@ class SystemUpdate(BaseSchema):
     ] = None
     external_id: Annotated[str | None, Field(min_length=1, max_length=255)] = None
     description: Annotated[str | None, Field(max_length=2000)] = None
+
+
+class SystemReference(IdSchema):
+    name: Annotated[str, Field(max_length=255, examples=["My token"])]
+    external_id: Annotated[str, Field(min_length=1, max_length=255, examples=["TKN-0478-4883"])]

@@ -17,6 +17,7 @@ from app.routers import (
     employees,
     entitlements,
     expenses,
+    me,
     organizations,
 )
 from app.telemetry import setup_fastapi_instrumentor
@@ -97,6 +98,7 @@ def setup_app():
         entitlements.router,
         organizations.router,
         employees.router,
+        me.router,
         accounts.router,
         expenses.router,
     ):
@@ -130,6 +132,13 @@ def setup_app():
     v1_router.include_router(
         accounts.router,
         prefix="/accounts",
+        dependencies=[Depends(authentication_required)],
+        tags=["Portal Administration"],
+    )
+
+    v1_router.include_router(
+        me.router,
+        prefix="/me",
         dependencies=[Depends(authentication_required)],
         tags=["Portal Administration"],
     )
