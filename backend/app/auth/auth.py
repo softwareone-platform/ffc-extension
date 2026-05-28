@@ -25,6 +25,7 @@ async def resolve_installation(account_id: str) -> str | None:
         data = response.json()
         if len(data["data"]) > 0:
             return data["data"][0]["id"]
+    return None
 
 
 async def get_auth_context(

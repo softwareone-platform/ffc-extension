@@ -320,6 +320,7 @@ def user_factory(
     async def _user(
         name: str | None = None,
         email: str | None = None,
+        external_id: str | None = None,
         status: UserStatus = UserStatus.ACTIVE,
         account: Account | None = None,
         accountuser_status: AccountUserStatus = AccountUserStatus.ACTIVE,
@@ -328,6 +329,7 @@ def user_factory(
         user = User(
             name=name or faker.name(),
             email=email or faker.email(),
+            external_id=external_id or str(uuid.uuid4()),
             status=status,
         )
 
@@ -474,6 +476,28 @@ async def aws_extension(system_factory: ModelFactory[System], aws_account: Accou
 async def admin_account(account_factory: ModelFactory[Account]) -> Account:
     return await account_factory(
         name="SoftwareOne", type=AccountType.ADMIN, external_id="ACC-0000-0000"
+    )
+
+
+@pytest.fixture
+async def admin_user(user_factory: ModelFactory[User], admin_account: Account) -> User:
+    return await user_factory(
+        name="Root",
+        account=admin_account,
+        external_id="USR-0000-0000",
+    )
+
+
+@pytest.fixture
+async def admin_user_token(admin_account: Account, admin_user: User, jwt_token_factory) -> str:
+    now = datetime.now(UTC)
+    return jwt_token_factory(
+        account_id=str(admin_account.external_id),
+        user_id=admin_user.external_id,
+        token_id=None,
+        exp=now + timedelta(minutes=5),
+        nbf=now,
+        iat=now,
     )
 
 

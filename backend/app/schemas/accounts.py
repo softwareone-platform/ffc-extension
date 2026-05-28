@@ -54,6 +54,15 @@ class AccountReference(IdSchema):
     name: Annotated[str, Field(max_length=255, examples=["Microsoft"])]
     type: AccountType
     integration: AccountIntegration | None
+    external_id: Annotated[
+        str,
+        Field(
+            min_length=1,
+            max_length=255,
+            examples=["ACC-9044-8753"],
+            description="An external identifier for the account",
+        ),
+    ]
 
 
 # Importing here to avoid circular imports

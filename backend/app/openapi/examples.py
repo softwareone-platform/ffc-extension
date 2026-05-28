@@ -43,3 +43,19 @@ USER_RESPONSE = {
     "id": "FUSR-9876-5431",
     "status": "active",
 }
+
+
+ME_RESPONSE = {
+    "account": {
+        "id": "FACC-5810-4583",
+        "name": "IBM",
+        "external_id": "ACC-1234",
+        "type": "affiliate",
+    },
+    "user": {
+        "name": "Fred Nerk",
+        "email": "fred.nerk@example.com",
+        "id": "FUSR-9876-5431",
+        "external_id": "USR-0000-1122",
+    },
+}

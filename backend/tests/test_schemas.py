@@ -53,7 +53,12 @@ def test_system_read_convert_model_to_schema(gcp_extension: System):
         description="Test Description",
         type=ActorType.SYSTEM,
         status=SystemStatus.ACTIVE,
-        owner=Account(id="FACC-1234-5678", name="test", type=AccountType.AFFILIATE),
+        owner=Account(
+            id="FACC-1234-5678",
+            name="test",
+            type=AccountType.AFFILIATE,
+            external_id="ACC-0000-1234",
+        ),
     )
     system.created_at = datetime.now(UTC)
     system.updated_at = datetime.now(UTC)
