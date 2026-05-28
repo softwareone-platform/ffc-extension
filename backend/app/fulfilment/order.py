@@ -10,11 +10,12 @@ from app.dependencies.api_clients import (
     OptscaleAuthClient,
 )
 from app.dependencies.core import ExtensionContext
+from app.fulfilment.constants import PURCHASE_EXISTING_TEMPLATE_NAME, PURCHASE_TEMPLATE_NAME
 from app.fulfilment.parameters import check_order_parameters, get_parameter_updates
 from app.fulfilment.provisioning import create_employee, get_or_create_organization
 from app.fulfilment.subscriptions import create_order_subscription
-from app.fulfilment.templates import resolve_template_id, start_processing_order_template
-from app.parameters import set_fulfillment_parameter
+from app.fulfilment.templates import get_product_template_id, start_processing_order_template
+from app.parameters import PARAM_IS_NEW_USER, get_fulfillment_parameter, set_fulfillment_parameter
 from app.schemas.core import EventResponse
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ async def validate_and_move_to_querying_if_needed(
     order_with_validation_errors, validation_succeeded = check_order_parameters(order)
     order_id = order["id"]
     if not validation_succeeded:
-        template_id = resolve_template_id("OrderQuerying", None)
+        template_id = await get_product_template_id(ext_client, "OrderQuerying", None)
         await ext_client.update_order(
             order_id=order_id,
             parameters=order_with_validation_errors["parameters"],
@@ -85,13 +86,25 @@ async def fulfill_order(
     task_id: str,
 ) -> EventResponse:
     order = await start_processing_order_template(ext_client, order)
-    order = await create_employee(api_modifier_client, ext_client, optscale_auth_client, order)
+    order, employee_id = await create_employee(
+        ext_client, api_modifier_client, optscale_auth_client, order
+    )
 
-    organization = await get_or_create_organization(ext_client, order, organization_repo)
+    organization = await get_or_create_organization(
+        ext_client, api_modifier_client, order, organization_repo, employee_id
+    )
 
     await create_order_subscription(ext_client, order, organization)
+    is_new_user_param = get_fulfillment_parameter(order, PARAM_IS_NEW_USER)
 
-    await ext_client.complete_order(order_id=order_id)
+    if is_new_user_param.get("value") == ["Yes"]:
+        template_name = PURCHASE_TEMPLATE_NAME
+    else:
+        template_name = PURCHASE_EXISTING_TEMPLATE_NAME
+
+    template_id = await get_product_template_id(ext_client, "OrderCompleted", template_name)
+
+    await ext_client.complete_order(order_id=order_id, payload={"template": {"id": template_id}})
 
     await ext_client.complete_task(task_id)
 

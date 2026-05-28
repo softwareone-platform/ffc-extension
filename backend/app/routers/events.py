@@ -21,7 +21,6 @@ from app.fulfilment.order import (
     validate_and_move_to_querying_if_needed,
 )
 from app.fulfilment.recovery import handle_exception
-from app.fulfilment.templates import initialize_templates
 from app.schemas.core import Event, EventResponse
 
 logger = logging.getLogger(__name__)
@@ -47,12 +46,10 @@ async def process_order(
         return EventResponse.cancel()
 
     task_id = event.task.id
-    product_id = settings.mpt_product_id
+    # product_id = settings.mpt_product_id
     order: dict[str, Any] = {}
 
     try:
-        # 1. Fetch templates
-        await initialize_templates(ext_client, product_id)
         # 2. Set task to Processing & fetch order
         order = await start_task_and_get_order(
             task_id=task_id,

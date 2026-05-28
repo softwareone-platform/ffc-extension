@@ -2,6 +2,7 @@ import copy
 import logging
 
 from app.api_clients.mpt import MPTClient
+from app.conf import get_settings
 from app.fulfilment.constants import PURCHASE_TEMPLATE_NAME
 
 logger = logging.getLogger(__name__)
@@ -13,38 +14,24 @@ def set_template(order: dict, template_id: str) -> dict:
     if not template_id:
         raise ValueError("Template id is required")
     updated_order = copy.deepcopy(order)
-    updated_order["template"]["id"] = template_id
-    return updated_order
+    try:
+        updated_order["template"]["id"] = template_id
+        return updated_order
+    except KeyError:
+        raise KeyError("Order is malformed")
 
 
-async def initialize_templates(ext_client: MPTClient, product_id: str) -> None:
-    if template_cache:
-        logger.debug("Template cache already initialized")
-        return
-
-    logger.info("Initializing template cache for product %s", product_id)
-    await fetch_product_templates(ext_client, product_id)
-
+async def get_product_template_id(
+    ext_client: MPTClient, template_type: str, template_name: str
+) -> str:
+    settings = get_settings()
+    product_id = settings.mpt_product_id
     if not template_cache:
-        raise RuntimeError(
-            f"Template cache is empty after initialization for product {product_id}. "
-            "Check MPT API availability and product configuration."
-        )
-    logger.info("Template cache initialized with %d entries", len(template_cache))
-
-
-def resolve_template_id(
-    template_type: str,
-    template_name: str | None,
-) -> str | None:
-    # 1) Try specific template by name
-    if template_name:
-        specific = template_cache.get((template_type, template_name))
-        if specific:
-            return specific
-
-    # 2) Fallback to default for that type
-    return template_cache.get((template_type, None))
+        logger.info("Initializing template cache for product %s", product_id)
+        await fetch_product_templates(ext_client, product_id)
+        logger.info("Template cache initialized with %d entries", len(template_cache))
+    logger.info("------ Fetching template %s", template_name)
+    return template_cache.get((template_type, template_name), template_cache[(template_type, None)])
 
 
 async def fetch_product_templates(ext_client: MPTClient, product_id: str) -> None:
@@ -58,7 +45,9 @@ async def fetch_product_templates(ext_client: MPTClient, product_id: str) -> Non
 
 async def start_processing_order_template(ext_client: MPTClient, order: dict) -> dict:
     """Ensure the order uses the processing template expected for purchase flow."""
-    template_id = resolve_template_id("OrderProcessing", PURCHASE_TEMPLATE_NAME)
+    template_id = await get_product_template_id(
+        ext_client, "OrderProcessing", PURCHASE_TEMPLATE_NAME
+    )
     logger.info("Processing order template: %s", template_id)
     current_template_id = order.get("template", {}).get("id")
     if template_id != current_template_id:

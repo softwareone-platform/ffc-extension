@@ -737,6 +737,7 @@ def fulfillment_parameters_factory():
                 "name": "Billed Percentage",
                 "type": "SingleLineText",
                 "phase": "Fulfillment",
+                "displayValue": "4",
                 "value": "4",
             },
         ]
@@ -916,6 +917,126 @@ def agreement_factory(buyer, order_parameters_factory, fulfillment_parameters_fa
         }
 
     return _agreement
+
+
+@pytest.fixture()
+def order_factory(
+    agreement,
+    listing,
+    buyer,
+    seller,
+    licensee,
+    template,
+    order_parameters_factory,
+    fulfillment_parameters_factory,
+    lines_factory,
+    subscriptions_factory,
+):
+    def _auto_order_id() -> str:
+        # 12-digit numeric suffix split as ORD-xxxx-xxxx-xxxx
+        numeric = f"{uuid.uuid4().int % (10**12):012d}"
+        return f"ORD-{numeric[:4]}-{numeric[4:8]}-{numeric[8:]}"
+
+    def _order(
+        *,
+        order_id: str | None = None,
+        order_type: str,
+        status: str,
+        product_id: str,
+        product_name: str,
+        lines: list[dict] | None = None,
+        subscriptions: list[dict] | None = None,
+        ordering_parameters: list[dict] | None = None,
+        fulfillment_parameters: list[dict] | None = None,
+        **overrides,
+    ) -> dict:
+        resolved_order_id = order_id or _auto_order_id()
+
+        order_lines = lines if lines is not None else lines_factory()
+        order_subscriptions = (
+            subscriptions if subscriptions is not None else subscriptions_factory(lines=order_lines)
+        )
+
+        order = {
+            "id": resolved_order_id,
+            "revision": 1,
+            "type": order_type,
+            "status": status,
+            "notes": "",
+            "template": {
+                "id": template["id"],
+                "name": template["name"],
+                "revision": 1,
+            },
+            "listing": {
+                "id": listing["id"],
+                "name": listing["id"],
+                "revision": 1,
+            },
+            "authorization": {
+                "id": "AUT-1234-5678",
+                "name": "Test Authorisation",
+                "revision": 1,
+                "currency": "EUR",
+            },
+            "agreement": {
+                "id": agreement["id"],
+                "name": agreement["name"],
+                "revision": 1,
+                "status": "Provisioning",
+            },
+            "externalIds": {"client": ""},
+            "price": {
+                "defaultMarkup": 42.0,
+                "SPxY": 0.0,
+                "SPxM": 0.0,
+                "PPxY": 0.0,
+                "PPxM": 0.0,
+                "currency": "USD",
+                "markup": 0.0,
+                "margin": 0.0,
+                "defaultMarkupSource": {},
+            },
+            "lines": order_lines,
+            "subscriptions": order_subscriptions,
+            "assets": [],
+            "parameters": {
+                "ordering": ordering_parameters or order_parameters_factory(),
+                "fulfillment": fulfillment_parameters or fulfillment_parameters_factory(),
+            },
+            "product": {
+                "id": product_id,
+                "name": product_name,
+                "icon": f"/v1/catalog/products/{product_id}/icon",
+                "revision": 1,
+                "externalIds": {},
+                "status": "Unpublished",
+            },
+            "client": agreement["client"],
+            "licensee": licensee,
+            "buyer": buyer,
+            "seller": seller,
+            "vendor": agreement["seller"],
+            "termsAndConditions": [],
+            "certificates": [],
+            "audit": {
+                "created": {
+                    "at": "2024-04-12T06:46:47.182Z",
+                    "by": {"id": "USR-2244-0626", "name": "Anton Hinz", "revision": 1},
+                },
+                "updated": {
+                    "at": "2024-05-13T15:23:15.312Z",
+                    "by": {"id": "USR-0000-0016", "name": "Astha Pruthi", "revision": 1},
+                },
+            },
+        }
+
+        if overrides:
+            order.update(overrides)
+
+        return order
+
+    return _order
 
 
 @pytest.fixture()
