@@ -24,7 +24,7 @@ async def test_get_employees_for_organization_success(
 
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/organizations/{org.linked_organization_id}/users?limit=50&offset=0",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/users?limit=50&offset=0",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         json={
             "items": [
@@ -125,7 +125,7 @@ async def test_get_employees_for_organization_with_no_employees(
 
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/organizations/{org.linked_organization_id}/users?limit=50&offset=0",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/users?limit=50&offset=0",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         json={"items": [], "total": 0, "limit": 50, "offset": 0},
     )
@@ -169,7 +169,7 @@ async def test_get_employees_for_organization_with_optscale_error(
 
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/organizations/{org.linked_organization_id}/users?limit=50&offset=0",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/users?limit=50&offset=0",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         status_code=500,
     )
