@@ -14,7 +14,6 @@ from app.dependencies.auth import authentication_required, check_admin_account
 from app.openapi import generate_openapi_spec
 from app.routers import (
     accounts,
-    employees,
     entitlements,
     expenses,
     me,
@@ -42,10 +41,6 @@ tags_metadata = [
     {
         "name": "Portal Administration",
         "description": "Operations Portal administration edpoints.",
-    },
-    {
-        "name": "Portal Settings",
-        "description": "Operations Portal settings edpoints.",
     },
     {
         "name": "FinOps for Cloud Provisioning",
@@ -97,7 +92,6 @@ def setup_app():
     for router in (
         entitlements.router,
         organizations.router,
-        employees.router,
         me.router,
         accounts.router,
         expenses.router,
@@ -124,12 +118,6 @@ def setup_app():
         tags=["FinOps for Cloud Provisioning"],
     )
     v1_router.include_router(
-        employees.router,
-        prefix="/employees",
-        dependencies=[Depends(authentication_required)],
-        tags=["FinOps for Cloud Provisioning"],
-    )
-    v1_router.include_router(
         accounts.router,
         prefix="/accounts",
         dependencies=[Depends(authentication_required)],
@@ -140,7 +128,7 @@ def setup_app():
         me.router,
         prefix="/me",
         dependencies=[Depends(authentication_required)],
-        tags=["Portal Administration"],
+        tags=["Auth"],
     )
 
     app.include_router(v1_router)

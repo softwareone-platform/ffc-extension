@@ -114,19 +114,33 @@ class DatasourceExpenseRules(ModelRQLRules, AuditableMixin):
     organization = RelationshipRule(rules=OrganizationRules())
 
 
+def get_rql_expression_from_querystring(querystring: str) -> str | None:
+    qs = quote(querystring, safe="/&()=_.-~:,")  # make sure we can decode datetime
+    parsed = parse_qs(qs, keep_blank_values=True)
+    rql_tokens = [k for k, v in parsed.items() if v == [""]]
+    rql_expression = "&".join(rql_tokens)
+
+    return unquote(rql_expression) if rql_expression else None
+
+
 class RQLQuery:
     def __init__(self, rules: ModelRQLRules):
         self.rules = rules
 
     def __call__(self, request: Request) -> Select | None:
-        qs = quote(
-            request.scope["query_string"].decode(), safe="/&()=_.-~:,"
-        )  # make sure we can decode datetime
-        parsed = parse_qs(qs, keep_blank_values=True)
-        rql_tokens = [k for k, v in parsed.items() if v == [""]]
-        rql_expression = "&".join(rql_tokens)
+        rql_expression = get_rql_expression_from_querystring(request.scope["query_string"].decode())
         if not rql_expression:
             return None
 
         with wrap_exc_in_http_response(RequelaError):
-            return self.rules.build_query(unquote(rql_expression))
+            return self.rules.build_query(rql_expression)
+
+
+class RQLPassthrough:
+    """
+    Extract the raw RQL expression from the request query string so it can be
+    forwarded as-is to upstream APIs that also speak RQL.
+    """
+
+    def __call__(self, request: Request) -> str | None:
+        return get_rql_expression_from_querystring(request.scope["query_string"].decode())

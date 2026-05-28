@@ -41,6 +41,7 @@ class Settings(BaseSettings):
 
     optscale_auth_api_base_url: str
     optscale_rest_api_base_url: str
+    optscale_ffc_api_base_url: str
     optscale_cluster_secret: str
     optscale_read_timeout: int = 90
 
