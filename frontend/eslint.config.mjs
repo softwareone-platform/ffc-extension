@@ -16,7 +16,7 @@ export default tseslint.config(
         ignores: ['node_modules/**', 'dist/**', '../static/**', 'coverage/**'],
     },
     {
-        files: ['**/*.{ts,tsx,js,mjs,cjs}'],
+        files: ['**/*.{ts,tsx,js,mjs,cjs,json}'],
         extends: [js.configs.recommended, ...tseslint.configs.recommended],
         languageOptions: {
             ecmaVersion: 2022,

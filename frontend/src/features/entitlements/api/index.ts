@@ -1,2 +1,2 @@
-export * from './useEntitlementsDetailsApi';
-export * from './useEntitlementsApi';
+export * from "./useEntitlementsDetailsApi";
+export * from "./useEntitlementsApi";

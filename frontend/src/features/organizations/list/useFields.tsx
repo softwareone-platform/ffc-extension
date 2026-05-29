@@ -1,7 +1,9 @@
+import { useMemo } from "react";
+
 import { GridFieldDefinition } from "@swo/design-system/grid";
 import { getStatusLabel } from "@swo/mp-status-chip";
+
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useMemo } from "react";
 
 export function useFields() {
   const tFields = useFixedT("shared:grid:fields");
@@ -24,7 +26,7 @@ export function useFields() {
           { value: "active", label: getStatusLabel("Active") },
           { value: "new", label: getStatusLabel("New") },
           { value: "terminated", label: getStatusLabel("Terminated") },
-          { value: "deleted", label: getStatusLabel("Deleted") }
+          { value: "deleted", label: getStatusLabel("Deleted") },
         ],
       },
     ],

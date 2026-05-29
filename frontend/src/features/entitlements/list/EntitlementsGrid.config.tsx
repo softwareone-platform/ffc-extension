@@ -1,16 +1,9 @@
-import { EntitlementRead } from '@swo/ffc-api-model';
-import { EntityReferenceCell } from '@swo/design-system/entity-reference-cell';
-import { GridFieldDefinition } from '@swo/design-system/grid';
-import { Link } from 'react-router-dom';
-import { Paths } from '@swo/rql-client';
-import { useMemo } from 'react';
-import { useEntitlementsApi } from '~entitlements/api';
+import { useMemo } from "react";
 
-import { useReactQueryRqlGrid } from '~shared/hooks/useReactQueryRqlGrid';
-import DataSourceIcon from '~shared/components/data-source-icons/DataSourceIcon';
-import { mapAxiosResponseDataList } from '~shared/utils/mapAxiosResponseDataList';
-import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
-import { useFixedT } from "~shared/hooks/useFixedT";
+import { Link } from "react-router-dom";
+
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
+import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
@@ -18,6 +11,15 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { EntitlementRead } from "@swo/ffc-api-model";
+import { Paths } from "@swo/rql-client";
+
+import { useEntitlementsApi } from "~entitlements/api";
+import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon";
+import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
+import { useFixedT } from "~shared/hooks/useFixedT";
+import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
+import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
 type Columns = Array<
   Omit<GridColumnDefinition<EntitlementRead>, "fields"> & {
@@ -35,8 +37,8 @@ export function useColumns(): Columns {
         title: tColumns("entitlement"),
         fields: ["name", "id"],
         cell: (item: EntitlementRead) => (
-            <GridCellTitleSubtitle
-              title={<Link to={`${item.id}/general`}>{item.name}</Link>}
+          <GridCellTitleSubtitle
+            title={<Link to={`${item.id}/general`}>{item.name}</Link>}
             subtitle={item.id}
           />
           // <GridCellTitleSubtitle title={item.name} subtitle={item.id} />
@@ -50,10 +52,7 @@ export function useColumns(): Columns {
         cell: (item: EntitlementRead) => (
           // <GridCellSimple>{item.affiliate_external_id}</GridCellSimple>
 
-          <GridCellTitleSubtitle
-            title={item.owner.name}
-            subtitle={item.owner.id}
-          />
+          <GridCellTitleSubtitle title={item.owner.name} subtitle={item.owner.id} />
         ),
         initialWidth: 150,
       },
@@ -61,11 +60,7 @@ export function useColumns(): Columns {
       {
         name: "data_source",
         title: tColumns("data_source"),
-        fields: [
-          "linked_datasource_name",
-          "linked_datasource_id",
-          "linked_datasource_type",
-        ],
+        fields: ["linked_datasource_name", "linked_datasource_id", "linked_datasource_type"],
         cell: (item: EntitlementRead) => (
           <GridCellSimple>
             {item.linked_datasource_id && (
@@ -73,12 +68,7 @@ export function useColumns(): Columns {
                 primaryContent={item.linked_datasource_name as string}
                 secondaryContent={item.linked_datasource_id as string}
                 secondaryContentMaxHeight={50}
-                icon={
-                  <DataSourceIcon
-                    name={item.linked_datasource_type as string}
-                    size={48}
-                  />
-                }
+                icon={<DataSourceIcon name={item.linked_datasource_type as string} size={48} />}
               />
             )}
           </GridCellSimple>
@@ -138,14 +128,14 @@ export function useFields() {
 export function useAsyncOptions() {
   const { list } = useEntitlementsApi();
   const baseQueryKey: unknown[] = ["EntitlementsList"];
-  return useReactQueryRqlGrid<
-    EntitlementRead,
-    Awaited<ReturnType<typeof list>>
-  >(baseQueryKey, (query) => ({
-    queryKey: [baseQueryKey, query.toString()],
-    queryFn: () => list(query),
-    select: mapAxiosResponseDataList<EntitlementRead>,
-  }));
+  return useReactQueryRqlGrid<EntitlementRead, Awaited<ReturnType<typeof list>>>(
+    baseQueryKey,
+    (query) => ({
+      queryKey: [baseQueryKey, query.toString()],
+      queryFn: () => list(query),
+      select: mapAxiosResponseDataList<EntitlementRead>,
+    }),
+  );
 }
 
 export function useGridConfig() {

@@ -1,9 +1,7 @@
 const azureCnr = (
   <>
     <defs>
-      <style>
-        {".a{fill:url(#a);}.b{fill:#0078d4;}.c{fill:url(#b);}.d{fill:url(#c);}"}
-      </style>
+      <style>{".a{fill:url(#a);}.b{fill:#0078d4;}.c{fill:url(#b);}.d{fill:url(#c);}"}</style>
       <linearGradient
         id="a"
         x1="-1267.51517"

@@ -1,16 +1,16 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from "react-router-dom";
 
-import { i18n } from '~i18n/translations';
-import { ExtensionsProvider } from '~shared/providers/ExtensionsProvider';
+import { i18n } from "~i18n/translations";
+import { ExtensionsProvider } from "~shared/providers/ExtensionsProvider";
 
-import '~styles/global.scss';
+import "~styles/global.scss";
 
 export function AppShell() {
-    return (
-        <ExtensionsProvider i18n={i18n}>
-            <div className="entitlements-app">
-                <Outlet />
-            </div>
-        </ExtensionsProvider>
-    );
+  return (
+    <ExtensionsProvider i18n={i18n}>
+      <div className="entitlements-app">
+        <Outlet />
+      </div>
+    </ExtensionsProvider>
+  );
 }

@@ -1,5 +1,6 @@
-import { DisplayValue } from "@swo/design-system/utils";
 import { GridCellSimple, GridCellTitleSubtitle } from "@swo/design-system/grid";
+import { DisplayValue } from "@swo/design-system/utils";
+
 import { useFormatMoney } from "~shared/utils/NumberUtils";
 
 export interface GridCellCurrencyProps {
@@ -21,9 +22,7 @@ export function GridCellCurrency({ value, currency }: GridCellCurrencyProps) {
 
   return (
     <GridCellTitleSubtitle
-      title={
-        <DisplayValue value={value} transform={format} context="financial" />
-      }
+      title={<DisplayValue value={value} transform={format} context="financial" />}
       subtitle={<DisplayValue value={currency} />}
     ></GridCellTitleSubtitle>
   );

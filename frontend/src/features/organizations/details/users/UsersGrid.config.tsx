@@ -1,9 +1,6 @@
-import { EmployeeRead } from '@swo/ffc-api-model';
-import { GridFieldDefinition } from '@swo/design-system/grid';
-import { Paths } from '@swo/rql-client';
-import { StatusChip } from '@swo/mp-status-chip';
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
+import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
@@ -11,6 +8,9 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { EmployeeRead } from "@swo/ffc-api-model";
+import { StatusChip } from "@swo/mp-status-chip";
+import { Paths } from "@swo/rql-client";
 
 import { useOrganizationsApi } from "~organizations/api";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";

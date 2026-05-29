@@ -27,14 +27,9 @@ function DataSourceIcon({
     height = height ?? 24;
   }
 
-  const [viewBox, setViewBox] = useState<string>(
-    `0 0 ${boxWidth} ${boxHeight}`,
-  );
+  const [viewBox, setViewBox] = useState<string>(`0 0 ${boxWidth} ${boxHeight}`);
 
-  useEffect(
-    () => setViewBox(`0 0 ${boxWidth} ${boxHeight}`),
-    [boxHeight, boxWidth],
-  );
+  useEffect(() => setViewBox(`0 0 ${boxWidth} ${boxHeight}`), [boxHeight, boxWidth]);
 
   const [iconContent, setIconContent] = useState<ReactElement>();
   useEffect(() => {

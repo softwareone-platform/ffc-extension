@@ -1,20 +1,22 @@
-import { DatasourceRead } from '@swo/ffc-api-model';
-import { EntityReferenceCell } from '@swo/design-system/entity-reference-cell';
-import { GridFieldDefinition } from '@swo/design-system/grid';
-import { Paths } from '@swo/rql-client';
-import { useMemo } from 'react';
-import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon";
-import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
-import { useFixedT } from "~shared/hooks/useFixedT";
-import { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
-import { useOrganizationsApi } from "~organizations/api";
-import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
+import { useMemo } from "react";
+
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
+import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridColumnDefinition,
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { DatasourceRead } from "@swo/ffc-api-model";
+import { Paths } from "@swo/rql-client";
+
+import { useOrganizationsApi } from "~organizations/api";
+import { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
+import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon";
+import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
+import { useFixedT } from "~shared/hooks/useFixedT";
+import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 
 type Columns = Array<
   Omit<GridColumnDefinition<DatasourceRead>, "fields"> & {
@@ -56,19 +58,14 @@ export function useColumns(): Columns {
         name: "parent_id",
         title: tColumns("parent_id"),
         fields: ["parent_id"],
-        cell: (item: DatasourceRead) => (
-          <GridCellSimple>{item.parent_id}</GridCellSimple>
-        ),
+        cell: (item: DatasourceRead) => <GridCellSimple>{item.parent_id}</GridCellSimple>,
       },
       {
         name: "resources_charged_this_month",
         title: tColumns("resources_charged_this_month"),
         fields: ["resources_charged_this_month"],
         cell: (item: DatasourceRead) => (
-          <GridCellCurrency
-            value={item.resources_charged_this_month}
-            currency={""}
-          />
+          <GridCellCurrency value={item.resources_charged_this_month} currency={""} />
         ),
       },
       {

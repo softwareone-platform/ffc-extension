@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 export function useViews() {

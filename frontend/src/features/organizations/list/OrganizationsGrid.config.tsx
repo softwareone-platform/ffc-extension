@@ -1,13 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
-import { UseAsyncGridConfig, useGridAsync } from '@swo/design-system/grid';
-import { OrganizationRead } from '@swo/ffc-api-model';
-import { Entity } from '@swo/service';
+import { UseAsyncGridConfig, useGridAsync } from "@swo/design-system/grid";
+import { OrganizationRead } from "@swo/ffc-api-model";
+import { Entity } from "@swo/service";
 
-import { useAsyncOptions } from './useAsyncOptions';
-import { useColumns } from './useColumns';
-import { useFields } from './useFields';
-import { useViews } from './useViews';
+import { useAsyncOptions } from "./useAsyncOptions";
+import { useColumns } from "./useColumns";
+import { useFields } from "./useFields";
+import { useViews } from "./useViews";
 
 // const _defaultFilter = {
 //     operator: 'and',
@@ -16,34 +16,34 @@ import { useViews } from './useViews';
 // const _sort = [{ field: 'event.created.at', direction: 'desc' }];
 
 export function useGridConfig() {
-    const columns = useColumns();
-    const fields = useFields();
-    const views = useViews();
-    const asyncOptions = useAsyncOptions();
+  const columns = useColumns();
+  const fields = useFields();
+  const views = useViews();
+  const asyncOptions = useAsyncOptions();
 
-    const config = useMemo(
-        () =>
-            ({
-                id: 'grid__rql-example',
-                // memoizeId: 'gridWithRqlStory',
-                views,
-                columns,
-                fields,
-                isDefaultView: false,
-                selectedView: 'active',
-                ...asyncOptions,
-            }) as UseAsyncGridConfig<Entity<OrganizationRead>>,
-        [columns, views, fields, asyncOptions],
-    );
+  const config = useMemo(
+    () =>
+      ({
+        id: "grid__rql-example",
+        // memoizeId: 'gridWithRqlStory',
+        views,
+        columns,
+        fields,
+        isDefaultView: false,
+        selectedView: "active",
+        ...asyncOptions,
+      }) as UseAsyncGridConfig<Entity<OrganizationRead>>,
+    [columns, views, fields, asyncOptions],
+  );
 
-    //   const { list } = useOrganizationsApi();
+  //   const { list } = useOrganizationsApi();
 
-    //   const { silentRefresh, ...gridProps } = useGridWithRql<
-    //     Entity<OrganizationRead>
-    //   >(config, list);
+  //   const { silentRefresh, ...gridProps } = useGridWithRql<
+  //     Entity<OrganizationRead>
+  //   >(config, list);
 
-    const gridProps = useGridAsync(config);
-    return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
-    //   const gridProps = useGridAsync(options);
-    //   return { silentRefresh, ...gridProps };
+  const gridProps = useGridAsync(config);
+  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+  //   const gridProps = useGridAsync(options);
+  //   return { silentRefresh, ...gridProps };
 }
