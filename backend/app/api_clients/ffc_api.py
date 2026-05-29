@@ -53,7 +53,7 @@ class FFCAPIClient(BaseAPIClient):
             params.extend((clause, "") for clause in rql.split("&"))
 
         response = await self.httpx_client.get(
-            f"/organizations/{organization_id}/users",
+            f"/admin/organizations/{organization_id}/users",
             params=params,
         )
         response.raise_for_status()

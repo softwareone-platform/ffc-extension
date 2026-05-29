@@ -16,7 +16,7 @@ router = APIRouter()
     response_model=Me,
     responses={
         201: {
-            "description": "Me",
+            "description": "Get current authentication context",
             "content": {
                 "application/json": {
                     "example": examples.ME_RESPONSE,
