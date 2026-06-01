@@ -28,6 +28,20 @@ class FFCAPIClusterSecretAuth(httpx.Auth):
         yield request
 
 
+def resolve_params(
+    limit: int | None = None, offset: int | None = None, rql: str | None = None
+) -> list[tuple[str, str]]:
+    params: list[tuple[str, str]] = []
+    if limit is not None:
+        params.append(("limit", str(limit)))
+    if offset is not None:
+        params.append(("offset", str(offset)))
+    if rql:
+        params.extend((clause, "") for clause in rql.split("&"))
+
+    return params
+
+
 class FFCAPIClient(BaseAPIClient):
     @property
     def base_url(self):
@@ -44,17 +58,23 @@ class FFCAPIClient(BaseAPIClient):
         offset: int | None = None,
         rql: str | None = None,
     ) -> httpx.Response:
-        params: list[tuple[str, str]] = []
-        if limit is not None:
-            params.append(("limit", str(limit)))
-        if offset is not None:
-            params.append(("offset", str(offset)))
-        if rql:
-            params.extend((clause, "") for clause in rql.split("&"))
-
         response = await self.httpx_client.get(
             f"/admin/organizations/{organization_id}/users",
-            params=params,
+            params=resolve_params(limit=limit, offset=offset, rql=rql),
+        )
+        response.raise_for_status()
+        return response
+
+    async def fetch_datasources_for_organization(
+        self,
+        organization_id: UUID | str,
+        limit: int | None = None,
+        offset: int | None = None,
+        rql: str | None = None,
+    ) -> httpx.Response:
+        response = await self.httpx_client.get(
+            f"/admin/organizations/{organization_id}/datasources",
+            params=resolve_params(limit=limit, offset=offset, rql=rql),
         )
         response.raise_for_status()
         return response
