@@ -31,7 +31,8 @@
         "charliermarsh.ruff",
         "ms-python.mypy-type-checker",
         "anthropic.claude-code",
-        "knisterpeter.vscode-commitizen"
+        "knisterpeter.vscode-commitizen",
+        "eamodio.gitlens"
       ],
       "settings": {
         "python.terminal.activateEnvironment": false,

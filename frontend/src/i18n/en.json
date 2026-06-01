@@ -43,7 +43,8 @@
         "createdAt": "Created",
         "affiliate_external_id": "Affiliate",
         "data_source": "Data Source",
-        "status": "Status"
+        "status": "Status",
+        "userType": "User Type"
       },
       "fields": {
         "id": "ID",
@@ -65,10 +66,7 @@
         "gcp_cnr": "GCP subscription"
       }
     },
-    "details": {
-      "additionalIds": "Additional IDs",
-      "references": "References"
-    },
+    "details": { "additionalIds": "Additional IDs", "references": "References" },
     "properties": {
       "linkedDataSource": "Linked data source",
       "affiliate_external_id": "Affiliate external ID",

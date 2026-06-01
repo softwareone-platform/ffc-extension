@@ -1,13 +1,16 @@
-import { DisplayValue } from '@swo/design-system/utils';
-import { Link } from 'react-router-dom';
-import { OrganizationRead } from '@swo/ffc-api-model';
-import { Paths } from '@swo/rql-client';
-import { useMemo } from 'react';
+import { useMemo } from "react";
+
+import { Link } from "react-router-dom";
+
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
 } from "@swo/design-system/grid";
+import { DisplayValue } from "@swo/design-system/utils";
+import { OrganizationRead } from "@swo/ffc-api-model";
+import { Paths } from "@swo/rql-client";
+
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
@@ -37,9 +40,7 @@ export function useColumns(): Columns {
         name: "currency",
         title: tColumns("currency"),
         fields: ["currency"],
-        cell: (item: OrganizationRead) => (
-          <GridCellSimple>{item.currency}</GridCellSimple>
-        ),
+        cell: (item: OrganizationRead) => <GridCellSimple>{item.currency}</GridCellSimple>,
         initialWidth: 175,
       },
       {
@@ -77,9 +78,7 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: (_item: OrganizationRead) => (
-          <></>
-        ),
+        cell: (_item: OrganizationRead) => <></>,
         initialWidth: 100,
       },
     ];

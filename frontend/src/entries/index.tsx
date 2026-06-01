@@ -1,12 +1,12 @@
-import { createRoot } from 'react-dom/client';
+import { createRoot } from "react-dom/client";
 
-import { RouterProvider } from 'react-router-dom';
+import { RouterProvider } from "react-router-dom";
 
-import { router } from '~app/router';
+import { router } from "~app/router";
 
-import '~styles/global-standalone.scss';
+import "~styles/global-standalone.scss";
 
-import { setup } from '@mpt-extension/sdk';
+import { setup } from "@mpt-extension/sdk";
 
 setup((element: Element) => {
   const root = createRoot(element);

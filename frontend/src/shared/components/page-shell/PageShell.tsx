@@ -1,42 +1,42 @@
-import React from 'react';
+import React from "react";
 
-import { AvatarProps } from '@swo/design-system/avatar';
-import { Navigation } from '@swo/design-system/navigation';
+import { AvatarProps } from "@swo/design-system/avatar";
+import { Navigation } from "@swo/design-system/navigation";
 
 export type PageShellNavItem = {
-    path: string;
-    label: string;
+  path: string;
+  label: string;
 };
 
 export type PageShellProps = {
-    className?: string;
-    children?: React.ReactNode;
+  className?: string;
+  children?: React.ReactNode;
 };
 
 type PageShellHeaderBaseProps = {
-    actions?: React.ReactNode;
+  actions?: React.ReactNode;
 };
 
 type PageShellHeaderTabsProps = PageShellHeaderBaseProps & {
-    items: PageShellNavItem[];
-    title?: never;
-    subtitle?: never;
-    backUrl?: never;
-    avatar?: never;
+  items: PageShellNavItem[];
+  title?: never;
+  subtitle?: never;
+  backUrl?: never;
+  avatar?: never;
 };
 
 type PageShellHeaderTitleProps = PageShellHeaderBaseProps & {
-    title: string | React.ReactElement;
-    subtitle?: string | React.ReactElement;
-    backUrl?: string | null;
-    avatar?: AvatarProps;
-    items?: never;
+  title: string | React.ReactElement;
+  subtitle?: string | React.ReactElement;
+  backUrl?: string | null;
+  avatar?: AvatarProps;
+  items?: never;
 };
 
 export type PageShellHeaderProps = PageShellHeaderTabsProps | PageShellHeaderTitleProps;
 
 export type PageShellContentProps = {
-    children?: React.ReactNode;
+  children?: React.ReactNode;
 };
 
 /**
@@ -60,39 +60,39 @@ export type PageShellContentProps = {
  * compose freely (single panel, `<Tabs>` widget, etc.).
  */
 export const PageShell: React.FC<PageShellProps> & {
-    Header: React.FC<PageShellHeaderProps>;
-    Content: React.FC<PageShellContentProps>;
+  Header: React.FC<PageShellHeaderProps>;
+  Content: React.FC<PageShellContentProps>;
 } = ({ children }) => {
-    return <Navigation>{children}</Navigation>;
+  return <Navigation>{children}</Navigation>;
 };
 
 const PageShellHeader: React.FC<PageShellHeaderProps> = (props) => {
-    const actionsNode = props.actions ? (
-        <Navigation.HeaderBar.Actions>{props.actions}</Navigation.HeaderBar.Actions>
-    ) : null;
+  const actionsNode = props.actions ? (
+    <Navigation.HeaderBar.Actions>{props.actions}</Navigation.HeaderBar.Actions>
+  ) : null;
 
-    if ('title' in props && props.title !== undefined) {
-        const { title, subtitle, backUrl, avatar } = props;
-        return (
-            <Navigation.HeaderBar
-                backUrl={backUrl ?? undefined}
-                title={title}
-                subtitle={subtitle}
-                avatar={avatar}
-            >
-                {actionsNode}
-            </Navigation.HeaderBar>
-        );
-    }
+  if ("title" in props && props.title !== undefined) {
+    const { title, subtitle, backUrl, avatar } = props;
+    return (
+      <Navigation.HeaderBar
+        backUrl={backUrl ?? undefined}
+        title={title}
+        subtitle={subtitle}
+        avatar={avatar}
+      >
+        {actionsNode}
+      </Navigation.HeaderBar>
+    );
+  }
 
-    return <Navigation.HeaderBar items={props.items}>{actionsNode}</Navigation.HeaderBar>;
+  return <Navigation.HeaderBar items={props.items}>{actionsNode}</Navigation.HeaderBar>;
 };
-PageShellHeader.displayName = 'PageShell.Header';
+PageShellHeader.displayName = "PageShell.Header";
 
 const PageShellContent: React.FC<PageShellContentProps> = ({ children }) => (
-    <Navigation.Content>{children}</Navigation.Content>
+  <Navigation.Content>{children}</Navigation.Content>
 );
-PageShellContent.displayName = 'PageShell.Content';
+PageShellContent.displayName = "PageShell.Content";
 
 PageShell.Header = PageShellHeader;
 PageShell.Content = PageShellContent;

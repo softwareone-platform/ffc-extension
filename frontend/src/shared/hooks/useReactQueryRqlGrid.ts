@@ -1,21 +1,21 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import {
-    DefaultError,
-    QueryKey,
-    useQuery,
-    useQueryClient,
-    UseQueryOptions,
-} from '@tanstack/react-query';
+  DefaultError,
+  QueryKey,
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+} from "@tanstack/react-query";
 
-import { buildRqlQuery, GridDefaultConfiguration } from '@swo/design-system/grid';
-import { RqlQuery } from '@swo/rql-client';
+import { buildRqlQuery, GridDefaultConfiguration } from "@swo/design-system/grid";
+import { RqlQuery } from "@swo/rql-client";
 
 interface StateRef<TEntity extends object, TOptions> {
-    options: TOptions;
-    query: RqlQuery<TEntity>;
-    isInitialised: boolean;
-    baseQueryKey: QueryKey;
+  options: TOptions;
+  query: RqlQuery<TEntity>;
+  isInitialised: boolean;
+  baseQueryKey: QueryKey;
 }
 /**
  *
@@ -25,98 +25,98 @@ interface StateRef<TEntity extends object, TOptions> {
  * @returns
  */
 export function useReactQueryRqlGrid<
-    TEntity extends object,
-    TQueryFnData = unknown,
-    TError = DefaultError,
-    TQueryKey extends QueryKey = QueryKey,
+  TEntity extends object,
+  TQueryFnData = unknown,
+  TError = DefaultError,
+  TQueryKey extends QueryKey = QueryKey,
 >(
-    baseQueryKey: TQueryKey,
-    options: (
-        query: RqlQuery<TEntity>,
-    ) => UseQueryOptions<TQueryFnData, TError, { data: TEntity[]; total?: number }, TQueryKey>,
-    pagingOption: 'DisablePaging' | 'EnablePaging' = 'EnablePaging',
+  baseQueryKey: TQueryKey,
+  options: (
+    query: RqlQuery<TEntity>,
+  ) => UseQueryOptions<TQueryFnData, TError, { data: TEntity[]; total?: number }, TQueryKey>,
+  pagingOption: "DisablePaging" | "EnablePaging" = "EnablePaging",
 ) {
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    const [query, setQuery] = useState(new RqlQuery<TEntity>());
-    const [isInitialised, setIsInitialised] = useState(false);
-    const [isSilentRefresh, setIsSilentRefresh] = useState(false);
-    const stateRef = useRef<StateRef<TEntity, ReturnType<typeof options>>>({
-        query,
-        options: {} as ReturnType<typeof options>,
-        baseQueryKey,
-        isInitialised,
-    });
-    stateRef.current = {
-        query,
-        isInitialised,
-        options: options(query.clone()),
-        baseQueryKey,
-    };
+  const [query, setQuery] = useState(new RqlQuery<TEntity>());
+  const [isInitialised, setIsInitialised] = useState(false);
+  const [isSilentRefresh, setIsSilentRefresh] = useState(false);
+  const stateRef = useRef<StateRef<TEntity, ReturnType<typeof options>>>({
+    query,
+    options: {} as ReturnType<typeof options>,
+    baseQueryKey,
+    isInitialised,
+  });
+  stateRef.current = {
+    query,
+    isInitialised,
+    options: options(query.clone()),
+    baseQueryKey,
+  };
 
-    const { data, isFetching, error } = useQuery({
-        ...stateRef.current.options,
-        // placeholderData: keepPreviousData,
-        enabled: isInitialised,
-    });
+  const { data, isFetching, error } = useQuery({
+    ...stateRef.current.options,
+    // placeholderData: keepPreviousData,
+    enabled: isInitialised,
+  });
 
-    const onConfigChange = useCallback(async (config: GridDefaultConfiguration<TEntity>) => {
-        const { isInitialised, query: oldQuery } = stateRef.current;
-        if (!isInitialised) {
-            setIsInitialised(true);
-        }
-        const newQuery = buildRqlQuery<TEntity>(config);
-        if (oldQuery.toString() === newQuery.toString()) {
-            return;
-        }
-        setQuery(newQuery);
-        setIsSilentRefresh(false);
-    }, []);
+  const onConfigChange = useCallback(async (config: GridDefaultConfiguration<TEntity>) => {
+    const { isInitialised, query: oldQuery } = stateRef.current;
+    if (!isInitialised) {
+      setIsInitialised(true);
+    }
+    const newQuery = buildRqlQuery<TEntity>(config);
+    if (oldQuery.toString() === newQuery.toString()) {
+      return;
+    }
+    setQuery(newQuery);
+    setIsSilentRefresh(false);
+  }, []);
 
-    const abort = useCallback(() => {
-        const queryKey = stateRef.current.options.queryKey;
-        queryClient.cancelQueries({ queryKey });
-    }, [queryClient]);
+  const abort = useCallback(() => {
+    const queryKey = stateRef.current.options.queryKey;
+    queryClient.cancelQueries({ queryKey });
+  }, [queryClient]);
 
-    const refresh = useCallback(async () => {
-        console.log('Refreshing data...', stateRef.current);
-        setIsSilentRefresh(false);
-        console.log('Invalidating queries with key:', stateRef.current.baseQueryKey);
-        console.log(queryClient.getQueryCache().getAll());
-        queryClient.invalidateQueries({ queryKey: stateRef.current.options.queryKey });
-    }, [queryClient]);
+  const refresh = useCallback(async () => {
+    console.log("Refreshing data...", stateRef.current);
+    setIsSilentRefresh(false);
+    console.log("Invalidating queries with key:", stateRef.current.baseQueryKey);
+    console.log(queryClient.getQueryCache().getAll());
+    queryClient.invalidateQueries({ queryKey: stateRef.current.options.queryKey });
+  }, [queryClient]);
 
-    const silentRefresh = useCallback(async () => {
-        console.log('Silent Refreshing data...', stateRef.current);
-        setIsSilentRefresh(true);
-        queryClient.invalidateQueries({ queryKey: stateRef.current.baseQueryKey });
-    }, [queryClient]);
+  const silentRefresh = useCallback(async () => {
+    console.log("Silent Refreshing data...", stateRef.current);
+    setIsSilentRefresh(true);
+    queryClient.invalidateQueries({ queryKey: stateRef.current.baseQueryKey });
+  }, [queryClient]);
 
-    return useMemo(
-        () => ({
-            ...(data
-                ? data
-                : {
-                      total: pagingOption === 'DisablePaging' ? undefined : 0,
-                      data: [],
-                  }),
-            isLoading: isFetching && !isSilentRefresh,
-            refresh,
-            onConfigChange,
-            abort,
-            silentRefresh,
-            error,
-        }),
-        [
-            abort,
-            data,
-            error,
-            isFetching,
-            isSilentRefresh,
-            pagingOption,
-            onConfigChange,
-            refresh,
-            silentRefresh,
-        ],
-    );
+  return useMemo(
+    () => ({
+      ...(data
+        ? data
+        : {
+            total: pagingOption === "DisablePaging" ? undefined : 0,
+            data: [],
+          }),
+      isLoading: isFetching && !isSilentRefresh,
+      refresh,
+      onConfigChange,
+      abort,
+      silentRefresh,
+      error,
+    }),
+    [
+      abort,
+      data,
+      error,
+      isFetching,
+      isSilentRefresh,
+      pagingOption,
+      onConfigChange,
+      refresh,
+      silentRefresh,
+    ],
+  );
 }

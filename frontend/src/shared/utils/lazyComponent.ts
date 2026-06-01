@@ -6,5 +6,5 @@
  * indirection layer, while keeping per-route code-splitting.
  */
 export const lazyComponent =
-    <K extends string>(importer: () => Promise<Record<K, React.ComponentType>>, exportName: K) =>
-    async () => ({ Component: (await importer())[exportName] });
+  <K extends string>(importer: () => Promise<Record<K, React.ComponentType>>, exportName: K) =>
+  async () => ({ Component: (await importer())[exportName] });
