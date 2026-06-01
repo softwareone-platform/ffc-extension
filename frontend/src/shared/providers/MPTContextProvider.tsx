@@ -9,9 +9,8 @@ export type MPTAuth = {
 };
 
 export type MPTData = {
-  standAloneApp?: boolean;
-  sample?: string;
-  [key: string]: unknown;
+    sample?: string;
+    [key: string]: unknown;
 };
 
 export type MPTContextValue = {
@@ -56,10 +55,6 @@ export function useMPTAuth(): MPTAuth | undefined {
 
 export function useMPTData(): MPTData | undefined {
   return useContext(MPTContextStore).data;
-}
-
-export function useStandAloneApp(): boolean {
-  return useContext(MPTContextStore).data?.standAloneApp ?? false;
 }
 
 declare global {

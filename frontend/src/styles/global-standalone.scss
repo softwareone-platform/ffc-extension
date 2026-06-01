@@ -19,11 +19,11 @@ h6 {
 }
 
 // --- app shell -----------------------------------------------------------
-.entitlements-app {
-  position: relative;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+.standalone-app {
+    position: relative;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 // --- shared utilities ----------------------------------------------------
