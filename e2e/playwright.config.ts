@@ -9,11 +9,17 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 
 /**
+ * Extended timeout (ms) for operations that load large amounts of data,
+ * such as reports, exports, or pages with many resources.
+ * Use this with the wait helpers in `utils/wait-utils.ts`.
+ */
+export const LARGE_DATA_TIMEOUT = 30000;
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
   globalSetup: './setup/global-setup.ts',
-  testDir: './tests',
+  testDir: '../e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -30,6 +36,11 @@ export default defineConfig({
     baseURL: process.env.BASE_URL,
     headless: true,
     trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+    screenshot: {
+      mode: 'only-on-failure',
+      fullPage: true,
+    },
     contextOptions: {
       ignoreHTTPSErrors: process.env.IGNORE_HTTPS_ERRORS === 'true',
       viewport: { width: 1920, height: 1080 },
