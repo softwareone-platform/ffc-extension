@@ -15,8 +15,8 @@ export const organizationsRoutes: RouteObject = {
     {
       path: ":organizationId",
       lazy: lazyComponent(
-        () => import("~features/organizations/details/DetailsTabs"),
-        "OrganizationDetailsTabs",
+        () => import("~features/organizations/details/DetailsContent"),
+        "OrganizationDetailsContent",
       ),
       children: [
         { index: true, loader: () => redirect("general") },

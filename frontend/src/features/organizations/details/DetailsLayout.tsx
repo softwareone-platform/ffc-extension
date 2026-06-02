@@ -3,12 +3,12 @@ import { useParams, useResolvedPath } from "react-router-dom";
 import { PageShell } from "~shared/components/page-shell";
 
 import { OrganizationDetailsHeader } from "../components/OrganizationDetailsHeader";
-import { OrganizationDetailsTabs } from "./DetailsTabs";
+import { OrganizationDetailsContent } from "./DetailsContent";
 
 /**
  * Full-chrome organization details layout. Used by the per-feature entry
  * (`entries/organizations.tsx`) where there is no surrounding `MainLayout`
- * to provide the header. The standalone app uses `OrganizationDetailsTabs`
+ * to provide the header. The standalone app uses `OrganizationDetailsContent`
  * directly and lets `MainLayout` render the header.
  */
 export function OrganizationDetailsLayout() {
@@ -22,7 +22,7 @@ export function OrganizationDetailsLayout() {
         <OrganizationDetailsHeader organizationId={organizationId} backUrl={backUrl} />
       ) : null}
       <PageShell.Content>
-        <OrganizationDetailsTabs />
+        <OrganizationDetailsContent />
       </PageShell.Content>
     </PageShell>
   );

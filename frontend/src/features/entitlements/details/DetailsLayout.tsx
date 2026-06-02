@@ -1,14 +1,15 @@
-import { Outlet, useParams, useResolvedPath } from "react-router-dom";
+import { useParams, useResolvedPath } from "react-router-dom";
 
 import { PageShell } from "~shared/components/page-shell";
 
 import { EntitlementDetailsHeader } from "../components/EntitlementDetailsHeader";
+import { EntitlementDetailsContent } from "./DetailsContent";
 
 /**
  * Full-chrome entitlement details layout. Used by the per-feature entry
  * (`entries/entitlements.tsx`) where there is no surrounding `MainLayout`
- * to provide the header. The standalone app skips this layout and lets
- * `MainLayout` render the header above the matched detail page directly.
+ * to provide the header. The standalone app uses `EntitlementDetailsContent`
+ * directly and lets `MainLayout` render the header.
  */
 export function EntitlementsDetailsLayout() {
   const { entitlementId } = useParams();
@@ -21,7 +22,7 @@ export function EntitlementsDetailsLayout() {
         <EntitlementDetailsHeader entitlementId={entitlementId} backUrl={backUrl} />
       ) : null}
       <PageShell.Content>
-        <Outlet />
+        <EntitlementDetailsContent />
       </PageShell.Content>
     </PageShell>
   );

@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import { EntitlementsDetailsLayout } from "~features/entitlements/details/DetailsLayout";
 import { EntitlementsGeneralDetails } from "~features/entitlements/details/general/General";
@@ -26,7 +26,8 @@ setup((element: Element) => {
           <Route element={<Outlet />}>
             <Route index element={<EntitlementsGrid />} />
             <Route path=":entitlementId" element={<EntitlementsDetailsLayout />}>
-              <Route index element={<EntitlementsGeneralDetails />} />
+              <Route index element={<Navigate to="general" replace />} />
+              <Route path="general" element={<EntitlementsGeneralDetails />} />
             </Route>
           </Route>
         </Routes>
