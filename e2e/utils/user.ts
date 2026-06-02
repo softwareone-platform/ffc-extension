@@ -2,6 +2,7 @@ import fs from 'fs';
 import { isSessionValid, storeSecretToFile } from './session-utils';
 import { Browser, chromium, Response } from 'playwright-core';
 import { expect } from 'playwright/test';
+import { debugLog, errorLog } from './debug-logging';
 
 export default class User {
   public email: string; // The user's email address.
@@ -10,7 +11,6 @@ export default class User {
   private readonly password: string; // The user's password.
   private readonly _safeName: string; // A sanitized version of the user's email for file naming.
   private _userToken?: string; // The user's token (optional).
-  private readonly _tokenStoragePath: string; // Path to store the user's token.
 
   /**
    * Creates a new User instance.
@@ -27,15 +27,27 @@ export default class User {
       .replace(/@.*/g, '')
       .replace(/[^A-Za-z]/g, '_')
       .toUpperCase();
-    this._tokenStoragePath = `.cache/${this._safeName}_${process.env.ENVIRONMENT}_TOKEN.txt`;
     this.role = role;
   }
 
   public get sessionStoragePath(): string {
-    const path = `.cache/${this._safeName}_${process.env.ENVIRONMENT}_SESSION.json`;
+    const path = `.cache/${this._safeName}_${this.environment}_SESSION.json`;
     if (!fs.existsSync('.cache')) fs.mkdirSync('.cache');
     if (!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify({}));
     return path;
+  }
+
+  private get environment(): string {
+    const environment = process.env.ENVIRONMENT;
+    if (!environment) {
+      throw new Error('Missing required environment variable: ENVIRONMENT');
+    }
+
+    return environment;
+  }
+
+  private get tokenStoragePath(): string {
+    return `.cache/${this._safeName}_${this.environment}_TOKEN.txt`;
   }
 
   /**
@@ -44,10 +56,9 @@ export default class User {
    */
   public async login(): Promise<string | undefined> {
     if (await isSessionValid(this.sessionStoragePath)) {
-      console.log('session found valid, returning storage path');
+      debugLog('session found valid, returning storage path');
       return this.sessionStoragePath;
     }
-    // if (this._userPass == null || this._userPass == '') await this.getPassword();
 
     let browser: Browser | undefined;
     try {
@@ -66,12 +77,12 @@ export default class User {
           if (status == 200 && url.includes('oauth/token')) {
             const body = await response.json();
 
-            console.log('Access token saved ...');
+            debugLog('Access token saved ...');
             this._userToken = body['access_token'];
             if (this._userToken != null && this.password != null)
-              await storeSecretToFile(this._tokenStoragePath, this._userToken, this.password);
+              await storeSecretToFile(this.tokenStoragePath, this._userToken, this.password);
 
-            console.log('Current session saved ...');
+            debugLog('Current session saved ...');
           }
         } catch {
           // Continue if login not successful
@@ -91,10 +102,10 @@ export default class User {
       expect(await page.title()).not.toContain('Login');
       await page.waitForLoadState('load', { timeout: 60000 });
       await page.context().storageState({ path: this.sessionStoragePath });
-      console.log(`User ${this.email} logged in`);
+      debugLog(`User ${this.email} logged in`);
       return this.sessionStoragePath;
     } catch (error) {
-      console.error(`Failed to login user ${this.email}:`, error);
+      errorLog(`Failed to login user ${this.email}: ${error}`);
     } finally {
       if (browser) {
         await browser.close();

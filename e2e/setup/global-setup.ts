@@ -4,6 +4,7 @@ import { setEnvironment } from '../utils/environment-util';
 import path from 'path';
 import fs from 'fs';
 import TestUsers from '../test-data/test-users';
+import { debugLog } from '../utils/debug-logging';
 
 /**
  * Cleans up previous test artifacts before starting a new test run.
@@ -13,10 +14,10 @@ function cleanupTestArtifacts(): void {
   const testResultsDir = path.resolve(process.cwd(), 'test-results');
   try {
     if (fs.existsSync(testResultsDir)) {
-      console.log('Cleaning up previous test artifacts...');
+      debugLog('Cleaning up previous test artifacts...');
       // Remove directory and all contents
       fs.rmSync(testResultsDir, { recursive: true, force: true });
-      console.log('Test artifacts cleaned');
+      debugLog('Test artifacts cleaned');
     }
   } catch (error) {
     console.error('Failed to clean up test artifacts:', error);
@@ -43,10 +44,10 @@ async function globalSetup(config: FullConfig) {
   process.env.ENVIRONMENT = setEnvironment();
 
   // Log key environment variables for debugging purposes
-  console.log(`Tests running on ${process.env.BASE_URL}`);
-  console.log(`Ignoring HTTPS errors: ${process.env.IGNORE_HTTPS_ERRORS}`);
-  console.log(`BROWSER_ERROR_LOGGING: ${process.env.BROWSER_ERROR_LOGGING}`);
-  console.log(`DEBUG_LOG: ${process.env.DEBUG_LOG}`);
+  debugLog(`Tests running on ${process.env.BASE_URL}`);
+  debugLog(`Ignoring HTTPS errors: ${process.env.IGNORE_HTTPS_ERRORS}`);
+  debugLog(`BROWSER_ERROR_LOGGING: ${process.env.BROWSER_ERROR_LOGGING}`);
+  debugLog(`DEBUG_LOG: ${process.env.DEBUG_LOG}`);
   if (process.env.BASE_URL === undefined) console.error('***BASE_URL is not set. This is required for the tests to run.');
   if (process.env.DEV === undefined || process.env.TEST === undefined || process.env.STAGING === undefined)
     console.error('***DEV, TEST, or STAGING is not set. One of these is required for the tests to run.');
@@ -63,7 +64,7 @@ async function globalSetup(config: FullConfig) {
     }),
   ]);
 
-  console.log('Global setup: finished');
+  debugLog('Global setup: finished');
 }
 
 // Export the global setup function as a module
