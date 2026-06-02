@@ -38,7 +38,7 @@ export function useColumns(): Columns {
         fields: ["name", "id"],
         cell: (item: EntitlementRead) => (
           <GridCellTitleSubtitle
-            title={<Link to={`${item.id}/general`}>{item.name}</Link>}
+            title={<Link to={item.id}>{item.name}</Link>}
             subtitle={item.id}
           />
           // <GridCellTitleSubtitle title={item.name} subtitle={item.id} />

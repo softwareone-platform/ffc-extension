@@ -13,7 +13,7 @@ import "~styles/global.scss";
 import { setup } from "@mpt-extension/sdk";
 
 /**
- * Standalone "Organizations" widget bundle. Mounted by the host as a
+ * Standalone "Entitlements" widget bundle. Mounted by the host as a
  * top-level micro-frontend at its own root, so it owns its providers and
  * router. Reuses the same feature components as the main router.
  */
@@ -27,7 +27,6 @@ setup((element: Element) => {
             <Route index element={<EntitlementsGrid />} />
             <Route path=":entitlementId" element={<EntitlementsDetailsLayout />}>
               <Route index element={<EntitlementsGeneralDetails />} />
-              <Route path="general" element={<EntitlementsGeneralDetails />} />
             </Route>
           </Route>
         </Routes>

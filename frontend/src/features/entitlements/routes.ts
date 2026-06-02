@@ -1,4 +1,4 @@
-import { redirect, RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 
 import { lazyComponent } from "~shared/utils/lazyComponent";
 
@@ -15,19 +15,9 @@ export const entitlementsRoutes: RouteObject = {
     {
       path: ":entitlementId",
       lazy: lazyComponent(
-        () => import("~features/entitlements/details/DetailsLayout"),
-        "EntitlementsDetailsLayout",
+        () => import("~features/entitlements/details/general/General"),
+        "EntitlementsGeneralDetails",
       ),
-      children: [
-        { index: true, loader: () => redirect("general") },
-        {
-          path: "general",
-          lazy: lazyComponent(
-            () => import("~features/entitlements/details/general/General"),
-            "EntitlementsGeneralDetails",
-          ),
-        },
-      ],
     },
   ],
 };

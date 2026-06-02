@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Outlet } from 'react-router-dom';
+import { Outlet, useMatch } from 'react-router-dom';
 
 import { Button } from '@swo/design-system/button';
 
+import { EntitlementDetailsHeader } from '~features/entitlements/components/EntitlementDetailsHeader';
 import {
     AddOrganizationFormValues,
     AddOrganizationModal,
 } from '~features/organizations/components/AddOrganizationModal';
+import { OrganizationDetailsHeader } from '~features/organizations/components/OrganizationDetailsHeader';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
 
 const NAV_ITEMS: PageShellNavItem[] = [
@@ -18,7 +20,9 @@ const NAV_ITEMS: PageShellNavItem[] = [
 export function MainLayout() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const navItems = useMemo(() => NAV_ITEMS, []);
-    // const standAloneApp = true; // --- FORCE STANDALONE MODE FOR TESTING ---
+
+    const entitlementMatch = useMatch('/entitlements/:entitlementId/*');
+    const organizationMatch = useMatch('/organizations/:organizationId/*');
 
     useEffect(() => {
         if (window.parent && window.parent !== window) {
@@ -29,6 +33,17 @@ export function MainLayout() {
     return (
         <>
             <PageShell>
+                {entitlementMatch?.params.entitlementId ? (
+                    <EntitlementDetailsHeader
+                        entitlementId={entitlementMatch.params.entitlementId}
+                        backUrl="/entitlements"
+                    />
+                ) : organizationMatch?.params.organizationId ? (
+                    <OrganizationDetailsHeader
+                        organizationId={organizationMatch.params.organizationId}
+                        backUrl="/organizations"
+                    />
+                ) : (
                     <PageShell.Header
                         items={navItems}
                         actions={
@@ -41,6 +56,7 @@ export function MainLayout() {
                             </Button>
                         }
                     />
+                )}
                 <PageShell.Content>
                     <Outlet />
                 </PageShell.Content>
