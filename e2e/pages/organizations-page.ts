@@ -9,7 +9,7 @@ export class OrganizationsPage extends BasePage {
   readonly activeNavLink: Locator;
 
   constructor(page: Page) {
-    super(page, '/finops-for-cloud/organizations');
+    super(page, '/');
     this.navHeaderBarList = this.page.getByTestId('navigation__header-bar__list');
     this.activeNavLink = this.navHeaderBarList.locator('a[aria-current="page"]');
   }
