@@ -30,8 +30,9 @@
     "../static"
   ],
   "dependencies": {
-    "@mpt-extension/sdk": "^0.0.5",
-    "@mpt-extension/sdk-react": "^0.0.1",
+    "@hookform/resolvers": "^5.0.1",
+    "@mpt-extension/sdk": "^0.0.7",
+    "@mpt-extension/sdk-react": "^0.0.7",
     "@swo/design-system": "5.0.133",
     "@swo/design-tokens": "5.0.133",
     "@swo/ffc-api-model": "./swo-ffc-api-model-5.0.0-rc.1.tgz",
@@ -47,8 +48,12 @@
     "i18next": "^26.0.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.7",
+    "react-hook-form": "^7.56.2",
     "react-router-dom": "^6.30.3",
-    "ts-jest": "^29.4.11"
+    "ts-jest": "^29.4.11",
+    "zod": "^4.1.13",
+    "zod-i18n-map": "^2.27.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

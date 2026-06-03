@@ -115,7 +115,7 @@ export function useFields() {
 
 export function useAsyncOptions(organizationId: string) {
   const { listOrganizationEmployees } = useOrganizationsApi();
-  const baseQueryKey: unknown[] = ["OrganizationUsers"];
+  const baseQueryKey: unknown[] = ["OrganizationUsers", organizationId];
   return useReactQueryRqlGrid<EmployeeRead, Awaited<ReturnType<typeof listOrganizationEmployees>>>(
     baseQueryKey,
     (query) => ({
@@ -148,5 +148,5 @@ export function useGridConfig(organizationId: string) {
   );
 
   const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+  return { silentRefresh: asyncOptions.silentRefresh, refresh: asyncOptions.refresh, ...gridProps };
 }
