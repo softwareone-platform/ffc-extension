@@ -169,33 +169,41 @@ async def get_organization_by_id(
     return convert_model_to_schema(OrganizationRead, organization)
 
 
-@router.get("/{organization_id}/datasources", response_model=list[DatasourceRead])
+@router.get("/{organization_id}/datasources", response_model=LimitOffsetPage[DatasourceRead])
 async def get_datasources_by_organization_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
-    optscale_client: OptscaleClient,
+    ffc_api_client: FFCAPIClient,
+    params: Annotated[LimitOffsetParams, Depends()],
+    rql: Annotated[str | None, Depends(RQLPassthrough())],
 ):
     validate_linked_organization_id(organization)
 
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
-        response = await optscale_client.fetch_datasources_for_organization(
-            organization_id=organization.linked_organization_id  # type: ignore
+        response = await ffc_api_client.fetch_datasources_for_organization(
+            organization_id=organization.linked_organization_id,
+            limit=params.limit,
+            offset=params.offset,
+            rql=rql,
         )
 
-    datasources = response.json()["cloud_accounts"]
-
-    return [
-        DatasourceRead(
-            id=datasource["id"],
-            name=datasource["name"],
-            type=DatasourceType(datasource["type"]),
-            parent_id=datasource["parent_id"],
-            resources_charged_this_month=datasource["details"]["resources"],
-            expenses_so_far_this_month=datasource["details"]["cost"],
-            expenses_forecast_this_month=datasource["details"]["forecast"],
-            datasource_id=datasource["account_id"],
-        )
-        for datasource in datasources
-    ]
+    datasources = response.json()
+    return create_page(
+        [
+            DatasourceRead(
+                id=datasource["id"],
+                name=datasource["name"],
+                type=datasource["type"],
+                parent=datasource.get("parent"),
+                resources_charged_this_month=datasource["resources"],
+                expenses_so_far_this_month=datasource["cost"],
+                expenses_forecast_this_month=datasource["forecast"],
+                datasource_id=datasource["account_id"],
+            )
+            for datasource in datasources["items"]
+        ],
+        params=params,
+        total=datasources["total"],
+    )
 
 
 @router.get("/{organization_id}/datasources/{datasource_id}", response_model=DatasourceRead)

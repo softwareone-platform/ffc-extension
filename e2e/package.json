@@ -1,15 +1,16 @@
 {
   "name": "swo-optscale-e2e-operations-api-tests",
   "version": "1.0.0",
-  "description": "E2E Playwright test framework for Operations API tests",
+  "description": "E2E Playwright test framework for FFC Admin Portal tests",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "playwright:codegen": "npx playwright codegen https://portal.s1.today/",
     "playwright:show-report": "npx playwright show-report",
-    "playwright:debug": "npx playwright test --debug --workers=1 --grep @ui",
+    "playwright:debug": "npx playwright test --debug --workers=1",
     "playwright:test": "npx playwright test"
   },
   "author": "Steve Churchill",
@@ -18,9 +19,10 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.57.0",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^24.10.1",
     "cross-env": "^10.1.0",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-playwright": "^2.2.2",
@@ -28,5 +30,9 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1",
     "uuid": "^11.0.5"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "jsonwebtoken": "^9.0.3"
   }
 }

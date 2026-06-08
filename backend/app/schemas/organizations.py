@@ -78,11 +78,15 @@ class OrganizationReference(IdSchema):
     operations_external_id: str
 
 
-class DatasourceRead(BaseSchema):
+class DatasourceBase(BaseSchema):
     id: uuid.UUID
     name: str
     type: DatasourceType
-    parent_id: uuid.UUID | None
+
+
+class DatasourceRead(DatasourceBase):
+    parent: DatasourceBase | None = None
+    parent_id: uuid.UUID | None = None
     resources_charged_this_month: int
     expenses_so_far_this_month: float
     expenses_forecast_this_month: float
