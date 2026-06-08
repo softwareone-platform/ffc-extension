@@ -17,7 +17,7 @@ files under `frontend/src`, follow the rules below.
    - Examples (from `@swo`): `Button.d.ts`, `Modal.d.ts`, `ConfirmModal.d.ts`,
      `Modal.Header.d.ts`, `DatePicker.Calendar.MonthView-*.mjs`,
      `Grid.Toolbar.Shared.ButtonLink-*.mjs`.
-   - In `src`: `AppShell.tsx`, `MainLayout.tsx`, `PageShell.tsx`,
+   - In `src`: `MainLayout.tsx`, `PageShell.tsx`,
      `EntityStatusChip.tsx`, `ExtensionsProvider.tsx`, `MPTContextProvider.tsx`,
      `OrganizationsGrid.tsx`, `DetailsLayout.tsx`, `EntitlementsGrid.tsx`,
      `AddOrganizationModal.tsx`, `Users.tsx`, `DataSources.tsx`.
@@ -49,7 +49,7 @@ files under `frontend/src`, follow the rules below.
    export { PageShell } from './PageShell';
    ```
 
-8. **TS path aliases (`~app`, `~features`, `~shared`, `~i18n`, `~styles`,
+8. **TS path aliases (`~app`, `~features`, `~shared`, `~i18n`,
    `~organizations`)** in `tsconfig.json` and `esbuild.config.js` point at
    `kebab-case` folders. Only the file suffix changes — folder paths remain
    `kebab-case`:

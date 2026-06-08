@@ -2,7 +2,7 @@ import { Outlet, useParams } from "react-router-dom";
 
 import { Navigation } from "@swo/design-system/navigation";
 
-import { SEGMENTS } from "~app/paths";
+import { SEGMENTS } from "~features/organizations/paths";
 import { useOrganizationDetailsApi } from "~organizations/api";
 
 import { OrganizationsProvider } from "../providers/OrganizationsProvider";

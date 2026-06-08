@@ -1,10 +1,10 @@
 import { redirect, RouteObject } from "react-router-dom";
 
-import { SEGMENTS } from "~app/paths";
+import { SEGMENTS } from "~features/organizations/paths";
 import { lazyComponent } from "~shared/utils/lazyComponent";
 
 export const organizationsRoutes: RouteObject = {
-  path: SEGMENTS.organizations,
+  path: SEGMENTS.root,
   children: [
     {
       index: true,
@@ -14,7 +14,7 @@ export const organizationsRoutes: RouteObject = {
       ),
     },
     {
-      path: SEGMENTS.organizationIdParam,
+      path: SEGMENTS.idParam,
       lazy: lazyComponent(
         () => import("~features/organizations/details/DetailsContent"),
         "OrganizationDetailsContent",

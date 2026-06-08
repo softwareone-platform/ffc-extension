@@ -31,7 +31,6 @@ const ctx = await context({
     '~organizations': srcDir('features/organizations'),
     '~entitlements': srcDir('features/entitlements'),
     '~shared': srcDir('shared'),
-    '~styles': srcDir('styles'),
     '~i18n': srcDir('i18n'),
   },
   define: {
