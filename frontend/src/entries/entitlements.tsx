@@ -2,7 +2,10 @@ import { createRoot } from "react-dom/client";
 
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
-import { EntitlementsDetailsLayout } from "~features/entitlements/details/DetailsLayout";
+import { DetailsLayout } from "~app/layouts";
+import { PARAMS, SEGMENTS } from "~app/paths";
+import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
+import { EntitlementDetailsContent } from "~features/entitlements/details/DetailsContent";
 import { EntitlementsGeneralDetails } from "~features/entitlements/details/general/General";
 import { EntitlementsGrid } from "~features/entitlements/list/EntitlementsGrid";
 import { i18n } from "~i18n/translations";
@@ -12,11 +15,6 @@ import "~styles/global.scss";
 
 import { setup } from "@mpt-extension/sdk";
 
-/**
- * Standalone "Entitlements" widget bundle. Mounted by the host as a
- * top-level micro-frontend at its own root, so it owns its providers and
- * router. Reuses the same feature components as the main router.
- */
 setup((element: Element) => {
   const root = createRoot(element);
   root.render(
@@ -25,9 +23,21 @@ setup((element: Element) => {
         <Routes>
           <Route element={<Outlet />}>
             <Route index element={<EntitlementsGrid />} />
-            <Route path=":entitlementId" element={<EntitlementsDetailsLayout />}>
-              <Route index element={<Navigate to="general" replace />} />
-              <Route path="general" element={<EntitlementsGeneralDetails />} />
+            <Route
+              path={SEGMENTS.entitlementIdParam}
+              element={
+                <DetailsLayout
+                  paramKey={PARAMS.entitlementId}
+                  renderHeader={(id, backUrl) => (
+                    <EntitlementDetailsHeader entitlementId={id} backUrl={backUrl} />
+                  )}
+                >
+                  <EntitlementDetailsContent />
+                </DetailsLayout>
+              }
+            >
+              <Route index element={<Navigate to={SEGMENTS.general} replace />} />
+              <Route path={SEGMENTS.general} element={<EntitlementsGeneralDetails />} />
             </Route>
           </Route>
         </Routes>

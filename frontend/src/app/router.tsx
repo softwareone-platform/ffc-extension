@@ -1,5 +1,6 @@
 import { createBrowserRouter, redirect } from 'react-router-dom';
 
+import { PATHS } from '~app/paths';
 import { entitlementsRoutes } from '~features/entitlements/routes';
 import { organizationsRoutes } from '~features/organizations/routes';
 import { lazyComponent } from '~shared/utils/lazyComponent';
@@ -10,10 +11,10 @@ import { lazyComponent } from '~shared/utils/lazyComponent';
  */
 export const router = createBrowserRouter([
     {
-        path: '/',
+        path: PATHS.root,
         lazy: lazyComponent(() => import('~app/AppShell'), 'AppShell'),
         children: [
-            { index: true, loader: () => redirect('/entitlements') },
+            { index: true, loader: () => redirect(PATHS.organizations.root) },
             {
                 // Top-level layout: renders the shared PageShell (Entitlements /
                 // Organizations tabs + "Add organization" action) for list pages.

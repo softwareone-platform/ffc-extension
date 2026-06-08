@@ -1,9 +1,10 @@
 import { redirect, RouteObject } from "react-router-dom";
 
+import { SEGMENTS } from "~app/paths";
 import { lazyComponent } from "~shared/utils/lazyComponent";
 
 export const organizationsRoutes: RouteObject = {
-  path: "organizations",
+  path: SEGMENTS.organizations,
   children: [
     {
       index: true,
@@ -13,29 +14,29 @@ export const organizationsRoutes: RouteObject = {
       ),
     },
     {
-      path: ":organizationId",
+      path: SEGMENTS.organizationIdParam,
       lazy: lazyComponent(
         () => import("~features/organizations/details/DetailsContent"),
         "OrganizationDetailsContent",
       ),
       children: [
-        { index: true, loader: () => redirect("general") },
+        { index: true, loader: () => redirect(SEGMENTS.general) },
         {
-          path: "general",
+          path: SEGMENTS.general,
           lazy: lazyComponent(
             () => import("~features/organizations/details/general/General"),
             "OrganizationGeneralDetails",
           ),
         },
         {
-          path: "data-sources",
+          path: SEGMENTS.dataSources,
           lazy: lazyComponent(
             () => import("~features/organizations/details/data-sources/DataSources"),
             "OrganizationDataSources",
           ),
         },
         {
-          path: "users",
+          path: SEGMENTS.users,
           lazy: lazyComponent(
             () => import("~features/organizations/details/users/Users"),
             "OrganizationUsers",

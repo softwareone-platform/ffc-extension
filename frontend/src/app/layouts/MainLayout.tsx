@@ -4,6 +4,7 @@ import { Outlet, useMatch } from 'react-router-dom';
 
 import { Button } from '@swo/design-system/button';
 
+import { PATHS } from '~app/paths';
 import { EntitlementDetailsHeader } from '~features/entitlements/components/EntitlementDetailsHeader';
 import {
     AddOrganizationFormValues,
@@ -13,16 +14,16 @@ import { OrganizationDetailsHeader } from '~features/organizations/components/Or
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
 
 const NAV_ITEMS: PageShellNavItem[] = [
-  { path: '/organizations', label: 'Organizations' },
-  { path: '/entitlements', label: 'Entitlements' },
+  { path: PATHS.organizations.root, label: 'Organizations' },
+  { path: PATHS.entitlements.root, label: 'Entitlements' },
 ];
 
 export function MainLayout() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const navItems = useMemo(() => NAV_ITEMS, []);
 
-    const entitlementMatch = useMatch('/entitlements/:entitlementId/*');
-    const organizationMatch = useMatch('/organizations/:organizationId/*');
+    const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
+    const organizationMatch = useMatch(PATHS.organizations.detailMatch);
 
     useEffect(() => {
         if (window.parent && window.parent !== window) {
@@ -36,12 +37,12 @@ export function MainLayout() {
                 {entitlementMatch?.params.entitlementId ? (
                     <EntitlementDetailsHeader
                         entitlementId={entitlementMatch.params.entitlementId}
-                        backUrl="/entitlements"
+                        backUrl={PATHS.entitlements.root}
                     />
                 ) : organizationMatch?.params.organizationId ? (
                     <OrganizationDetailsHeader
                         organizationId={organizationMatch.params.organizationId}
-                        backUrl="/organizations"
+                        backUrl={PATHS.organizations.root}
                     />
                 ) : (
                     <PageShell.Header

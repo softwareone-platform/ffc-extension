@@ -30,8 +30,9 @@ plugs:
   icon: adobe.png
   socket: portal.{{ settings.ui_plugs_prefix }}.entitlements.actions
   href: "/static/modal.js"
-- id: modal
-  name: Add entitlement
-  description: Wizard to test modals
+- id: standalone
+  name: Standalone
+  description: This is a standalone plug that is not connected to the portal socket. It can be used to test the UI of the plug without having to connect it to the portal.
   icon: adobe.png
-  href: "/static/modal.js"
+  socket: portal.{{ settings.ui_plugs_prefix }}
+  href: "/static/index.js"
