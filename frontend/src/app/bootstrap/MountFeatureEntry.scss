@@ -1,13 +1,7 @@
-@use "../../../node_modules/@swo/design-tokens/src/index" as *;
-@use "../../../node_modules/@swo/design-tokens/src/style" as *;
+@use "./base" as *;
 
-// --- typography & resets -------------------------------------------------
 html,
 body,
 #root {
-  height: 100%;
-}
-
-#root {
-  margin: $spacing-2;
+  height: auto;
 }

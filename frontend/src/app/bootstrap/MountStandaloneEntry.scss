@@ -1,15 +1,11 @@
-@use "../../../node_modules/@swo/design-tokens/src/index" as *;
-@use "../../../node_modules/@swo/design-tokens/src/style" as *;
+@use "./base" as *;
 
 html,
-body,
-#root {
+body {
   height: 100%;
-  margin: 0;
 }
+
 #root {
-    position: relative;
-    height: 100vh;
-    overflow-y: auto;
-    overflow-x: hidden;
+  position: relative;
+  height: 100vh;
 }

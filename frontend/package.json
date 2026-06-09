@@ -30,8 +30,8 @@
     "../static"
   ],
   "dependencies": {
-    "@mpt-extension/sdk": "^0.0.5",
-    "@mpt-extension/sdk-react": "^0.0.1",
+    "@mpt-extension/sdk": "^0.0.7",
+    "@mpt-extension/sdk-react": "^0.0.7",
     "@swo/design-system": "5.0.133",
     "@swo/design-tokens": "5.0.133",
     "@swo/ffc-api-model": "./swo-ffc-api-model-5.0.0-rc.1.tgz",
