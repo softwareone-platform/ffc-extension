@@ -30,7 +30,6 @@ export const AddUser = () => {
   const tUsers = useFixedT("organization:users");
 
   const onError = useCallback((error: AxiosError): void => {
-    // console.log('Error adding user:', error, error.status);
     return setError(tErrors("add_admin_failed_with_code_" + (error.status || "unknown")));
   }, []);
   const onSuccess = useCallback((): void => {
@@ -47,7 +46,7 @@ export const AddUser = () => {
     async (formData: AddUserForm) => {
       await mutateAsync(formData);
     },
-    [data.organizationId, mutateAsync],
+    [mutateAsync],
   );
 
   return (

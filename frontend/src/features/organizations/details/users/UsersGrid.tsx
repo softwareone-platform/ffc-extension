@@ -9,7 +9,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { useGridConfig } from "./UsersGrid.config";
 
 export function UsersGrid({ organizationId }: { organizationId: string }) {
-  const { silentRefresh, refresh, ...gridProps } = useGridConfig(organizationId);
+  const { refresh, ...gridProps } = useGridConfig(organizationId);
   const { open } = useMPTModal();
   const tUsers = useFixedT("organization:users");
 

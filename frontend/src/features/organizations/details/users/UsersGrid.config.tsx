@@ -129,15 +129,12 @@ export function useAsyncOptions(organizationId: string) {
 export function useGridConfig(organizationId: string) {
   const columns = useColumns();
   const fields = useFields();
-  // const views = useViews();
   const asyncOptions = useAsyncOptions(organizationId);
 
   const config = useMemo(
     () =>
       ({
         id: "grid__organizations-details-users",
-        // memoizeId: 'gridWithRqlStory',
-        // views,
         columns,
         fields,
         isDefaultView: true,
