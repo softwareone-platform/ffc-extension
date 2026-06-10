@@ -80,7 +80,6 @@ export const AddUser = () => {
           label={tProperties("display_name")}
           labelType="required"
           placeholder={tPlaceholders("display_name")}
-          characterLimit={255}
         />
       </div>
       <div className="modal-actions modal__container">
