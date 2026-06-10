@@ -34,5 +34,9 @@ plugs:
   name: Standalone
   description: This is a standalone plug that is not connected to the portal socket. It can be used to test the UI of the plug without having to connect it to the portal.
   icon: adobe.png
-  socket: portal.{{ settings.ui_plugs_prefix }}
-  href: "/static/index.js"
+  href: "/static/modal.js"
+- id: finops.admin.create-user-modal
+  name: Create User Modal
+  description: Wizard to create a new user
+  icon: adobe.png
+  href: "/static/create-user.js"
