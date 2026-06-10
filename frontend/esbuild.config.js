@@ -14,6 +14,7 @@ const ctx = await context({
     './src/entries/organizations.tsx',
     './src/entries/entitlements.tsx',
     './src/entries/modal.tsx',
+    './src/entries/create-user.tsx',
     './src/entries/index.tsx',
   ],
   outdir: '../static',
@@ -50,4 +51,3 @@ if (watch) {
   await ctx.rebuild();
   await ctx.dispose();
 }
-
