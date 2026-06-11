@@ -31,6 +31,10 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
+
+# Install ty
+COPY --from=ghcr.io/astral-sh/ty:latest /ty /bin/
+
 # Run the uv installer then remove it
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 

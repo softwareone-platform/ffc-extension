@@ -18,6 +18,7 @@ from app.openapi import generate_openapi_spec
 from app.routers import (
     accounts,
     entitlements,
+    events,
     expenses,
     me,
     organizations,
@@ -52,6 +53,10 @@ tags_metadata = [
     {
         "name": "Billing",
         "description": "FinOps for Cloud Billing management endpoints.",
+    },
+    {
+        "name": "Marketplace Commerce Events",
+        "description": "Marketplace events handler endpoints for order's fulfillment",
     },
 ]
 
@@ -91,6 +96,7 @@ def setup_app():
     fastapi_pagination.add_pagination(app)
 
     v1_router = APIRouter(prefix="/ops/v1")
+    events_router = APIRouter(prefix="/events")
 
     for router in (
         entitlements.router,
@@ -165,8 +171,15 @@ def setup_app():
         ],
         tags=["Auth"],
     )
+    events_router.include_router(
+        events.router,
+        prefix="/commerce",
+        tags=["Marketplace Commerce Events"],
+        dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+    )
 
     app.include_router(v1_router)
+    app.include_router(events_router)
 
     settings = get_settings()
 
