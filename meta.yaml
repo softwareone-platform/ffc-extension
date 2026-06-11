@@ -36,3 +36,8 @@ plugs:
   icon: adobe.png
   socket: portal.{{ settings.ui_plugs_prefix }}
   href: "/static/index.js"
+- id: finops.admin.create-user-modal
+  name: Create User Modal
+  description: Wizard to create a new user
+  icon: adobe.png
+  href: "/static/create-user.js"

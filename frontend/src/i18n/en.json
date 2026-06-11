@@ -5,12 +5,29 @@
         "title": "General",
         "properties": {
           "limit": "Limit",
-          "forecastThisMonth": "Expenses this month forsecast",
+          "forecastThisMonth": "Expenses this month forecast",
           "expensesThisMonth": "Expenses this month",
           "expensesLastMonth": "Expenses last month",
           "possibleSavings": "Possible monthly savings"
         }
       }
+    },
+    "users": {
+      "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
+      "errors": {
+        "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
+        "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
+        "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
+        "add_admin_failed_with_code_409": "Failed to add user: Conflict. The user may already be an admin of this organization.",
+        "add_admin_failed_with_code_422": "Failed to add user: Missing required fields. The user may already be an admin of this organization.",
+        "add_admin_failed_with_code_500": "Failed to add user: Internal server error. Please try again later.",
+        "add_admin_failed_with_code_502": "Failed to add user: Internal server error. Please try again later.",
+        "add_admin_failed_with_code_unknown": "Failed to add user: An unknown error occurred. Please try again."
+      },
+      "add": "Add",
+      "add_user": "Add user",
+      "cancel": "Cancel",
+      "save": "Save"
     }
   },
   "shared": {
@@ -76,7 +93,10 @@
       "terminated": "Terminated",
       "expensesInfo": "Expenses information",
       "currency": "Currency",
-      "billingCurrency": "Billing currency"
-    }
+      "billingCurrency": "Billing currency",
+      "email": "Email",
+      "display_name": "Full name"
+    },
+    "placeholders": { "email": "Enter an email", "display_name": "Enter the user's full name" }
   }
 }

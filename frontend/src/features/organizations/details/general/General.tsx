@@ -32,6 +32,7 @@ export function OrganizationGeneralDetails() {
   };
 
   const tProperties = useFixedT("organization:details:general:properties");
+
   return (
     <>
       <div className={"organization-details-general"}>
