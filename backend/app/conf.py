@@ -3,7 +3,10 @@ import pathlib
 from urllib.parse import quote
 
 from pydantic import PostgresDsn, computed_field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+)
 
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 
@@ -36,7 +39,7 @@ class Settings(BaseSettings):
     api_modifier_jwt_secret: str
 
     datasources_expenses_obsolete_after_months: int = 6
-    billing_percentage: float = 1.0
+    billing_percentage: float = 1.0  # todo : ask if the default is 4 or 1.
     ffc_external_product_id: str = "FIN-0001-P1M"
 
     optscale_auth_api_base_url: str
@@ -66,8 +69,8 @@ class Settings(BaseSettings):
     ffc_billing_process_max_concurrency: int = 10
     default_billed_percentage: int = 4
     journal_validation_max_attempts: int = 5
-
-    # Billing command constraints
+    default_trial_period_duration_days: int = 30
+    due_date_days: int = 30
     lower_billing_year: int = 2025
 
     ui_plugs_prefix: str = "ffc"

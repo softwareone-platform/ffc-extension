@@ -16,6 +16,7 @@ from app.routers import (
     accounts,
     employees,
     entitlements,
+    events,
     expenses,
     organizations,
 )
@@ -135,6 +136,7 @@ def setup_app():
     )
 
     app.include_router(v1_router)
+    app.include_router(events.router)
 
     settings = get_settings()
 
