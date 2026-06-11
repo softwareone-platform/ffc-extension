@@ -17,6 +17,7 @@ import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon"
 import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
+import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
 type Columns = Array<
   Omit<GridColumnDefinition<DatasourceRead>, "fields"> & {
@@ -119,9 +120,7 @@ export function useAsyncOptions(organizationId: string) {
   >(baseQueryKey, (query) => ({
     queryKey: [baseQueryKey, query.toString(), organizationId],
     queryFn: () => listOrganizationDataSources(organizationId, query),
-    select: (res) => {
-      return { data: res.data, total: undefined };
-    },
+    select: mapAxiosResponseDataList,
   }));
 }
 
