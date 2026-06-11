@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Outlet, useMatch } from 'react-router-dom';
 
@@ -8,10 +8,13 @@ import { PATHS } from '~app/paths';
 import { EntitlementDetailsHeader } from '~features/entitlements/components/EntitlementDetailsHeader';
 import {
     AddOrganizationFormValues,
-    AddOrganizationModal,
-} from '~features/organizations/components/AddOrganizationModal';
+    AddEntitlementsModal,
+} from '~organizations/components/AddEntitlementsModal';
 import { OrganizationDetailsHeader } from '~features/organizations/components/OrganizationDetailsHeader';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
+import { useNotifyParentChildModal } from '~shared/hooks/useNotifyParentChildModal';
+
+import { StandaloneShellProvider } from './StandaloneShellContext';
 
 const NAV_ITEMS: PageShellNavItem[] = [
   { path: PATHS.organizations.root, label: 'Organizations' },
@@ -25,14 +28,10 @@ export function MainLayout() {
     const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
     const organizationMatch = useMatch(PATHS.organizations.detailMatch);
 
-    useEffect(() => {
-        if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'child-modal', isOpen: isAddOpen }, '*');
-        }
-    }, [isAddOpen]);
+    useNotifyParentChildModal(isAddOpen);
 
     return (
-        <>
+        <StandaloneShellProvider>
             <PageShell>
                 {entitlementMatch?.params.entitlementId ? (
                     <EntitlementDetailsHeader
@@ -62,13 +61,13 @@ export function MainLayout() {
                     <Outlet />
                 </PageShell.Content>
             </PageShell>
-            <AddOrganizationModal
+            <AddEntitlementsModal
                 isOpen={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
                 onSubmit={(values: AddOrganizationFormValues) => {
                     console.log('[entitlements] add organization submitted', values);
                 }}
             />
-        </>
+        </StandaloneShellProvider>
     );
 }

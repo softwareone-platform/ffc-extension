@@ -22,7 +22,7 @@ const initialValues: AddOrganizationFormValues = {
   contactEmail: "",
 };
 
-export const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({
+export const AddEntitlementsModal: React.FC<AddOrganizationModalProps> = ({
   isOpen,
   onClose,
   onSubmit,

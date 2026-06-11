@@ -13,8 +13,8 @@ const ctx = await context({
   entryPoints: [
     './src/entries/organizations.tsx',
     './src/entries/entitlements.tsx',
-    './src/entries/modal.tsx',
-    './src/entries/create-user.tsx',
+    './src/entries/CreateEntitlementModal.tsx',
+    './src/entries/CreateUserModal.tsx',
     './src/entries/index.tsx',
   ],
   outdir: '../static',

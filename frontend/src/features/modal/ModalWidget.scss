@@ -7,20 +7,19 @@
     align-items: center;
     border-bottom: 2px solid;
     border-image: linear-gradient(
-        259deg,
-        $var-tertiary-cyan-2 16.32%,
-        $var-brand-primary 59.03%,
-        $var-alerts-info-3 99.99%
-      )
-      1;
+                    259deg,
+                    $var-tertiary-cyan-2 16.32%,
+                    $var-brand-primary 59.03%,
+                    $var-alerts-info-3 99.99%
+    ) 1;
 
     &-title {
       @extend %medium3;
     }
   }
 
-  &__container {
-    padding: var(--spacing-3);
+  &__container{
+    padding: 0;
   }
 
   &__content {
