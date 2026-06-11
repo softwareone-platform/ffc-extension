@@ -20,7 +20,7 @@ files under `frontend/src`, follow the rules below.
    - In `src`: `MainLayout.tsx`, `PageShell.tsx`,
      `EntityStatusChip.tsx`, `ExtensionsProvider.tsx`, `MPTContextProvider.tsx`,
      `OrganizationsGrid.tsx`, `DetailsLayout.tsx`, `EntitlementsGrid.tsx`,
-     `AddEntitlementsModal.tsx`, `Users.tsx`, `DataSources.tsx`.
+     `EntitlementsForm.tsx`, `Users.tsx`, `DataSources.tsx`.
 
 3. **Hooks: `camelCase` starting with `use…` + `.ts`/`.tsx`.**
    - Examples (from `@swo/modal/lib/hooks`): `useConfirm.d.ts`, `useConfirmModal.d.ts`,

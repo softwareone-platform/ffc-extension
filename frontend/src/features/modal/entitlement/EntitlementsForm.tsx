@@ -4,35 +4,32 @@ import { Button } from "@swo/design-system/button";
 import { Input } from "@swo/design-system/input";
 import { Modal } from "@swo/design-system/modal";
 
-export interface AddOrganizationFormValues {
+export interface AddEntitlementsFormValues {
   name: string;
   description: string;
   contactEmail: string;
 }
 
-interface AddOrganizationModalProps {
+type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (values: AddOrganizationFormValues) => void;
-}
+  onSubmit?: (values: AddEntitlementsFormValues) => void;
+};
 
-const initialValues: AddOrganizationFormValues = {
+const initialValues: AddEntitlementsFormValues = {
   name: "",
   description: "",
   contactEmail: "",
 };
 
-export const AddEntitlementsModal: React.FC<AddOrganizationModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-}) => {
-  const [values, setValues] = useState<AddOrganizationFormValues>(initialValues);
+export const EntitlementsForm: React.FC<Props> = ({ isOpen, onClose, onSubmit }) => {
+  const [values, setValues] = useState<AddEntitlementsFormValues>(initialValues);
 
-  const update = (field: keyof AddOrganizationFormValues) => (e: React.ChangeEvent<Element>) => {
-    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-    setValues((prev) => ({ ...prev, [field]: target.value }));
-  };
+  const update =
+    (field: keyof AddEntitlementsFormValues) => (e: React.ChangeEvent<Element>) => {
+      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+      setValues((prev) => ({ ...prev, [field]: target.value }));
+    };
 
   const handleClose = () => {
     setValues(initialValues);
@@ -48,7 +45,7 @@ export const AddEntitlementsModal: React.FC<AddOrganizationModalProps> = ({
 
   return (
     <Modal
-      title="Add organization"
+      title="Add entitlement"
       isOpen={isOpen}
       width={560}
       onClose={handleClose}
@@ -63,28 +60,28 @@ export const AddEntitlementsModal: React.FC<AddOrganizationModalProps> = ({
         </>
       }
     >
-      <div className="add-organization-form">
+      <div className="add-entitlement-form">
         <Input
           label="Name"
           placeholder="Acme Corp."
           value={values.name}
           isRequired
           onChange={update("name")}
-          testId="add-organization-name"
+          testId="add-entitlement-name"
         />
         <Input
           label="Description"
           placeholder="Short description"
           value={values.description}
           onChange={update("description")}
-          testId="add-organization-description"
+          testId="add-entitlement-description"
         />
         <Input
           label="Contact email"
           placeholder="admin@acme.com"
           value={values.contactEmail}
           onChange={update("contactEmail")}
-          testId="add-organization-email"
+          testId="add-entitlement-email"
         />
       </div>
     </Modal>

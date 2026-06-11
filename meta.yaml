@@ -29,7 +29,7 @@ plugs:
   description: Add entitlement
   icon: adobe.png
   socket: portal.{{ settings.ui_plugs_prefix }}.entitlements.actions
-  href: "/static/CreateEntitlementsModal.js"
+  href: "/static/CreateEntitlementModal.js"
 - id: standalone
   name: Standalone
   description: This is a standalone plug that is not connected to the portal socket. It can be used to test the UI of the plug without having to connect it to the portal.
@@ -40,4 +40,4 @@ plugs:
   name: Create User Modal
   description: Wizard to create a new user
   icon: adobe.png
-  href: "/static/create-user.js"
+  href: "/static/CreateUserModal.js"

@@ -7,9 +7,9 @@ import { Button } from '@swo/design-system/button';
 import { PATHS } from '~app/paths';
 import { EntitlementDetailsHeader } from '~features/entitlements/components/EntitlementDetailsHeader';
 import {
-    AddOrganizationFormValues,
-    AddEntitlementsModal,
-} from '~organizations/components/AddEntitlementsModal';
+    AddEntitlementsFormValues,
+    EntitlementsForm,
+} from '~features/modal/entitlement/EntitlementsForm';
 import { OrganizationDetailsHeader } from '~features/organizations/components/OrganizationDetailsHeader';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
 import { useNotifyParentChildModal } from '~shared/hooks/useNotifyParentChildModal';
@@ -61,11 +61,11 @@ export function MainLayout() {
                     <Outlet />
                 </PageShell.Content>
             </PageShell>
-            <AddEntitlementsModal
+            <EntitlementsForm
                 isOpen={isAddOpen}
                 onClose={() => setIsAddOpen(false)}
-                onSubmit={(values: AddOrganizationFormValues) => {
-                    console.log('[entitlements] add organization submitted', values);
+                onSubmit={(values: AddEntitlementsFormValues) => {
+                    console.log('[entitlements] add entitlement submitted', values);
                 }}
             />
         </StandaloneShellProvider>

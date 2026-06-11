@@ -1,18 +1,14 @@
-import "./ModalWidget.scss";
-
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
-import { AddEntitlementsModal } from "~features/organizations/components/AddEntitlementsModal";
+import { ModalWidget } from "../shared/ModalWidget";
+import { EntitlementsForm } from "./EntitlementsForm";
 
 export default () => {
   const { close } = useMPTModal();
 
   return (
-    <div className="modal">
-      <div className="modal-header modal__container">
-        <div className="modal-header-title">Add entitlement</div>
-      </div>
-      <AddEntitlementsModal
+    <ModalWidget title="Add entitlement">
+      <EntitlementsForm
         isOpen={true}
         onClose={() => close("cancel")}
         onSubmit={(values) => {
@@ -20,6 +16,6 @@ export default () => {
           close({ success: true });
         }}
       />
-    </div>
+    </ModalWidget>
   );
 };

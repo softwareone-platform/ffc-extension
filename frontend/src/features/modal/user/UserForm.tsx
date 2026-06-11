@@ -11,11 +11,11 @@ import { useMPTContext, useMPTModal } from "@mpt-extension/sdk-react";
 import { ControlledInput } from "~shared/components/form/ControlledInput";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { useEmployeesApi } from "../api/useEmployeesApi";
-import { AddUserForm } from "./add-user-modal/AddUserForm.Schema";
-import { useAddUserForm } from "./add-user-modal/hooks/useAddUserForm";
+import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
+import { AddUserForm } from "./AddUserForm.Schema";
+import { useAddUserForm } from "./hooks/useAddUserForm";
 
-export const AddUser = () => {
+export const UserForm = () => {
   const { close } = useMPTModal();
   const { data } = useMPTContext();
   const { addAdmin } = useEmployeesApi();

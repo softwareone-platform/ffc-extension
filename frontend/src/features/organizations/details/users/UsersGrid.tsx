@@ -8,7 +8,7 @@ import { EmployeeRead } from "@swo/ffc-api-model";
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
 import { useIsStandaloneShell } from "~app/layouts/StandaloneShellContext";
-import AddUserModal from "~features/modal/AddUserModal";
+import CreateUserModal from "~features/modal/user/CreateUserModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 
@@ -50,7 +50,7 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
       </Grid>
       {isStandaloneShell && (
         <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false) } className={"add-user-modal"}>
-          <AddUserModal />
+          <CreateUserModal />
         </Modal>
       )}
     </>
