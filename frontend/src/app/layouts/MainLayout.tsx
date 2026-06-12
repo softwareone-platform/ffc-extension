@@ -4,6 +4,8 @@ import { Outlet } from "react-router-dom";
 
 import { Button } from "@swo/design-system/button";
 
+import { useMPTEmit } from "@mpt-extension/sdk-react";
+
 import {
   AddOrganizationFormValues,
   AddOrganizationModal,
@@ -21,12 +23,12 @@ export function MainLayout() {
   const navItems = useMemo(() => NAV_ITEMS, []);
   const standAloneApp = useStandAloneApp();
   // const standAloneApp = true; // --- FORCE STANDALONE MODE FOR TESTING ---
+  const emit = useMPTEmit();
 
   useEffect(() => {
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: "child-modal", isOpen: isAddOpen }, "*");
-    }
-  }, [isAddOpen]);
+    if (typeof window.__MPT__ === "undefined") return;
+    emit("child-modal", { isOpen: isAddOpen });
+  }, [emit, isAddOpen]);
 
   return (
     <>
