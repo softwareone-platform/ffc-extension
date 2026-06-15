@@ -8,7 +8,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "playwright:codegen": "npx playwright codegen https://portal.s1.today/",
+    "playwright:codegen": "npx playwright codegen https://portal.s1.show/",
     "playwright:show-report": "npx playwright show-report",
     "playwright:debug": "npx playwright test --debug --workers=1",
     "playwright:test": "npx playwright test"

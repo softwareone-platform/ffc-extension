@@ -19,6 +19,7 @@ export const LARGE_DATA_TIMEOUT = 30000;
  */
 export default defineConfig({
   globalSetup: './setup/global-setup.ts',
+  globalTeardown: './setup/global-teardown.ts',
   testDir: '../e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,

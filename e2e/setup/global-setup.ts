@@ -63,7 +63,6 @@ async function globalSetup(config: FullConfig) {
       console.error('Global Setup Login failed: ' + error);
     }),
   ]);
-
   debugLog('Global setup: finished');
 }
 

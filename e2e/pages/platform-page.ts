@@ -6,13 +6,14 @@ import { LARGE_DATA_TIMEOUT } from '../playwright.config';
  * Abstract class representing the base structure for all pages.
  * This class provides common functionality for interacting with web pages in Playwright tests.
  */
-export abstract class BasePage {
+export abstract class PlatformPage {
   readonly page: Page; // The Playwright page object representing the current page.
   readonly url: string; // The URL of the page.
   readonly main: Locator;
-  readonly extensionFrame: FrameLocator;
+  readonly wizardFrame: FrameLocator;
   readonly navigationHeaderBarTitle: Locator;
   readonly loadingPageImg: Locator;
+
 
   /**
    * Initializes a new instance of the BasePage class.
@@ -23,9 +24,11 @@ export abstract class BasePage {
     this.page = page;
     this.url = url;
     this.main = this.page.locator('main');
-    this.extensionFrame = this.main.frameLocator('iframe');
+
+    this.wizardFrame = this.main.frameLocator('(//iframe)[2]');
     this.navigationHeaderBarTitle = this.main.getByTestId('navigation__header-bar__title');
     this.loadingPageImg = this.page.locator('#Vector_5');
+
   }
 
   /**
@@ -164,6 +167,7 @@ export abstract class BasePage {
    *
    * @param {Locator} locator - The locator for the element whose text content is being checked.
    * @param {string} expectedText - The text expected to be present within the element's text content.
+   * @param {boolean} [exactMatch=false] - When true, requires an exact text match instead of substring match.
    * @returns {Promise<void>} Resolves when the element containing the expected text is attached to the DOM.
    *
    * @example
@@ -175,12 +179,19 @@ export abstract class BasePage {
    * await basePage.waitForTextContent(basePage.table.locator('td').first(), '$1,234.56');
    *
    * @remarks
-   * - Uses Playwright's `filter({ hasText })` which performs a substring match, not an exact match.
+   * - Uses Playwright's `filter({ hasText })`.
+   * - With `exactMatch=false` (default), it performs a substring match.
+   * - With `exactMatch=true`, it uses an anchored regex for exact matching.
    * - The method waits for the element to be attached to the DOM but does not assert visibility.
    *   Use `toBeVisible()` for stricter visibility assertions.
    */
-  async waitForTextContent(locator: Locator, expectedText: string): Promise<void> {
-    await locator.filter({ hasText: expectedText }).waitFor();
+  async waitForTextContent(locator: Locator, expectedText: string, exactMatch: boolean = false): Promise<void> {
+    const hasText = exactMatch ? new RegExp(`^${this.escapeRegExp(expectedText)}$`) : expectedText;
+    await locator.filter({ hasText }).waitFor();
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   /**
@@ -333,6 +344,8 @@ export abstract class BasePage {
       errorLog('[ERROR] Loading page image did not disappear within the timeout.'); // Log a warning if the image remains visible after the timeout.
     }
   }
+
+
 
   /**
    * Introduces a delay for a specified duration.
