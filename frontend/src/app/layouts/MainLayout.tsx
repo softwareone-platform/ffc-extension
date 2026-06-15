@@ -26,7 +26,7 @@ export function MainLayout() {
   const emit = useMPTEmit();
 
   useEffect(() => {
-    if (typeof window.__MPT__ === "undefined") return;
+    if (globalThis.__MPT__ === undefined) return;
     emit("child-modal", { isOpen: isAddOpen });
   }, [emit, isAddOpen]);
 
