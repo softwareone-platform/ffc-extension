@@ -26,7 +26,6 @@ EXCLUDED_CURRENCIES = [
 
 class OrganizationExpensesInfo(BaseSchema):
     limit: Annotated[Decimal, Field(examples=["10000.00"], default=Decimal(0))]
-    expenses_last_month: Annotated[Decimal, Field(examples=["4321.26"], default=Decimal(0))]
     expenses_this_month: Annotated[Decimal, Field(examples=["2111.49"], default=Decimal(0))]
     expenses_this_month_forecast: Annotated[
         Decimal, Field(examples=["5001.12"], default=Decimal(0))

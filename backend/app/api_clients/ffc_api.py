@@ -78,3 +78,8 @@ class FFCAPIClient(BaseAPIClient):
         )
         response.raise_for_status()
         return response
+
+    async def fetch_expenses_for_organization(self, organization_id: UUID | str) -> httpx.Response:
+        response = await self.httpx_client.get(f"/admin/organizations/{organization_id}/expenses")
+        response.raise_for_status()
+        return response

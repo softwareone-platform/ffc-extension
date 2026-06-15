@@ -510,10 +510,23 @@ async def test_get_organization_by_id(
     api_client: AsyncClient,
     ffc_jwt_token: str,
     ffc_extension: System,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
 ):
     org = await organization_factory(
         created_by=ffc_extension,
         updated_by=ffc_extension,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/expenses",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "limit": "57",
+            "expenses_this_month": "1724.6654545809972",
+            "expenses_this_month_forecast": "3690.91",
+            "possible_monthly_saving": "64.55278421228572",
+        },
     )
     response = await api_client.get(
         f"/organizations/{org.id}", headers={"Authorization": f"Bearer {ffc_jwt_token}"}
@@ -533,6 +546,8 @@ async def test_get_organization_by_id(
     assert data["events"]["updated"]["by"]["id"] == str(ffc_extension.id)
     assert data["events"]["updated"]["by"]["type"] == ffc_extension.type
     assert data["events"]["updated"]["by"]["name"] == ffc_extension.name
+    assert data["expenses_info"] is not None
+    assert data["expenses_info"]["expenses_this_month_forecast"] == "3690.91"
 
 
 async def test_get_non_existant_organization(api_client: AsyncClient, ffc_jwt_token: str):

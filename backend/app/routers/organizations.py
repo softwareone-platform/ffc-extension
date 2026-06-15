@@ -165,8 +165,15 @@ async def fetch_organization_or_404(
 )
 async def get_organization_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
+    ffc_api_client: FFCAPIClient,
 ):
-    return convert_model_to_schema(OrganizationRead, organization)
+    with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
+        response = await ffc_api_client.fetch_expenses_for_organization(
+            organization_id=organization.linked_organization_id,
+        )
+
+    expenses = response.json()
+    return convert_model_to_schema(OrganizationRead, organization, expenses_info=expenses)
 
 
 @router.get("/{organization_id}/datasources", response_model=LimitOffsetPage[DatasourceRead])
