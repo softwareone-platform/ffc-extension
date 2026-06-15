@@ -27,14 +27,12 @@ function HostContextBridge({ children }: PropsWithChildren) {
 }
 
 export function MPTContextProvider({ children }: PropsWithChildren) {
-  const [hasHost, setHasHost] = useState(
-    typeof window !== "undefined" && typeof window.__MPT__ !== "undefined",
-  );
+  const [hasHost, setHasHost] = useState(globalThis.__MPT__ !== undefined);
 
-  // The host may inject `window.__MPT__` slightly after mount; re-check once.
+  // The host may inject `globalThis.__MPT__` slightly after mount; re-check once.
   useEffect(() => {
     if (hasHost) return;
-    if (typeof window !== "undefined" && typeof window.__MPT__ !== "undefined") {
+    if (globalThis.__MPT__ !== undefined) {
       setHasHost(true);
     }
   }, [hasHost]);
@@ -62,11 +60,3 @@ export function useStandAloneApp(): boolean {
   return useContext(MPTContextStore).data?.standAloneApp ?? false;
 }
 
-declare global {
-  interface Window {
-    __MPT__?: {
-      context?: unknown;
-      onChange?: (cb: (data: unknown) => void) => void;
-    };
-  }
-}
