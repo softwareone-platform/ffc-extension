@@ -1,89 +1,119 @@
-import React, { useState } from "react";
+import { useCallback, useState } from "react";
+
+import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
 import { Button } from "@swo/design-system/button";
-import { Input } from "@swo/design-system/input";
-import { Modal } from "@swo/design-system/modal";
+import { InlineNotification } from "@swo/notification";
 
-export interface AddEntitlementsFormValues {
-  name: string;
-  description: string;
-  contactEmail: string;
-}
+import { useMPTModal } from "@mpt-extension/sdk-react";
 
-type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit?: (values: AddEntitlementsFormValues) => void;
-};
+import { ControlledInput } from "~shared/components/form/ControlledInput";
+import { useFixedT } from "~shared/hooks/useFixedT";
 
-const initialValues: AddEntitlementsFormValues = {
-  name: "",
-  description: "",
-  contactEmail: "",
-};
+import { ModalCancelButton } from "../shared/ModalCancelButton";
+import { ModalEntryProps } from "../shared/defineModalEntry";
+import { AddEntitlementForm } from "./AddEntitlementForm.Schema";
+import { useAddEntitlementForm } from "./hooks/useAddEntitlementForm";
 
-export const EntitlementsForm: React.FC<Props> = ({ isOpen, onClose, onSubmit }) => {
-  const [values, setValues] = useState<AddEntitlementsFormValues>(initialValues);
+export const EntitlementsForm = ({ onClose }: ModalEntryProps = {}) => {
+  const { close } = useMPTModal();
+  const [error, setError] = useState<string | null>(null);
+  const { handleSubmit, control } = useAddEntitlementForm({
+    name: "",
+    description: "",
+    contactEmail: "",
+  });
+  const tProperties = useFixedT("entitlement:properties");
+  const tPlaceholders = useFixedT("entitlement:placeholders");
+  const tErrors = useFixedT("entitlement:errors");
+  const tEntitlement = useFixedT("entitlement");
 
-  const update =
-    (field: keyof AddEntitlementsFormValues) => (e: React.ChangeEvent<Element>) => {
-      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-      setValues((prev) => ({ ...prev, [field]: target.value }));
-    };
+  const handleCancel = useCallback((): void => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+    close("cancel");
+  }, [onClose, close]);
 
-  const handleClose = () => {
-    setValues(initialValues);
-    onClose();
-  };
+  const onError = useCallback(
+    (_error: AxiosError): void => {
+      setError(tErrors("create_failed"));
+    },
+    [tErrors],
+  );
+  const onSuccess = useCallback((): void => {
+    if (onClose) {
+      onClose({ success: true });
+      return;
+    }
+    close({ success: true });
+  }, [onClose, close]);
 
-  const handleSubmit = () => {
-    onSubmit?.(values);
-    handleClose();
-  };
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: async (formData: AddEntitlementForm) => {
+      // Placeholder for the real entitlement API call.
+      console.log("[entitlements] add entitlement submitted", formData);
+      return formData;
+    },
+    onSuccess,
+    onError,
+  });
 
-  const isValid = values.name.trim().length > 0;
+  const onSave = useCallback(
+    async (formData: AddEntitlementForm) => {
+      await mutateAsync(formData);
+    },
+    [mutateAsync],
+  );
 
   return (
-    <Modal
-      title="Add entitlement"
-      isOpen={isOpen}
-      width={560}
-      onClose={handleClose}
-      actions={
-        <>
-          <Button type="text" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} isDisabled={!isValid}>
-            Add
-          </Button>
-        </>
-      }
-    >
-      <div className="add-entitlement-form">
-        <Input
-          label="Name"
-          placeholder="Acme Corp."
-          value={values.name}
-          isRequired
-          onChange={update("name")}
-          testId="add-entitlement-name"
+    <form onSubmit={handleSubmit(onSave)}>
+      <div className="modal__content modal__container">
+        {error && (
+          <div className="modal__error">
+            <InlineNotification status="error" isToShowCloseButton={false} width="auto">
+              {error}
+            </InlineNotification>
+          </div>
+        )}
+
+        <p>{tEntitlement("create_info")}</p>
+        <ControlledInput
+          className="modal__input"
+          control={control}
+          name="name"
+          type="default"
+          label={tProperties("name")}
+          labelType="required"
+          placeholder={tPlaceholders("name")}
         />
-        <Input
-          label="Description"
-          placeholder="Short description"
-          value={values.description}
-          onChange={update("description")}
-          testId="add-entitlement-description"
+        <ControlledInput
+          className="modal__input"
+          control={control}
+          name="description"
+          type="default"
+          label={tProperties("description")}
+          placeholder={tPlaceholders("description")}
         />
-        <Input
-          label="Contact email"
-          placeholder="admin@acme.com"
-          value={values.contactEmail}
-          onChange={update("contactEmail")}
-          testId="add-entitlement-email"
+        <ControlledInput
+          className="modal__input"
+          control={control}
+          name="contactEmail"
+          type="default"
+          label={tProperties("contactEmail")}
+          placeholder={tPlaceholders("contactEmail")}
         />
       </div>
-    </Modal>
+      <div className="modal-actions modal__container">
+        <div className="modal-actions__content">
+          <ModalCancelButton onClick={handleCancel} isDisabled={isPending} />
+          <Button type="primary" htmlType="submit" isBusy={isPending}>
+            {tEntitlement("save")}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 };

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useContext, useSyncExternalStore } from "react";
 
 import { useMPTContext } from "@mpt-extension/sdk-react";
 
@@ -9,8 +9,9 @@ export type MPTAuth = {
 };
 
 export type MPTData = {
-    sample?: string;
-    [key: string]: unknown;
+  standAloneApp?: boolean;
+  sample?: string;
+  [key: string]: unknown;
 };
 
 export type MPTContextValue = {
@@ -25,18 +26,25 @@ function HostContextBridge({ children }: PropsWithChildren) {
   return <MPTContextStore.Provider value={raw ?? {}}>{children}</MPTContextStore.Provider>;
 }
 
-export function MPTContextProvider({ children }: PropsWithChildren) {
-  const [hasHost, setHasHost] = useState(
-    typeof window !== "undefined" && typeof window.__MPT__ !== "undefined",
-  );
-
-  // The host may inject `window.__MPT__` slightly after mount; re-check once.
-  useEffect(() => {
-    if (hasHost) return;
-    if (typeof window !== "undefined" && typeof window.__MPT__ !== "undefined") {
-      setHasHost(true);
+// The host injects `globalThis.__MPT__` either before React mounts or shortly
+// after. Treat it as an external store: poll until present, then unsubscribe.
+function subscribeToHost(onChange: () => void): () => void {
+  if (globalThis.__MPT__ !== undefined) return () => {};
+  const id = window.setInterval(() => {
+    if (globalThis.__MPT__ !== undefined) {
+      window.clearInterval(id);
+      onChange();
     }
-  }, [hasHost]);
+  }, 50);
+  return () => window.clearInterval(id);
+}
+
+function getHostSnapshot(): boolean {
+  return globalThis.__MPT__ !== undefined;
+}
+
+export function MPTContextProvider({ children }: PropsWithChildren) {
+  const hasHost = useSyncExternalStore(subscribeToHost, getHostSnapshot, getHostSnapshot);
 
   if (!hasHost) {
     return <MPTContextStore.Provider value={{}}>{children}</MPTContextStore.Provider>;
@@ -65,3 +73,7 @@ declare global {
     };
   }
 }
+export function useStandAloneApp(): boolean {
+  return useContext(MPTContextStore).data?.standAloneApp ?? false;
+}
+

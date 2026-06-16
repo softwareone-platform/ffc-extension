@@ -31,6 +31,9 @@
     }
   },
   "shared": {
+    "actions": {
+      "cancel": "Cancel"
+    },
     "grid": {
       "views": {
         "activeOrganizations": "Active Organizations",
@@ -98,5 +101,23 @@
       "display_name": "Full name"
     },
     "placeholders": { "email": "Enter an email", "display_name": "Enter the user's full name" }
+  },
+  "entitlement": {
+    "create_info": "Provide the details for the new entitlement.",
+    "add_entitlement": "Add entitlement",
+    "save": "Add",
+    "properties": {
+      "name": "Name",
+      "description": "Description",
+      "contactEmail": "Contact email"
+    },
+    "placeholders": {
+      "name": "Acme Corp.",
+      "description": "Short description",
+      "contactEmail": "admin@acme.com"
+    },
+    "errors": {
+      "create_failed": "Failed to add entitlement. Please try again."
+    }
   }
 }

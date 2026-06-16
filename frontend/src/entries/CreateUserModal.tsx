@@ -1,4 +1,4 @@
-import { mountModalEntry } from "~app/bootstrap/MountModalEntry";
+import { defineModalEntry } from "~features/modal/shared/defineModalEntry";
 import CreateUserModal from "~features/modal/user/CreateUserModal";
 
-mountModalEntry(<CreateUserModal />);
+defineModalEntry(CreateUserModal);

@@ -49,8 +49,13 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
         </Grid.Actions>
       </Grid>
       {isStandaloneShell && (
-        <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false) } className={"add-user-modal"}>
-          <CreateUserModal />
+        <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} className={"add-user-modal"}>
+          <CreateUserModal
+            onClose={(result) => {
+              setIsAddOpen(false);
+              if (result?.success) refresh();
+            }}
+          />
         </Modal>
       )}
     </>

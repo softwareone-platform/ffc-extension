@@ -12,10 +12,12 @@ import { ControlledInput } from "~shared/components/form/ControlledInput";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
+import { ModalCancelButton } from "../shared/ModalCancelButton";
+import { ModalEntryProps } from "../shared/defineModalEntry";
 import { AddUserForm } from "./AddUserForm.Schema";
 import { useAddUserForm } from "./hooks/useAddUserForm";
 
-export const UserForm = () => {
+export const UserForm = ({ onClose }: ModalEntryProps = {}) => {
   const { close } = useMPTModal();
   const { data } = useMPTContext();
   const { addAdmin } = useEmployeesApi();
@@ -29,12 +31,24 @@ export const UserForm = () => {
   const tErrors = useFixedT("organization:users:errors");
   const tUsers = useFixedT("organization:users");
 
+  const handleCancel = useCallback((): void => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+    close("cancel");
+  }, [onClose, close]);
+
   const onError = useCallback((error: AxiosError): void => {
     return setError(tErrors("add_admin_failed_with_code_" + (error.status || "unknown")));
-  }, []);
+  }, [tErrors]);
   const onSuccess = useCallback((): void => {
+    if (onClose) {
+      onClose({ success: true });
+      return;
+    }
     close({ success: true });
-  }, [close]);
+  }, [onClose, close]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (formData: AddUserForm) => addAdmin(data.organizationId, formData),
@@ -84,9 +98,7 @@ export const UserForm = () => {
       </div>
       <div className="modal-actions modal__container">
         <div className="modal-actions__content">
-          <Button type="secondary" onClick={() => close("cancel")} isDisabled={isPending}>
-            {tUsers("cancel")}
-          </Button>
+          <ModalCancelButton onClick={handleCancel} isDisabled={isPending} />
           <Button type="primary" htmlType="submit" isBusy={isPending}>
             {tUsers("save")}
           </Button>
