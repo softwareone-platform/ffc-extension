@@ -1,15 +1,19 @@
 import { deleteTestUsers } from '../utils/teardown-utils';
 import { request } from '@playwright/test';
 import { FfcClientRequest } from '../api-request/ffc-client-request';
+import { getCurrentEnv } from '../utils/utils';
 
 async function globalTeardown() {
   if (process.env.CLEAN_UP === 'true') {
+    const env = getCurrentEnv();
+    const password = process.env.DEFAULT_USER_PASSWORD;
+
     const apiRequestContext = await request.newContext({
       ignoreHTTPSErrors: true,
-      baseURL: process.env.BASE_URL,
+      baseURL: env.baseUrl,
     });
-    const email = process.env.DEFAULT_USER_EMAIL;
-    const password = process.env.DEFAULT_USER_PASSWORD;
+
+    const email = env.clientAPI_email;
 
     const ffcRequest = new FfcClientRequest(apiRequestContext);
     const token = await ffcRequest.getAuthorizationToken(email, password);

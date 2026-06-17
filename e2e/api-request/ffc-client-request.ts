@@ -2,6 +2,7 @@ import { type APIRequestContext, APIResponse } from '@playwright/test';
 import { ERequestMethod } from '../types/enums';
 import { debugLog } from '../utils/debug-logging';
 import { getBearerTokenHeader } from '../utils/teardown-utils';
+import { getCurrentEnv } from '../utils/utils';
 
 export class FfcClientRequest {
   readonly request: APIRequestContext;
@@ -11,8 +12,7 @@ export class FfcClientRequest {
 
   public constructor(request: APIRequestContext) {
     this.request = request;
-    const baseUrl = process.env.BASE_URL;
-    const ffcClientBaseUrl = baseUrl.replace(/^https:\/\/portal\.s1\./, 'https://portal.finops.s1.');
+    const ffcClientBaseUrl = getCurrentEnv().ffcClientBaseUrl;
     this.userEndpoint = `${ffcClientBaseUrl}/auth/v2/users`;
     this.tokenEndpoint = `${ffcClientBaseUrl}/auth/v2/tokens`;
     this.employeesEndpoint = `${ffcClientBaseUrl}/restapi/v2/employees`;
@@ -74,7 +74,6 @@ export class FfcClientRequest {
    * @returns {Promise<APIResponse>} A promise that resolves to the API response.
    */
   async authorization(email: string, password: string): Promise<APIResponse> {
-    debugLog(`tokenEndpoint: ${this.tokenEndpoint}`);
     return await this.request.post(this.tokenEndpoint, {
       headers: {
         'Content-Type': 'application/json',

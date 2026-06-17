@@ -1,26 +1,8 @@
 import { FfcClientRequest } from '../api-request/ffc-client-request';
 import { debugLog } from './debug-logging';
 import { ERequestMethod } from '../types/enums';
-
-export interface EmployeesResponse {
-  employees: [
-    {
-      deleted_at: 0;
-      id: string;
-      created_at: number;
-      name: string;
-      organization_id: string;
-      auth_user_id: string;
-      default_ssh_key_id: null;
-      slack_connected: false;
-      jira_connected: false;
-      last_login: number;
-      user_display_name: string;
-      user_email: string;
-      assignments: [];
-    },
-  ];
-}
+import { getCurrentEnv } from './utils';
+import { EmployeesResponse } from '../types/employees-response';
 
 /**
  * Generates a headers object with a Bearer token for authorization.
@@ -65,10 +47,10 @@ export async function deleteTestUsers(request: FfcClientRequest, token: string):
   if (process.env.CLEAN_UP !== 'true') {
     return;
   }
-  const baseUrl = process.env.BASE_URL;
-  const ffcClientBaseUrl = baseUrl.replace(/^https:\/\/portal\.s1\./, 'https://portal.finops.s1.');
-  const reassignToUserId = process.env.DEFAULT_USER_ID;
-  const organisationId = process.env.DEFAULT_ORG_ID;
+  const env = getCurrentEnv();
+  const ffcClientBaseUrl = env.ffcClientBaseUrl;
+  const reassignToUserId = env.clientAPI_userId;
+  const organisationId = env.clientAPI_orgId;
   const usersEndpoint = `${ffcClientBaseUrl}/restapi/v2/organizations/${organisationId}/employees?exclude_myself=false&roles=true`;
 
   debugLog(`Fetching employees from endpoint: ${usersEndpoint}`);
@@ -78,7 +60,7 @@ export async function deleteTestUsers(request: FfcClientRequest, token: string):
   const employeesResponseBody = (await employeesResponse.json()) as EmployeesResponse;
 
   for (const employee of employeesResponseBody.employees) {
-    if (employee.user_email.startsWith('mpt.qlt+ffc') && employee.user_display_name === 'Test User') {
+    if (employee.user_email.startsWith('mpt.qlt+ffc-temp') && employee.user_display_name === 'Test User') {
       debugLog(`Deleting user: ${employee.user_email} with ID: ${employee.id}`);
       await request.deleteUserAndReassign(employee.id, reassignToUserId, token);
     }

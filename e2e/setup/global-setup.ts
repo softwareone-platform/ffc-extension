@@ -1,10 +1,8 @@
 import { FullConfig } from '@playwright/test';
-import dotenv from 'dotenv';
-import { setEnvironment } from '../utils/environment-util';
 import path from 'path';
 import fs from 'fs';
 import TestUsers from '../test-data/test-users';
-import { debugLog } from '../utils/debug-logging';
+import { debugLog, errorLog } from '../utils/debug-logging';
 
 /**
  * Cleans up previous test artifacts before starting a new test run.
@@ -36,23 +34,11 @@ function cleanupTestArtifacts(): void {
 async function globalSetup(config: FullConfig) {
   if (!config) console.error('No config found');
 
-  dotenv.config({
-    path: '.env.local',
-    override: true,
-  });
-
-  process.env.ENVIRONMENT = setEnvironment();
 
   // Log key environment variables for debugging purposes
-  debugLog(`Tests running on ${process.env.BASE_URL}`);
   debugLog(`Ignoring HTTPS errors: ${process.env.IGNORE_HTTPS_ERRORS}`);
   debugLog(`BROWSER_ERROR_LOGGING: ${process.env.BROWSER_ERROR_LOGGING}`);
   debugLog(`DEBUG_LOG: ${process.env.DEBUG_LOG}`);
-  if (process.env.BASE_URL === undefined) console.error('***BASE_URL is not set. This is required for the tests to run.');
-  if (process.env.DEV === undefined || process.env.TEST === undefined || process.env.STAGING === undefined)
-    console.error('***DEV, TEST, or STAGING is not set. One of these is required for the tests to run.');
-  if (process.env.DEFAULT_USER_EMAIL === undefined || process.env.DEFAULT_USER_PASSWORD === undefined)
-    console.warn('***DEFAULT_USER_EMAIL or DEFAULT_USER_PASSWORD is not set. This will block login for tests not using live demo.');
 
   // Clean up artifacts from previous run first
   cleanupTestArtifacts();
@@ -60,7 +46,7 @@ async function globalSetup(config: FullConfig) {
   // Log in all test users concurrently and handle any login failures
   await Promise.allSettled([
     TestUsers.Admin.login().catch(error => {
-      console.error('Global Setup Login failed: ' + error);
+      errorLog('Global Setup Login failed: ' + error);
     }),
   ]);
   debugLog('Global setup: finished');

@@ -10,5 +10,5 @@ export function generateRandomEmail(): string {
   const randomNumber = Math.floor(Math.random() * 100);
 
   // Combine elements into a random email
-  return `mpt.qlt+ffc-${timestamp}${randomNumber}@gmail.com`;
+  return `mpt.qlt+ffc-temp-${timestamp}${randomNumber}@gmail.com`;
 }
