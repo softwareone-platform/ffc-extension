@@ -1,13 +1,13 @@
 import { ReactNode } from "react";
 
-import "./ModalWidget.scss";
+import "./EntryModalWidget.scss";
 
 type Props = {
   title: ReactNode;
   children: ReactNode;
 };
 
-export function ModalWidget({ title, children }: Props) {
+export function EntryModalWidget({ title, children }: Props) {
   return (
     <div className="modal">
       <div className="modal-header modal__container">

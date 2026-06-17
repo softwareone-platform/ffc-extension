@@ -36,7 +36,7 @@ files under `frontend/src`, follow the rules below.
      `DataSourcesGrid.tsx` + `DataSourcesGrid.config.tsx`,
      `UsersGrid.tsx` + `UsersGrid.config.tsx`,
      `DetailsLayout.tsx` + `DetailsLayout.scss`,
-     `CreateEntitlementModal.tsx` + `ModalWidget.scss`.
+     `CreateEntitlementModal.tsx` + `EntryModalWidget.scss`.
 
 5. **SCSS files for a component share the component's PascalCase base name**
    (`Component.scss`), imported relatively (`import './Component.scss'`).

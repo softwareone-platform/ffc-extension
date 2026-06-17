@@ -4,7 +4,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { ModalCancelButton } from "../shared/ModalCancelButton";
 import { ModalEntryComponent } from "../shared/modalEntry";
-import { ModalWidget } from "../shared/ModalWidget";
+import { EntryModalWidget } from "../shared/EntryModalWidget";
 import { UserFormFields } from "./UserFormFields";
 import { useUserFormController } from "./hooks/useUserFormController";
 
@@ -13,7 +13,7 @@ const CreateUserEntryModal: ModalEntryComponent = ({ onClose }) => {
   const { control, error, isPending, submit, handleCancel } = useUserFormController({ onClose });
 
   return (
-    <ModalWidget title={tUsers("add_user")}>
+    <EntryModalWidget title={tUsers("add_user")}>
       <form onSubmit={submit}>
         <UserFormFields control={control} error={error} />
         <div className="modal-actions modal__container">
@@ -25,7 +25,7 @@ const CreateUserEntryModal: ModalEntryComponent = ({ onClose }) => {
           </div>
         </div>
       </form>
-    </ModalWidget>
+    </EntryModalWidget>
   );
 };
 

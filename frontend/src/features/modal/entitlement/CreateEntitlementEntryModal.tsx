@@ -4,7 +4,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { ModalCancelButton } from "../shared/ModalCancelButton";
 import { ModalEntryComponent } from "../shared/modalEntry";
-import { ModalWidget } from "../shared/ModalWidget";
+import { EntryModalWidget } from "../shared/EntryModalWidget";
 import { EntitlementsFormFields } from "./EntitlementsFormFields";
 import { useEntitlementFormController } from "./hooks/useEntitlementFormController";
 
@@ -13,7 +13,7 @@ const CreateEntitlementEntryModal: ModalEntryComponent = ({ onClose }) => {
   const { control, error, isPending, submit, handleCancel } = useEntitlementFormController({ onClose });
 
   return (
-    <ModalWidget title={tEntitlement("add_entitlement")}>
+    <EntryModalWidget title={tEntitlement("add_entitlement")}>
       <form onSubmit={submit}>
         <EntitlementsFormFields control={control} error={error} />
         <div className="modal-actions modal__container">
@@ -25,7 +25,7 @@ const CreateEntitlementEntryModal: ModalEntryComponent = ({ onClose }) => {
           </div>
         </div>
       </form>
-    </ModalWidget>
+    </EntryModalWidget>
   );
 };
 
