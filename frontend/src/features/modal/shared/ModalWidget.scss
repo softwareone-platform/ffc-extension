@@ -15,11 +15,8 @@
 
     &-title {
       @extend %medium3;
+      padding:  $spacing-2;
     }
-  }
-
-  &__container{
-    padding: 0;
   }
 
   &__content {
@@ -27,6 +24,7 @@
     flex-direction: column;
     overflow: auto;
     flex-grow: 1;
+    padding: $spacing-2 $spacing-2;
   }
 
   &-actions {
@@ -34,7 +32,7 @@
     flex-direction: column;
     justify-content: space-between;
     border-top: 1px solid var(--gray-3);
-
+    padding: $spacing-1 $spacing-2;
     &__content {
       display: flex;
       justify-content: space-between;
@@ -46,6 +44,7 @@
   }
 
   .modal__container {
+
     p {
       margin: 0 0 var(--spacing-3) 0;
     }

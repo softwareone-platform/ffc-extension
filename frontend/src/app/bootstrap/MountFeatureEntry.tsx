@@ -5,7 +5,7 @@ import { BrowserRouter, Routes } from "react-router-dom";
 import { AppProviders } from "./AppProviders";
 import { mount } from "./mount";
 
-import "./MountFeatureEntry.scss";
+import "./base.scss";
 
 export function mountFeatureEntry(routes: ReactNode) {
   mount(

@@ -1,18 +1,16 @@
-import { useMemo, useState } from 'react';
-
 import { Outlet, useMatch } from 'react-router-dom';
 
 import { Button } from '@swo/design-system/button';
-import { Modal } from '@swo/design-system/modal';
 
 import { PATHS } from '~app/paths';
 import { EntitlementDetailsHeader } from '~features/entitlements/components/EntitlementDetailsHeader';
-import CreateEntitlementModal from '~features/modal/entitlement/CreateEntitlementModal';
+import { CreateEntitlementStandaloneModal } from '~features/modal/entitlement/CreateEntitlementStandaloneModal';
+import { useModalToggle } from '~features/modal/shared/useModalToggle';
 import { OrganizationDetailsHeader } from '~features/organizations/components/OrganizationDetailsHeader';
 import { PageShell, PageShellNavItem } from '~shared/components/page-shell';
+import { useFixedT } from '~shared/hooks/useFixedT';
 import { useNotifyParentChildModal } from '~shared/hooks/useNotifyParentChildModal';
-
-import { StandaloneShellProvider } from './StandaloneShellContext';
+import { StandaloneShellProvider } from '~shared/providers/StandaloneShellContext';
 
 const NAV_ITEMS: PageShellNavItem[] = [
   { path: PATHS.organizations.root, label: 'Organizations' },
@@ -20,13 +18,13 @@ const NAV_ITEMS: PageShellNavItem[] = [
 ];
 
 export function MainLayout() {
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const navItems = useMemo(() => NAV_ITEMS, []);
+  const tEntitlement = useFixedT('entitlement');
+  const { isOpen, open, close } = useModalToggle();
 
   const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
   const organizationMatch = useMatch(PATHS.organizations.detailMatch);
 
-  useNotifyParentChildModal(isAddOpen);
+  useNotifyParentChildModal(isOpen);
 
   return (
     <StandaloneShellProvider>
@@ -43,14 +41,10 @@ export function MainLayout() {
           />
         ) : (
           <PageShell.Header
-            items={navItems}
+            items={NAV_ITEMS}
             actions={
-              <Button
-                type="primary"
-                onClick={() => setIsAddOpen(true)}
-                testId="add-organization-button"
-              >
-                Add organization
+              <Button type="primary" onClick={open} testId="add-entitlement-button">
+                {tEntitlement('add_entitlement')}
               </Button>
             }
           />
@@ -59,9 +53,7 @@ export function MainLayout() {
           <Outlet />
         </PageShell.Content>
       </PageShell>
-      <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)}>
-        <CreateEntitlementModal onClose={() => setIsAddOpen(false)} />
-      </Modal>
+      <CreateEntitlementStandaloneModal isOpen={isOpen} onClose={close} />
     </StandaloneShellProvider>
   );
 }

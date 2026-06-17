@@ -1,14 +1,12 @@
-import { useState } from "react";
-
 import { Button } from "@swo/design-system/button";
 import { Grid } from "@swo/design-system/grid";
-import { Modal } from "@swo/design-system/modal";
 import { EmployeeRead } from "@swo/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
-import { useIsStandaloneShell } from "~app/layouts/StandaloneShellContext";
-import CreateUserModal from "~features/modal/user/CreateUserModal";
+import { useIsStandaloneShell } from "~shared/providers/StandaloneShellContext";
+import { useModalToggle } from "~features/modal/shared/useModalToggle";
+import { CreateUserStandaloneModal } from "~features/modal/user/CreateUserStandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 
@@ -19,9 +17,9 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
   const { open } = useMPTModal();
   const tUsers = useFixedT("organization:users");
   const isStandaloneShell = useIsStandaloneShell();
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const addUserModal = useModalToggle({ onSuccess: refresh });
 
-  useNotifyParentChildModal(isAddOpen);
+  useNotifyParentChildModal(addUserModal.isOpen);
 
   const openMptCreateUserModal = () =>
     open("finops.admin.create-user-modal", {
@@ -36,11 +34,7 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
       <Grid<EmployeeRead> {...gridProps}>
         <Grid.Actions>
           {isStandaloneShell ? (
-            <Button
-              type="primary"
-              onClick={() => setIsAddOpen(true)}
-              testId="add-user-button"
-            >
+            <Button type="primary" onClick={addUserModal.open} testId="add-user-button">
               Add user
             </Button>
           ) : (
@@ -49,14 +43,11 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
         </Grid.Actions>
       </Grid>
       {isStandaloneShell && (
-        <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} className={"add-user-modal"}>
-          <CreateUserModal
-            onClose={(result) => {
-              setIsAddOpen(false);
-              if (result?.success) refresh();
-            }}
-          />
-        </Modal>
+        <CreateUserStandaloneModal
+          isOpen={addUserModal.isOpen}
+          onClose={addUserModal.close}
+          className="add-user-modal"
+        />
       )}
     </>
   );

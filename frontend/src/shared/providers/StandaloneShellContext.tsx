@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { PropsWithChildren, createContext, useContext } from "react";
 
 const StandaloneShellContext = createContext(false);

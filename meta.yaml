@@ -11,6 +11,8 @@ plugs:
   description: FinOps for Cloud
   icon: extension
   socket: portal
+# href: "/static/index.js"
+# socket: portal.{{ settings.ui_plugs_prefix }}
 - id: organizations
   name: Organizations
   description: This section shows all of the customers Organisations created in FinOps.
