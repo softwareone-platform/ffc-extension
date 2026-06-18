@@ -31,16 +31,16 @@ function HostContextBridge({ children }: PropsWithChildren) {
 function subscribeToHost(onChange: () => void): () => void {
   if (globalThis.__MPT__ !== undefined) return () => {};
   const stop = () => {
-    window.clearInterval(intervalId);
-    window.clearTimeout(timeoutId);
+    globalThis.clearInterval(intervalId);
+    globalThis.clearTimeout(timeoutId);
   };
-  const intervalId = window.setInterval(() => {
+  const intervalId = globalThis.setInterval(() => {
     if (globalThis.__MPT__ !== undefined) {
       stop();
       onChange();
     }
   }, 50);
-  const timeoutId = window.setTimeout(stop, 5000);
+  const timeoutId = globalThis.setTimeout(stop, 5000);
   return stop;
 }
 
@@ -77,4 +77,3 @@ export function useMPTData(): MPTData | undefined {
 export function useStandAloneApp(): boolean {
   return useContext(MPTContextStore).data?.standAloneApp ?? false;
 }
-

@@ -1,7 +1,7 @@
 import { Navigate, Route } from "react-router-dom";
 
-import { DetailsLayout } from "~app/layouts";
 import { mountFeatureEntry } from "~app/bootstrap/MountFeatureEntry";
+import { DetailsLayout } from "~app/layouts";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import { EntitlementDetailsContent } from "~features/entitlements/details/DetailsContent";
 import { EntitlementsGeneralDetails } from "~features/entitlements/details/general/General";

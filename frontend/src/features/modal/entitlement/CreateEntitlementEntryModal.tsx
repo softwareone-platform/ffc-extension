@@ -2,15 +2,17 @@ import { Button } from "@swo/design-system/button";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { EntryModalWidget } from "../shared/EntryModalWidget";
 import { ModalCancelButton } from "../shared/ModalCancelButton";
 import { ModalEntryComponent } from "../shared/modalEntry";
-import { EntryModalWidget } from "../shared/EntryModalWidget";
 import { EntitlementsFormFields } from "./EntitlementsFormFields";
 import { useEntitlementFormController } from "./hooks/useEntitlementFormController";
 
 const CreateEntitlementEntryModal: ModalEntryComponent = ({ onClose }) => {
   const tEntitlement = useFixedT("entitlement");
-  const { control, error, isPending, submit, handleCancel } = useEntitlementFormController({ onClose });
+  const { control, error, isPending, submit, handleCancel } = useEntitlementFormController({
+    onClose,
+  });
 
   return (
     <EntryModalWidget title={tEntitlement("add_entitlement")}>

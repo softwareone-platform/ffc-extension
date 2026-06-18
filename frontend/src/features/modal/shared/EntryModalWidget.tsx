@@ -7,7 +7,7 @@ type Props = {
   children: ReactNode;
 };
 
-export function EntryModalWidget({ title, children }: Props) {
+export function EntryModalWidget({ title, children }: Readonly<Props>) {
   return (
     <div className="modal">
       <div className="modal-header modal__container">

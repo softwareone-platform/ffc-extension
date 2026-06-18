@@ -1,17 +1,17 @@
-import { Outlet, useParams } from 'react-router-dom';
+import { Outlet, useParams } from "react-router-dom";
 
-import { Navigation } from '@swo/design-system/navigation';
+import { Card } from "@swo/design-system/card";
+import { Navigation } from "@swo/design-system/navigation";
 
-import { SEGMENTS } from '~features/organizations/paths';
-import { useOrganizationDetailsApi } from '~organizations/api';
+import { SEGMENTS } from "~features/organizations/paths";
+import { useOrganizationDetailsApi } from "~organizations/api";
 
-import { OrganizationsProvider } from '../providers/OrganizationsProvider';
-import { Card } from '@swo/design-system/card';
+import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 
 const TOP_BAR_ITEMS = [
-  { label: 'General', path: SEGMENTS.general },
-  { label: 'Data Sources', path: SEGMENTS.dataSources },
-  { label: 'Users', path: SEGMENTS.users },
+  { label: "General", path: SEGMENTS.general },
+  { label: "Data Sources", path: SEGMENTS.dataSources },
+  { label: "Users", path: SEGMENTS.users },
 ];
 
 // Inner content for organization details. Outer chrome comes from MainLayout

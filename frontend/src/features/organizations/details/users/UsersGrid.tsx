@@ -4,11 +4,11 @@ import { EmployeeRead } from "@swo/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
-import { useIsStandaloneShell } from "~shared/providers/StandaloneShellContext";
 import { useModalToggle } from "~features/modal/shared/useModalToggle";
 import { CreateUserStandaloneModal } from "~features/modal/user/CreateUserStandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
+import { useIsStandaloneShell } from "~shared/providers/StandaloneShellContext";
 
 import { useGridConfig } from "./UsersGrid.config";
 

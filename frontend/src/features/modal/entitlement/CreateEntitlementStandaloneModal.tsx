@@ -10,9 +10,11 @@ type Props = {
   onClose: (result?: ModalCloseResult) => void;
 };
 
-export function CreateEntitlementStandaloneModal({ isOpen, onClose }: Props) {
+export function CreateEntitlementStandaloneModal({ isOpen, onClose }: Readonly<Props>) {
   const tEntitlement = useFixedT("entitlement");
-  const { control, error, isPending, submit, handleCancel } = useEntitlementFormController({ onClose });
+  const { control, error, isPending, submit, handleCancel } = useEntitlementFormController({
+    onClose,
+  });
 
   return (
     <StandaloneModal

@@ -1,12 +1,11 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet } from "react-router-dom";
 
-import { Navigation } from '@swo/design-system/navigation';
+import { Card } from "@swo/design-system/card";
+import { Navigation } from "@swo/design-system/navigation";
 
-import { SEGMENTS } from '~features/entitlements/paths';
+import { SEGMENTS } from "~features/entitlements/paths";
 
-import { Card } from '@swo/design-system/card';
-
-const TOP_BAR_ITEMS = [{ label: 'General', path: SEGMENTS.general }];
+const TOP_BAR_ITEMS = [{ label: "General", path: SEGMENTS.general }];
 
 // Inner content for entitlement details. Outer chrome comes from MainLayout
 // (standalone) or DetailsLayout (per-feature entry).

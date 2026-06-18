@@ -9,7 +9,7 @@ type Props = {
   backUrl: string;
 };
 
-export function EntitlementDetailsHeader({ entitlementId, backUrl }: Props) {
+export function EntitlementDetailsHeader({ entitlementId, backUrl }: Readonly<Props>) {
   const { data: entity } = useEntitlementsDetailsApi(entitlementId);
 
   const title = (

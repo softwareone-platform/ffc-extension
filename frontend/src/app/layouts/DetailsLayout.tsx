@@ -11,7 +11,7 @@ type Props = {
 };
 
 // Used by per-feature entries; the standalone app uses MainLayout instead.
-export function DetailsLayout({ paramKey, renderHeader, children }: Props) {
+export function DetailsLayout({ paramKey, renderHeader, children }: Readonly<Props>) {
   const params = useParams();
   const entityId = params[paramKey];
   const basePath = useResolvedPath("").pathname.replace(/\/$/, "");

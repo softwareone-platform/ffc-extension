@@ -9,7 +9,7 @@ type Props = {
   backUrl: string;
 };
 
-export function OrganizationDetailsHeader({ organizationId, backUrl }: Props) {
+export function OrganizationDetailsHeader({ organizationId, backUrl }: Readonly<Props>) {
   const { data: entity } = useOrganizationDetailsApi(organizationId);
 
   const title = (

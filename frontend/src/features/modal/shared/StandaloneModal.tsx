@@ -48,9 +48,11 @@ export function StandaloneModal({
   onSubmit,
   submitLabel,
   isSubmitting,
-}: Props) {
+}: Readonly<Props>) {
   const mergedClassName = className ? `${DEFAULT_CLASS} ${className}` : DEFAULT_CLASS;
-  const resolvedActions = actions ?? buildDefaultActions({ onCancel: onCancel ?? onClose, onSubmit, submitLabel, isSubmitting });
+  const resolvedActions =
+    actions ??
+    buildDefaultActions({ onCancel: onCancel ?? onClose, onSubmit, submitLabel, isSubmitting });
 
   return (
     <Modal

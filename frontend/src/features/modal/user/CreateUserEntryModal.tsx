@@ -2,11 +2,11 @@ import { Button } from "@swo/design-system/button";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { EntryModalWidget } from "../shared/EntryModalWidget";
 import { ModalCancelButton } from "../shared/ModalCancelButton";
 import { ModalEntryComponent } from "../shared/modalEntry";
-import { EntryModalWidget } from "../shared/EntryModalWidget";
-import { UserFormFields } from "./UserFormFields";
 import { useUserFormController } from "./hooks/useUserFormController";
+import { UserFormFields } from "./UserFormFields";
 
 const CreateUserEntryModal: ModalEntryComponent = ({ onClose }) => {
   const tUsers = useFixedT("organization:users");
