@@ -26,17 +26,22 @@ function HostContextBridge({ children }: PropsWithChildren) {
   return <MPTContextStore.Provider value={raw ?? {}}>{children}</MPTContextStore.Provider>;
 }
 
-// The host injects `globalThis.__MPT__` either before React mounts or shortly
-// after. Treat it as an external store: poll until present, then unsubscribe.
+// Poll for `globalThis.__MPT__` (injected by the host around mount time).
+// Give up after 5s so standalone mode doesn't poll forever.
 function subscribeToHost(onChange: () => void): () => void {
   if (globalThis.__MPT__ !== undefined) return () => {};
-  const id = window.setInterval(() => {
+  const stop = () => {
+    window.clearInterval(intervalId);
+    window.clearTimeout(timeoutId);
+  };
+  const intervalId = window.setInterval(() => {
     if (globalThis.__MPT__ !== undefined) {
-      window.clearInterval(id);
+      stop();
       onChange();
     }
   }, 50);
-  return () => window.clearInterval(id);
+  const timeoutId = window.setTimeout(stop, 5000);
+  return stop;
 }
 
 function getHostSnapshot(): boolean {
@@ -44,13 +49,17 @@ function getHostSnapshot(): boolean {
 }
 
 export function MPTContextProvider({ children }: PropsWithChildren) {
-  const hasHost = useSyncExternalStore(subscribeToHost, getHostSnapshot, getHostSnapshot);
+  const hasHost = useHasMPTHost();
 
   if (!hasHost) {
     return <MPTContextStore.Provider value={{}}>{children}</MPTContextStore.Provider>;
   }
 
   return <HostContextBridge>{children}</HostContextBridge>;
+}
+
+export function useHasMPTHost(): boolean {
+  return useSyncExternalStore(subscribeToHost, getHostSnapshot, getHostSnapshot);
 }
 
 export function useMPT(): MPTContextValue {
@@ -65,14 +74,6 @@ export function useMPTData(): MPTData | undefined {
   return useContext(MPTContextStore).data;
 }
 
-declare global {
-  interface Window {
-    __MPT__?: {
-      context?: unknown;
-      onChange?: (cb: (data: unknown) => void) => void;
-    };
-  }
-}
 export function useStandAloneApp(): boolean {
   return useContext(MPTContextStore).data?.standAloneApp ?? false;
 }
