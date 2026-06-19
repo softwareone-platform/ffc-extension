@@ -39,3 +39,5 @@ team's host-integration thread for the proposed contract.
 
 - [Standalone mode flags](./standalone-mode.md) — the three different
   "am I standalone?" hooks and when to use each.
+- [Entry modes](./entry-mode.md) — which bundle gets loaded into the iframe
+  for which routes.

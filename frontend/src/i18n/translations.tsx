@@ -10,21 +10,13 @@ const i18n: ReturnType<typeof i18next.createInstance> = i18next.createInstance()
 
 i18n.use(
   resourcesToBackend(async (language: string) => {
-    const validLanguage = languageCodes.find((l) => l.includes(language))?.replace("-", "_");
-    if (!validLanguage) {
-      return;
-    }
+    const validLanguage = languageCodes.find((l) => l.includes(language));
+    if (!validLanguage) return;
 
-    const resource = language.startsWith("en")
-      ? await import(`./en.json`)
-      : await import(`./${validLanguage}/${validLanguage}.json`);
-
-    const translations = resource.default ?? {};
-
-    console.log(`Loaded translations for language ${language}:`, translations);
-
+    // Only English ships today; non-English languages fall back via `fallbackLng`.
+    // To add a locale, replace this with a static import map keyed on `language`.
+    const translations = (await import("./en.json")).default ?? {};
     i18n.addResourceBundle(language, "mpt", translations, true);
-
     return translations;
   }),
 );

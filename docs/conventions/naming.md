@@ -36,7 +36,7 @@ files under `frontend/src`, follow the rules below.
      `DataSourcesGrid.tsx` + `DataSourcesGrid.config.tsx`,
      `UsersGrid.tsx` + `UsersGrid.config.tsx`,
      `DetailsLayout.tsx` + `DetailsLayout.scss`,
-     `CreateEntitlementModal.tsx` + `EntryModalWidget.scss`.
+     `EntryModalWidget.tsx` + `EntryModalWidget.scss`.
 
 5. **SCSS files for a component share the component's PascalCase base name**
    (`Component.scss`), imported relatively (`import './Component.scss'`).
@@ -58,6 +58,31 @@ files under `frontend/src`, follow the rules below.
    import { useFixedT } from '~shared/hooks/useFixedT';            // file
    import { OrganizationsGrid } from '~features/organizations/list/OrganizationsGrid';
    ```
+
+## Translation keys
+
+Translation keys in `frontend/src/i18n/*.json` follow their own naming
+rules. The short version:
+
+- **Path separator is `:`**, not `.` (i18next is configured with
+  `keySeparator: ":"`).
+- **Top-level grouping:** `<feature>:*` (e.g. `organization:*`,
+  `entitlement:*`) for feature-owned strings, `shared:*` for cross-feature
+  groups (`shared:nav`, `shared:grid:columns`, `shared:properties`, …).
+- **Leaf casing follows intent, not casing dogma:**
+  - `snake_case` when the key mirrors an API field name
+    (`affiliate_external_id`, `parent_id`, `data_source`, `display_name`,
+    `azure_cnr`) — so dynamic lookups like `tProperties(field)` work
+    without conversion.
+  - `camelCase` for UI-only labels (`lastLogin`, `createdAt`,
+    `billingCurrency`, `forecastThisMonth`).
+  - `snake_case` for compound action verbs (`add_user`, `add_entitlement`,
+    `create_failed`).
+
+Don't translate snake_case API fields into camelCase keys — that breaks
+dynamic-lookup sites. Full conventions, dynamic-key patterns, and the
+"add a locale" recipe live in
+[`./i18n.md`](./i18n.md).
 
 ## How to apply the convention (step-by-step for an AI agent)
 
@@ -90,7 +115,7 @@ When asked to "apply the `@swo` naming convention" to a folder:
    ```
    Don't forget:
    - barrel files (`index.ts`),
-   - dynamic `import('…')` calls in `frontend/src/app/router.tsx`,
+   - dynamic `import('…')` calls (e.g. `lazyComponent(() => import("~app/layouts"), …)`),
    - SCSS imports (`import './foo.scss'`),
    - test files (`*.spec.tsx`).
 5. **Verify**:
@@ -101,5 +126,6 @@ When asked to "apply the `@swo` naming convention" to a folder:
    case-only renames — restart the TS server / editor if `tsc` is clean but
    the editor still reports `TS1149` / `TS1261`.
 6. **Do not rename** `index.ts`, `package.json`, `tsconfig*.json`,
-   `esbuild.config.js`, `eslint.config.mjs`, `global.d.ts`, JSON locale files
-   (`en.json`, `en_US.json`) or anything inside `node_modules/`.
+   `esbuild.config.js`, `eslint.config.mjs`, `global.d.ts`, locale JSON
+   files (`en.json` and any future `<lang>.json`), or anything inside
+   `node_modules/`.

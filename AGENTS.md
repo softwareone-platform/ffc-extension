@@ -2,10 +2,14 @@
 
 Guidance for AI coding agents working in this repository.
 
-- **Frontend file & folder naming** (imports, renames):
+- **Frontend file & folder naming** (imports, renames, translation keys):
   [`docs/conventions/naming.md`](docs/conventions/naming.md).
 - **API hook conventions** (`useFooApi` vs `useFooDetailsApi`, query keys):
   [`docs/conventions/api-hooks.md`](docs/conventions/api-hooks.md).
+- **i18n conventions** (`useFixedT`, namespaces, dynamic keys, locales):
+  [`docs/conventions/i18n.md`](docs/conventions/i18n.md).
+- **Modal conventions** (entry vs standalone shapes, shared controllers):
+  [`docs/conventions/modals.md`](docs/conventions/modals.md).
 - **Entry modes** (esbuild bundles per `src/entries/*`, `mount*Entry` helpers):
   [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md).
 - **MPT host integration** (iframe-as-extension runtime, `__MPT__` detection):
@@ -37,10 +41,3 @@ Guidance for AI coding agents working in this repository.
 - Anything under `node_modules/`.
 - `pg_data/` (Postgres data directory).
 
-## Runtime modes
-
-The frontend can run two ways: embedded inside the MPT host shell, or
-standalone. See [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md)
-for how `globalThis.__MPT__` is detected, and
-[`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md)
-for the three different "am I standalone?" hooks and when to use each.

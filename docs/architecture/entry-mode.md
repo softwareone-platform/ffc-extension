@@ -54,12 +54,12 @@ and they render in place inside the host chrome.
 
 ```ts
 // frontend/src/entries/CreateUserModal.tsx
-import CreateUserEntryModal from "~features/modal/user/CreateUserEntryModal";
+import CreateUserEntryModal from "~organizations/details/users/modal/CreateUserEntryModal";
 
 mountModalEntry(<CreateUserEntryModal />);
 ```
 
-Modal entry components implement `ModalEntryComponent` (`features/modal/shared/modalEntry.ts`):
+Modal entry components implement `ModalEntryComponent` (`shared/components/modal/modalEntry.ts`):
 
 ```ts
 type ModalEntryProps = { onClose?: (result?: { success?: boolean }) => void };
@@ -88,9 +88,11 @@ mount(node)                       // calls SDK setup → createRoot.render
 2. Create `frontend/src/entries/<name>.tsx` and call the appropriate
    `mount*Entry(...)` helper.
 3. Add the new file path to `entryPoints` in `frontend/esbuild.config.js`.
-4. For modal entries: the modal component itself lives under
-   `frontend/src/features/modal/<entity>/`, must `export default` a
+4. For modal entries: the modal component itself lives next to its owning
+   feature (e.g. `features/entitlements/modal/`,
+   `features/organizations/details/users/modal/`), must `export default` a
    `ModalEntryComponent`, and is referenced by id from the host registry.
+   See [`docs/conventions/modals.md`](../conventions/modals.md).
 
 ## See also
 

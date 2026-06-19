@@ -17,14 +17,16 @@ The FinOps for Cloud Extension enables SoftwareOne to manage the FinOps for Clou
 - [`AGENTS.md`](AGENTS.md) — guidance for AI coding agents (and humans) working in this repo.
 - [`docs/conventions/naming.md`](docs/conventions/naming.md) — frontend file & folder naming.
 - [`docs/conventions/api-hooks.md`](docs/conventions/api-hooks.md) — `useFooApi` vs `useFooDetailsApi` patterns.
+- [`docs/conventions/i18n.md`](docs/conventions/i18n.md) — translation namespaces, `useFixedT`, dynamic keys.
+- [`docs/conventions/modals.md`](docs/conventions/modals.md) — entry vs standalone modal pair pattern.
 - [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md) — `mountStandaloneEntry` / `mountFeatureEntry` / `mountModalEntry`.
 - [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md) — iframe-as-extension runtime.
 - [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md) — `useHasMPTHost` / `useStandAloneApp` / `useIsStandaloneShell`.
 - [`docs/dev/devcontainer.md`](docs/dev/devcontainer.md) — devcontainer setup.
 
-# Create you .env file
+# Create your .env file
 
-You can use the `env.example` as a bases to setup your running environment and customize it according to your needs.
+You can use the `env.example` as a base to set up your running environment and customize it according to your needs.
 
 # Run tests
 
@@ -36,7 +38,7 @@ You can use the `env.example` as a bases to setup your running environment and c
 
 # Build production image
 
-To build the production image please use the `prod.Dockefile` dockerfile.
+To build the production image please use the `prod.Dockerfile` dockerfile.
 
 > [!IMPORTANT]
 > Developers must take care of keep in sync `dev.Dockerfile` and `prod.Dockerfile`.
