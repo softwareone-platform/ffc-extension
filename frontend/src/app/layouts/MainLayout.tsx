@@ -12,14 +12,15 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContext";
 
-const NAV_ITEMS: PageShellNavItem[] = [
-  { path: PATHS.organizations.root, label: "Organizations" },
-  { path: PATHS.entitlements.root, label: "Entitlements" },
-];
-
 export function MainLayout() {
   const tEntitlement = useFixedT("entitlement");
+  const tNav = useFixedT("shared:nav");
   const { isOpen, open, close } = useModalToggle();
+
+  const navItems: PageShellNavItem[] = [
+    { path: PATHS.organizations.root, label: tNav("organizations") },
+    { path: PATHS.entitlements.root, label: tNav("entitlements") },
+  ];
 
   const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
   const organizationMatch = useMatch(PATHS.organizations.detailMatch);
@@ -47,7 +48,7 @@ export function MainLayout() {
     }
     return (
       <PageShell.Header
-        items={NAV_ITEMS}
+        items={navItems}
         actions={
           <Button type="primary" onClick={open} testId="add-entitlement-button">
             {tEntitlement("add_entitlement")}

@@ -10,6 +10,12 @@
           "expensesLastMonth": "Expenses last month",
           "possibleSavings": "Possible monthly savings"
         }
+      },
+      "dataSources": {
+        "title": "Data Sources"
+      },
+      "users": {
+        "title": "Users"
       }
     },
     "users": {
@@ -31,6 +37,10 @@
     }
   },
   "shared": {
+    "nav": {
+      "organizations": "Organizations",
+      "entitlements": "Entitlements"
+    },
     "actions": {
       "cancel": "Cancel"
     },
@@ -78,7 +88,9 @@
         "email": "Email",
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
-        "entitlement": "Entitlement"
+        "entitlement": "Entitlement",
+        "lastLogin": "Last Login",
+        "createdAt": "Created At"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
@@ -103,6 +115,11 @@
     "placeholders": { "email": "Enter an email", "display_name": "Enter the user's full name" }
   },
   "entitlement": {
+    "details": {
+      "general": {
+        "title": "General"
+      }
+    },
     "create_info": "Provide the details for the new entitlement.",
     "add_entitlement": "Add entitlement",
     "save": "Add",
