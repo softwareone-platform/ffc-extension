@@ -1,7 +1,7 @@
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { ModalCloseResult } from "../shared/modalEntry";
-import { StandaloneModal } from "../shared/StandaloneModal";
+import { ModalCloseResult } from "~shared/components/modal/modalEntry";
+import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
 import { EntitlementsFormFields } from "./EntitlementsFormFields";
 import { useEntitlementFormController } from "./hooks/useEntitlementFormController";
 

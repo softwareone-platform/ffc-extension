@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-import { ModalCloseResult } from "./modalEntry";
+import { ModalCloseResult } from "~shared/components/modal/modalEntry";
 
 type Options = {
   onSuccess?: () => void;

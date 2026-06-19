@@ -2,10 +2,18 @@
 
 Guidance for AI coding agents working in this repository.
 
-- **Frontend conventions** (file & folder naming, imports, renames):
-  see [`frontend/NAMING.md`](frontend/NAMING.md).
+- **Frontend file & folder naming** (imports, renames):
+  [`docs/conventions/naming.md`](docs/conventions/naming.md).
+- **API hook conventions** (`useFooApi` vs `useFooDetailsApi`, query keys):
+  [`docs/conventions/api-hooks.md`](docs/conventions/api-hooks.md).
+- **Entry modes** (esbuild bundles per `src/entries/*`, `mount*Entry` helpers):
+  [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md).
+- **MPT host integration** (iframe-as-extension runtime, `__MPT__` detection):
+  [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md).
+- **Standalone mode flags** (`useHasMPTHost` vs `useStandAloneApp` vs
+  `useIsStandaloneShell`): [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md).
 - **General Copilot instructions** (mirrors what GitHub Copilot loads):
-  see [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+  [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
 ## Repo layout
 
@@ -18,7 +26,7 @@ Guidance for AI coding agents working in this repository.
 ## Before changing code
 
 1. Match the existing style and naming of the surrounding folder.
-2. For frontend changes, read `frontend/docs/conventions/naming.md` first.
+2. For frontend changes, read `docs/conventions/naming.md` first.
 3. After edits, run the relevant verification:
    - Frontend: `cd frontend && npx tsc --noEmit`
    - Backend: existing test suite under `tests/`.
@@ -29,25 +37,10 @@ Guidance for AI coding agents working in this repository.
 - Anything under `node_modules/`.
 - `pg_data/` (Postgres data directory).
 
-## MPT host integration (iframe-as-extension)
+## Runtime modes
 
 The frontend can run two ways: embedded inside the MPT host shell, or
-standalone. The host injects `globalThis.__MPT__` into the iframe around mount
-time. Key pieces:
-
-- `frontend/src/global.d.ts` — types `globalThis.__MPT__` (single source of
-  truth; do not redeclare elsewhere).
-- `frontend/src/shared/providers/MPTContextProvider.tsx` — polls for
-  `__MPT__` via `useSyncExternalStore`, with a 5s safety timeout so standalone
-  mode doesn't poll forever. Exposes `useHasMPTHost()` (also re-used by other
-  hooks) and `MPTContextProvider` which switches between an empty provider
-  (standalone) and `HostContextBridge` (embedded).
-- `frontend/src/shared/hooks/useNotifyParentChildModal.ts` — when this app
-  opens a child modal inside the iframe, it emits a `child-modal` event so the
-  host can dim its own header. A single effect handles open/close *and* the
-  unmount-while-open case via React's effect cleanup.
-
-**Replacing the polling.** The 5s-bounded polling is a workaround because the
-host doesn't currently signal injection completion. If the host team adds a
-`mpt:ready` window event (or guarantees `__MPT__` is set before our bundle
-loads), `subscribeToHost` can be replaced with a one-shot `addEventListener`.
+standalone. See [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md)
+for how `globalThis.__MPT__` is detected, and
+[`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md)
+for the three different "am I standalone?" hooks and when to use each.

@@ -1,4 +1,4 @@
 import { mountModalEntry } from "~app/bootstrap/MountModalEntry";
-import CreateEntitlementEntryModal from "~features/modal/entitlement/CreateEntitlementEntryModal";
+import CreateEntitlementEntryModal from "~entitlements/modal/CreateEntitlementEntryModal";
 
 mountModalEntry(<CreateEntitlementEntryModal />);

@@ -8,7 +8,7 @@ import { Entity } from "@swo/service";
 
 import { http } from "@mpt-extension/sdk";
 
-import { AddUserForm } from "~features/modal/user/AddUserForm.Schema";
+import { AddUserForm } from "~organizations/details/users/modal/AddUserForm.Schema";
 
 export interface ListResponse<T> {
   total: number;

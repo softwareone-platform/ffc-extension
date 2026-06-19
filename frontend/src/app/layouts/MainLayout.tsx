@@ -4,8 +4,8 @@ import { Button } from "@swo/design-system/button";
 
 import { PATHS } from "~app/paths";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
-import { CreateEntitlementStandaloneModal } from "~features/modal/entitlement/CreateEntitlementStandaloneModal";
-import { useModalToggle } from "~features/modal/shared/useModalToggle";
+import { CreateEntitlementStandaloneModal } from "~entitlements/modal/CreateEntitlementStandaloneModal";
+import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
 import { useFixedT } from "~shared/hooks/useFixedT";

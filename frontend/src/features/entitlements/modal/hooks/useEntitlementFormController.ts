@@ -7,7 +7,7 @@ import { useMPTModal } from "@mpt-extension/sdk-react";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { ModalEntryProps } from "../../shared/modalEntry";
+import { ModalEntryProps } from "~shared/components/modal/modalEntry";
 import { AddEntitlementForm } from "../AddEntitlementForm.Schema";
 import { useAddEntitlementForm } from "./useAddEntitlementForm";
 

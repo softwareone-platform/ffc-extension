@@ -1,35 +1,52 @@
 # Copilot / AI agent instructions
 
-This repository contains a Python backend (`app/`), a React + TypeScript
-frontend (`frontend/`), and Playwright e2e tests (`e2e/`).
+Python backend (`app/`), React + TypeScript frontend (`frontend/`),
+Playwright e2e (`e2e/`). Canonical docs live in [`../docs/`](../docs); start
+with [`../AGENTS.md`](../AGENTS.md) for the index.
 
 ## Frontend (`frontend/`)
 
-When creating or refactoring files under `frontend/src`, follow the file &
-folder naming convention documented in **[`frontend/docs/conventions/naming.md`](../frontend/docs/conventions/naming.md)**.
+When creating or refactoring files under `frontend/src`, follow the naming
+convention in
+**[`../docs/conventions/naming.md`](../docs/conventions/naming.md)**.
 
-Quick reference:
+TL;DR:
 
-- **Folders**: `kebab-case` (`page-shell/`, `data-sources/`).
-- **Components / providers / layouts**: `PascalCase.tsx` matching the export
-  (`PageShell.tsx`, `OrganizationsGrid.tsx`, `ExtensionsProvider.tsx`).
-- **Hooks**: `camelCase` starting with `use` (`useFixedT.ts`,
-  `useReactQueryRqlGrid.ts`).
-- **Companion files** share the PascalCase base with a `.` qualifier
-  (`OrganizationsGrid.config.tsx`, `DetailsLayout.scss`,
-  `useReactQueryRqlGrid.spec.tsx`).
-- **Barrel** files stay `index.ts` and re-export from PascalCase files.
-- TS path aliases (`~app`, `~features`, `~organizations`, `~shared`,
-  `~i18n`, `~styles`) target `kebab-case` folders; only file suffixes are
-  PascalCase / camelCase.
+- **Folders** — `kebab-case` (`page-shell/`, `data-sources/`).
+- **Components / providers / layouts** — `PascalCase.tsx` matching the export.
+- **Hooks** — `camelCase.ts` starting with `use`.
+- **Companion files** — share the PascalCase base with a `.` qualifier
+  (`OrganizationsGrid.config.tsx`, `DetailsLayout.scss`).
+- **Barrels** — `index.ts`, re-export from PascalCase files.
+- **Path aliases** (`~app`, `~features`, `~shared`, `~organizations`,
+  `~entitlements`, `~i18n`, `~styles`) — target `kebab-case` folders.
 
-When renaming:
+For data fetching, follow
+[`../docs/conventions/api-hooks.md`](../docs/conventions/api-hooks.md):
+list endpoints get `useFooApi.tsx` (raw HTTP callbacks), detail endpoints
+get `useFooDetailsApi.ts` (`useQuery` wrapper with the
+`["Entity", "Details", id]` key). Don't inline `useQuery` in components.
+
+### Runtime context
+
+The frontend runs in two modes (embedded inside MPT host, or standalone).
+Before adding behavior that varies between them, read
+[`../docs/architecture/standalone-mode.md`](../docs/architecture/standalone-mode.md)
+to pick the right hook (`useHasMPTHost` / `useStandAloneApp` /
+`useIsStandaloneShell` are **not** interchangeable). For how the host bridge
+is detected, see
+[`../docs/architecture/mpt-host-integration.md`](../docs/architecture/mpt-host-integration.md).
+
+Each file in `frontend/src/entries/` is a separate esbuild bundle (standalone
+SPA, per-feature, or per-modal). When adding an entry, see
+[`../docs/architecture/entry-mode.md`](../docs/architecture/entry-mode.md).
+
+### Renames
 
 1. Use `git mv` to preserve history.
 2. For case-only renames on macOS, do a two-step rename through a temp name.
-3. Update every import: barrels (`index.ts`), aliased imports,
-   dynamic `import('…')` in `frontend/src/app/router.tsx`, and `./*.scss`
-   siblings.
+3. Update every import: barrels (`index.ts`), aliased imports, dynamic
+   `import('…')` in `frontend/src/app/router.tsx`, and `./*.scss` siblings.
 4. Verify with `cd frontend && npx tsc --noEmit`. Restart the TS server in
    the editor if it still reports `TS1149` / `TS1261` after a clean `tsc`.
 
@@ -39,5 +56,5 @@ or anything in `node_modules/`.
 
 ## Backend (`app/`)
 
-Python project managed with `uv` + Alembic. See top-level `README.md` for run
-instructions.
+Python project managed with `uv` + Alembic. See top-level
+[`../README.md`](../README.md) for run instructions.

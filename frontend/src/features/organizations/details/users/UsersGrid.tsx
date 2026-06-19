@@ -4,8 +4,8 @@ import { EmployeeRead } from "@swo/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
-import { useModalToggle } from "~features/modal/shared/useModalToggle";
-import { CreateUserStandaloneModal } from "~features/modal/user/CreateUserStandaloneModal";
+import { useModalToggle } from "~shared/hooks/useModalToggle";
+import { CreateUserStandaloneModal } from "~organizations/details/users/modal/CreateUserStandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 import { useIsStandaloneShell } from "~shared/providers/StandaloneShellContext";

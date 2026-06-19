@@ -2,9 +2,9 @@ import { Button } from "@swo/design-system/button";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { EntryModalWidget } from "../shared/EntryModalWidget";
-import { ModalCancelButton } from "../shared/ModalCancelButton";
-import { ModalEntryComponent } from "../shared/modalEntry";
+import { EntryModalWidget } from "~shared/components/modal/EntryModalWidget";
+import { ModalCancelButton } from "~shared/components/modal/ModalCancelButton";
+import { ModalEntryComponent } from "~shared/components/modal/modalEntry";
 import { EntitlementsFormFields } from "./EntitlementsFormFields";
 import { useEntitlementFormController } from "./hooks/useEntitlementFormController";
 
