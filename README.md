@@ -36,6 +36,17 @@ You can use the `env.example` as a base to set up your running environment and c
 
 `docker compose up app`
 
+This runs `ffcops serve -w2 --ziti-load-timeout-ms 20000` inside the `app`
+container (see `docker-compose.yaml`). To override worker count or any other
+`serve` flag, run the CLI directly:
+
+```sh
+docker compose run --rm --service-ports app uv run ffcops serve --server-workers 4
+```
+
+See `uv run ffcops serve --help` for the full flag list (`--server-backlog`,
+`--server-timeout-keep-alive`, `--server-reload`, etc.).
+
 # Build production image
 
 To build the production image please use the `prod.Dockerfile` dockerfile.
