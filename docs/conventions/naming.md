@@ -84,48 +84,10 @@ dynamic-lookup sites. Full conventions, dynamic-key patterns, and the
 "add a locale" recipe live in
 [`./i18n.md`](./i18n.md).
 
-## How to apply the convention (step-by-step for an AI agent)
+## Applying the convention
 
-When asked to "apply the `@swo` naming convention" to a folder:
+1. Rename with `git mv` so history is preserved. On case-insensitive filesystems (macOS default), case-only renames may need a two-step via a temp name to avoid `TS1149` / `TS1261`.
+2. Update every import — including barrels (`index.ts`), dynamic `import('…')`, SCSS imports, and `*.spec.tsx`.
+3. Verify with `cd frontend && npx tsc --noEmit`. Restart the editor's TS server if stale errors persist after a case-only rename.
 
-1. **Survey the reference**: list a few `frontend/node_modules/@swo/*` packages
-   and their `lib/` contents to confirm the casing rules above are still in
-   effect.
-2. **Inventory the target folder** (`frontend/src/...`) and classify each file:
-   - React component / class / context provider / layout → `PascalCase`.
-   - Hook (export starts with `use…`) → `camelCase` starting with `use`.
-   - Config / styles / spec sibling → keep the sibling's PascalCase base and
-     add a `.config`, `.scss`, `.spec` qualifier.
-   - Folders → leave as `kebab-case` (rename to `kebab-case` if not already).
-3. **Rename with `git mv`** so history is preserved:
-   ```sh
-   git mv frontend/src/path/old-name.tsx frontend/src/path/NewName.tsx
-   ```
-   On case-insensitive filesystems (macOS default) git mv handles case-only
-   renames, but if TypeScript complains about duplicate filenames differing
-   only in casing, perform a two-step rename through a temporary name:
-   ```sh
-   git mv -f path/Foo.tsx path/Foo_tmp.tsx
-   git mv -f path/Foo_tmp.tsx path/Foo.tsx
-   ```
-4. **Update every import** that referenced the old path. Search patterns:
-   ```sh
-   grep -rnE "from ['\"][~\.][^'\"]*(old-kebab-name)" frontend/src
-   grep -rnE "import\\(['\"][~\.][^'\"]*(old-kebab-name)" frontend/src
-   ```
-   Don't forget:
-   - barrel files (`index.ts`),
-   - dynamic `import('…')` calls (e.g. `lazyComponent(() => import("~app/layouts"), …)`),
-   - SCSS imports (`import './foo.scss'`),
-   - test files (`*.spec.tsx`).
-5. **Verify**:
-   ```sh
-   cd frontend && npx tsc --noEmit
-   ```
-   The TypeScript language server in editors may keep a stale cache after
-   case-only renames — restart the TS server / editor if `tsc` is clean but
-   the editor still reports `TS1149` / `TS1261`.
-6. **Do not rename** `index.ts`, `package.json`, `tsconfig*.json`,
-   `esbuild.config.js`, `eslint.config.mjs`, `global.d.ts`, locale JSON
-   files (`en.json` and any future `<lang>.json`), or anything inside
-   `node_modules/`.
+**Do not rename**: `index.ts`, `package.json`, `tsconfig*.json`, `esbuild.config.js`, `eslint.config.mjs`, `global.d.ts`, locale JSON files (`en.json`, `<lang>.json`), or anything inside `node_modules/`.

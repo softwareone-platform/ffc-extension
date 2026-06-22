@@ -94,31 +94,18 @@ behave identically.
 
 ## File layout per feature
 
-After the modal reorganisation, modal code lives **next to the feature it
-belongs to**, not in a separate `features/modal/` tree.
+Modal code lives next to the feature it belongs to (not in a separate `features/modal/` tree), and nests under the parent resource when applicable (e.g. user modals under `organizations/details/users/`).
 
 ```
-features/entitlements/modal/
-├── AddEntitlementForm.Schema.tsx   # zod schema + types
-├── EntitlementsFormFields.tsx      # the actual <input>s
-├── CreateEntitlementEntryModal.tsx     # host-mounted shape
-├── CreateEntitlementStandaloneModal.tsx # in-app shape
+features/<feature>/modal/
+├── Add<Thing>Form.Schema.tsx       # zod schema + types
+├── <Thing>FormFields.tsx           # the actual <input>s
+├── Create<Thing>EntryModal.tsx     # host-mounted shape
+├── Create<Thing>StandaloneModal.tsx # in-app shape
 └── hooks/
-    ├── useAddEntitlementForm.tsx   # react-hook-form wrapper
-    └── useEntitlementFormController.ts  # mutation + onClose plumbing
-
-features/organizations/details/users/modal/
-├── AddUserForm.Schema.tsx
-├── UserFormFields.tsx
-├── CreateUserEntryModal.tsx
-├── CreateUserStandaloneModal.tsx
-└── hooks/
-    ├── useAddUserForm.tsx
-    └── useUserFormController.ts
+    ├── useAdd<Thing>Form.tsx       # react-hook-form wrapper
+    └── use<Thing>FormController.ts # mutation + onClose plumbing
 ```
-
-User modals nest under `organizations/details/users/` because Users are a
-sub-resource of Organizations in this app (not a top-level feature).
 
 ## Shared modal pieces
 

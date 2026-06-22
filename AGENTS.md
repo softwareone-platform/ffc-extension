@@ -21,10 +21,9 @@ Guidance for AI coding agents working in this repository.
 
 ## Repo layout
 
-- `app/` — Python backend (FastAPI + SQLAlchemy + Alembic).
+- `backend/` — Python backend (FastAPI + SQLAlchemy + Alembic). Code in `backend/app/`, Alembic migrations in `backend/migrations/`, tests in `backend/tests/`.
 - `frontend/` — React + TypeScript extension UI, bundled with esbuild.
 - `e2e/` — Playwright end-to-end tests.
-- `migrations/` — Alembic migrations.
 - `static/` — esbuild output (do not edit by hand).
 
 ## Before changing code
@@ -33,7 +32,7 @@ Guidance for AI coding agents working in this repository.
 2. For frontend changes, read `docs/conventions/naming.md` first.
 3. After edits, run the relevant verification:
    - Frontend: `cd frontend && npx tsc --noEmit`
-   - Backend: existing test suite under `tests/`.
+   - Backend: `cd backend && uv run pytest`.
 
 ## Do not touch
 

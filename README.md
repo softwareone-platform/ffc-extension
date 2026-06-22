@@ -6,10 +6,10 @@ The FinOps for Cloud Extension enables SoftwareOne to manage the FinOps for Clou
 
 ## Repo layout
 
-- `app/` — Python backend (FastAPI + SQLAlchemy + Alembic).
+- `backend/` — Python backend (FastAPI + SQLAlchemy + Alembic); Alembic migrations under `backend/migrations/`.
 - `frontend/` — React + TypeScript extension UI, bundled with esbuild.
+- `static/` — esbuild output (do not edit by hand).
 - `e2e/` — Playwright end-to-end tests.
-- `migrations/` — Alembic migrations.
 - `docs/` — conventions and architecture notes (see below).
 
 ## Documentation

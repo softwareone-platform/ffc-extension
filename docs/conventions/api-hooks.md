@@ -77,3 +77,8 @@ The barrel re-exports both. Consumers import from the barrel:
 ```ts
 import { useOrganizationsApi, useOrganizationDetailsApi } from "~organizations/api";
 ```
+
+## See also
+
+- [i18n conventions](./i18n.md) — the `["Entity", "Slice", ...]` query-key shape loosely mirrors the i18n `<feature>:<section>:...` namespace nesting; keep them aligned when adding a new entity.
+- [Naming conventions](./naming.md) — file & folder casing for the `features/<entity>/api/` tree.

@@ -29,11 +29,7 @@ forever.
 
 ## Replacing the polling
 
-The 5s-bounded polling is a workaround because the host doesn't currently
-signal injection completion. If the host team adds a `mpt:ready` window event
-(or guarantees `__MPT__` is set before our bundle loads), `subscribeToHost` can
-be replaced with a one-shot `addEventListener`. See the message draft in the
-team's host-integration thread for the proposed contract.
+The 5s-bounded polling is a workaround because the host doesn't signal injection completion. If the host team adds a `mpt:ready` window event (or guarantees `__MPT__` is set before our bundle loads), `subscribeToHost` can be replaced with a one-shot `addEventListener`.
 
 ## See also
 
