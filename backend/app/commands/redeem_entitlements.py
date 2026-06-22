@@ -4,8 +4,10 @@ from datetime import UTC, datetime
 
 import httpx
 import typer
+from httpx import HTTPStatusError, ReadTimeout
 from sqlalchemy.exc import DatabaseError
 
+from app.api_clients.ffc_api import FFCAPIClient
 from app.api_clients.optscale import OptscaleClient
 from app.conf import Settings
 from app.db.base import session_factory
@@ -31,10 +33,26 @@ async def fetch_datasources_for_organization(settings: Settings, organization_id
     return response.json()["cloud_accounts"]
 
 
+async def create_entitlement_tag_for_datasource(
+    ffc_api_client: FFCAPIClient,
+    entitlement_id: str,
+    datasource_id: str,
+) -> None:
+    try:
+        await ffc_api_client.create_tag_for_datasource(
+            datasource_id=datasource_id,
+            name="entitlement",
+            value=entitlement_id,
+        )
+    except (HTTPStatusError, ReadTimeout) as exc:
+        logger.warning(f"Could not create entitlement tag for datasource {datasource_id}: {exc}")
+
+
 async def process_datasource(
     datasource: dict,
     organization: Organization,
     entitlement_handler: EntitlementHandler,
+    ffc_api_client: FFCAPIClient,
 ):
     datasource_id = datasource["account_id"]
     datasource_type = datasource["type"]
@@ -77,6 +95,11 @@ async def process_datasource(
                     "linked_datasource_name": datasource["name"],
                 },
             )
+            await create_entitlement_tag_for_datasource(
+                ffc_api_client=ffc_api_client,
+                entitlement_id=instance.id,
+                datasource_id=datasource["id"],
+            )
             msg = (
                 f"The entitlement {instance.id} - {instance.name} "
                 f"owned by {instance.owner.id} - {instance.owner.name} "
@@ -106,6 +129,7 @@ async def redeem_entitlements(settings: Settings):
     async with session_factory.begin() as session:
         organization_handler = OrganizationHandler(session)
         entitlement_handler = EntitlementHandler(session)
+        ffc_api_client = FFCAPIClient(settings)
 
         async for organization in organization_handler.stream_scalars(
             extra_conditions=[Organization.status == OrganizationStatus.ACTIVE],
@@ -135,6 +159,7 @@ async def redeem_entitlements(settings: Settings):
                     datasource,
                     organization,
                     entitlement_handler,
+                    ffc_api_client,
                 )
                 if entitlement:
                     redeemed_entitlements.append(entitlement)

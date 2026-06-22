@@ -78,3 +78,10 @@ class OrganizationStatus(enum.StrEnum):
     ACTIVE = "active"
     CANCELLED = "cancelled"
     DELETED = "deleted"
+
+
+@enum.unique
+class TagType(enum.StrEnum):
+    USER = "user"
+    ORGANIZATION = "organization"
+    DATA_SOURCE = "data_source"
