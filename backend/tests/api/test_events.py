@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from httpx import AsyncClient
 
 from app.api_clients.mpt import MPTClient
+from app.fulfilment.processing import PurchaseOrderProcessor
 from app.schemas.core import Details, Event, EventResponse, Object, Task
 
 
@@ -66,21 +67,10 @@ async def test_process_order_status_processing(
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
     )
-
-    mocked_start_task_and_get_order = mocker.patch(
-        "app.routers.events.start_task_and_get_order",
-        return_value=order,
-    )
-    mocked_apply_fulfillment_defaults = mocker.patch(
-        "app.routers.events.apply_fulfillment_defaults",
-        return_value=order,
-    )
-    mocked_validate = mocker.patch(
-        "app.routers.events.validate_and_move_to_querying_if_needed", return_value=(order, True)
-    )
-    mocked_fulfill_order = mocker.patch(
-        "app.routers.events.fulfill_order", return_value=EventResponse.ok()
-    )
+    mocked_start_task = mocker.patch.object(MPTClient, "start_task")
+    mocked_get_order = mocker.patch.object(MPTClient, "get_order", return_value=order)
+    mocked_run = mocker.patch.object(PurchaseOrderProcessor, "run", return_value=order)
+    mocked_complete_task = mocker.patch.object(MPTClient, "complete_task")
 
     event = Event(
         id="01ef68d7-3792-48cc-96cc-924599f6d490",
@@ -102,10 +92,10 @@ async def test_process_order_status_processing(
     assert response.status_code == 200
     assert response.json()["response"] == "OK"
 
-    mocked_start_task_and_get_order.assert_awaited_once()
-    mocked_apply_fulfillment_defaults.assert_awaited_once()
-    mocked_validate.assert_awaited_once()
-    mocked_fulfill_order.assert_awaited_once()
+    mocked_start_task.assert_awaited_once()
+    mocked_get_order.assert_awaited_once()
+    mocked_run.assert_awaited_once()
+    mocked_complete_task.assert_awaited_once_with(event.task.id)
 
 
 async def test_process_order_moved_to_query(
@@ -177,7 +167,7 @@ async def test_process_order_missing_task_id(
     )
 
     event = Event(
-        id="01ef68d7-3792-48cc-96cc-924599f6d490",
+        id="1428965b-5735-498d-8d31-d51a22f4205d",
         object=Object(id=order["id"], name="order", objectType="Order"),
         details=Details(
             eventType="status_changed",
@@ -239,3 +229,28 @@ async def test_process_order_exception(
     assert response.json()["response"] == "Delay"
 
     mocked_start_task_and_get_order.assert_awaited_once()
+
+
+async def test_process_order_bug(
+    mocker,
+    mpt_api_client: AsyncClient,
+    ffc_jwt_token: str,
+    order_factory,
+):
+    event = Event(
+        id="01ef68d7-3792-48cc-96cc-924599f6d490",
+        object=Object(id="ORD-8037-9951-5349", name="order", objectType="Order"),
+        details=Details(
+            eventType="status_changed",
+            enqueueTime=datetime(2026, 6, 23, 14, 48, 54, 288000, tzinfo=UTC),
+            deliveryTime=datetime(2026, 6, 23, 14, 54, 41, 681000, tzinfo=UTC),
+        ),
+        task=Task(id="TSK-0014-7929-1583-2941"),
+    )
+    response = await mpt_api_client.post(
+        "/events/commerce/orders",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+        json=event.model_dump(mode="json", by_alias=True),
+    )
+
+    assert response.status_code == 200

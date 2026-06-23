@@ -18,7 +18,7 @@ from app.fulfilment.constants import (
 )
 from app.fulfilment.order import (
     apply_fulfillment_defaults,
-    fulfill_order,
+    complete_purchase_order,
     start_task_and_get_order,
     validate_and_move_to_querying_if_needed,
 )
@@ -266,7 +266,7 @@ async def test_fulfill_order_success(
     mocked_complete_order = mocker.patch.object(ext_client, "complete_order")
     mocked_complete_task = mocker.patch.object(ext_client, "complete_task")
 
-    response = await fulfill_order(
+    response = await complete_purchase_order(
         api_modifier_client=api_modifier_client,
         ext_client=ext_client,
         optscale_auth_client=optscale_auth_client,
@@ -364,7 +364,7 @@ async def test_fulfill_order_new_user_password_reset_failure_is_swallowed(
     mocked_complete_task = mocker.patch.object(ext_client, "complete_task")
     optscale_client.reset_password.side_effect = Exception("boom")
 
-    response = await fulfill_order(
+    response = await complete_purchase_order(
         api_modifier_client=api_modifier_client,
         ext_client=ext_client,
         optscale_auth_client=optscale_auth_client,

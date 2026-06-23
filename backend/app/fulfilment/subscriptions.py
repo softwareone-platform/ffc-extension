@@ -1,7 +1,5 @@
 import logging
 
-from app.api_clients.mpt import MPTClient
-from app.db.models import Organization
 from app.utils import find_first
 
 logger = logging.getLogger(__name__)
@@ -30,31 +28,3 @@ def get_subscription_by_line_and_item_id(
         if item:
             return subscription
     return None
-
-
-async def create_order_subscription(ext_client: MPTClient, order: dict, organization: Organization):
-    """Create missing subscriptions for each order line and bind them to the organization."""
-    for line in order["lines"]:
-        order_subscription = get_subscription_by_line_and_item_id(
-            order["subscriptions"],
-            line["item"]["id"],
-            line["id"],
-        )
-        if not order_subscription:
-            subscription = {
-                "name": f"Subscription for {line['item']['name']}",
-                "parameters": {},
-                "externalIds": {"vendor": organization.id},
-                "lines": [
-                    {
-                        "id": line["id"],
-                    },
-                ],
-            }
-            subscription = await ext_client.create_subscription(
-                order_id=order["id"],
-                subscription=subscription,
-            )
-            logger.info(
-                "%s: subscription %s (%s) created", order["id"], line["id"], subscription["id"]
-            )

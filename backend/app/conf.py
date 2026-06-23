@@ -8,7 +8,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-PROJECT_ROOT = pathlib.Path(__file__).parent.parent
+PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 
 
 class OpenTelemetryExporter(enum.StrEnum):
@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     default_trial_period_duration_days: int = 30
     due_date_days: int = 30
     lower_billing_year: int = 2025
-
+    reschedule_seconds: int = 300
     ui_plugs_prefix: str = "ffc"
 
     @computed_field

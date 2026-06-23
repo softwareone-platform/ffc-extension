@@ -10,8 +10,8 @@ from app.fulfilment import templates as templates_module
 from app.fulfilment.constants import PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME
 from app.fulfilment.templates import (
     get_product_template_id,
+    set_processing_order_template,
     set_template,
-    start_processing_order_template,
 )
 
 PRODUCT_ID = "PRD-4141-4379"
@@ -152,7 +152,7 @@ async def test_start_processing_order_template(mocker, order_factory, caplog):
     updated_order["template"]["id"] = "TPL-0001"
     mocker.patch.object(ext_client, "update_order", return_value=updated_order)
     with caplog.at_level(logging.INFO):
-        response = await start_processing_order_template(ext_client, order)
+        response = await set_processing_order_template(ext_client, order)
         assert response == updated_order
         assert f"{order['id']}: processing template set to Purchase (TPL-0001)" in caplog.text
 
@@ -178,6 +178,6 @@ async def test_start_processing_order_template_with_same_template(mocker, order_
 
     mocker.patch.object(ext_client, "update_order", return_value=order)
     with caplog.at_level(logging.INFO):
-        response = await start_processing_order_template(ext_client, order)
+        response = await set_processing_order_template(ext_client, order)
         assert response == order
         assert f"{order['id']}: processing template is ok, continue" in caplog.text

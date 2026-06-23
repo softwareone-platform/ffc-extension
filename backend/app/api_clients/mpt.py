@@ -144,6 +144,8 @@ class MPTClient:
             json=payload,
         )
         try:
+            if response.status_code == 409:
+                return None
             response.raise_for_status()
             return response.json()
         except Exception as task_error:
@@ -251,11 +253,14 @@ class MPTClient:
     async def update_task(self, task_id: str, payload: dict) -> dict[str, Any]:
         return await self.update("system/tasks", task_id, payload=payload)
 
-    async def start_task(self, task_id: str, instance_id: str) -> dict[str, Any]:
+    async def start_task(self, task_id: str, instance_id: str) -> dict[str, Any] | None:
         task = await self.run_object_action("system/tasks", task_id, "execute")
-        params = task["parameters"]
-        params["instanceId"] = instance_id.upper()
-        return await self.update_task(task_id, {"parameters": params})
+        # workaround for response status 409
+        if task:
+            params = task["parameters"]
+            params["instanceId"] = instance_id.upper()
+            return await self.update_task(task_id, {"parameters": params})
+        return None
 
     async def complete_task(
         self, task_id: str, payload: dict | None = None
