@@ -25,6 +25,7 @@ async def test_redeeem_entitlements(
     entitlement_aws: Entitlement,
     entitlement_gcp: Entitlement,
     entitlement_gcp_with_redeem_at: Entitlement,
+    httpx_mock: HTTPXMock,
 ):
     mocker.patch(
         "app.commands.redeem_entitlements.fetch_datasources_for_organization",
@@ -70,6 +71,13 @@ async def test_redeeem_entitlements(
     )
     mocked_send_info = mocker.patch(
         "app.commands.redeem_entitlements.send_info",
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=201,
+        is_reusable=True,
     )
 
     await redeem_entitlements(test_settings)
@@ -145,6 +153,50 @@ async def test_redeeem_entitlements_error_fetching_datasources(
             f"{apple_inc_organization.id} (ReadTimeout): timed out"
         ),
     )
+
+
+async def test_redeeem_entitlements_error_creating_tag(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    db_session: AsyncSession,
+    apple_inc_organization: Organization,
+    entitlement_aws: Entitlement,
+    httpx_mock: HTTPXMock,
+    caplog: pytest.LogCaptureFixture,
+):
+    mocker.patch(
+        "app.commands.redeem_entitlements.fetch_datasources_for_organization",
+        return_value=[
+            {
+                "id": "aws",
+                "name": "AWS Datasource",
+                "type": "aws_cnr",
+                "account_id": entitlement_aws.datasource_id,
+            },
+        ],
+    )
+    mocked_send_info = mocker.patch(
+        "app.commands.redeem_entitlements.send_info",
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+
+    with caplog.at_level("INFO"):
+        await redeem_entitlements(test_settings)
+
+    assert "Could not create entitlement tag for datasource" in caplog.text
+
+    assert mocked_send_info.await_args.args == (
+        "Redeem Entitlements Success",
+        "1 Entitlement has been successfully redeemed.",
+    )
+
+    assert mocked_send_info.await_count == 1
+    assert len(mocked_send_info.await_args.kwargs["details"].rows) == 1
 
 
 async def test_fetch_datasources_for_organization(

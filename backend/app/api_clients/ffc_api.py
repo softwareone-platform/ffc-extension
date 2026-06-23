@@ -1,11 +1,13 @@
 import logging
 from collections.abc import Generator
+from typing import Any
 from uuid import UUID
 
 import httpx
 
 from app.api_clients.base import APIClientError, BaseAPIClient
 from app.conf import Settings
+from app.enums import TagType
 
 logger = logging.getLogger(__name__)
 
@@ -83,3 +85,23 @@ class FFCAPIClient(BaseAPIClient):
         response = await self.httpx_client.get(f"/admin/organizations/{organization_id}/expenses")
         response.raise_for_status()
         return response
+
+    async def create_tag(self, payload: dict[str, Any]) -> httpx.Response:
+        response = await self.httpx_client.post("/admin/tags", json=payload)
+        response.raise_for_status()
+        return response
+
+    async def create_tag_for_datasource(
+        self,
+        datasource_id: UUID | str,
+        name: str,
+        value: str,
+    ) -> httpx.Response:
+        payload = {
+            "resource_id": datasource_id,
+            "resource_type": TagType.DATA_SOURCE,
+            "name": name,
+            "value": value,
+        }
+
+        return await self.create_tag(payload)
