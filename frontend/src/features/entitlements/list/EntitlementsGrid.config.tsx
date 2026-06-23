@@ -144,7 +144,7 @@ export function useGridConfig() {
   const config = useMemo(
     () =>
       ({
-        id: "grid__entitlements-details-users",
+        id: "grid__entitlements-list",
         // memoizeId: 'gridWithRqlStory',
         // views,
         columns,
@@ -157,5 +157,5 @@ export function useGridConfig() {
   );
 
   const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+  return { silentRefresh: asyncOptions.silentRefresh, refresh: asyncOptions.refresh, ...gridProps };
 }

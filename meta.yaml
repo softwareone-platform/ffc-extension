@@ -43,3 +43,8 @@ plugs:
   description: Wizard to create a new user
   icon: adobe.png
   href: "/static/CreateUserModal.js"
+- id: finops.admin.create-entitlement-modal
+  name: Create Entitlement Modal
+  description: Wizard to create a new entitlement
+  icon: adobe.png
+  href: "/static/CreateEntitlementModal.js"

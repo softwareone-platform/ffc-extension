@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { EntitlementRead } from "@swo/ffc-api-model";
+import { EntitlementCreate, EntitlementRead } from "@swo/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 
 import { http } from "@mpt-extension/sdk";
@@ -33,5 +33,21 @@ export function useEntitlementsApi() {
     });
   }, []);
 
-  return useMemo(() => ({ list, get }), [list, get]);
+  const save = useCallback(async (entity: EntitlementCreate) => {
+    return http<EntitlementCreate & { id?: string }>(
+      "id" in entity && entity.id
+        ? {
+            method: "PUT",
+            url: `${rootPath}/${entity.id}`,
+            data: entity,
+          }
+        : {
+            method: "POST",
+            url: rootPath,
+            data: entity,
+          },
+    );
+  }, []);
+
+  return useMemo(() => ({ list, get, save }), [list, get, save]);
 }

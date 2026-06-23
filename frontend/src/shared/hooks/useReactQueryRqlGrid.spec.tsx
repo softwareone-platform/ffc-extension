@@ -40,9 +40,9 @@ describe("useReactQueryRqlGrid", () => {
 
   const mockQueryFn = jest.fn().mockResolvedValue(mockData);
   const mockBaseQueryKey = ["test-entities"];
-  const mockBuildRqlQuery = buildRqlQuery as jest.MockedFunction<
-    typeof buildRqlQuery<{ name: string }>
-  >;
+  // const mockBuildRqlQuery = buildRqlQuery as jest.MockedFunction<
+  //   typeof buildRqlQuery<{ name: string }>
+  // >;
 
   beforeEach(() => {
     jest.clearAllMocks();

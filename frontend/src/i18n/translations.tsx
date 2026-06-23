@@ -1,10 +1,12 @@
 import i18next, { InitOptions } from "i18next";
 import resourcesToBackend from "i18next-resources-to-backend";
+import { z } from "zod/v4";
 
-// import { z } from 'zod';
 // import { ZodI18nMapOption, makeZodI18nMap } from 'zod-i18n-map';
 
 import { languageCodes } from "@swo/countries/languageCodes";
+
+import { getZodMap } from "./zodCustomError";
 
 const i18n: ReturnType<typeof i18next.createInstance> = i18next.createInstance();
 
@@ -44,6 +46,10 @@ i18n.init({
 // }) as typeOfi18nT;
 
 // z.setErrorMap(makeZodI18nMap({ t, ns: 'mpt', handlePath: { keyPrefix: 'shared.properties' } }));
+
+z.config({
+  customError: getZodMap(i18n.t),
+});
 
 export { i18n };
 
