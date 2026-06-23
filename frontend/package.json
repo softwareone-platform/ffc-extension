@@ -36,7 +36,6 @@
     "@swo/design-system": "5.0.133",
     "@swo/design-tokens": "5.0.133",
     "@swo/ffc-api-model": "./swo-ffc-api-model-5.0.0-rc.1.tgz",
-    "@swo/mp-api-model": "^5.2.524",
     "@swo/mp-status-chip": "^5.0.10",
     "@swo/rql-client": "^5.0.13",
     "@swo/service": "^5.0.2",

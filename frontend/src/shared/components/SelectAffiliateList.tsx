@@ -6,16 +6,17 @@ import { AccountRead } from "@swo/ffc-api-model";
 import { useApiCall } from "~entitlements/create-entitlement-wizard/hooks/useApiCall";
 import { useColumns } from "~entitlements/create-entitlement-wizard/hooks/useColumns";
 import { useListDataWithSelectedEntity } from "~entitlements/create-entitlement-wizard/hooks/useListDataWithSelectedEntity";
+import { Account } from "~features/entitlements/api/model";
 
 const limitPerPage = 10;
 
 export interface SelectAffiliateListProps {
-  entity: AccountRead | null;
-  onSelected: (entity: AccountRead) => void;
+  entity: Account | null;
+  onSelected: (entity: Account) => void;
 }
 
 export function SelectAffiliateList({ entity, onSelected }: SelectAffiliateListProps) {
-  const [selectedRows, setSelectedRows] = useState<Row<AccountRead>[]>(
+  const [selectedRows, setSelectedRows] = useState<Row<Account>[]>(
     entity ? [{ data: entity, selected: true }] : [],
   );
   const columns = useColumns();

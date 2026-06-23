@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 
 import { StepNavigationProperties, useStepActions } from "@swo/design-system/wizard";
-import { AccountRead } from "@swo/ffc-api-model";
 
+import { Account } from "~features/entitlements/api/model";
 import { SelectAffiliateList } from "~shared/components/SelectAffiliateList";
 import { WizardStep } from "~shared/components/wizard/WizardStep";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -35,15 +35,17 @@ export function AffiliateStep() {
   }, [formState]);
 
   const onSelected = useCallback(
-    (entity: AccountRead) => {
-      setValue("affiliate", entity as Required<AccountRead>, { shouldValidate: true });
+    (entity: Account) => {
+      setValue("affiliate", entity as Required<Account>, {
+        shouldValidate: true,
+      });
     },
     [setValue],
   );
 
   return (
     <WizardStep title={tStep("title")} error={errors}>
-      <SelectAffiliateList entity={affiliate as AccountRead} onSelected={onSelected} />
+      <SelectAffiliateList entity={affiliate as Account} onSelected={onSelected} />
     </WizardStep>
   );
 }

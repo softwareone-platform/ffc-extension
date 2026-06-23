@@ -40,7 +40,6 @@ export function DataSourceStep() {
           isPreventAutocomplete={true}
           label={tProperties("name")}
           placeholder={tPlaceholders("name")}
-          labelType="required"
         />
       </div>
       <div className={"step-input"}>
@@ -50,7 +49,6 @@ export function DataSourceStep() {
           isPreventAutocomplete={true}
           label={tProperties("id")}
           placeholder={tPlaceholders("id")}
-          labelType="required"
         />
         <RegularText size={1}>{tStep("field:id:description")}</RegularText>
       </div>
@@ -61,6 +59,7 @@ export function DataSourceStep() {
           isPreventAutocomplete={true}
           label={tProperties("affiliateExternalId")}
           placeholder={tPlaceholders("affiliateExternalId")}
+          labelType="optional"
         />
         <RegularText size={1}>{tStep("field:affiliate_external_id:description")}</RegularText>
       </div>

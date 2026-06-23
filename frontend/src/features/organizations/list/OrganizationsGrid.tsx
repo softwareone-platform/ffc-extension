@@ -8,9 +8,6 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { useGridConfig } from "./OrganizationsGrid.config";
 
 export function OrganizationsGrid() {
-  // const {auth, data} = useMPTContext();
-
-  //TODO: proper translation name
   const tProperties = useFixedT("shared:grid:columns");
   const { ...gridProps } = useGridConfig();
 

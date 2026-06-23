@@ -9,12 +9,6 @@ import { useColumns } from "./useColumns";
 import { useFields } from "./useFields";
 import { useViews } from "./useViews";
 
-// const _defaultFilter = {
-//     operator: 'and',
-//     value: [{ operator: 'eq', field: 'status', value: 'active' }],
-// };
-// const _sort = [{ field: 'event.created.at', direction: 'desc' }];
-
 export function useGridConfig() {
   const columns = useColumns();
   const fields = useFields();
@@ -24,8 +18,7 @@ export function useGridConfig() {
   const config = useMemo(
     () =>
       ({
-        id: "grid__rql-example",
-        // memoizeId: 'gridWithRqlStory',
+        id: "grid__organizations-list",
         views,
         columns,
         fields,
@@ -36,14 +29,6 @@ export function useGridConfig() {
     [columns, views, fields, asyncOptions],
   );
 
-  //   const { list } = useOrganizationsApi();
-
-  //   const { silentRefresh, ...gridProps } = useGridWithRql<
-  //     Entity<OrganizationRead>
-  //   >(config, list);
-
   const gridProps = useGridAsync(config);
   return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
-  //   const gridProps = useGridAsync(options);
-  //   return { silentRefresh, ...gridProps };
 }

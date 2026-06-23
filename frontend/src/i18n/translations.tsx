@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 
 // import { ZodI18nMapOption, makeZodI18nMap } from 'zod-i18n-map';
 
-import { languageCodes } from "@swo/countries/languageCodes";
+import { languageCodes } from "@swo/design-system/countries/languageCodes";
 
 import { getZodMap } from "./zodCustomError";
 

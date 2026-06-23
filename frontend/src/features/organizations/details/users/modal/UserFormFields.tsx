@@ -1,6 +1,6 @@
 import { Control } from "react-hook-form";
 
-import { InlineNotification } from "@swo/notification";
+import { InlineNotification } from "@swo/design-system/notification";
 
 import { ControlledInput } from "~shared/components/form/ControlledInput";
 import { useFixedT } from "~shared/hooks/useFixedT";

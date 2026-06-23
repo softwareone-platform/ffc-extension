@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { Link } from "react-router-dom";
 
+import { EntityReference } from "@swo/design-system/entity-reference";
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
@@ -15,6 +16,7 @@ import { EntitlementRead } from "@swo/ffc-api-model";
 import { Paths } from "@swo/rql-client";
 
 import { useEntitlementsApi } from "~entitlements/api";
+import AccountTypeIcon from "~shared/components/account-type-icons/AccountTypeIcon";
 import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -37,8 +39,10 @@ export function useColumns(): Columns {
         title: tColumns("entitlement"),
         fields: ["name", "id"],
         cell: (item: EntitlementRead) => (
-          <GridCellTitleSubtitle title={<Link to={item.id}>{item.name}</Link>} subtitle={item.id} />
-          // <GridCellTitleSubtitle title={item.name} subtitle={item.id} />
+          <GridCellTitleSubtitle
+            title={<Link to={`${item.id}/general`}>{item.name}</Link>}
+            subtitle={item.id}
+          />
         ),
         initialWidth: 350,
       },
@@ -47,9 +51,14 @@ export function useColumns(): Columns {
         title: tColumns("affiliate_external_id"),
         fields: ["affiliate_external_id"],
         cell: (item: EntitlementRead) => (
-          // <GridCellSimple>{item.affiliate_external_id}</GridCellSimple>
-
-          <GridCellTitleSubtitle title={item.owner.name} subtitle={item.owner.id} />
+          <GridCellSimple>
+            <EntityReference
+              primaryContent={item.owner.name}
+              secondaryContent={item.owner.id}
+              isPrimaryContentBold={false}
+              icon={<AccountTypeIcon name={item.owner.integration} size={44} />}
+            />
+          </GridCellSimple>
         ),
         initialWidth: 150,
       },
@@ -65,7 +74,7 @@ export function useColumns(): Columns {
                 primaryContent={item.linked_datasource_name as string}
                 secondaryContent={item.linked_datasource_id as string}
                 secondaryContentMaxHeight={50}
-                icon={<DataSourceIcon name={item.linked_datasource_type as string} size={48} />}
+                icon={<DataSourceIcon name={item.linked_datasource_type as string} size={44} />}
               />
             )}
           </GridCellSimple>
@@ -138,15 +147,12 @@ export function useAsyncOptions() {
 export function useGridConfig() {
   const columns = useColumns();
   const fields = useFields();
-  // const views = useViews();
   const asyncOptions = useAsyncOptions();
 
   const config = useMemo(
     () =>
       ({
         id: "grid__entitlements-list",
-        // memoizeId: 'gridWithRqlStory',
-        // views,
         columns,
         fields,
         isDefaultView: true,
