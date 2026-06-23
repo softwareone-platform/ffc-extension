@@ -1,11 +1,11 @@
-import { BasePage } from './base-page';
+import { PlatformPage } from './platform-page';
 import { Locator, Page } from '@playwright/test';
 
 /**
  * Represents the Header component of the page.
  * Extends the BasePage class.
  */
-export class Header extends BasePage {
+export class Header extends PlatformPage {
   readonly header: Locator;
   readonly navigationMenuBtn: Locator;
   readonly navigationMenu: Locator;
@@ -30,7 +30,7 @@ export class Header extends BasePage {
     this.navigationMenuBtn = this.header.getByTestId('navigation-menu-toggle');
     this.navigationMenu = this.header.getByTestId('navigation-menu');
     this.navigationMenuSettings = this.page.getByTestId('side-menu').getByRole('button', { name: 'Settings' });
-    this.navigationMenuFinOpsForCloud = this.navigationMenu.getByText('FinOps for Cloud');
+    this.navigationMenuFinOpsForCloud = this.navigationMenu.getByText('FinOps for Cloud', { exact: true });
     this.menuContent = this.navigationMenu.getByTestId('menu-content');
     this.usersMenuItem = this.menuContent.getByText('Users', { exact: true });
     this.organizationsMenuItem = this.menuContent.getByText('Organizations', { exact: true });

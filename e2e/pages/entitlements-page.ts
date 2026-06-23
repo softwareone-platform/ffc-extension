@@ -1,10 +1,10 @@
-import { BasePage } from './base-page';
 import { Locator, Page } from '@playwright/test';
+import { ExtensionPage } from './extension-page';
 
 /**
  * Represents the Entitlements page under FinOps for Cloud.
  */
-export class EntitlementsPage extends BasePage {
+export class EntitlementsPage extends ExtensionPage {
   readonly navHeaderBarList: Locator;
   readonly activeNavLink: Locator;
 

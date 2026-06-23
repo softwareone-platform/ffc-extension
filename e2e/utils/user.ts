@@ -1,8 +1,9 @@
 import fs from 'fs';
-import { isSessionValid, storeSecretToFile } from './session-utils';
+import { getCurrentEnv, isSessionValid, storeSecretToFile } from './utils';
 import { Browser, chromium, Response } from 'playwright-core';
 import { expect } from 'playwright/test';
 import { debugLog, errorLog } from './debug-logging';
+import { getEnvironment } from '../test-data/env-data/environment';
 
 export default class User {
   public email: string; // The user's email address.
@@ -31,23 +32,14 @@ export default class User {
   }
 
   public get sessionStoragePath(): string {
-    const path = `.cache/${this._safeName}_${this.environment}_SESSION.json`;
+    const path = `.cache/${this._safeName}_${getEnvironment()}_SESSION.json`;
     if (!fs.existsSync('.cache')) fs.mkdirSync('.cache');
     if (!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify({}));
     return path;
   }
 
-  private get environment(): string {
-    const environment = process.env.ENVIRONMENT;
-    if (!environment) {
-      throw new Error('Missing required environment variable: ENVIRONMENT');
-    }
-
-    return environment;
-  }
-
   private get tokenStoragePath(): string {
-    return `.cache/${this._safeName}_${this.environment}_TOKEN.txt`;
+    return `.cache/${this._safeName}_${getEnvironment()}_TOKEN.txt`;
   }
 
   /**
@@ -89,7 +81,7 @@ export default class User {
         }
       });
 
-      await page.goto(process.env.BASE_URL);
+      await page.goto(getCurrentEnv().baseUrl);
       await expect(userNameInput).toBeVisible({ timeout: 60000 });
       await userNameInput.fill(this.email);
       await actionBtn.click();

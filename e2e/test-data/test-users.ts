@@ -1,4 +1,5 @@
 import User from '../utils/user';
+import {getCurrentEnv} from "../utils/utils";
 
 /**
  * Returns the value of a required environment variable.
@@ -17,5 +18,5 @@ const requireEnv = (name: string): string => {
 };
 
 export default class TestUsers {
-  static readonly Admin = new User(requireEnv('DEFAULT_USER_EMAIL'), requireEnv('DEFAULT_USER_PASSWORD'), 'Admin User', 'Vendor');
+  static readonly Admin = new User('mpt.qlt+ffc-admin@gmail.com', requireEnv('DEFAULT_USER_PASSWORD'), 'FFC Admin', 'Vendor');
 }

@@ -1,12 +1,22 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
+import { loadEnvVariables } from './dotenv/config';
+import {getCurrentEnv} from "./utils/utils";
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+
+const useDotEnv = process.env.LOCAL_TEST_ENV !== undefined;
+if (useDotEnv) {
+  const ENV = process.env.LOCAL_TEST_ENV;
+  loadEnvVariables(ENV!);
+} else {
+  console.log('Skipping loading of .env environment variables');
+}
 
 /**
  * Extended timeout (ms) for operations that load large amounts of data,
@@ -19,6 +29,7 @@ export const LARGE_DATA_TIMEOUT = 30000;
  */
 export default defineConfig({
   globalSetup: './setup/global-setup.ts',
+  globalTeardown: './setup/global-teardown.ts',
   testDir: '../e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -33,7 +44,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     actionTimeout: 10000,
-    baseURL: process.env.BASE_URL,
+    baseURL: getCurrentEnv().baseUrl,
     headless: true,
     trace: 'retain-on-failure',
     video: 'retain-on-failure',

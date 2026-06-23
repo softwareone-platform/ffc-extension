@@ -8,10 +8,12 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "playwright:codegen": "npx playwright codegen https://portal.s1.today/",
+    "playwright:codegen-test": "npx playwright codegen https://portal.s1.show/",
+    "playwright:codegen-dev": "npx playwright codegen https://portal-qa.s1.today/",
     "playwright:show-report": "npx playwright show-report",
     "playwright:debug": "npx playwright test --debug --workers=1",
-    "playwright:test": "npx playwright test"
+    "playwright:test": "cross-env LOCAL_TEST_ENV=TEST npx playwright test",
+    "playwright:test:dev": "cross-env LOCAL_TEST_ENV=DEV npx playwright test"
   },
   "author": "Steve Churchill",
   "license": "ISC",
