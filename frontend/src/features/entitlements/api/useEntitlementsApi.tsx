@@ -2,22 +2,24 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { EntitlementCreate, EntitlementRead } from "@swo/ffc-api-model";
+import { EntitlementCreate } from "@swo/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 
 import { http } from "@mpt-extension/sdk";
 
 import { ListResponse } from "~shared/utils/mapAxiosResponseDataList";
 
+import { Entitlement } from "./model";
+
 const rootPath = "/ops/v1/entitlements";
 
 export function useEntitlementsApi() {
   const list = useCallback(
     async (
-      query: RqlQuery<EntitlementRead>,
-      config?: AxiosRequestConfig<ListResponse<EntitlementRead>>,
+      query: RqlQuery<Entitlement>,
+      config?: AxiosRequestConfig<ListResponse<Entitlement>>,
     ) => {
-      return http<ListResponse<EntitlementRead>>({
+      return http<ListResponse<Entitlement>>({
         method: "GET",
         url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
         ...config,
@@ -26,8 +28,8 @@ export function useEntitlementsApi() {
     [],
   );
 
-  const get = useCallback(async (entityId: string, query?: RqlQuery<EntitlementRead>) => {
-    return http<EntitlementRead>({
+  const get = useCallback(async (entityId: string, query?: RqlQuery<Entitlement>) => {
+    return http<Entitlement>({
       method: "GET",
       url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
     });

@@ -113,6 +113,7 @@
       },
       "columns": {
         "actions": "Actions",
+        "affiliate": "Affiliate",
         "currency": "Currency",
         "organization": "Organization",
         "organizations": "Organizations",
@@ -149,7 +150,14 @@
         "email": "Email",
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
-        "entitlement": "Entitlement",
+        "entitlement": {
+          "name": "Entitlement Name",
+          "id": "Entitlement ID"
+        },
+        "affiliate": {
+          "name": "Affiliate Name",
+          "id": "Affiliate ID"
+        },
         "lastLogin": "Last Login",
         "createdAt": "Created At"
       },

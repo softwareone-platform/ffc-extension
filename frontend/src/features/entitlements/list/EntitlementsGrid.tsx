@@ -1,12 +1,12 @@
 import { Button } from "@swo/design-system/button";
 import { Card } from "@swo/design-system/card";
 import { Grid } from "@swo/design-system/grid";
-import { EntitlementRead } from "@swo/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { Entitlement } from "../api/model";
 import { useGridConfig } from "./EntitlementsGrid.config";
 
 // import '../../../styles.scss';
@@ -22,7 +22,7 @@ export function EntitlementsGrid() {
 
   return (
     <Card testId={"ffc-extension__entitlements-grid"} title={tProperties("entitlements")}>
-      <Grid<EntitlementRead> {...gridProps}>
+      <Grid<Entitlement> {...gridProps}>
         <Grid.Actions>
           <Button
             onClick={() =>
