@@ -4,9 +4,7 @@ This project ships a [Development Container](https://containers.dev/) so you can
 
 The container definition lives in [`.devcontainer/devcontainer.json`](../../.devcontainer/devcontainer.json) and reuses the project's `docker-compose.yaml` plus a small `.devcontainer/docker-compose.yml` override.
 
-This guide covers how to open the dev container from **Visual Studio Code** and from **JetBrains IDEs** (PyCharm Professional / IntelliJ IDEA Ultimate).
-
-> **About the screenshots.** Image placeholders point at `docs/dev/images/`. If the file is missing the image won't render — just drop a PNG with the same name into that folder. Official Microsoft and JetBrains documentation (linked at the bottom of each section) hosts authoritative screenshots if you'd rather refer to those.
+This guide covers how to open the dev container from **Visual Studio Code** and from **JetBrains IDEs** (PyCharm Professional / IntelliJ IDEA Ultimate). For background on the Dev Container specification, see <https://containers.dev/>.
 
 ---
 
@@ -25,17 +23,7 @@ This guide covers how to open the dev container from **Visual Studio Code** and 
 
 ## What is a Dev Container?
 
-A **Dev Container** is a Docker container configured as a full-featured development environment. It is described by an open specification ([containers.dev](https://containers.dev/)) maintained by Microsoft, GitHub, and the broader community, originally derived from the VS Code Remote — Containers feature.
-
-A `devcontainer.json` file declares:
-
-- The base image or `docker-compose` services to start.
-- IDE-specific customizations (extensions, plugins, settings).
-- Volume mounts, port forwards, and lifecycle hooks.
-
-Both VS Code and JetBrains IDEs read the **same** `devcontainer.json`, so your team can stay on different editors without forking the configuration.
-
-📖 Specification: <https://containers.dev/implementors/spec/>
+A Docker container configured as a development environment, described by an open specification at <https://containers.dev/>. VS Code and JetBrains IDEs both read the same `devcontainer.json`, so the team can stay on different editors without forking the configuration.
 
 ---
 

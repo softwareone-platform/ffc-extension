@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
 import { EntityReference } from "@swo/design-system/entity-reference";
@@ -8,25 +7,14 @@ import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { BoldText, MediumText } from "@swo/design-system/text";
 import { DisplayValue, NO_VALUE } from "@swo/design-system/utils";
 
-// import { Timestamps } from "@swo/mp-timestamps";
-import { useEntitlementsApi } from "~entitlements/api";
+import { useEntitlementsDetailsApi } from "~entitlements/api";
 import { useFixedT } from "~shared/hooks/useFixedT";
-
-// const { formatDate, formatTime } = useLocalisation();
 
 export function EntitlementsGeneralDetails() {
   const { entitlementId } = useParams();
-  const { get } = useEntitlementsApi();
   const tProperties = useFixedT("shared:properties");
   const tSharedDetails = useFixedT("shared:details");
-  //   const { get } = useJournalApi("RedirectOnError");
-  //   const baseQueryKey = useBaseQueryKey("Journal");
-  const entityQueryKey = useMemo(() => ["Entitlements", "Details", entitlementId], [entitlementId]);
-  const { data: entity } = useQuery({
-    queryKey: entityQueryKey,
-    queryFn: () => get(entitlementId!),
-    select: (res) => res.data,
-  });
+  const { data: entity } = useEntitlementsDetailsApi(entitlementId);
 
   const events = useMemo(
     () =>

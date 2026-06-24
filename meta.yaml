@@ -11,6 +11,8 @@ plugs:
   description: FinOps for Cloud
   icon: extension
   socket: portal
+# href: "/static/index.js"
+# socket: portal.{{ settings.ui_plugs_prefix }}
 - id: organizations
   name: Organizations
   description: This section shows all of the customers Organisations created in FinOps.
@@ -29,14 +31,15 @@ plugs:
   description: Add entitlement
   icon: adobe.png
   socket: portal.{{ settings.ui_plugs_prefix }}.entitlements.actions
-  href: "/static/modal.js"
-- id: modal
-  name: Add entitlement
-  description: Wizard to test modals
+  href: "/static/CreateEntitlementModal.js"
+- id: standalone
+  name: Standalone
+  description: This is a standalone plug that is not connected to the portal socket. It can be used to test the UI of the plug without having to connect it to the portal.
   icon: adobe.png
-  href: "/static/modal.js"
+  socket: portal.{{ settings.ui_plugs_prefix }}
+  href: "/static/index.js"
 - id: finops.admin.create-user-modal
   name: Create User Modal
   description: Wizard to create a new user
   icon: adobe.png
-  href: "/static/create-user.js"
+  href: "/static/CreateUserModal.js"

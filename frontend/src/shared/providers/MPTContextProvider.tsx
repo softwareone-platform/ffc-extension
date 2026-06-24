@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useContext, useSyncExternalStore } from "react";
 
 import { useMPTContext } from "@mpt-extension/sdk-react";
 
@@ -26,22 +26,40 @@ function HostContextBridge({ children }: PropsWithChildren) {
   return <MPTContextStore.Provider value={raw ?? {}}>{children}</MPTContextStore.Provider>;
 }
 
-export function MPTContextProvider({ children }: PropsWithChildren) {
-  const [hasHost, setHasHost] = useState(globalThis.__MPT__ !== undefined);
-
-  // The host may inject `globalThis.__MPT__` slightly after mount; re-check once.
-  useEffect(() => {
-    if (hasHost) return;
+// Poll for `globalThis.__MPT__` (injected by the host around mount time).
+// Give up after 5s so standalone mode doesn't poll forever.
+function subscribeToHost(onChange: () => void): () => void {
+  if (globalThis.__MPT__ !== undefined) return () => {};
+  const stop = () => {
+    globalThis.clearInterval(intervalId);
+    globalThis.clearTimeout(timeoutId);
+  };
+  const intervalId = globalThis.setInterval(() => {
     if (globalThis.__MPT__ !== undefined) {
-      setHasHost(true);
+      stop();
+      onChange();
     }
-  }, [hasHost]);
+  }, 50);
+  const timeoutId = globalThis.setTimeout(stop, 5000);
+  return stop;
+}
+
+function getHostSnapshot(): boolean {
+  return globalThis.__MPT__ !== undefined;
+}
+
+export function MPTContextProvider({ children }: PropsWithChildren) {
+  const hasHost = useHasMPTHost();
 
   if (!hasHost) {
     return <MPTContextStore.Provider value={{}}>{children}</MPTContextStore.Provider>;
   }
 
   return <HostContextBridge>{children}</HostContextBridge>;
+}
+
+export function useHasMPTHost(): boolean {
+  return useSyncExternalStore(subscribeToHost, getHostSnapshot, getHostSnapshot);
 }
 
 export function useMPT(): MPTContextValue {
@@ -59,4 +77,3 @@ export function useMPTData(): MPTData | undefined {
 export function useStandAloneApp(): boolean {
   return useContext(MPTContextStore).data?.standAloneApp ?? false;
 }
-

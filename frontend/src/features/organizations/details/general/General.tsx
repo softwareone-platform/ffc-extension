@@ -1,27 +1,15 @@
-import { useMemo } from "react";
-
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
 import { DisplayValue } from "@swo/design-system/utils";
 
-import { useOrganizationsApi } from "~organizations/api";
+import { useOrganizationDetailsApi } from "~organizations/api";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import "./General.scss";
 
 export function OrganizationGeneralDetails() {
   const { organizationId } = useParams();
-  const { get } = useOrganizationsApi();
-  const entityQueryKey = useMemo(
-    () => ["Organizations", "Details", organizationId],
-    [organizationId],
-  );
-  const { data: entity } = useQuery({
-    queryKey: entityQueryKey,
-    queryFn: () => get(organizationId!),
-    select: (res) => res.data,
-  });
+  const { data: entity } = useOrganizationDetailsApi(organizationId);
 
   const mockedExpensesInfo = {
     limit: 123,

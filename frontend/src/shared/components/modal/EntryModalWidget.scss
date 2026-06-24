@@ -1,0 +1,60 @@
+@use "@swo/design-tokens" as *;
+
+.modal {
+  &-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid;
+    border-image: linear-gradient(
+        259deg,
+        $var-tertiary-cyan-2 16.32%,
+        $var-brand-primary 59.03%,
+        $var-alerts-info-3 99.99%
+      )
+      1;
+
+    &-title {
+      @extend %medium3;
+      padding: $spacing-2;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    flex-grow: 1;
+    padding: $spacing-2 $spacing-2;
+  }
+
+  &-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-top: 1px solid var(--gray-3);
+    padding: $spacing-1 $spacing-2;
+    &__content {
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+
+  form {
+    margin: 0;
+  }
+
+  .modal__container {
+    p {
+      margin: 0 0 var(--spacing-3) 0;
+    }
+  }
+
+  .modal__error {
+    margin-bottom: var(--spacing-3);
+  }
+
+  .modal__input:not(:last-child) {
+    margin-bottom: var(--spacing-3);
+  }
+}

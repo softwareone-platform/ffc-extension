@@ -1,9 +1,10 @@
 import { redirect, RouteObject } from "react-router-dom";
 
+import { SEGMENTS } from "~features/entitlements/paths";
 import { lazyComponent } from "~shared/utils/lazyComponent";
 
 export const entitlementsRoutes: RouteObject = {
-  path: "entitlements",
+  path: SEGMENTS.root,
   children: [
     {
       index: true,
@@ -13,15 +14,15 @@ export const entitlementsRoutes: RouteObject = {
       ),
     },
     {
-      path: ":entitlementId",
+      path: SEGMENTS.idParam,
       lazy: lazyComponent(
-        () => import("~features/entitlements/details/DetailsLayout"),
-        "EntitlementsDetailsLayout",
+        () => import("~features/entitlements/details/DetailsContent"),
+        "EntitlementDetailsContent",
       ),
       children: [
-        { index: true, loader: () => redirect("general") },
+        { index: true, loader: () => redirect(SEGMENTS.general) },
         {
-          path: "general",
+          path: SEGMENTS.general,
           lazy: lazyComponent(
             () => import("~features/entitlements/details/general/General"),
             "EntitlementsGeneralDetails",

@@ -31,7 +31,6 @@ export default {
     '~organizations(.*)$': '<rootDir>/features/organizations/$1',
     '~entitlements(.*)$': '<rootDir>/features/entitlements/$1',
     '~shared(.*)$': '<rootDir>/shared/$1',
-    '~styles(.*)$': '<rootDir>/styles/$1',
   },
   setupFilesAfterEnv: ['@testing-library/jest-dom', '../jest.setup.js'],
   testTimeout: 10_000,

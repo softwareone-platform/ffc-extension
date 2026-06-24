@@ -1,14 +1,22 @@
-import { createRoot } from "react-dom/client";
+import { createBrowserRouter, redirect } from "react-router-dom";
 
-import { RouterProvider } from "react-router-dom";
+import { mountStandaloneEntry } from "~app/bootstrap/MountStandaloneEntry";
+import { PATHS } from "~app/paths";
+import { entitlementsRoutes } from "~features/entitlements/routes";
+import { organizationsRoutes } from "~features/organizations/routes";
+import { lazyComponent } from "~shared/utils/lazyComponent";
 
-import { router } from "~app/router";
+const router = createBrowserRouter([
+  {
+    path: PATHS.root,
+    children: [
+      { index: true, loader: () => redirect(PATHS.organizations.root) },
+      {
+        lazy: lazyComponent(() => import("~app/layouts"), "MainLayout"),
+        children: [entitlementsRoutes, organizationsRoutes],
+      },
+    ],
+  },
+]);
 
-import "~styles/global-standalone.scss";
-
-import { setup } from "@mpt-extension/sdk";
-
-setup((element: Element) => {
-  const root = createRoot(element);
-  root.render(<RouterProvider router={router} />);
-});
+mountStandaloneEntry(router);

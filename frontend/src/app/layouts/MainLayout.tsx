@@ -1,63 +1,72 @@
-import { useEffect, useMemo, useState } from "react";
-
-import { Outlet } from "react-router-dom";
+import { Outlet, useMatch } from "react-router-dom";
 
 import { Button } from "@swo/design-system/button";
 
-import { useMPTEmit } from "@mpt-extension/sdk-react";
-
-import {
-  AddOrganizationFormValues,
-  AddOrganizationModal,
-} from "~features/organizations/components/AddOrganizationModal";
+import { PATHS } from "~app/paths";
+import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
+import { CreateEntitlementStandaloneModal } from "~entitlements/modal/CreateEntitlementStandaloneModal";
+import { useModalToggle } from "~shared/hooks/useModalToggle";
+import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
-import { useStandAloneApp } from "~shared/providers/MPTContextProvider";
-
-const NAV_ITEMS: PageShellNavItem[] = [
-  { path: "/entitlements", label: "Entitlements" },
-  { path: "/organizations", label: "Organizations" },
-];
+import { useFixedT } from "~shared/hooks/useFixedT";
+import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
+import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContext";
 
 export function MainLayout() {
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const navItems = useMemo(() => NAV_ITEMS, []);
-  const standAloneApp = useStandAloneApp();
-  // const standAloneApp = true; // --- FORCE STANDALONE MODE FOR TESTING ---
-  const emit = useMPTEmit();
+  const tEntitlement = useFixedT("entitlement");
+  const tNav = useFixedT("shared:nav");
+  const { isOpen, open, close } = useModalToggle();
 
-  useEffect(() => {
-    if (globalThis.__MPT__ === undefined) return;
-    emit("child-modal", { isOpen: isAddOpen });
-  }, [emit, isAddOpen]);
+  const navItems: PageShellNavItem[] = [
+    { path: PATHS.organizations.root, label: tNav("organizations") },
+    { path: PATHS.entitlements.root, label: tNav("entitlements") },
+  ];
+
+  const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
+  const organizationMatch = useMatch(PATHS.organizations.detailMatch);
+
+  useNotifyParentChildModal(isOpen);
+
+  const header = renderHeader();
+
+  function renderHeader() {
+    if (entitlementMatch?.params.entitlementId) {
+      return (
+        <EntitlementDetailsHeader
+          entitlementId={entitlementMatch.params.entitlementId}
+          backUrl={PATHS.entitlements.root}
+        />
+      );
+    }
+    if (organizationMatch?.params.organizationId) {
+      return (
+        <OrganizationDetailsHeader
+          organizationId={organizationMatch.params.organizationId}
+          backUrl={PATHS.organizations.root}
+        />
+      );
+    }
+    return (
+      <PageShell.Header
+        items={navItems}
+        actions={
+          <Button type="primary" onClick={open} testId="add-entitlement-button">
+            {tEntitlement("add_entitlement")}
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
-    <>
+    <StandaloneShellProvider>
       <PageShell>
-        {standAloneApp && (
-          <PageShell.Header
-            items={navItems}
-            actions={
-              <Button
-                type="primary"
-                onClick={() => setIsAddOpen(true)}
-                testId="add-organization-button"
-              >
-                Add organization
-              </Button>
-            }
-          />
-        )}
+        {header}
         <PageShell.Content>
           <Outlet />
         </PageShell.Content>
       </PageShell>
-      <AddOrganizationModal
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onSubmit={(values: AddOrganizationFormValues) => {
-          console.log("[entitlements] add organization submitted", values);
-        }}
-      />
-    </>
+      <CreateEntitlementStandaloneModal isOpen={isOpen} onClose={close} />
+    </StandaloneShellProvider>
   );
 }
