@@ -282,7 +282,7 @@ class MPTClient:
         self,
     ) -> AsyncGenerator[dict[str, Any], None]:
         return self.collection_iterator(
-            "catalog/authorizations", query=f"eq(product.id,{self.settings.mpt_product_id[0]})"
+            "catalog/authorizations", query=f"eq(product.id,{self.settings.mpt_product_id})"
         )
 
     async def count_active_agreements(
@@ -326,7 +326,6 @@ class MPTClient:
     async def create_journal(
         self, authorization_id: str, external_id: str, name: str, due_date: datetime
     ) -> dict[str, Any]:
-
         return await self.create(
             endpoint="/billing/journals",
             payload={
@@ -366,7 +365,6 @@ class MPTClient:
     async def create_journal_attachment(
         self, journal_id: str, filename: str, json_data: str
     ) -> None:
-
         boundary = f"----{secrets.token_hex(8)}"
         # Data parts
         attachment_content = json.dumps(
