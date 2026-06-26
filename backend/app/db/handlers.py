@@ -248,22 +248,42 @@ class ModelHandler[M: BaseModel]:
             return results.unique().all()
         return results.all()
 
+    async def _stream(
+        self,
+        extra_conditions: list[ColumnExpressionArgument] | None = None,
+        order_by: list[ColumnExpressionArgument] | None = None,
+        batch_size: int = 100,
+    ):
+        query = select(self.model_cls)
+        query = self._apply_conditions_to_the_query(
+            query=query, where_clauses=extra_conditions, order_by=order_by
+        )
+        return await self.session.stream_scalars(
+            query,
+            execution_options={"yield_per": batch_size},
+        )
+
     async def stream_scalars(
         self,
         extra_conditions: list[ColumnExpressionArgument] | None = None,
         order_by: list[ColumnExpressionArgument] | None = None,
         batch_size: int = 100,
     ) -> AsyncGenerator[M, None]:
-        query = select(self.model_cls)
-        query = self._apply_conditions_to_the_query(
-            query=query, where_clauses=extra_conditions, order_by=order_by
-        )
-        result = await self.session.stream_scalars(
-            query,
-            execution_options={"yield_per": batch_size},
-        )
+        result = await self._stream(extra_conditions, order_by, batch_size)
         async for row in result:
             yield row
+
+        await result.close()
+
+    async def stream_scalars_in_batches(
+        self,
+        extra_conditions: list[ColumnExpressionArgument] | None = None,
+        order_by: list[ColumnExpressionArgument] | None = None,
+        batch_size: int = 100,
+    ) -> AsyncGenerator[Sequence[M], None]:
+        result = await self._stream(extra_conditions, order_by, batch_size)
+        async for batch in result.partitions(batch_size):
+            yield batch
 
         await result.close()
 

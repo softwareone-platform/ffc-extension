@@ -105,3 +105,16 @@ class FFCAPIClient(BaseAPIClient):
         }
 
         return await self.create_tag(payload)
+
+    async def get_tags(
+        self,
+        limit: int | None = None,
+        offset: int | None = None,
+        rql: str | None = None,
+    ) -> httpx.Response:
+        response = await self.httpx_client.get(
+            "/admin/tags",
+            params=resolve_params(limit=limit, offset=offset, rql=rql),
+        )
+        response.raise_for_status()
+        return response
