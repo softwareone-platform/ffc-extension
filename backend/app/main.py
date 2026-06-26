@@ -15,6 +15,7 @@ from app.openapi import generate_openapi_spec
 from app.routers import (
     accounts,
     entitlements,
+    events,
     expenses,
     me,
     organizations,
@@ -132,6 +133,7 @@ def setup_app():
     )
 
     app.include_router(v1_router)
+    app.include_router(events.router)
 
     settings = get_settings()
 

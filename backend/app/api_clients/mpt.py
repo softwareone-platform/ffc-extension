@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import secrets
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
@@ -12,6 +13,8 @@ import httpx
 from app.billing.enum import JournalStatus
 from app.conf import get_settings
 from app.utils import get_jwt_token_expires
+
+logger = logging.getLogger(__name__)
 
 
 class TokenInfo:
@@ -89,6 +92,8 @@ class MPTClient:
             ),
         )
 
+        # Generic HTTP helpers
+
     async def get(
         self,
         endpoint: str,
@@ -98,26 +103,6 @@ class MPTClient:
         url = f"{endpoint}/{id}"
         if select:
             url = f"{url}?select={','.join(select)}"
-        response = await self.httpx_client.get(url)
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
-
-    async def get_collection(
-        self,
-        endpoint: str,
-        query: str | None = None,
-        select: list[str] | None = None,
-    ) -> dict[str, Any]:
-        parts = []
-        if query:
-            parts.append(query)
-        if select:
-            parts.append(f"select={','.join(select)}")
-        url = f"{endpoint}?{'&'.join(parts)}" if parts else endpoint
-
         response = await self.httpx_client.get(url)
         try:
             response.raise_for_status()
@@ -158,6 +143,28 @@ class MPTClient:
             f"{endpoint}/{id}/{action}",
             json=payload,
         )
+        try:
+            response.raise_for_status()
+            return response.json()
+        except Exception as task_error:
+            logger.warning("Failed to run action %s on object %s: %s", action, id, task_error)
+        finally:
+            await response.aclose()
+
+    async def get_collection(
+        self,
+        endpoint: str,
+        query: str | None = None,
+        select: list[str] | None = None,
+    ) -> dict[str, Any]:
+        parts = []
+        if query:
+            parts.append(query)
+        if select:
+            parts.append(f"select={','.join(select)}")
+        url = f"{endpoint}?{'&'.join(parts)}" if parts else endpoint
+
+        response = await self.httpx_client.get(url)
         try:
             response.raise_for_status()
             return response.json()
@@ -236,7 +243,79 @@ class MPTClient:
         page = await self.get_page(endpoint, limit=0, offset=0, query=query)
         return page["$meta"]["pagination"]["total"]
 
-    # Object specific methods
+    # Task methods
+
+    async def get_task(self, task_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("system/tasks", task_id, select=select)
+
+    async def update_task(self, task_id: str, payload: dict) -> dict[str, Any]:
+        return await self.update("system/tasks", task_id, payload=payload)
+
+    async def start_task(self, task_id: str, instance_id: str) -> dict[str, Any]:
+        task = await self.run_object_action("system/tasks", task_id, "execute")
+        params = task["parameters"]
+        params["instanceId"] = instance_id.upper()
+        return await self.update_task(task_id, {"parameters": params})
+
+    async def complete_task(
+        self, task_id: str, payload: dict | None = None
+    ) -> dict[str, Any] | None:
+        return await self.run_object_action("system/tasks", task_id, "complete", payload=payload)
+
+    async def fail_task(self, task_id: str, payload: dict | None = None):
+        return await self.run_object_action("system/tasks", task_id, "fail", payload=payload)
+
+    async def reschedule_task(self, task_id: str, payload: dict | None = None):
+        return await self.run_object_action("system/tasks", task_id, "reschedule", payload=payload)
+
+    # Order methods
+
+    async def get_order(self, order_id: str, select: list[str] | None = None) -> dict[str, Any]:
+        return await self.get("commerce/orders", order_id, select=select)
+
+    def get_orders(
+        self, query: str | None = None, select: list[str] | None = None
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        return self.collection_iterator("commerce/orders", query=query, select=select)
+
+    async def update_order(self, order_id, **kwargs):
+        response = await self.httpx_client.put(
+            f"/commerce/orders/{order_id}",
+            json=kwargs,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def set_status_to_querying(
+        self, order_id: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        response: httpx.Response = await self.httpx_client.post(
+            url=f"/commerce/orders/{order_id}/query",
+            json=payload,
+        )
+        try:
+            response.raise_for_status()
+            return response.json()
+        finally:
+            await response.aclose()
+
+    async def complete_order(self, order_id: str, payload: dict | None = None):
+        return await self.run_object_action(
+            "commerce/orders", order_id, "complete", payload=payload
+        )
+
+    async def fail_order(self, order_id: str, payload: dict | None = None):
+        return await self.run_object_action("commerce/orders", order_id, "fail", payload=payload)
+
+    async def create_subscription(self, order_id, subscription):
+        response = await self.httpx_client.post(
+            f"/commerce/orders/{order_id}/subscriptions",
+            json=subscription,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    # Account methods
 
     async def get_user(self, user_id: str, select: list[str] | None = None) -> dict[str, Any]:
         return await self.get("accounts/users", user_id, select=select)
@@ -247,27 +326,7 @@ class MPTClient:
     async def get_token(self, user_id: str, select: list[str] | None = None) -> dict[str, Any]:
         return await self.get("accounts/api-tokens", user_id, select=select)
 
-    async def get_task(self, task_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("system/tasks", task_id, select=select)
-
-    async def update_task(self, task_id: str, payload: dict) -> dict[str, Any]:
-        return await self.update("system/tasks", task_id, payload=payload)
-
-    async def start_task(self, task_id: str) -> dict[str, Any] | None:
-        return await self.run_object_action("system/tasks", task_id, "execute")
-
-    async def complete_task(
-        self, task_id: str, payload: dict | None = None
-    ) -> dict[str, Any] | None:
-        return await self.run_object_action("system/tasks", task_id, "complete", payload=payload)
-
-    async def get_order(self, order_id: str, select: list[str] | None = None) -> dict[str, Any]:
-        return await self.get("commerce/orders", order_id, select=select)
-
-    def get_orders(
-        self, query: str | None = None, select: list[str] | None = None
-    ) -> AsyncGenerator[dict[str, Any], None]:
-        return self.collection_iterator("commerce/orders", query=query, select=select)
+    # Authorization methods
 
     async def get_authorization(
         self, authorization_id: str, select: list[str] | None = None
@@ -277,6 +336,18 @@ class MPTClient:
             authorization_id,
             select=select,
         )
+
+    def get_templates_by_product_id(self, product_id: str) -> AsyncGenerator[dict[str, Any], None]:
+        return self.collection_iterator(f"/catalog/products/{product_id}/templates")
+
+    async def get_product_template_or_default(self, product_id, status, name=None):
+        name_or_default_filter = "eq(default,true)"
+        if name:
+            name_or_default_filter = f"or({name_or_default_filter},eq(name,{name}))"
+        rql_filter = f"and(eq(type,Order{status}),{name_or_default_filter})"
+        url = f"/catalog/products/{product_id}/templates?{rql_filter}&order=default&limit=1"
+        templates = await self.get_collection(url)
+        return templates["data"][0]
 
     def get_authorizations_for_product(
         self,
@@ -304,11 +375,28 @@ class MPTClient:
 
         return await self.count(endpoint="commerce/agreements", query=rql)
 
+    # Agreement methods
+
     def get_agreements_by_organization(
         self, organization_id: str
     ) -> AsyncGenerator[dict[str, Any], None]:
         rql = f"eq(externalIds.vendor,{organization_id})&select=parameters"
         return self.collection_iterator("commerce/agreements", rql)
+
+    async def get_agreement(
+        self, agreement_id: str, select: list[str] | None = None
+    ) -> dict[str, Any]:
+        return await self.get("commerce/agreements", agreement_id, select=select)
+
+    async def update_agreement(self, agreement_id, **kwargs):
+        response = await self.httpx_client.put(
+            f"/commerce/agreements/{agreement_id}",
+            json=kwargs,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    # Journal methods
 
     async def get_journal_by_authorization_external_id(
         self, authorization_id: str, external_id: str

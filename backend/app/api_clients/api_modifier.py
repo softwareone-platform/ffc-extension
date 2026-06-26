@@ -4,10 +4,7 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import jwt
 
-from app.api_clients.base import (
-    APIClientError,
-    BaseAPIClient,
-)
+from app.api_clients.base import APIClientError, BaseAPIClient
 from app.conf import Settings
 
 API_MODIFIER_JWT_ALGORITHM = "HS256"
@@ -89,7 +86,6 @@ class APIModifierClient(BaseAPIClient):
                 "password": password,
             },
         )
-
         response.raise_for_status()
         return response
 
