@@ -7,9 +7,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEntitlementsDetailsApi } from "../api";
 
-export function EntitlementHighlights({ entitlementId }: { entitlementId: string | undefined }) {
-  if (!entitlementId) return <></>;
-
+export function EntitlementHighlights({ entitlementId }: { entitlementId: string }) {
   const { data: entity } = useEntitlementsDetailsApi(entitlementId);
   const tProperties = useFixedT("shared:grid:columns");
 

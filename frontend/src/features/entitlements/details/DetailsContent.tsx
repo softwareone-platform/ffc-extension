@@ -20,7 +20,7 @@ export function EntitlementDetailsContent() {
 
   return (
     <>
-      <EntitlementHighlights entitlementId={entitlementId} />
+      {entitlementId && <EntitlementHighlights entitlementId={entitlementId} />}
       <Navigation.TopBar items={topBarItems} />
       <Card>
         <Outlet />
