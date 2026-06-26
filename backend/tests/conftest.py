@@ -64,6 +64,16 @@ def skip_logging_setup() -> Generator:
         yield
 
 
+@pytest.fixture(autouse=True)
+def _clear_instance_external_id_cache() -> Generator[None]:
+    """Clear the cached instance external id so per-test mocking does not leak."""
+    from app.utils import get_instance_external_id
+
+    get_instance_external_id.cache_clear()
+    yield
+    get_instance_external_id.cache_clear()
+
+
 def pytest_collection_modifyitems(items):
     pytest_asyncio_tests = (item for item in items if is_async_test(item))
     session_scope_marker = pytest.mark.asyncio(loop_scope="session")
@@ -771,6 +781,33 @@ def fulfillment_parameters_factory():
         ]
 
     return _fulfillment_parameters
+
+
+@pytest.fixture()
+def mpt_extension_client():
+    """An `MPTClient` authenticated with the static extension token (no token refresh)."""
+    from app.api_clients.mpt import MPTClient, MPTExtensionAuth
+
+    return MPTClient(MPTExtensionAuth())
+
+
+@pytest.fixture()
+def order_with_parameters(
+    order_parameters_factory: Callable[[], list[dict]],
+    fulfillment_parameters_factory: Callable[[], list[dict]],
+) -> Callable[[], dict]:
+    """Build an order payload carrying both ordering and fulfillment parameters."""
+
+    def _order() -> dict:
+        return {
+            "id": "ORD-1234-5678",
+            "parameters": {
+                "ordering": order_parameters_factory(),
+                "fulfillment": fulfillment_parameters_factory(),
+            },
+        }
+
+    return _order
 
 
 @pytest.fixture()

@@ -10,7 +10,10 @@ from fastapi.staticfiles import StaticFiles
 
 from app.conf import get_settings
 from app.db.base import configure_db_engine, verify_db_connection
-from app.dependencies.auth import authentication_required, check_admin_account
+from app.db.models import AccountType
+from app.dependencies.auth import (
+    AuthorizedAccountTypes,
+)
 from app.openapi import generate_openapi_spec
 from app.routers import (
     accounts,
@@ -102,32 +105,64 @@ def setup_app():
     v1_router.include_router(
         expenses.router,
         prefix="/expenses",
-        dependencies=[Depends(check_admin_account)],
+        dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
         tags=["Billing"],
     )
     v1_router.include_router(
         entitlements.router,
         prefix="/entitlements",
-        dependencies=[Depends(authentication_required)],
+        dependencies=[
+            Depends(
+                AuthorizedAccountTypes(
+                    AccountType.ADMIN,
+                    AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
+                )
+            )
+        ],
         tags=["Billing"],
     )
     v1_router.include_router(
         organizations.router,
         prefix="/organizations",
-        dependencies=[Depends(authentication_required)],
+        dependencies=[
+            Depends(
+                AuthorizedAccountTypes(
+                    AccountType.ADMIN,
+                    AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
+                )
+            )
+        ],
         tags=["FinOps for Cloud Provisioning"],
     )
     v1_router.include_router(
         accounts.router,
         prefix="/accounts",
-        dependencies=[Depends(authentication_required)],
+        dependencies=[
+            Depends(
+                AuthorizedAccountTypes(
+                    AccountType.ADMIN,
+                    AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
+                )
+            )
+        ],
         tags=["Portal Administration"],
     )
 
     v1_router.include_router(
         me.router,
         prefix="/me",
-        dependencies=[Depends(authentication_required)],
+        dependencies=[
+            Depends(
+                AuthorizedAccountTypes(
+                    AccountType.ADMIN,
+                    AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
+                )
+            )
+        ],
         tags=["Auth"],
     )
 

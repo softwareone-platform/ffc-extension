@@ -29,7 +29,7 @@ class LimitOffsetParams(BaseModel, AbstractParams):
 
 
 class LimitOffsetPage[S: BaseSchema](_LimitOffsetPage[S]):
-    limit: GreaterEqualZero | None
+    limit: GreaterEqualZero | None  # type: ignore[assignment]
 
     __params_type__ = LimitOffsetParams  # type: ignore
 

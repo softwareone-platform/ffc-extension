@@ -6,7 +6,7 @@ from sqlalchemy import ColumnExpressionArgument, Select
 from app.db.handlers import NotFoundError
 from app.db.models import Account, Entitlement
 from app.dependencies.api_clients import OptscaleClient
-from app.dependencies.auth import CurrentAuthContext, check_admin_account
+from app.dependencies.auth import AuthorizedAccountTypes, CurrentAuthContext
 from app.dependencies.db import (
     AccountRepository,
     EntitlementRepository,
@@ -164,7 +164,7 @@ async def delete_entitlement_by_id(
 @router.post(
     "/{id}/redeem",
     response_model=EntitlementRead,
-    dependencies=[Depends(check_admin_account)],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def redeem_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],

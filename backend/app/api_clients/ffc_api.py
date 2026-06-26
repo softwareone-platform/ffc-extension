@@ -32,8 +32,8 @@ class FFCAPIClusterSecretAuth(httpx.Auth):
 
 def resolve_params(
     limit: int | None = None, offset: int | None = None, rql: str | None = None
-) -> list[tuple[str, str]]:
-    params: list[tuple[str, str]] = []
+) -> list[tuple[str, str | int | float | bool | None]]:
+    params: list[tuple[str, str | int | float | bool | None]] = []
     if limit is not None:
         params.append(("limit", str(limit)))
     if offset is not None:

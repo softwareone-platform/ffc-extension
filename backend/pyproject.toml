@@ -168,6 +168,9 @@ exclude_lines = [
     "pragma: no branch",
     "NotImplementedError",
 ]
+omit = [
+    "**/__main__.py",
+]
 
 [tool.mypy]
 warn_no_return = false

@@ -17,10 +17,10 @@ from app.dependencies.api_clients import (
     OptscaleAuthClient,
     OptscaleClient,
 )
-from app.dependencies.auth import check_admin_account
+from app.dependencies.auth import AuthorizedAccountTypes
 from app.dependencies.db import AdditionalAdminRequestRepository, OrganizationRepository
 from app.dependencies.path import OrganizationId
-from app.enums import DatasourceType, OrganizationStatus
+from app.enums import AccountType, DatasourceType, OrganizationStatus
 from app.openapi import examples
 from app.pagination import LimitOffsetPage, LimitOffsetParams, paginate
 from app.rql import OrganizationRules, RQLPassthrough, RQLQuery
@@ -36,7 +36,7 @@ from app.schemas.organizations import (
 )
 from app.utils import wrap_exc_in_http_response, wrap_http_error_in_502
 
-router = APIRouter(dependencies=[Depends(check_admin_account)])
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +58,7 @@ logger = logging.getLogger(__name__)
             },
         },
     },
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_organizations(
     organization_repo: OrganizationRepository,
@@ -80,6 +81,7 @@ async def get_organizations(
         },
     },
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def create_organization(
     data: OrganizationCreate,
@@ -162,6 +164,7 @@ async def fetch_organization_or_404(
             },
         },
     },
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_organization_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
@@ -169,14 +172,18 @@ async def get_organization_by_id(
 ):
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
         response = await ffc_api_client.fetch_expenses_for_organization(
-            organization_id=organization.linked_organization_id,
+            organization_id=organization.linked_organization_id,  # type: ignore[arg-type]
         )
 
     expenses = response.json()
     return convert_model_to_schema(OrganizationRead, organization, expenses_info=expenses)
 
 
-@router.get("/{organization_id}/datasources", response_model=LimitOffsetPage[DatasourceRead])
+@router.get(
+    "/{organization_id}/datasources",
+    response_model=LimitOffsetPage[DatasourceRead],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
+)
 async def get_datasources_by_organization_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     ffc_api_client: FFCAPIClient,
@@ -187,7 +194,7 @@ async def get_datasources_by_organization_id(
 
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
         response = await ffc_api_client.fetch_datasources_for_organization(
-            organization_id=organization.linked_organization_id,
+            organization_id=organization.linked_organization_id,  # type: ignore[arg-type]
             limit=params.limit,
             offset=params.offset,
             rql=rql,
@@ -213,7 +220,11 @@ async def get_datasources_by_organization_id(
     )
 
 
-@router.get("/{organization_id}/datasources/{datasource_id}", response_model=DatasourceRead)
+@router.get(
+    "/{organization_id}/datasources/{datasource_id}",
+    response_model=DatasourceRead,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
+)
 async def get_datasource_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
@@ -241,6 +252,7 @@ async def get_datasource_by_id(
 @router.post(
     "/{organization_id}/datasources/{datasource_id}/force-reimport",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def force_reimport_datasource(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
@@ -264,6 +276,7 @@ async def force_reimport_datasource(
 @router.get(
     "/{organization_id}/employees",
     response_model=LimitOffsetPage[EmployeeRead],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_employees_by_organization_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
@@ -274,7 +287,7 @@ async def get_employees_by_organization_id(
     validate_linked_organization_id(organization)
     with wrap_http_error_in_502(f"Error fetching employees for organization {organization.name}"):
         response = await ffc_api_client.fetch_users_for_organization(
-            organization.linked_organization_id,
+            organization.linked_organization_id,  # type: ignore[arg-type]
             limit=params.limit,
             offset=params.offset,
             rql=rql,
@@ -302,6 +315,7 @@ async def get_employees_by_organization_id(
 @router.post(
     "/{organization_id}/employees/{user_id}/make-admin",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def make_organization_user_admin(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
@@ -333,6 +347,7 @@ async def make_organization_user_admin(
             },
         },
     },
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def update_organization(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
@@ -406,7 +421,11 @@ async def update_organization(
     return convert_model_to_schema(OrganizationRead, db_organization)
 
 
-@router.delete("/{organization_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{organization_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+)
 async def delete_organization_by_id(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     organization_repo: OrganizationRepository,
@@ -428,7 +447,11 @@ async def delete_organization_by_id(
     await organization_repo.delete(db_organization)
 
 
-@router.post("/{organization_id}/add-admin", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{organization_id}/add-admin",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+)
 async def add_additional_admin(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     optscale_client: OptscaleClient,

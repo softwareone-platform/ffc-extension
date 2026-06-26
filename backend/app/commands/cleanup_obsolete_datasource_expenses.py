@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import cast
 
 import typer
 from dateutil.relativedelta import relativedelta  # type: ignore[import-untyped]
-from sqlalchemy import delete, func, select
+from sqlalchemy import CursorResult, delete, func, select
 
 from app.conf import Settings
 from app.db.base import session_factory
@@ -39,7 +40,9 @@ async def main(settings: Settings) -> None:
             "Deleting %s obsolete datasource expenses from the database", num_obsolete_expenses
         )
 
-        result = await session.execute(delete(DatasourceExpense).where(where_cond))
+        result = cast(
+            CursorResult, await session.execute(delete(DatasourceExpense).where(where_cond))
+        )
 
         message = (
             f"{result.rowcount} obsolete (older than "
