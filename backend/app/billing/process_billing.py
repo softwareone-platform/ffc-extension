@@ -4,7 +4,7 @@ import json
 import logging
 import tempfile
 from _decimal import Decimal
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable, MutableMapping
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime
 from io import BytesIO
@@ -51,11 +51,15 @@ DATASOURCE_TYPE_TO_NAME_MAP = {
     "azure_cnr": "Microsoft Azure",
     "gcp_cnr": "Google Cloud Platform",
 }
+VALID_JOURNAL_STATUSES = frozenset({JournalStatus.DRAFT, JournalStatus.VALIDATED})
 
 
-class PrefixAdapter(logging.LoggerAdapter):
-    def process(self, msg, kwargs):
-        return f"[{self.extra['prefix']}] {msg}", kwargs
+class PrefixAdapter(logging.LoggerAdapter[logging.Logger]):
+    def process(
+        self, msg: Any, kwargs: MutableMapping[str, Any]
+    ) -> tuple[Any, MutableMapping[str, Any]]:
+        prefix = self.extra["prefix"] if self.extra else ""
+        return f"[{prefix}] {msg}", kwargs
 
 
 async def process_billing(
@@ -63,8 +67,8 @@ async def process_billing(
     month: int,
     cutoff_day: int,
     authorization_id: str | None = None,
-    dry_run=False,
-):
+    dry_run: bool = False,
+) -> None:
     """
     This method starts the processing of all billings for each authorization.
     It also supports the processing of a single authorization if provided.
@@ -101,7 +105,7 @@ class AuthorizationProcessor:
         self,
         year: int,
         month: int,
-        authorization: dict,
+        authorization: dict[str, Any],
         dry_run: bool = False,
         semaphore: asyncio.Semaphore | None = None,
     ):
@@ -158,9 +162,9 @@ class AuthorizationProcessor:
 
     async def maybe_call(
         self,
-        func,
-        *args,
-        **kwargs,
+        func: Callable[..., Awaitable[Any]],
+        *args: Any,
+        **kwargs: Any,
     ) -> Any | None:
         """
         Conditionally calls and awaits the given asynchronous function.
@@ -198,7 +202,7 @@ class AuthorizationProcessor:
         filepath = f"{tempfile.gettempdir()}/{filepath}" if not self.dry_run else filepath
         return filepath
 
-    async def evaluate_journal_status(self, journal_external_id) -> dict[str, Any] | None:
+    async def evaluate_journal_status(self, journal_external_id: str) -> dict[str, Any] | None:
         """
         Evaluates the status of a journal.
 
@@ -360,7 +364,7 @@ class AuthorizationProcessor:
                 await self.mpt_client.httpx_client.aclose()
                 await self.exchange_rate_client.httpx_client.aclose()
 
-    async def write_charges_file(self, filepath) -> bool:
+    async def write_charges_file(self, filepath: str) -> bool:
         """
         This method writes the charges file to the given filepath.
         If there is more than one agreement for an organization, it won't be processed.
@@ -423,7 +427,12 @@ class AuthorizationProcessor:
                     return False
                 return True
 
-    async def complete_journal_process(self, filepath, journal, journal_external_id) -> dict:
+    async def complete_journal_process(
+        self,
+        filepath: str,
+        journal: dict[str, Any] | None,
+        journal_external_id: str,
+    ) -> dict[str, Any]:
         """
         This method uploads and submits the given journal, attaching also the exchange rates
         files.
@@ -512,7 +521,7 @@ class AuthorizationProcessor:
 
     async def attach_exchange_rates(
         self, journal_id: str, currency: str, exchange_rates: dict[str, Any]
-    ) -> dict[str, Any] | None:
+    ) -> None:
         """
         This method checks if an attachment already exists for the given journal.
         If it exists, it will be deleted and a new one will be created with the
@@ -525,12 +534,12 @@ class AuthorizationProcessor:
         exchange_rates_hash = hasher.hexdigest()
         filename = f"{currency}_{exchange_rates_hash}"
         attachment = await self.mpt_client.get_journal_attachment(journal_id, f"{currency}_")
-        if attachment:  # pragma no cover
+        if attachment:
             if attachment["name"] == filename:
                 return None
             await self.mpt_client.delete_journal_attachment(journal_id, attachment["id"])
 
-        return await self.mpt_client.create_journal_attachment(journal_id, filename, serialized)
+        await self.mpt_client.create_journal_attachment(journal_id, filename, serialized)
 
     async def dump_organization_charges(
         self,
@@ -671,7 +680,9 @@ class AuthorizationProcessor:
         )
         return charges
 
-    async def is_journal_status_validated(self, journal_id, max_attempts=None) -> bool:
+    async def is_journal_status_validated(
+        self, journal_id: str, max_attempts: int | None = None
+    ) -> bool:
         """
         Check if a journal has reached 'Validated' status with exponential backoff retry.
 
@@ -730,8 +741,8 @@ class AuthorizationProcessor:
                     trial_info.refund_to,
                     (
                         "Refund due to trial period "
-                        f"(from {trial_start_date.strftime('%d %b %Y')} "  # type: ignore
-                        f"to {trial_end_date.strftime('%d %b %Y')})"  # type: ignore
+                        f"(from {trial_start_date.strftime('%d %b %Y')} "
+                        f"to {trial_end_date.strftime('%d %b %Y')})"
                     ),
                 )
             )
@@ -967,7 +978,7 @@ def get_billing_percentage(agreement: dict[str, Any]) -> Decimal:
     )
 
 
-def split_entitlement_days_into_ranges(entitlement_days: set[int]):
+def split_entitlement_days_into_ranges(entitlement_days: set[int]) -> list[tuple[int, int]]:
     if not entitlement_days:
         return []
     sorted_days = sorted(entitlement_days)
@@ -976,12 +987,8 @@ def split_entitlement_days_into_ranges(entitlement_days: set[int]):
     for d in sorted_days[1:]:
         if d == prev + 1:
             prev = d
-        else:  # pragma no cover
-            # investigate how to test this case
+        else:
             ranges.append((start, prev))
             start = prev = d
     ranges.append((start, prev))
     return ranges
-
-
-VALID_JOURNAL_STATUSES = frozenset({JournalStatus.DRAFT, JournalStatus.VALIDATED})

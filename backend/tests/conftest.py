@@ -5,7 +5,6 @@ import uuid
 from collections.abc import AsyncGenerator, Callable, Generator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from types import SimpleNamespace
 
 import httpx
 import jwt
@@ -24,7 +23,6 @@ from sqlalchemy.ext.asyncio import (
 from app.api_clients.base import BaseAPIClient
 from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
-from app.billing.process_billing import AuthorizationProcessor
 from app.conf import Settings, get_settings
 from app.db.base import configure_db_engine, session_factory
 from app.db.models import (
@@ -204,6 +202,9 @@ def entitlement_factory(
         owner: Account | None = None,
         status: EntitlementStatus | None = None,
         redeem_at: datetime | None = None,
+        redeemed_at: datetime | None = None,
+        redeemed_by: Organization | None = None,
+        terminated_at: datetime | None = None,
     ) -> Entitlement:
         entitlement = Entitlement(
             name=name or "AWS",
@@ -216,6 +217,9 @@ def entitlement_factory(
             status=status or EntitlementStatus.NEW,
             owner=owner or await account_factory(),
             redeem_at=redeem_at,
+            redeemed_at=redeemed_at,
+            redeemed_by=redeemed_by,
+            terminated_at=terminated_at,
         )
         db_session.add(entitlement)
         await db_session.commit()
@@ -1543,25 +1547,6 @@ def ffc_employee():
 
 
 @pytest.fixture()
-def billing_process_instance(request):
-    params = {
-        "month": 6,
-        "year": 2025,
-        "authorization": {
-            "id": "AUT-5305-9928",
-            "name": "TEST",
-            "currency": "USD",
-        },
-    }
-
-    # Override defaults if test provides parameters via @pytest.mark.parametrize indirect
-    if param := getattr(request, "param", None):
-        params.update(param)
-
-    return AuthorizationProcessor(**params)
-
-
-@pytest.fixture()
 def authorization_process_result():
     return ProcessResultInfo(
         authorization_id="AUT-5305-9928",
@@ -2369,124 +2354,6 @@ def exchange_rates():
             "ZWL": 6.9749,
         },
     }
-
-
-@pytest.fixture()
-def org_mock_generator(get_organizations):
-    async def _gen():
-        yield get_organizations
-
-    return _gen
-
-
-@pytest.fixture()
-def org_mock_generator_agr_000(get_organizations):
-    get_organizations.operations_external_id = "AGR-0000-0000-0000"
-
-    async def _gen():
-        yield get_organizations
-
-    return _gen
-
-
-@pytest.fixture()
-def agr_mock_generator(agreements):
-    async def _gen():
-        for agr in agreements["data"]:
-            yield agr
-
-    return _gen
-
-
-@pytest.fixture()
-def agr_mock_generator_with_trial(agreement_data_with_trial):
-    async def _gen():
-        for agr in agreement_data_with_trial():
-            yield agr
-
-    return _gen
-
-
-@pytest.fixture()
-def exp_mock_generator(expenses):
-    async def _gen():
-        for exp in expenses:
-            yield exp
-
-    return _gen
-
-
-@pytest.fixture()
-def patch_get_by_billing_currency(mocker, org_mock_generator):
-    def _factory(*_args, **_kwargs):
-        return org_mock_generator()
-
-    return mocker.patch(
-        "app.billing.process_billing.OrganizationHandler.get_by_billing_currency",
-        side_effect=_factory,
-    )
-
-
-@pytest.fixture()
-def patch_get_for_billing(mocker, active_entitlement):
-    def _factory(*_args, **_kwargs):
-        events = active_entitlement.get("events", {})
-        redeemed_at = events.get("redeemed", {}).get("at")
-        terminated_at = events.get("terminated", {}).get("at")
-        return SimpleNamespace(
-            id=active_entitlement.get("id"),
-            redeemed_at=(
-                datetime.fromisoformat(redeemed_at.replace("Z", "+00:00")) if redeemed_at else None
-            ),
-            terminated_at=(
-                datetime.fromisoformat(terminated_at.replace("Z", "+00:00"))
-                if terminated_at
-                else None
-            ),
-        )
-
-    return mocker.patch(
-        "app.billing.process_billing.EntitlementHandler.get_for_billing",
-        side_effect=_factory,
-    )
-
-
-@pytest.fixture()
-def patch_get_agreements_from_mpt(mocker, billing_process_instance, agr_mock_generator):
-    return mocker.patch.object(
-        billing_process_instance.mpt_client,
-        "get_agreements_by_organization",
-        return_value=agr_mock_generator(),
-    )
-
-
-@pytest.fixture()
-def patch_return_datasource_expenses(mocker, billing_process_instance, exp_mock_generator):
-    return mocker.patch(
-        "app.billing.process_billing.DatasourceExpenseHandler.get_expenses_for_billing",
-        return_value=exp_mock_generator(),
-    )
-
-
-@pytest.fixture()
-def patch_get_agreements_with_trial(
-    mocker, billing_process_instance, agr_mock_generator_with_trial
-):
-    return mocker.patch.object(
-        billing_process_instance.mpt_client,
-        "get_agreements_by_organization",
-        return_value=agr_mock_generator_with_trial(),
-    )
-
-
-@pytest.fixture()
-def patch_get_by_billing_currency_for_agr_000(
-    mocker, billing_process_instance, agr_mock_generator, org_mock_generator_agr_000
-):
-    return mocker.patch(
-        "app.billing.process_billing.OrganizationHandler.get_by_billing_currency",
-        return_value=org_mock_generator_agr_000(),
-    )
 
 
 class TestClientAuth(httpx.Auth):
