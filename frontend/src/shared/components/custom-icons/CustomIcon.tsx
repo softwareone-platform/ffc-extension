@@ -10,7 +10,7 @@ type IconProps = {
   className?: string;
 };
 
-function DataSourceIcon({
+function CustomIcon({
   name,
   width,
   height,
@@ -62,4 +62,4 @@ function DataSourceIcon({
   );
 }
 
-export default DataSourceIcon;
+export default CustomIcon;

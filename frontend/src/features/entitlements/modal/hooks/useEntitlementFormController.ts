@@ -5,9 +5,9 @@ import { AxiosError } from "axios";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
+import { ModalEntryProps } from "~shared/components/modal/modalEntry";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { ModalEntryProps } from "~shared/components/modal/modalEntry";
 import { AddEntitlementForm } from "../AddEntitlementForm.Schema";
 import { useAddEntitlementForm } from "./useAddEntitlementForm";
 

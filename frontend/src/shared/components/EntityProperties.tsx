@@ -5,7 +5,7 @@ import { BoldText } from "@swo/design-system/text";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { AddWizardForm } from "../../features/entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
-import AccountTypeIcon from "./account-type-icons/AccountTypeIcon";
+import CustomIcon from "./custom-icons/CustomIcon";
 import { Status } from "./entity-status-chip";
 
 export interface EntityPropertiesProps {
@@ -36,7 +36,7 @@ export function EntityProps({ entity }: EntityPropertiesProps) {
               primaryContent={entity.affiliate.name}
               secondaryContent={entity.affiliate.id}
               isPrimaryContentBold={false}
-              icon={<AccountTypeIcon name={entity.affiliate.integration} size={44} />}
+              icon={<CustomIcon name={entity.affiliate.integration} size={44} />}
             />
           )}
         </InPageHighlight.Item>

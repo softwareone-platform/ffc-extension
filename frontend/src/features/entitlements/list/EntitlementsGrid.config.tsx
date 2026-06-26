@@ -12,18 +12,17 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { getStatusLabel } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
 import { useEntitlementsApi } from "~entitlements/api";
-import AccountTypeIcon from "~shared/components/account-type-icons/AccountTypeIcon";
-import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon";
+import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
 import { Entitlement } from "../api/model";
-import { getStatusLabel } from "@swo/mp-status-chip";
 
 type Columns = Array<
   Omit<GridColumnDefinition<Entitlement>, "fields"> & {
@@ -64,7 +63,7 @@ export function useColumns(): Columns {
               primaryContent={item.owner.name}
               secondaryContent={item.owner.id}
               isPrimaryContentBold={false}
-              icon={<AccountTypeIcon name={item.owner.integration} size={44} />}
+              icon={<CustomIcon name={item.owner.integration} size={44} />}
             />
           </GridCellSimple>
         ),
@@ -82,7 +81,7 @@ export function useColumns(): Columns {
                 primaryContent={item.linked_datasource_name as string}
                 secondaryContent={item.linked_datasource_id as string}
                 secondaryContentMaxHeight={50}
-                icon={<DataSourceIcon name={item.linked_datasource_type as string} size={44} />}
+                icon={<CustomIcon name={item.linked_datasource_type as string} size={44} />}
               />
             )}
           </GridCellSimple>

@@ -13,7 +13,7 @@ import { Paths } from "@swo/rql-client";
 
 import { useOrganizationsApi } from "~organizations/api";
 import { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
-import DataSourceIcon from "~shared/components/data-source-icons/DataSourceIcon";
+import DataSourceIcon from "~shared/components/custom-icons/CustomIcon";
 import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";

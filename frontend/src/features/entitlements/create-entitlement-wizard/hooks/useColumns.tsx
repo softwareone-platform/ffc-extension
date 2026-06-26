@@ -2,7 +2,7 @@ import { EntityReference } from "@swo/design-system/entity-reference";
 import { Column } from "@swo/design-system/list";
 
 import { Account } from "~features/entitlements/api/model";
-import AccountTypeIcon from "~shared/components/account-type-icons/AccountTypeIcon";
+import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 
 const columns: Column<Account>[] = [
   { name: "id", filterable: true, hide: true },
@@ -17,7 +17,7 @@ const columns: Column<Account>[] = [
             primaryContent={data.name}
             secondaryContent={data.id}
             isPrimaryContentBold={false}
-            icon={<AccountTypeIcon name={data.integration} size={44} />}
+            icon={<CustomIcon name={data.integration} size={44} />}
           />
         </>
       );
