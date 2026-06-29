@@ -1,3 +1,5 @@
+import enum
+
 MPT_ORDER_STATUS_PROCESSING = "Processing"
 MPT_ORDER_STATUS_QUERYING = "Querying"
 MPT_ORDER_STATUS_COMPLETED = "Completed"
@@ -13,3 +15,16 @@ ORDER_TYPE_TERMINATE = "Termination"
 PROCESSING_TEMPLATE_TYPE = "OrderProcessing"
 QUERYING_TEMPLATE_TYPE = "OrderQuerying"
 COMPLETED_TEMPLATE_TYPE = "OrderCompleted"
+
+
+class ProcessResult(enum.StrEnum):
+    COMPLETE = "Complete"
+    RESCHEDULE = "Reschedule"
+    CANCEL = "Cancel"
+    SKIP = "Skip"
+
+
+class ExceptionSeverity(enum.StrEnum):
+    WARNING = "Warning"
+    ERROR = "Error"
+    INFO = "Info"

@@ -1,5 +1,4 @@
 import copy
-import enum
 import logging
 import secrets
 from datetime import date
@@ -24,6 +23,7 @@ from app.fulfilment.constants import (
     PURCHASE_EXISTING_TEMPLATE_NAME,
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
+    ProcessResult,
 )
 from app.fulfilment.error import (
     ERR_DUE_DATE_IS_REACHED,
@@ -50,13 +50,6 @@ from app.parameters import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class ExceptionProcessResult(enum.StrEnum):
-    COMPLETE = "Complete"
-    RESCHEDULE = "Reschedule"
-    CANCEL = "Cancel"
-    SKIP = "Skip"
 
 
 class OrderProcessor:
@@ -351,10 +344,10 @@ class PurchaseOrderProcessor(OrderProcessor):
                 order_id=self.order["id"],
                 payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
             )
-            return ExceptionProcessResult.COMPLETE
+            return ProcessResult.COMPLETE
         if isinstance(exc, OrderMovedToQuery | OrderNotValidError):
             # no fail order
-            return ExceptionProcessResult.SKIP
+            return ProcessResult.SKIP
 
         due_date: date | None = get_due_date(self.order) if self.order else None
         if due_date is None:
@@ -363,17 +356,17 @@ class PurchaseOrderProcessor(OrderProcessor):
                 order_id=self.order["id"],
                 payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
             )
-            return ExceptionProcessResult.CANCEL, ERR_DUE_DATE_NOT_SET.to_dict()
+            return ProcessResult.CANCEL, ERR_DUE_DATE_NOT_SET.to_dict()
         if now < due_date:
             # reschedule
-            return ExceptionProcessResult.RESCHEDULE
+            return ProcessResult.RESCHEDULE
         else:
             # fail order
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
                 payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
             )
-            return ExceptionProcessResult.COMPLETE, ERR_DUE_DATE_NOT_SET.to_dict(
+            return ProcessResult.COMPLETE, ERR_DUE_DATE_NOT_SET.to_dict(
                 payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
             )
 

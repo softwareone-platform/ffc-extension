@@ -4,14 +4,13 @@ from typing import assert_never
 
 from fastapi import APIRouter
 
-from app.api_clients.mpt import MPTClient
 from app.conf import get_settings
 from app.dependencies.api_clients import (
     ExtensionClient,
 )
 from app.dependencies.core import ExtensionContext
 from app.dependencies.fulfillment import OrderProcessorFactoryDep
-from app.fulfilment.processing import ExceptionProcessResult
+from app.fulfilment.constants import ExceptionSeverity, ProcessResult
 from app.schemas.core import Event, EventResponse
 
 logger = logging.getLogger(__name__)
@@ -38,34 +37,42 @@ async def process_order(
         return EventResponse.ok()
 
     except Exception as exc:
-        # order = getattr(exc, "order", None) or order
-        action = await processor.handle_exception(exc, now=datetime.now(UTC).date())
-        return await _process_error_and_send_response(action, exc, ext_client, order_id, task_id)
+        result = await processor.handle_exception(exc, now=datetime.now(UTC).date())
 
+        error_message = str(exc)
+        logger.error("Process result %s for task %s with error: %s", result, task_id, error_message)
+        match result:
+            case ProcessResult.RESCHEDULE:
+                await ext_client.log_task(
+                    task_id,
+                    severity=ExceptionSeverity.WARNING,
+                    error_message=error_message,
+                )
+                await ext_client.reschedule_task(task_id)
+                return EventResponse.reschedule(seconds=get_settings().reschedule_seconds)
 
-async def _process_error_and_send_response(
-    action, exc: Exception, ext_client: MPTClient, order_id: str, task_id: str
-) -> EventResponse:
-    now = datetime.now(UTC).date()
-    error_message = str(exc)
-    logger.error(f"ACTION {action} occurred")
-
-    async def _description() -> str:
-        task = await ext_client.get_task(task_id)
-        return f"{task.get('description', '')} - {now.isoformat()} - {error_message}"
-
-    match action:
-        case ExceptionProcessResult.RESCHEDULE:
-            await ext_client.reschedule_task(task_id, payload={"description": await _description()})
-            return EventResponse.reschedule(seconds=get_settings().reschedule_seconds)
-
-        case ExceptionProcessResult.COMPLETE:
-            await ext_client.complete_task(task_id)
-            return EventResponse.ok()
-        case ExceptionProcessResult.CANCEL:
-            return EventResponse.cancel()
-        case ExceptionProcessResult.SKIP:
-            await ext_client.complete_task(task_id)
-            return EventResponse.ok()
-        case _:
-            assert_never(action)
+            case ProcessResult.COMPLETE:
+                await ext_client.log_task(
+                    task_id,
+                    severity=ExceptionSeverity.ERROR,
+                    error_message=error_message,
+                )
+                await ext_client.complete_task(task_id)
+                return EventResponse.ok()
+            case ProcessResult.CANCEL:
+                await ext_client.log_task(
+                    task_id,
+                    severity=ExceptionSeverity.ERROR,
+                    error_message=error_message,
+                )
+                return EventResponse.cancel()
+            case ProcessResult.SKIP:
+                await ext_client.log_task(
+                    task_id,
+                    severity=ExceptionSeverity.INFO,
+                    error_message=error_message,
+                )
+                await ext_client.complete_task(task_id)
+                return EventResponse.ok()
+            case _:
+                assert_never(result)

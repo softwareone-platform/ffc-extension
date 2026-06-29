@@ -232,7 +232,6 @@ async def test_process_order_exception(
 
 
 async def test_process_order_bug(
-    mocker,
     mpt_api_client: AsyncClient,
     ffc_jwt_token: str,
     order_factory,
