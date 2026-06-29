@@ -12,14 +12,12 @@ const columns: Column<Account>[] = [
     cell: (item) => {
       const data = item.data;
       return (
-        <>
-          <EntityReference
-            primaryContent={data.name}
-            secondaryContent={data.id}
-            isPrimaryContentBold={false}
-            icon={<CustomIcon name={data.integration} size={44} />}
-          />
-        </>
+        <EntityReference
+          primaryContent={data.name}
+          secondaryContent={data.id}
+          isPrimaryContentBold={false}
+          icon={<CustomIcon name={data.integration} size={44} />}
+        />
       );
     },
   },

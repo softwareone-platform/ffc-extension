@@ -11,7 +11,6 @@ import { EntitlementHighlights } from "../components/EntitlementHighlights";
 // Inner content for entitlement details. Outer chrome comes from MainLayout
 // (standalone) or DetailsLayout (per-feature entry).
 export function EntitlementDetailsContent() {
-
   const tDetails = useFixedT("entitlement:details");
 
   const topBarItems = [{ label: tDetails("general:title"), path: SEGMENTS.general }];

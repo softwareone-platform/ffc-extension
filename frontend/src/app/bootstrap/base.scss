@@ -1,17 +1,3 @@
-// @forward "../../../node_modules/@swo/design-tokens/src/index";
-// @forward "../../../node_modules/@swo/design-tokens/src/style";
-
-// html,
-// body,
-// #root {
-//   margin: 0;
-//   height: auto;
-// }
-
-// .navigation-host {
-//   height: auto !important;
-// }
-
 @use "../../../node_modules/@swo/design-tokens/src/index" as *;
 @use "../../../node_modules/@swo/design-tokens/src/style" as *;
 

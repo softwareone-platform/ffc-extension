@@ -3,7 +3,6 @@ import { PropsWithChildren } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 
-import { buildRqlQuery } from "@swo/design-system/grid";
 import { RqlQuery } from "@swo/rql-client";
 
 import { useReactQueryRqlGrid } from "./useReactQueryRqlGrid";

@@ -9,44 +9,42 @@ import CustomIcon from "./custom-icons/CustomIcon";
 import { Status } from "./entity-status-chip";
 
 export interface EntityPropertiesProps {
-  entity: AddWizardForm;
+  readonly entity: AddWizardForm;
 }
 
 export function EntityProps({ entity }: EntityPropertiesProps) {
   const tProperties = useFixedT("entitlements:addWizard:properties");
 
   return (
-    <>
-      <InPageHighlight
-        style="inline"
-        mode="dense"
-        direction="vertical"
-        className={"in-page-highlight-form"}
-      >
-        {entity.id && (
-          <InPageHighlight.Item title={tProperties("entitlementId")}>
-            <BoldText color="brand-type">
-              {entity.id} <Status<{ status: string }> item={{ status: "New" }}></Status>
-            </BoldText>
-          </InPageHighlight.Item>
+    <InPageHighlight
+      style="inline"
+      mode="dense"
+      direction="vertical"
+      className={"in-page-highlight-form"}
+    >
+      {entity?.id && (
+        <InPageHighlight.Item title={tProperties("entitlementId")}>
+          <BoldText color="brand-type">
+            {entity.id} <Status<{ status: string }> item={{ status: "New" }}></Status>
+          </BoldText>
+        </InPageHighlight.Item>
+      )}
+      <InPageHighlight.Item title={tProperties("affiliate")}>
+        {entity?.affiliate && (
+          <EntityReference
+            primaryContent={entity.affiliate.name}
+            secondaryContent={entity.affiliate.id}
+            isPrimaryContentBold={false}
+            icon={<CustomIcon name={entity.affiliate.integration} size={44} />}
+          />
         )}
-        <InPageHighlight.Item title={tProperties("affiliate")}>
-          {entity && entity.affiliate && (
-            <EntityReference
-              primaryContent={entity.affiliate.name}
-              secondaryContent={entity.affiliate.id}
-              isPrimaryContentBold={false}
-              icon={<CustomIcon name={entity.affiliate.integration} size={44} />}
-            />
-          )}
-        </InPageHighlight.Item>
-        <InPageHighlight.Item title={tProperties("dataSource:id")}>
-          <BoldText color="brand-type">{entity.dataSource.id}</BoldText>
-        </InPageHighlight.Item>
-        <InPageHighlight.Item title={tProperties("dataSource:affiliateExternalId")}>
-          <BoldText color="brand-type">{entity.dataSource.affiliate_external_id}</BoldText>
-        </InPageHighlight.Item>
-      </InPageHighlight>
-    </>
+      </InPageHighlight.Item>
+      <InPageHighlight.Item title={tProperties("dataSource:id")}>
+        <BoldText color="brand-type">{entity?.dataSource?.id}</BoldText>
+      </InPageHighlight.Item>
+      <InPageHighlight.Item title={tProperties("dataSource:affiliateExternalId")}>
+        <BoldText color="brand-type">{entity?.dataSource?.affiliate_external_id}</BoldText>
+      </InPageHighlight.Item>
+    </InPageHighlight>
   );
 }

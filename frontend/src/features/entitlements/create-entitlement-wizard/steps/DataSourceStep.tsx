@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 
 import { RegularText } from "@swo/design-system/text";
 import { StepNavigationProperties, useStepActions } from "@swo/design-system/wizard";
@@ -16,10 +16,9 @@ export function DataSourceStep() {
   const tProperties = useFixedT("entitlements:addWizard:properties:dataSource");
   const tPlaceholders = useFixedT("entitlements:addWizard:placeholders:dataSource");
 
-  const { trigger, control, setValue } = useFormContext<AddWizardForm>();
+  const { trigger, control } = useFormContext<AddWizardForm>();
 
   const { registerOnNextCallback } = useStepActions();
-  const formState = useFormState<AddWizardForm>({ name: "dataSource" });
 
   const onNext = useCallback(
     async ({ targetStepIndex, currentStepIndex }: StepNavigationProperties) => {

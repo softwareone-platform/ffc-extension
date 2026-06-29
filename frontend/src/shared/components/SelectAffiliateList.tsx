@@ -11,8 +11,8 @@ import { Account } from "~features/entitlements/api/model";
 const limitPerPage = 10;
 
 export interface SelectAffiliateListProps {
-  entity: Account | null;
-  onSelected: (entity: Account) => void;
+  readonly entity: Account | null;
+  readonly onSelected: (entity: Account) => void;
 }
 
 export function SelectAffiliateList({ entity, onSelected }: SelectAffiliateListProps) {

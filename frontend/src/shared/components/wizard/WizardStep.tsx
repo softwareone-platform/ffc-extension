@@ -4,10 +4,10 @@ import { InlineNotification } from "@swo/design-system/notification";
 import { RegularText } from "@swo/design-system/text";
 
 export interface WizardStepProps extends PropsWithChildren {
-  title: string;
-  error?: string;
-  className?: string;
-  contentClassName?: string;
+  readonly title: string;
+  readonly error?: string;
+  readonly className?: string;
+  readonly contentClassName?: string;
 }
 
 export function WizardStep({
@@ -35,7 +35,7 @@ export function WizardStep({
               .toString()
               .split("\n")
               .map((err, i) => (
-                <p key={i}>{err}</p>
+                <p key={'error_'+ i}>{err}</p>
               ))}
           </InlineNotification>
         </div>

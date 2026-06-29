@@ -9,7 +9,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { AddWizardForm } from "../CreateEntitlement.Schema";
 
 export interface SummaryStepProps {
-  error?: string;
+  readonly error?: string;
 }
 
 export function SummaryStep({ error }: SummaryStepProps) {

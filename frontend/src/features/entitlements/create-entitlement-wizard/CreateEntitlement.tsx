@@ -20,7 +20,7 @@ import "./CreateEntitlement.scss";
 import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-export default () => {
+export function CreateEntitlement() {
   const tEntitlementWizard = useFixedT("entitlements:addWizard");
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [entitlementCreated, setEntitlementCreated] = useState(false);
@@ -41,8 +41,6 @@ export default () => {
   const onSave = useCallback(() => {
     alert("saved");
   }, []);
-
-  // const onError = useCallback((err: Error): void => setError(err.message), []);
 
   const onClose = useCallback(() => {
     const closeContext = { entitlementCreated };
@@ -77,7 +75,6 @@ export default () => {
         setEntitlementCreated(true);
 
         setActiveStepIndex((i) => i + 1);
-        // wizardRef.current?.goToNext();
       } catch (err) {
         setError(err + "");
       }
@@ -111,7 +108,7 @@ export default () => {
                   case 2:
                     return <ReviewStep error={error} />;
                   case 3:
-                    return <SummaryStep />;
+                    return <SummaryStep error={error} />;
                 }
               }}
             </Wizard.Content.StepContent>
@@ -121,4 +118,6 @@ export default () => {
       </FormProvider>
     </div>
   );
-};
+}
+
+export default CreateEntitlement;

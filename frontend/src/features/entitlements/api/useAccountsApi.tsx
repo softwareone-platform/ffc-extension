@@ -27,12 +27,5 @@ export function useAccountsApi() {
     [],
   );
 
-  // const get = useCallback(async (entityId: string, query?: RqlQuery<EntitlementRead>) => {
-  //   return http<EntitlementRead>({
-  //     method: "GET",
-  //     url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
-  //   });
-  // }, []);
-
   return useMemo(() => ({ list }), [list]);
 }

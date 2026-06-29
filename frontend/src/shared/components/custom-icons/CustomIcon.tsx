@@ -1,13 +1,13 @@
 import { ReactElement, useEffect, useState } from "react";
 
 type IconProps = {
-  name: string;
-  width?: number;
-  height?: number;
-  size?: number;
-  boxWidth?: number;
-  boxHeight?: number;
-  className?: string;
+  readonly name: string;
+  readonly width?: number;
+  readonly height?: number;
+  readonly size?: number;
+  readonly boxWidth?: number;
+  readonly boxHeight?: number;
+  readonly className?: string;
 };
 
 function CustomIcon({
@@ -19,12 +19,12 @@ function CustomIcon({
   boxHeight = 24,
   className = "",
 }: IconProps) {
-  if (size !== undefined) {
-    width = size;
-    height = size;
-  } else {
+  if (size === undefined) {
     width = width ?? 24;
     height = height ?? 24;
+  } else {
+    width = size;
+    height = size;
   }
 
   const [viewBox, setViewBox] = useState<string>(`0 0 ${boxWidth} ${boxHeight}`);
