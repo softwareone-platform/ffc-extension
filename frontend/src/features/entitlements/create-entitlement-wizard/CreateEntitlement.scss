@@ -56,10 +56,7 @@
     }
   }
 
-  .modal__error {
-    margin-bottom: var(--spacing-3);
-  }
-
+  .modal__error,
   .modal__input:not(:last-child) {
     margin-bottom: var(--spacing-3);
   }

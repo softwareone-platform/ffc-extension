@@ -38,10 +38,6 @@ export function CreateEntitlement() {
   });
   const { handleSubmit, reset, setValue } = methods;
 
-  const onSave = useCallback(() => {
-    alert("saved");
-  }, []);
-
   const onClose = useCallback(() => {
     const closeContext = { entitlementCreated };
     close(closeContext);
@@ -89,7 +85,7 @@ export function CreateEntitlement() {
           testId={"create-entitlement-wizard"}
           stepsProps={steps}
           onClose={closeWizard}
-          onSave={onSave}
+          onSave={onClose}
           isToDisableSideNavigation={true}
           onSubmit={handleSubmit(onSubmit)}
           activeStepIndex={activeStepIndex}

@@ -2,9 +2,9 @@ import { EntityReference } from "@swo/design-system/entity-reference";
 import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { BoldText } from "@swo/design-system/text";
 
+import { AddWizardForm } from "~entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { AddWizardForm } from "../../features/entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
 import CustomIcon from "./custom-icons/CustomIcon";
 import { Status } from "./entity-status-chip";
 

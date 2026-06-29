@@ -1,7 +1,5 @@
 import { useMemo } from "react";
 
-// import { ensureArray } from '../ArrayUtils';
-
 interface UseListDataWithSelectedEntityProps<
   T extends {
     id?: string;

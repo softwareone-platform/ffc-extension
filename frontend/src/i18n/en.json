@@ -80,7 +80,6 @@
         }
       },
       "validations": {
-        "affiliateRequired": "Affiliate is required",
         "affiliate": {
           "required": "Affiliate is required"
         },
@@ -89,9 +88,6 @@
         },
         "dataSource": {
           "id": { "required": "Data Source ID is required" }
-        },
-        "id": {
-          "required": "Data source ID is required"
         }
       }
     }

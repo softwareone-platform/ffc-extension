@@ -35,7 +35,7 @@ export function WizardStep({
               .toString()
               .split("\n")
               .map((err, i) => (
-                <p key={'error_'+ i}>{err}</p>
+                <p key={"error_" + i}>{err}</p>
               ))}
           </InlineNotification>
         </div>

@@ -9,12 +9,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { Entitlement } from "../api/model";
 import { useGridConfig } from "./EntitlementsGrid.config";
 
-// import '../../../styles.scss';
-
 export function EntitlementsGrid() {
-  // const {auth, data} = useMPTContext();
-
-  //TODO: proper translation name
   const tProperties = useFixedT("shared:grid:columns");
   const tActions = useFixedT("shared:grid:actions");
   const { refresh, ...gridProps } = useGridConfig();
@@ -27,11 +22,8 @@ export function EntitlementsGrid() {
           <Button
             onClick={() =>
               open("finops.admin.create-entitlement-modal", {
-                context: {
-                  /* pass any necessary context here */
-                },
+                context: {},
                 onClose: (result) => {
-                  // console.log("Modal closed with result:", result);
                   result.entitlementCreated && refresh();
                 },
               })
