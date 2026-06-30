@@ -31,7 +31,7 @@ Mounts a **single feature's routes** inside a `BrowserRouter`. One bundle
 per feature, loaded by the host when that section is opened.
 
 ```ts
-// frontend/src/entries/entitlements.tsx
+// frontend/src/entries/Entitlements.tsx
 mountFeatureEntry(
   <>
     <Route index element={<EntitlementsGrid />} />
@@ -43,8 +43,8 @@ mountFeatureEntry(
 ```
 
 Each feature entry currently in use:
-- `entries/organizations.tsx` — Organizations routes.
-- `entries/entitlements.tsx` — Entitlements routes.
+- `entries/Organizations.tsx` — Organizations routes.
+- `entries/Entitlements.tsx` — Entitlements routes.
 
 ### 3. Modal entry — `mountModalEntry(<Modal />)`
 
@@ -99,5 +99,5 @@ mount(node)                       // calls SDK setup → createRoot.render
 - [MPT host integration](./mpt-host-integration.md) — how the host bridge
   works inside any entry that runs embedded.
 - [Standalone mode flags](./standalone-mode.md) — disambiguating
-  `useHasMPTHost` / `useStandAloneApp` / `useIsStandaloneShell` (relevant
+  `useHasMPTHost` / `useIsRoot` / `useIsStandaloneShell` (relevant
   inside any entry that needs to vary behavior per runtime).

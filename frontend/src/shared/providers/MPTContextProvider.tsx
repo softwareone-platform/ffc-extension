@@ -9,7 +9,7 @@ export type MPTAuth = {
 };
 
 export type MPTData = {
-  standAloneApp?: boolean;
+  isRoot?: boolean;
   sample?: string;
   [key: string]: unknown;
 };
@@ -74,6 +74,6 @@ export function useMPTData(): MPTData | undefined {
   return useContext(MPTContextStore).data;
 }
 
-export function useStandAloneApp(): boolean {
-  return useContext(MPTContextStore).data?.standAloneApp ?? false;
+export function useIsRoot(): boolean {
+  return useContext(MPTContextStore).data?.isRoot ?? false;
 }

@@ -11,8 +11,8 @@ const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
 
 const ctx = await context({
   entryPoints: [
-    './src/entries/organizations.tsx',
-    './src/entries/entitlements.tsx',
+    './src/entries/Organizations.tsx',
+    './src/entries/Entitlements.tsx',
     './src/entries/CreateEntitlementModal.tsx',
     './src/entries/CreateUserModal.tsx',
     './src/entries/index.tsx',

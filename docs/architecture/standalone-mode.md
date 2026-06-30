@@ -14,12 +14,12 @@ right one or behavior will diverge between embedded and standalone runs.
 inside other infra hooks (e.g. `useNotifyParentChildModal` only emits when
 this is true).
 
-### `useStandAloneApp()`
+### `useIsRoot()`
 **File:** `frontend/src/shared/providers/MPTContextProvider.tsx`
-**Source of truth:** `MPTContextValue.data.standAloneApp === true` (set by
+**Source of truth:** `MPTContextValue.data.isRoot === true` (set by
 the host via `globalThis.__MPT__.context`).
-**Returns `true` when:** the host has explicitly told us we're a standalone
-app via its MPT data payload.
+**Returns `true` when:** the host has told us this slot is the root slot
+via its MPT data payload.
 **Use when:** behavior depends on the host's intent, not on whether the host
 is present. Rare.
 
@@ -35,10 +35,10 @@ modal entry when embedded).
 
 ## How they differ in practice
 
-| Scenario | `useHasMPTHost` | `useStandAloneApp` | `useIsStandaloneShell` |
+| Scenario | `useHasMPTHost` | `useIsRoot` | `useIsStandaloneShell` |
 |---|---|---|---|
 | App loaded inside MPT host iframe, normal flow | `true` | `false` | `false` |
-| App loaded inside MPT host with `standAloneApp: true` in data | `true` | `true` | depends on route |
+| App loaded inside MPT host with `isRoot: true` in data | `true` | `true` | depends on route |
 | App loaded directly (no host injection within 5s) | `false` | `false` | depends on route |
 | Component rendered under `MainLayout` | independent | independent | `true` |
 
@@ -48,7 +48,7 @@ inside the standalone shell while still having a host bridge available.
 
 ## Common mistakes
 
-- Using `useStandAloneApp` to decide whether to show a standalone-styled
+- Using `useIsRoot` to decide whether to show a standalone-styled
   modal. The standalone *shell* is the right signal; use `useIsStandaloneShell`.
 - Using `useIsStandaloneShell` to decide whether to call `emit()` from the MPT
   SDK. The SDK only works with a host bridge; gate on `useHasMPTHost` instead.
