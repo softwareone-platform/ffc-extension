@@ -7,6 +7,7 @@ from app.commands import (
     process_billing,
     redeem_entitlements,
     serve,
+    set_entitlements_tag,
     shell,
 )
 
@@ -16,6 +17,7 @@ __all__ = [
     "process_billing",
     "redeem_entitlements",
     "serve",
+    "set_entitlements_tag",
     "shell",
     "calculate_accounts_stats",
     "fetch_datasource_expenses",
