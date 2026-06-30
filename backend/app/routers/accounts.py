@@ -9,16 +9,14 @@ from sqlalchemy.sql.selectable import Select
 from app.db.handlers import NotFoundError
 from app.db.models import Account, AccountUser, User
 from app.dependencies.auth import (
+    AuthorizedAccountTypes,
     CurrentAuthContext,
-    authentication_required,
-    check_admin_account,
 )
 from app.dependencies.db import (
     AccountRepository,
-    AccountUserRepository,
     UserRepository,
 )
-from app.dependencies.path import AccountId, UserId
+from app.dependencies.path import AccountId
 from app.enums import AccountStatus, AccountType, AccountUserStatus, UserStatus
 from app.openapi import examples
 from app.pagination import LimitOffsetPage, paginate
@@ -138,7 +136,7 @@ async def fetch_account_or_404(id: AccountId, account_repo: AccountRepository) -
         },
     },
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(check_admin_account)],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def create_account(
     data: Annotated[
@@ -171,7 +169,7 @@ async def create_account(
             "content": {"application/json": {"example": examples.ACCOUNT_RESPONSE}},
         },
     },
-    dependencies=[Depends(check_admin_account)],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_account_by_id(
     account: Annotated[Account, Depends(fetch_account_or_404)],
@@ -197,7 +195,7 @@ async def get_account_by_id(
             },
         },
     },
-    dependencies=[Depends(check_admin_account)],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_accounts(
     account_repo: AccountRepository,
@@ -215,7 +213,7 @@ async def get_accounts(
             "content": {"application/json": {"example": examples.ACCOUNT_UPDATE_RESPONSE}},
         },
     },
-    dependencies=[Depends(check_admin_account)],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def update_account(
     data: Annotated[
@@ -272,7 +270,11 @@ async def update_account(
             },
         },
     },
-    dependencies=[Depends(authentication_required)],
+    dependencies=[
+        Depends(
+            AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS, AccountType.AFFILIATE)
+        )
+    ],
 )
 async def list_account_users(
     account: Annotated[Account, Depends(fetch_account_or_404)],
@@ -322,39 +324,3 @@ async def list_account_users(
         UserRead,
         where_clauses=extra_conditions,
     )
-
-
-@router.delete(
-    "/{id}/users/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(authentication_required)],
-)
-async def remove_user_from_account(
-    account: Annotated[Account, Depends(fetch_account_or_404)],
-    user_id: UserId,
-    auth_context: CurrentAuthContext,
-    accountuser_repo: AccountUserRepository,
-):
-    """
-    This Endpoint removes a user from the giver account
-    Raises:
-        - HTTPException with status 404 if the given account is different from the context account
-        - HTTPException 400 if the query doesn't return a valid account's user object
-
-    """
-    if auth_context.account.type == AccountType.AFFILIATE and auth_context.account != account:  # type: ignore
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Account with ID `{account.id}` wasn't found.",
-        )
-    account_user = await accountuser_repo.get_account_user(
-        account_id=account.id,
-        user_id=user_id,
-        extra_conditions=[AccountUser.status != AccountUserStatus.DELETED],
-    )
-    if account_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"The User `{user_id}` does not belong to the Account with ID `{account.id}`.",
-        )
-    await accountuser_repo.delete(id_or_obj=account_user)

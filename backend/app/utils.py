@@ -120,13 +120,6 @@ def wrap_exc_in_http_response(
         raise HTTPException(status_code=status_code, detail=error_msg) from e
 
 
-def _extract_container_id_from_cpuset(cpuset_content: str) -> str | None:
-    container_id = cpuset_content.strip().rsplit("/", 1)[-1]
-    if len(container_id) == 64:
-        return container_id[:12]
-    return None
-
-
 @lru_cache(maxsize=1)
 def get_instance_external_id() -> str:
     hostname = (os.environ.get("HOSTNAME") or socket.gethostname() or "").lower()

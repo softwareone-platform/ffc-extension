@@ -72,10 +72,10 @@ async def test_add_additional_admin_request(
             },
         )
         assert response.status_code == 200
-        response = response.json()
-        assert response["email"] == "peter.parker@spiderman.com"
-        assert response["display_name"] == "Peter Parker"
-        assert response["id"].startswith("FAAR")
+        response_json = response.json()
+        assert response_json["email"] == "peter.parker@spiderman.com"
+        assert response_json["display_name"] == "Peter Parker"
+        assert response_json["id"].startswith("FAAR")
         assert caplog.messages[2] == (
             f"The User Peter Parker (1bf6f063-d90b-4d45-8e7f-62fefa9f5471) "
             f"already belongs to the Organization {FAKE_LINKED_ORG_ID}."

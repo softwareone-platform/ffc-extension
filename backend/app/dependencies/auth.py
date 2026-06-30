@@ -190,22 +190,23 @@ async def authentication_required(
         yield
 
 
-def check_admin_account(
-    context: Annotated[AuthenticationContext | None, Depends(get_authentication_context)],
-) -> None:
-    """
-    This function ensures that the account type is of type ADMIN
-    """
-    if not context:
-        raise UNAUTHORIZED_EXCEPTION
+class AuthorizedAccountTypes:
+    def __init__(self, *allowed_types: models.AccountType):
+        self.allowed_types = allowed_types
 
-    if context.account.type != models.AccountType.ADMIN:
-        # This API can only be consumed in the context of an Admin Account
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You've found the door, but you don't have the key.",
-        )
-    return None
+    def __call__(
+        self,
+        context: Annotated[AuthenticationContext | None, Depends(get_authentication_context)],
+    ) -> None:
+        if not context:
+            raise UNAUTHORIZED_EXCEPTION
+
+        if context.account.type not in self.allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You've found the door, but you don't have the key.",
+            )
+        return None
 
 
-CurrentAuthContext = Annotated[AuthenticationContext | None, Depends(get_authentication_context)]
+CurrentAuthContext = Annotated[AuthenticationContext, Depends(get_authentication_context)]
