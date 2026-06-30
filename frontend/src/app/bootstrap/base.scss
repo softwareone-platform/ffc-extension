@@ -1,13 +1,100 @@
-@forward "../../../node_modules/@swo/design-tokens/src/index";
-@forward "../../../node_modules/@swo/design-tokens/src/style";
+@use "../../../node_modules/@swo/design-tokens/src/index" as *;
+@use "../../../node_modules/@swo/design-tokens/src/style" as *;
+
+// --- typography & resets -------------------------------------------------
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+$gray-background: var(--gray-1);
+$radius-s: var(--radius-s);
+$radius-m: var(--radius-m);
+$block-space: var(--spacing-3);
+
+h1,
+.__h1 {
+  @extend %regular6;
+}
+
+h2,
+.__h2 {
+  @extend %regular5;
+}
+
+h3,
+.__h3 {
+  @extend %regular4;
+}
+
+// Platform assumes box-sizing: border-box globally.
+// Without it, design system components (e.g. Grid) overflow by border width.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+// Base typography for all elements, matching platform defaults.
+* {
+  @extend %regular2;
+}
+
+// Wizard step circle uses line-height + vertical-align for centering,
+// which breaks when * { line-height } overrides the SVG's inherited value.
+// Switch to flex centering for reliable layout.
+[class*="wizard__step__index"] {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// --- app shell -----------------------------------------------------------
+.entitlements-app {
+  position: relative;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+// --- shared utilities ----------------------------------------------------
+.container {
+  padding: $spacing-2;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+}
+
+// --- feature snippets ----------------------------------------------------
+.organization-details-header {
+  margin-bottom: var(--spacing-3);
+}
+
+.add-organization-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+  padding: $spacing-1 0;
+}
+
+// --- temporary overrides (MZ) ---------------------------------------------
 
 html,
 body,
 #root {
-  margin: 0;
   height: auto;
+  margin: 0;
 }
-
 .navigation-host {
   height: auto !important;
+
+  & > div {
+    padding: var(--spacing-3) 0;
+    scrollbar-gutter: auto;
+  }
 }

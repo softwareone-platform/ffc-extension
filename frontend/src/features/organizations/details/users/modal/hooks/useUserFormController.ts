@@ -6,9 +6,9 @@ import { AxiosError } from "axios";
 import { useMPTContext, useMPTModal } from "@mpt-extension/sdk-react";
 
 import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
+import { ModalEntryProps } from "~shared/components/modal/modalEntry";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { ModalEntryProps } from "~shared/components/modal/modalEntry";
 import { AddUserForm } from "../AddUserForm.Schema";
 import { useAddUserForm } from "./useAddUserForm";
 

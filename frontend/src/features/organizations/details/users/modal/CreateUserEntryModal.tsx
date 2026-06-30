@@ -1,10 +1,10 @@
 import { Button } from "@swo/design-system/button";
 
-import { useFixedT } from "~shared/hooks/useFixedT";
-
 import { EntryModalWidget } from "~shared/components/modal/EntryModalWidget";
 import { ModalCancelButton } from "~shared/components/modal/ModalCancelButton";
 import { ModalEntryComponent } from "~shared/components/modal/modalEntry";
+import { useFixedT } from "~shared/hooks/useFixedT";
+
 import { useUserFormController } from "./hooks/useUserFormController";
 import { UserFormFields } from "./UserFormFields";
 

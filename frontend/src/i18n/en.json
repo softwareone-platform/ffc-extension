@@ -36,12 +36,69 @@
       "save": "Save"
     }
   },
+  "entitlements": {
+    "addWizard": {
+      "title": "Add entitlement",
+      "steps": {
+        "affiliate": {
+          "title": "Affiliate"
+        },
+        "dataSource": {
+          "title": "Data Source",
+          "field": {
+            "id": {
+              "description": "This is the ID of the data source at the vendor. Examples include an Azure subscription ID or AWS account number."
+            },
+            "affiliate_external_id": {
+              "description": "This is usually the subscription ID from the reseller marketplace."
+            }
+          }
+        },
+        "overview": {
+          "title": "Overview",
+          "description": "You are going to add an entitlement to the Admin Portal."
+        },
+        "summary": {
+          "title": "Summary",
+          "description": "The entitlement has been successfully added to the Admin Portal."
+        }
+      },
+      "properties": {
+        "entitlementId": "Entitlement",
+        "affiliate": "Affiliate",
+        "dataSource": {
+          "id": "Data source ID",
+          "name": "Entitlement name",
+          "affiliateExternalId": "Affiliate external ID"
+        }
+      },
+      "placeholders": {
+        "dataSource": {
+          "id": "Enter the data source ID",
+          "name": "Enter the entitlement name",
+          "affiliateExternalId": "Enter the affiliate external ID"
+        }
+      },
+      "validations": {
+        "affiliate": {
+          "required": "Affiliate is required"
+        },
+        "name": {
+          "required": "Entitlement name is required"
+        },
+        "dataSource": {
+          "id": { "required": "Data Source ID is required" }
+        }
+      }
+    }
+  },
   "shared": {
     "nav": {
       "organizations": "Organizations",
       "entitlements": "Entitlements"
     },
     "actions": {
+      "add": "Add",
       "cancel": "Cancel"
     },
     "grid": {
@@ -52,6 +109,7 @@
       },
       "columns": {
         "actions": "Actions",
+        "affiliate": "Affiliate",
         "currency": "Currency",
         "organization": "Organization",
         "organizations": "Organizations",
@@ -88,7 +146,14 @@
         "email": "Email",
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
-        "entitlement": "Entitlement",
+        "entitlement": {
+          "name": "Entitlement Name",
+          "id": "Entitlement ID"
+        },
+        "affiliate": {
+          "name": "Affiliate Name",
+          "id": "Affiliate ID"
+        },
         "lastLogin": "Last Login",
         "createdAt": "Created At"
       },
@@ -96,6 +161,9 @@
         "azure_cnr": "Azure subscription",
         "aws_cnr": "AWS subscription",
         "gcp_cnr": "GCP subscription"
+      },
+      "actions": {
+        "add": "Add"
       }
     },
     "details": { "additionalIds": "Additional IDs", "references": "References" },

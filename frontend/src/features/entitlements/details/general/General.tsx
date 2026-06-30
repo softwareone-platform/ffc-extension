@@ -30,15 +30,6 @@ export function EntitlementsGeneralDetails() {
     [entity, tProperties],
   );
 
-  // const columnNames = useMemo(
-  //   () => [
-  //     tProperties("event"),
-  //     tProperties("triggeredBy"),
-  //     tProperties("dateAndTime"),
-  //   ],
-  //   [tProperties],
-  // );
-
   return (
     <>
       <div>
@@ -71,22 +62,6 @@ export function EntitlementsGeneralDetails() {
           </InPageHighlight.Item>
         ))}
       </InPageHighlight>
-      {/* <Timestamps
-        events={events}
-        columnNames={columnNames}
-        componentTitle={tProperties("title")}
-      /> */}
-      {/* <div>
-        <MediumText size={4}>{tSharedDetails("timestamps")}</MediumText>
-        <InPageHighlight direction="vertical">
-          <InPageHighlight.Item title={tProperties("currency")}>
-            <DisplayValue value={entity?.currency} />
-          </InPageHighlight.Item>
-          <InPageHighlight.Item title={tProperties("billingCurrency")}>
-            <DisplayValue value={entity?.billing_currency} />
-          </InPageHighlight.Item>
-        </InPageHighlight>
-      </div> */}
     </>
   );
 }
