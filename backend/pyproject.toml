@@ -33,7 +33,7 @@ dependencies = [
     "jinja2>=3.1.6,<4",
     "rich>=14.0.0,<16",
     "pyfiglet>=1.0.2,<2",
-    "azure-monitor-opentelemetry-exporter==1.0.0b51",
+    "azure-monitor-opentelemetry-exporter==1.0.0b53",
     "opentelemetry-api==1.40.0",
     "opentelemetry-sdk==1.40.0",
     "opentelemetry-proto==1.40.0",
@@ -48,7 +48,7 @@ dependencies = [
     "opentelemetry-semantic-conventions==0.61b0",
     "opentelemetry-util-http==0.61b0",
     "snippettoni>=0.1.0,<0.2.0",
-    "ipython>=8.37.0,<9.0.0",
+    "ipython>=9.15.0,<10.0.0",
     "mrok>=0.10.2",
     "freezegun>=1.5.5,<2.0.0",
     "responses>=0.26.0,<0.27.0",
@@ -56,12 +56,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "faker>=33.1.0,<34.0",
+    "faker>=40.27.0,<41.0",
     "mypy>=1.14.0,<1.16.0",
     "pytest-httpx>=0.34.0,<1.0",
     "pytest>=9.1.1,<10.0",
     "pytest-asyncio>=1.4.0,<2.0",
-    "pytest-cov>=6.0.0,<7.0",
+    "pytest-cov>=7.1.0,<8.0",
     "ruff>=0.8.0,<1.0",
     "pytest-mock>=3.14.0,<4.0",
     "ipdb>=0.13.13,<1.0",
