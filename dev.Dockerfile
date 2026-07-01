@@ -60,15 +60,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
 
 RUN echo 'alias pip="uv pip"' >> ~/.bashrc
+RUN echo 'alias pytest="uv run pytest"' >> ~/.bashrc
+RUN echo 'alias ruff="uv run ruff"' >> ~/.bashrc
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
-
-# setup default PYTEST opts to get config from the right place
-ENV PYTEST_ADDOPTS="--rootdir=/app/backend -c /app/backend/pyproject.toml --cov-config /app/backend/pyproject.toml /app/backend"
 
 # Place executables in the environment at the front of the path
 RUN echo 'export PATH="/opt/venv/bin:$PATH"' >> ~/.bashrc

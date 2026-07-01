@@ -48,6 +48,7 @@ from app.enums import (
     SystemStatus,
     UserStatus,
 )
+from app.fastapi import setup_app
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import ModelFactory
 
@@ -138,8 +139,7 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 
 @pytest.fixture(scope="session")
 def fastapi_app(test_settings: Settings) -> FastAPI:
-    from app.main import app
-
+    app = setup_app()
     app.dependency_overrides[get_settings] = lambda: test_settings
     return app
 

@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 import yaml
 
+from app.fastapi import setup_app
 from app.openapi import generate_openapi_spec
 
 
@@ -36,10 +37,9 @@ def command(
     """
     Generates the OpenAPI spec file.
     """
-    from app import main
 
     dump_fn = json.dump if output_format == OutputFormat.json else yaml.dump
-    spec = generate_openapi_spec(main.app, ctx.obj)
+    spec = generate_openapi_spec(setup_app(), ctx.obj)
 
     with open(output, "w") as f:  # type: ignore
         dump_fn(spec, f, indent=2)
