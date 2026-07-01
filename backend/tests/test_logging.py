@@ -39,6 +39,6 @@ def test_setup_logging(mocker: pytest_mock.MockerFixture):
     mocker.patch("app.logging.get_logging_config", return_value={"logging": "config"})
     mocked_dictconfig = mocker.patch("app.logging.logging.config.dictConfig")
 
-    setup_logging(mocker.MagicMock)
+    setup_logging(mocker.MagicMock())
 
     mocked_dictconfig.assert_called_once_with({"logging": "config"})
