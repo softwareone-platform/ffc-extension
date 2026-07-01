@@ -978,7 +978,7 @@ requires-dist = [
     { name = "responses", specifier = ">=0.26.0,<0.27.0" },
     { name = "rich", specifier = ">=14.0.0,<16" },
     { name = "snippettoni", specifier = ">=0.1.0,<0.2.0" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.40,<3" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51,<3" },
     { name = "sqlalchemy-utils", specifier = ">=0.41.2,<1" },
     { name = "typer", specifier = ">=0.13.1,<1" },
     { name = "uvicorn-worker", specifier = ">=0.3.0,<1" },
