@@ -946,7 +946,7 @@ requires-dist = [
     { name = "azure-monitor-opentelemetry-exporter", specifier = "==1.0.0b53" },
     { name = "cryptography", specifier = ">=49.0.0,<50" },
     { name = "email-validator", specifier = ">=2.2.0,<3" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.115.12,<1" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.138.2,<1" },
     { name = "fastapi-pagination", specifier = ">=0.12.34,<1" },
     { name = "freezegun", specifier = ">=1.5.5,<2.0.0" },
     { name = "gunicorn", specifier = ">=26.0.0,<27" },
