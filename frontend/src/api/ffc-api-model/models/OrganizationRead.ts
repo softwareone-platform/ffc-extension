@@ -10,36 +10,36 @@ export type OrganizationRead = {
   events: {
     created: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
     updated: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
-    deleted?: ({
+    deleted?: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
-    } | null);
+      } | null;
+    } | null;
   };
   id: string;
-  linked_organization_id?: (string | null);
-  status: 'active' | 'cancelled' | 'deleted';
-  expenses_info?: ({
+  linked_organization_id?: string | null;
+  status: "active" | "cancelled" | "deleted";
+  expenses_info?: {
     limit?: string;
     expenses_this_month?: string;
     expenses_this_month_forecast?: string;
     possible_monthly_saving?: string;
-  } | null);
+  } | null;
 };

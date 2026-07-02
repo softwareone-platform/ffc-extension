@@ -4,7 +4,7 @@
 /* eslint-disable */
 export type HTTPValidationError = {
   detail?: Array<{
-    loc: Array<(string | number)>;
+    loc: Array<string | number>;
     msg: string;
     type: string;
     input?: any;

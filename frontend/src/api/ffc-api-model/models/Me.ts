@@ -6,22 +6,22 @@ export type Me = {
   account: {
     id: string;
     name: string;
-    type: 'admin' | 'operations' | 'affiliate';
-    integration: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
+    type: "admin" | "operations" | "affiliate";
+    integration: "aws" | "google" | "microsoft" | "softwareone" | null;
     /**
      * An external identifier for the account
      */
     external_id: string;
   };
-  system: ({
+  system: {
     id: string;
     name: string;
     external_id: string;
-  } | null);
-  user: ({
+  } | null;
+  user: {
     name: string;
     external_id: string;
     email: string;
     id: string;
-  } | null);
+  } | null;
 };

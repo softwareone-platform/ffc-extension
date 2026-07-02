@@ -2,4 +2,4 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AccountStatus = 'active' | 'disabled' | 'deleted';
+export type AccountStatus = "active" | "disabled" | "deleted";

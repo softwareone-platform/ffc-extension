@@ -3,11 +3,11 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import path from 'path';
 import { exit } from 'process';
 
-import util from 'util';
-const execP = util.promisify(exec);
+// import util from 'util';
+// const execP = util.promisify(exec);
 
 const models = [{
-  displayName: 'Operations',
+  displayName: 'FFC Extension API Model',
   apiName: 'ffc-api-model',
   name: 'ffc-api-model',
   file: 'ffc-api-model.json'
@@ -16,16 +16,6 @@ const models = [{
 async function run() {
   const source = path.resolve('./tools/api-model');
   const rootDestination = path.resolve(`./src/api/`);
-  // const home = path.resolve(`../`);
-  const command = `uv --project ../backend run ffcops openapi -f json -o ${source}/swagger/ffc-api-model.json`;
-  console.log(`[ffc-api-model] Generating swagger: ${command}`);
-
-  const { stdout, stderr } = await execP(command);
-
-  console.log(`[ffc-api-model] Generated swagger: ${stdout}`);
-  if (stderr) {
-    console.error(`[ffc-api-model] Error generating swagger: ${stderr}`);
-  }
 
   for (const swagger of models) {
     const destination = path.resolve(rootDestination, `./${swagger.name}`);

@@ -5,42 +5,42 @@
 export type EntitlementsEventsSchema = {
   created: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
+    } | null;
   };
   updated: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
+    } | null;
   };
-  deleted?: ({
+  deleted?: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
-  } | null);
-  redeemed?: ({
+    } | null;
+  } | null;
+  redeemed?: {
     at: string;
     by: {
       id: string;
       name: string;
       operations_external_id: string;
     };
-  } | null);
-  terminated?: ({
+  } | null;
+  terminated?: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
-  } | null);
+    } | null;
+  } | null;
 };

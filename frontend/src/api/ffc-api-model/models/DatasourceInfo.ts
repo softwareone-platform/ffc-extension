@@ -5,5 +5,5 @@
 export type DatasourceInfo = {
   id: string;
   name: string;
-  type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+  type: "aws_cnr" | "azure_cnr" | "azure_tenant" | "gcp_cnr" | "unknown";
 };

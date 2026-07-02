@@ -14,45 +14,45 @@ export type AccountRead = {
   events: {
     created: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
     updated: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
-    deleted?: ({
+    deleted?: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
-    } | null);
+      } | null;
+    } | null;
   };
   id: string;
-  account_user: ({
-    status: 'invited' | 'invitation-expired' | 'active' | 'deleted';
+  account_user: {
+    status: "invited" | "invitation-expired" | "active" | "deleted";
     id: string;
-    created_at?: (string | null);
-    joined_at?: (string | null);
+    created_at?: string | null;
+    joined_at?: string | null;
     user: {
       name: string;
       external_id: string;
       email: string;
       id: string;
     };
-  } | null);
-  integration?: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
-  status: 'active' | 'disabled' | 'deleted';
-  type: 'admin' | 'operations' | 'affiliate';
+  } | null;
+  integration?: "aws" | "google" | "microsoft" | "softwareone" | null;
+  status: "active" | "disabled" | "deleted";
+  type: "admin" | "operations" | "affiliate";
   stats: {
     entitlements: {
       new?: number;

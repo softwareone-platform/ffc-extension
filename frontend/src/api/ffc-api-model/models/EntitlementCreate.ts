@@ -6,8 +6,8 @@ export type EntitlementCreate = {
   name: string;
   affiliate_external_id: string;
   datasource_id: string;
-  redeem_at?: (string | null);
-  owner?: ({
+  redeem_at?: string | null;
+  owner?: {
     id: string;
-  } | null);
+  } | null;
 };

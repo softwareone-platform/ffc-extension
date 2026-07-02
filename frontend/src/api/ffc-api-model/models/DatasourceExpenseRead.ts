@@ -6,34 +6,34 @@ export type DatasourceExpenseRead = {
   events: {
     created: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
     updated: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
-    deleted?: ({
+    deleted?: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
-    } | null);
+      } | null;
+    } | null;
   };
   id: string;
   datasource_id: string;
   linked_datasource_id: string;
   datasource_name: string;
-  linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+  linked_datasource_type: "aws_cnr" | "azure_cnr" | "azure_tenant" | "gcp_cnr" | "unknown";
   organization: {
     id: string;
     name: string;

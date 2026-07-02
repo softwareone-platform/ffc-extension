@@ -2,4 +2,4 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AccountIntegration = 'aws' | 'google' | 'microsoft' | 'softwareone';
+export type AccountIntegration = "aws" | "google" | "microsoft" | "softwareone";

@@ -5,8 +5,8 @@
 export type AccountReference = {
   id: string;
   name: string;
-  type: 'admin' | 'operations' | 'affiliate';
-  integration: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
+  type: "admin" | "operations" | "affiliate";
+  integration: "aws" | "google" | "microsoft" | "softwareone" | null;
   /**
    * An external identifier for the account
    */

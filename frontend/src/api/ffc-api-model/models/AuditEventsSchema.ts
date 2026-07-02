@@ -5,26 +5,26 @@
 export type AuditEventsSchema = {
   created: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
+    } | null;
   };
   updated: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
+    } | null;
   };
-  deleted?: ({
+  deleted?: {
     at: string;
-    by: ({
+    by: {
       id: string;
-      type: 'user' | 'system';
+      type: "user" | "system";
       name: string;
-    } | null);
-  } | null);
+    } | null;
+  } | null;
 };

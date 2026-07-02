@@ -3,15 +3,15 @@
 /* tslint:disable */
 /* eslint-disable */
 export type AccountUserReferenceWithAccount = {
-  status: 'invited' | 'invitation-expired' | 'active' | 'deleted';
+  status: "invited" | "invitation-expired" | "active" | "deleted";
   id: string;
-  created_at?: (string | null);
-  joined_at?: (string | null);
+  created_at?: string | null;
+  joined_at?: string | null;
   account: {
     id: string;
     name: string;
-    type: 'admin' | 'operations' | 'affiliate';
-    integration: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
+    type: "admin" | "operations" | "affiliate";
+    integration: "aws" | "google" | "microsoft" | "softwareone" | null;
     /**
      * An external identifier for the account
      */

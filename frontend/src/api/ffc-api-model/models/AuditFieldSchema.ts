@@ -4,9 +4,9 @@
 /* eslint-disable */
 export type AuditFieldSchema = {
   at: string;
-  by: ({
+  by: {
     id: string;
-    type: 'user' | 'system';
+    type: "user" | "system";
     name: string;
-  } | null);
+  } | null;
 };
