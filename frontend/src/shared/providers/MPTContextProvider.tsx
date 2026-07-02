@@ -9,7 +9,7 @@ export type MPTAuth = {
 };
 
 export type MPTData = {
-  isRoot?: boolean;
+  isRootPage?: boolean;
   sample?: string;
   [key: string]: unknown;
 };
@@ -74,6 +74,6 @@ export function useMPTData(): MPTData | undefined {
   return useContext(MPTContextStore).data;
 }
 
-export function useIsRoot(): boolean {
-  return useContext(MPTContextStore).data?.isRoot ?? false;
+export function useIsRootPage(): boolean {
+  return useContext(MPTContextStore).data?.isRootPage ?? false;
 }

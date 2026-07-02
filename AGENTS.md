@@ -14,7 +14,7 @@ Guidance for AI coding agents working in this repository.
   [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md).
 - **MPT host integration** (iframe-as-extension runtime, `__MPT__` detection):
   [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md).
-- **Standalone mode flags** (`useHasMPTHost` vs `useIsRoot` vs
+- **Standalone mode flags** (`useHasMPTHost` vs `useIsRootPage` vs
   `useIsStandaloneShell`): [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md).
 - **General Copilot instructions** (mirrors what GitHub Copilot loads):
   [`.github/copilot-instructions.md`](.github/copilot-instructions.md).

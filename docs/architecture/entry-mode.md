@@ -99,5 +99,5 @@ mount(node)                       // calls SDK setup → createRoot.render
 - [MPT host integration](./mpt-host-integration.md) — how the host bridge
   works inside any entry that runs embedded.
 - [Standalone mode flags](./standalone-mode.md) — disambiguating
-  `useHasMPTHost` / `useIsRoot` / `useIsStandaloneShell` (relevant
+  `useHasMPTHost` / `useIsRootPage` / `useIsStandaloneShell` (relevant
   inside any entry that needs to vary behavior per runtime).
