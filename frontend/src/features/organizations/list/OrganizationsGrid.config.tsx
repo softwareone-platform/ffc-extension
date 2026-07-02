@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 
 import { UseAsyncGridConfig, useGridAsync } from "@swo/design-system/grid";
-import { OrganizationRead } from "@swo/ffc-api-model";
 import { Entity } from "@swo/service";
+
+import { OrganizationRead } from "~api/ffc-api-model";
 
 import { useAsyncOptions } from "./useAsyncOptions";
 import { useColumns } from "./useColumns";

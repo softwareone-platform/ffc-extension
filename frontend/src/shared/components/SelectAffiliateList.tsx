@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { List, Row, useListWithApi, UseListWithApiHookModel } from "@swo/design-system/list";
-import { AccountRead } from "@swo/ffc-api-model";
 
+import { AccountRead } from "~api/ffc-api-model";
 import { useApiCall } from "~entitlements/create-entitlement-wizard/hooks/useApiCall";
 import { useColumns } from "~entitlements/create-entitlement-wizard/hooks/useColumns";
 import { useListDataWithSelectedEntity } from "~entitlements/create-entitlement-wizard/hooks/useListDataWithSelectedEntity";

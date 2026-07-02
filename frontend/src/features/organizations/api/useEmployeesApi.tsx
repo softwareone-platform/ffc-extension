@@ -2,12 +2,12 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { EmployeeRead } from "@swo/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 import { Entity } from "@swo/service";
 
 import { http } from "@mpt-extension/sdk";
 
+import { EmployeeRead } from "~api/ffc-api-model";
 import { AddUserForm } from "~organizations/details/users/modal/AddUserForm.Schema";
 
 export interface ListResponse<T> {

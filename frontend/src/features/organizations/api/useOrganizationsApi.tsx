@@ -2,11 +2,12 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { DatasourceRead, EmployeeRead, OrganizationRead } from "@swo/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 import { Entity } from "@swo/service";
 
 import { http } from "@mpt-extension/sdk";
+
+import { DatasourceRead, EmployeeRead, OrganizationRead } from "~api/ffc-api-model";
 
 export interface ListResponse<T> {
   total: number;

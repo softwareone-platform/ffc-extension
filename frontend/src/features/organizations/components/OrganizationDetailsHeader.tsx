@@ -1,5 +1,4 @@
-import { OrganizationRead } from "@swo/ffc-api-model";
-
+import { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationDetailsApi } from "~organizations/api";
 import { Status } from "~shared/components/entity-status-chip";
 import { PageShell } from "~shared/components/page-shell";
