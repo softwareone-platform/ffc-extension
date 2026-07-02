@@ -1,6 +1,6 @@
 import { Route } from "react-router-dom";
 
-import { mountFeatureEntry } from "~app/bootstrap/MountFeatureEntry";
+import { mountFeatureEntry } from "~app/bootstrap/mountFeatureEntry";
 import { DetailsLayout } from "~app/layouts";
 import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import { OrganizationDataSources } from "~features/organizations/details/data-sources/DataSources";

@@ -1,0 +1,48 @@
+@use "../../../node_modules/@swo/design-tokens/src/index" as *;
+@use "../../../node_modules/@swo/design-tokens/src/style" as *;
+
+// Global styles applied to every entry. Height is intentionally left to the
+// per-mode partials (_embedded / _standalone) so it isn't set here then
+// immediately overridden.
+
+// --- resets --------------------------------------------------------------
+// Platform assumes box-sizing: border-box globally. Without it, design system
+// components (e.g. Grid) overflow by border width.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+}
+
+// --- typography ----------------------------------------------------------
+// Base typography for all elements, matching platform defaults.
+* {
+  @extend %regular2;
+}
+
+h1 {
+  @extend %regular6;
+}
+
+h2 {
+  @extend %regular5;
+}
+
+h3 {
+  @extend %regular4;
+}
+
+// Wizard step circle centers via line-height + vertical-align, which breaks
+// when `* { line-height }` overrides the SVG's inherited value. Use flex.
+[class*="wizard__step__index"] {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

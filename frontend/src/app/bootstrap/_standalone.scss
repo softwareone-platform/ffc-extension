@@ -1,0 +1,10 @@
+// Overrides for the standalone entry — the full-page SPA, whether opened in
+// its own browser tab or loaded into the portal.root iframe. Fills the
+// viewport and lets the app manage its own scroll.
+
+html,
+body,
+#root {
+  height: 100%;
+  position: relative;
+}

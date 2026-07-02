@@ -1,6 +1,6 @@
 import { createBrowserRouter, redirect } from "react-router-dom";
 
-import { mountStandaloneEntry } from "~app/bootstrap/MountStandaloneEntry";
+import { mountStandaloneEntry } from "~app/bootstrap/mountStandaloneEntry";
 import { PATHS } from "~app/paths";
 import { entitlementsRoutes } from "~features/entitlements/routes";
 import { organizationsRoutes } from "~features/organizations/routes";

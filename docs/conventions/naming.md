@@ -20,7 +20,7 @@ files under `frontend/src`, follow the rules below.
    - In `src`: `MainLayout.tsx`, `PageShell.tsx`,
      `EntityStatusChip.tsx`, `ExtensionsProvider.tsx`, `MPTContextProvider.tsx`,
      `OrganizationsGrid.tsx`, `DetailsLayout.tsx`, `EntitlementsGrid.tsx`,
-     `EntitlementsForm.tsx`, `Users.tsx`, `DataSources.tsx`.
+     `EntitlementsFormFields.tsx`, `Users.tsx`, `DataSources.tsx`.
 
 3. **Hooks: `camelCase` starting with `use…` + `.ts`/`.tsx`.**
    - Examples (from `@swo/modal/lib/hooks`): `useConfirm.d.ts`, `useConfirmModal.d.ts`,
@@ -35,7 +35,7 @@ files under `frontend/src`, follow the rules below.
    - In `src`: `OrganizationsGrid.tsx` + `OrganizationsGrid.config.tsx`,
      `DataSourcesGrid.tsx` + `DataSourcesGrid.config.tsx`,
      `UsersGrid.tsx` + `UsersGrid.config.tsx`,
-     `DetailsLayout.tsx` + `DetailsLayout.scss`,
+     `General.tsx` + `General.scss`,
      `EntryModalWidget.tsx` + `EntryModalWidget.scss`.
 
 5. **SCSS files for a component share the component's PascalCase base name**

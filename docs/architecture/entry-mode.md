@@ -22,8 +22,8 @@ const router = createBrowserRouter([/* ... */]);
 mountStandaloneEntry(router);
 ```
 
-Used by the development standalone build. Wraps the router in `AppProviders`
-(i18n + extensions context).
+Used by the development standalone build. Passes just the router; `mount()`
+adds the shared provider context (see [Provider stack](#provider-stack)).
 
 ### 2. Feature entry — `mountFeatureEntry(routes)`
 
@@ -71,15 +71,15 @@ successful submit, or with no argument on cancel.
 
 ## Provider stack
 
-Every entry wraps its content in `AppProviders` → `ExtensionsProvider` (which
-itself provides i18n and React Query). Standalone and feature entries add a
-router around it; modal entries do not.
+`mount()` wraps whatever tree an entry passes in `ExtensionsProvider` (i18n +
+React Query) before rendering, so every entry gets the same context without
+repeating it. Standalone and feature entries pass a router as that tree; modal
+entries pass the modal directly.
 
 ```
-mount(node)                       // calls SDK setup → createRoot.render
-  └─ AppProviders
-       └─ ExtensionsProvider      // i18n + React Query
-            └─ <entry-specific tree>
+mount(node)                       // SDK setup → wraps node → createRoot.render
+  └─ ExtensionsProvider           // i18n + React Query
+       └─ <entry-specific tree>   // router (standalone / feature) or modal
 ```
 
 ## Adding a new entry
