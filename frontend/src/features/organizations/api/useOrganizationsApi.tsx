@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { DatasourceRead, EmployeeRead, OrganizationRead } from "@swo/ffc-api-model";
+import { DatasourceRead, EmployeeRead, OrganizationRead } from "~api/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 import { Entity } from "@swo/service";
 

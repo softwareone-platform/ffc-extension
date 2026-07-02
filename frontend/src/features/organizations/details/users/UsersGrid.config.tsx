@@ -8,7 +8,7 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
-import { EmployeeRead } from "@swo/ffc-api-model";
+import { EmployeeRead } from "~api/ffc-api-model";
 import { StatusChip } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 

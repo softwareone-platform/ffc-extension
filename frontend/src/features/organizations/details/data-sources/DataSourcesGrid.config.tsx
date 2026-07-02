@@ -8,7 +8,7 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
-import { DatasourceRead } from "@swo/ffc-api-model";
+import { DatasourceRead } from "~api/ffc-api-model";
 import { Paths } from "@swo/rql-client";
 
 import { useOrganizationsApi } from "~organizations/api";

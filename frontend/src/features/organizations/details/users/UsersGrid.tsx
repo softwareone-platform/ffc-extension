@@ -1,6 +1,6 @@
 import { Button } from "@swo/design-system/button";
 import { Grid } from "@swo/design-system/grid";
-import { EmployeeRead } from "@swo/ffc-api-model";
+import { EmployeeRead } from "~api/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 

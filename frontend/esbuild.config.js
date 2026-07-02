@@ -27,6 +27,7 @@ const ctx = await context({
   allowOverwrite: true,
   // Keep these in sync with `compilerOptions.paths` in tsconfig.json.
   alias: {
+    '~api': srcDir('api'),
     '~app': srcDir('app'),
     '~features': srcDir('features'),
     '~organizations': srcDir('features/organizations'),

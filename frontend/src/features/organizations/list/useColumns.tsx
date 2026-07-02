@@ -8,7 +8,7 @@ import {
   GridColumnDefinition,
 } from "@swo/design-system/grid";
 import { DisplayValue } from "@swo/design-system/utils";
-import { OrganizationRead } from "@swo/ffc-api-model";
+import { OrganizationRead } from "~api/ffc-api-model";
 import { Paths } from "@swo/rql-client";
 
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";

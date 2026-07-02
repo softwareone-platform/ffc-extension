@@ -1,4 +1,4 @@
-import { OrganizationRead } from "@swo/ffc-api-model";
+import { OrganizationRead } from "~api/ffc-api-model";
 import { Entity } from "@swo/service";
 
 import { useOrganizationsApi } from "~organizations/api";
