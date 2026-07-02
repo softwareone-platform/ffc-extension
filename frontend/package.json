@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
-  "main": "../static/index.js",
-  "types": "../static/index.d.ts",
+  "main": "../static/StandaloneRoot.js",
+  "types": "../static/StandaloneRoot.d.ts",
   "scripts": {
     "build:types": "tsc -p tsconfig.json",
     "build:code": "node esbuild.config.js",

@@ -41,7 +41,7 @@ Every "create" modal ships as a pair: `Create<Entity>EntryModal` (host-mounted)
 The frontend runs in two modes (embedded inside MPT host, or standalone).
 Before adding behavior that varies between them, read
 [`../docs/architecture/standalone-mode.md`](../docs/architecture/standalone-mode.md)
-to pick the right hook (`useHasMPTHost` / `useStandAloneApp` /
+to pick the right hook (`useHasMPTHost` / `useIsRootPage` /
 `useIsStandaloneShell` are **not** interchangeable). For how the host bridge
 is detected, see
 [`../docs/architecture/mpt-host-integration.md`](../docs/architecture/mpt-host-integration.md).

@@ -1,0 +1,18 @@
+// Overrides for entries rendered embedded inside the MPT host chrome
+// (feature + modal entries). Standalone entry must not pull these in.
+
+html,
+body,
+#root {
+  height: auto;
+  margin: 0;
+}
+
+.navigation-host {
+  height: auto !important;
+
+  & > div {
+    padding: var(--spacing-3) 0;
+    scrollbar-gutter: auto;
+  }
+}

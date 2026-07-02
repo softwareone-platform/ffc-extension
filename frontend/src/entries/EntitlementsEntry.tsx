@@ -1,6 +1,6 @@
 import { Navigate, Route } from "react-router-dom";
 
-import { mountFeatureEntry } from "~app/bootstrap/MountFeatureEntry";
+import { mountFeatureEntry } from "~app/bootstrap/mountFeatureEntry";
 import { DetailsLayout } from "~app/layouts";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import { EntitlementDetailsContent } from "~features/entitlements/details/DetailsContent";
