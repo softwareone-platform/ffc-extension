@@ -16,20 +16,20 @@ plugs:
   description: This section shows all of the customers Organisations created in FinOps.
   icon: adobe.png
   socket: portal.root
-  href: "/static/index.js"
+  href: "/static/StandaloneRoot.js"
 - id: organizations
   name: Organizations
   description: This section shows all of the customers Organisations created in FinOps.
   icon: adobe.png
   socket: portal.{{ settings.ui_plugs_prefix }}
-  href: "/static/Organizations.js"
+  href: "/static/OrganizationsEntry.js"
 - id: entitlements
   name: Entitlements
   description: This section provides visibility into what services and resources of
     organizations are entitled to use.
   icon: adobe.png
   socket: portal.{{ settings.ui_plugs_prefix }}
-  href: "/static/Entitlements.js"
+  href: "/static/EntitlementsEntry.js"
 - id: finops.admin.create-user-modal
   name: Create User Modal
   description: Wizard to create a new user

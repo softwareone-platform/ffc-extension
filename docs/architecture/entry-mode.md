@@ -16,8 +16,8 @@ controls where the React root attaches.
 
 Mounts the **full SPA** with React Router. One bundle, all routes.
 
-```ts
-// frontend/src/entries/index.tsx
+```tsx
+// frontend/src/entries/StandaloneRoot.tsx
 const router = createBrowserRouter([/* ... */]);
 mountStandaloneEntry(router);
 ```
@@ -30,8 +30,8 @@ adds the shared provider context (see [Provider stack](#provider-stack)).
 Mounts a **single feature's routes** inside a `BrowserRouter`. One bundle
 per feature, loaded by the host when that section is opened.
 
-```ts
-// frontend/src/entries/Entitlements.tsx
+```tsx
+// frontend/src/entries/EntitlementsEntry.tsx
 mountFeatureEntry(
   <>
     <Route index element={<EntitlementsGrid />} />
@@ -43,8 +43,8 @@ mountFeatureEntry(
 ```
 
 Each feature entry currently in use:
-- `entries/Organizations.tsx` — Organizations routes.
-- `entries/Entitlements.tsx` — Entitlements routes.
+- `entries/OrganizationsEntry.tsx` — Organizations routes.
+- `entries/EntitlementsEntry.tsx` — Entitlements routes.
 
 ### 3. Modal entry — `mountModalEntry(<Modal />)`
 
@@ -52,7 +52,7 @@ Mounts a **single modal component** (no router). The host opens these by id
 through the MPT SDK (e.g. `open("finops.admin.create-user-modal", { … })`)
 and they render in place inside the host chrome.
 
-```ts
+```tsx
 // frontend/src/entries/CreateUserModal.tsx
 import CreateUserEntryModal from "~organizations/details/users/modal/CreateUserEntryModal";
 
@@ -61,7 +61,7 @@ mountModalEntry(<CreateUserEntryModal />);
 
 Modal entry components implement `ModalEntryComponent` (`shared/components/modal/modalEntry.ts`):
 
-```ts
+```tsx
 type ModalEntryProps = { onClose?: (result?: { success?: boolean }) => void };
 type ModalEntryComponent = ComponentType<ModalEntryProps>;
 ```
