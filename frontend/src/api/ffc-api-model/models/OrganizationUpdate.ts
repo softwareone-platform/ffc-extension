@@ -3,6 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type OrganizationUpdate = {
-  name?: (string | null);
-  operations_external_id?: (string | null);
+  name?: string | null;
+  operations_external_id?: string | null;
 };

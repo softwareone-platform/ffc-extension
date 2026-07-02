@@ -1,9 +1,9 @@
 import { Button } from "@swo/design-system/button";
 import { Grid } from "@swo/design-system/grid";
-import { EmployeeRead } from "~api/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
+import { EmployeeRead } from "~api/ffc-api-model";
 import { CreateUserStandaloneModal } from "~organizations/details/users/modal/CreateUserStandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useModalToggle } from "~shared/hooks/useModalToggle";

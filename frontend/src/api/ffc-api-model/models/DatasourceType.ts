@@ -2,4 +2,4 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+export type DatasourceType = "aws_cnr" | "azure_cnr" | "azure_tenant" | "gcp_cnr" | "unknown";

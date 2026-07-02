@@ -3,10 +3,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export type AccountUserReferenceWithUser = {
-  status: 'invited' | 'invitation-expired' | 'active' | 'deleted';
+  status: "invited" | "invitation-expired" | "active" | "deleted";
   id: string;
-  created_at?: (string | null);
-  joined_at?: (string | null);
+  created_at?: string | null;
+  joined_at?: string | null;
   user: {
     name: string;
     external_id: string;

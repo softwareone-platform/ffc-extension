@@ -2,4 +2,4 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type EntitlementStatus = 'new' | 'active' | 'terminated' | 'deleted';
+export type EntitlementStatus = "new" | "active" | "terminated" | "deleted";

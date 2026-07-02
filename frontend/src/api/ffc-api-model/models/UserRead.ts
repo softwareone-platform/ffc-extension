@@ -9,45 +9,45 @@ export type UserRead = {
   events: {
     created: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
     updated: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
+      } | null;
     };
-    deleted?: ({
+    deleted?: {
       at: string;
-      by: ({
+      by: {
         id: string;
-        type: 'user' | 'system';
+        type: "user" | "system";
         name: string;
-      } | null);
-    } | null);
+      } | null;
+    } | null;
   };
   id: string;
-  status: 'draft' | 'active' | 'disabled' | 'deleted';
-  account_user: ({
-    status: 'invited' | 'invitation-expired' | 'active' | 'deleted';
+  status: "draft" | "active" | "disabled" | "deleted";
+  account_user: {
+    status: "invited" | "invitation-expired" | "active" | "deleted";
     id: string;
-    created_at?: (string | null);
-    joined_at?: (string | null);
+    created_at?: string | null;
+    joined_at?: string | null;
     account: {
       id: string;
       name: string;
-      type: 'admin' | 'operations' | 'affiliate';
-      integration: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
+      type: "admin" | "operations" | "affiliate";
+      integration: "aws" | "google" | "microsoft" | "softwareone" | null;
       /**
        * An external identifier for the account
        */
       external_id: string;
     };
-  } | null);
+  } | null;
 };

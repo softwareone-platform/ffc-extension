@@ -2,4 +2,4 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type AccountUserStatus = 'invited' | 'invitation-expired' | 'active' | 'deleted';
+export type AccountUserStatus = "invited" | "invitation-expired" | "active" | "deleted";

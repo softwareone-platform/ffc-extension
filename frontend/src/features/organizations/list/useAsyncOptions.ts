@@ -1,6 +1,6 @@
-import { OrganizationRead } from "~api/ffc-api-model";
 import { Entity } from "@swo/service";
 
+import { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationsApi } from "~organizations/api";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";

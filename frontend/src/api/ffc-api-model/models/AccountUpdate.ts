@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type AccountUpdate = {
-  name?: (string | null);
-  integration?: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
-  external_id?: (string | null);
+  name?: string | null;
+  integration?: "aws" | "google" | "microsoft" | "softwareone" | null;
+  external_id?: string | null;
 };

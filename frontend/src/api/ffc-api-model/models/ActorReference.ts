@@ -4,6 +4,6 @@
 /* eslint-disable */
 export type ActorReference = {
   id: string;
-  type: 'user' | 'system';
+  type: "user" | "system";
   name: string;
 };

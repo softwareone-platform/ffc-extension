@@ -8,10 +8,10 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
-import { EmployeeRead } from "~api/ffc-api-model";
 import { StatusChip } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
+import { EmployeeRead } from "~api/ffc-api-model";
 import { useOrganizationsApi } from "~organizations/api";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";
 import { useFixedT } from "~shared/hooks/useFixedT";

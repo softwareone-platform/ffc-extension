@@ -11,6 +11,6 @@ export type AccountCreate = {
    * An external identifier for the account
    */
   external_id: string;
-  type: 'admin' | 'operations' | 'affiliate';
-  integration?: ('aws' | 'google' | 'microsoft' | 'softwareone' | null);
+  type: "admin" | "operations" | "affiliate";
+  integration?: "aws" | "google" | "microsoft" | "softwareone" | null;
 };

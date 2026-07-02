@@ -3,6 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type EmployeeRole = {
-  resource_type?: (string | null);
-  purpose?: (string | null);
+  resource_type?: string | null;
+  purpose?: string | null;
 };

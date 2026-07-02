@@ -1,5 +1,4 @@
 import { EntitlementRead } from "~api/ffc-api-model";
-
 import { useEntitlementsDetailsApi } from "~entitlements/api";
 import { Status } from "~shared/components/entity-status-chip";
 import { PageShell } from "~shared/components/page-shell";
