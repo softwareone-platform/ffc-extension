@@ -1,6 +1,6 @@
 import { Card } from "@swo/design-system/card";
 import { Grid } from "@swo/design-system/grid";
-import { OrganizationRead } from "@swo/ffc-api-model";
+import { OrganizationRead } from "~api/ffc-api-model";
 import { Entity } from "@swo/service";
 
 import { useFixedT } from "~shared/hooks/useFixedT";

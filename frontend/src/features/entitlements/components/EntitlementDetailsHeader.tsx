@@ -1,4 +1,4 @@
-import { EntitlementRead } from "@swo/ffc-api-model";
+import { EntitlementRead } from "~api/ffc-api-model";
 
 import { useEntitlementsDetailsApi } from "~entitlements/api";
 import { Status } from "~shared/components/entity-status-chip";

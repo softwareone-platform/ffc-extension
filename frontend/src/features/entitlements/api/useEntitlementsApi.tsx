@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { EntitlementCreate } from "@swo/ffc-api-model";
+import { EntitlementCreate } from "~api/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 
 import { http } from "@mpt-extension/sdk";

@@ -12,6 +12,7 @@
     "baseUrl": "./src",
     "types": ["node", "jest"],
     "paths": {
+      "~api/*": ["api/*"],
       "~app/*": ["app/*"],
       "~features/*": ["features/*"],
       "~organizations/*": ["features/organizations/*"],

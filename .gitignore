@@ -201,3 +201,4 @@ static/*
 
 frontend/test-results/
 frontend/coverage/
+frontend/tools/api-model/**/*.json

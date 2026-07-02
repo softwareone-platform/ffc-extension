@@ -1,7 +1,7 @@
 import { createContext, PropsWithChildren, useContext } from "react";
 
 // import { useOrganizationsApi } from "~organizations/api";
-import { OrganizationRead } from "@swo/ffc-api-model";
+import { OrganizationRead } from "~api/ffc-api-model";
 
 const OrganizationContext = createContext<OrganizationRead | undefined>({} as OrganizationRead);
 
