@@ -28,6 +28,18 @@ repos:
           - id: gitleaks
     - repo: local
       hooks:
+          - id: generate-api-models
+            name: Regenerate API models from OpenAPI spec
+            entry: bash -c 'cd frontend && npm run generate:api'
+            language: system
+            pass_filenames: false
+            files: ^backend/app/(schemas|routers)/.*\.py$
+          - id: frontend-typecheck
+            name: Typecheck frontend (tsc --noEmit)
+            entry: bash -c 'cd frontend && npm run typecheck'
+            language: system
+            pass_filenames: false
+            files: ^frontend/src/.*\.tsx?$
           - id: frontend-check
             name: frontend check:all
             language: system

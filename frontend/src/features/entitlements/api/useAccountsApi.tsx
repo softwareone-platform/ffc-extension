@@ -2,11 +2,11 @@ import { useCallback, useMemo } from "react";
 
 import { AxiosRequestConfig } from "axios";
 
-import { AccountRead } from "@swo/ffc-api-model";
 import { RqlQuery } from "@swo/rql-client";
 
 import { http } from "@mpt-extension/sdk";
 
+import { AccountRead } from "~api/ffc-api-model";
 import { ListResponse } from "~shared/utils/mapAxiosResponseDataList";
 
 const rootPath = "/ops/v1/accounts";

@@ -18,6 +18,7 @@ export default {
   coverageReporters: ['text', 'cobertura', 'html', 'lcov', 'text-summary'],
   coverageDirectory: '<rootDir>/../coverage',
   coveragePathIgnorePatterns: [
+    'api',
     '\\.d\\.ts',
     '\\.html$',
     'i18n',

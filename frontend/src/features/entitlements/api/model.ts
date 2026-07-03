@@ -1,4 +1,4 @@
-import { AccountRead, EntitlementRead } from "@swo/ffc-api-model";
+import { AccountRead, EntitlementRead } from "~api/ffc-api-model";
 
 export type Account = AccountRead & { integration: string };
 export type Entitlement = EntitlementRead & {
