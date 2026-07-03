@@ -47,14 +47,18 @@ PRODUCT_TEMPLATES = [
     },
 ]
 
-#
-#
-# @pytest.fixture(autouse=True)
-# def clear_template_cache():
-#     # template_cache is module-level global state, so it leaks between tests unless reset.
-#     templates_module.template_cache.clear()
-#     yield
-#     templates_module.template_cache.clear()
+
+def _make_purchase_processor(order: dict, settings) -> PurchaseOrderProcessor:
+    return PurchaseOrderProcessor(
+        api_modifier_client=AsyncMock(),
+        client=AsyncMock(),
+        ext_client=AsyncMock(),
+        optscale_auth_client=AsyncMock(),
+        optscale_client=AsyncMock(),
+        organization_repo=AsyncMock(),
+        order=order,
+        settings=settings,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -395,9 +399,7 @@ async def test_start_processing_order_template_with_same_template(
         assert f"{order['id']}: processing template is ok, continue" in caplog.text
 
 
-async def test_test_validate_returns_true_for_valid_order(
-    mocker, make_processor, order_factory, caplog
-):
+async def test_test_validate_returns_true_for_valid_order(make_processor, order_factory, caplog):
     order = order_factory(
         order_type="Purchase",
         status="Processing",
@@ -537,9 +539,7 @@ async def test_apply_fulfillment_defaults(mocker, make_processor, order_factory)
     assert response == expected_order
 
 
-async def test_get_or_create_organization(
-    mocker, make_processor, caplog, order_factory, db_session
-):
+async def test_get_or_create_organization(mocker, make_processor, caplog, order_factory):
     order = order_factory(
         order_type="Purchase",
         status="Processing",
@@ -547,187 +547,50 @@ async def test_get_or_create_organization(
         product_name="SoftwareOne FinOps for Cloud",
     )
     processor = make_processor(order)
+    agreement_id = order["agreement"]["id"]
+
+    # Only the authorization currency is read from the agreement (the billing currency).
     agreement_body = {
-        "$meta": {"omitted": ["split"]},
-        "id": "AGR-2234-7614-1678",
-        "name": "SoftwareOne FinOps for Cloud for Stuart Meeks Corp",
-        "revision": 1,
-        "status": "Active",
-        "listing": {"id": "LST-9168-7963", "name": "LST-9168-7963", "revision": 1},
         "authorization": {
             "id": "AUT-3727-1184",
             "name": "SoftwareOne FinOps for Cloud (USD)",
-            "revision": 1,
-            "externalIds": {"operations": "sfc-auth-us-01"},
             "currency": "USD",
-            "notes": "",
-            "product": {
-                "id": "PRD-7208-0459",
-                "name": "SoftwareOne FinOps for Cloud",
-                "icon": "/v1/catalog/products/PRD-7208-0459/icon",
-                "revision": 1,
-                "externalIds": {},
-                "status": "Published",
-            },
-            "vendor": {
-                "id": "ACC-3805-2089",
-                "name": "SoftwareOne Vendor",
-                "icon": "/v1/accounts/accounts/ACC-3805-2089/icon",
-                "revision": 3,
-                "type": "Vendor",
-                "status": "Active",
-            },
-            "owner": {
-                "id": "SEL-7282-9889",
-                "name": "SoftwareOne, Inc.",
-                "icon": "/v1/accounts/sellers/SEL-7282-9889/icon",
-                "revision": 2,
-                "externalId": "78ADB9DA-BC69-4CBF-BAA0-CDBC28619EF7",
-            },
-            "statistics": {"subscriptions": 21, "agreements": 23, "sellers": 1, "listings": 1},
-            "journal": {"firstInvoiceDate": "2025-02-01T00:00:00.000Z", "frequency": "1m"},
-            "eligibility": {"client": True, "partner": False},
-            "audit": {
-                "created": {
-                    "at": "2024-10-25T04:41:00.053Z",
-                    "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
-                },
-                "updated": {
-                    "at": "2024-10-25T04:41:30.649Z",
-                    "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
-                },
-            },
-        },
-        "vendor": {
-            "id": "ACC-3805-2089",
-            "name": "SoftwareOne Vendor",
-            "icon": "/v1/accounts/accounts/ACC-3805-2089/icon",
-            "revision": 3,
-            "type": "Vendor",
-            "status": "Active",
-        },
-        "client": {
-            "id": "ACC-3131-4670",
-            "name": "Stuart Meeks Corp",
-            "revision": 1,
-            "type": "Client",
-            "status": "Enabled",
-        },
-        "price": {"PPxY": 0.00000, "PPxM": 0.00000, "currency": "USD"},
-        "template": {"id": "TPL-7208-0459-0003", "name": "Default", "revision": 1},
-        "lines": [],
-        "assets": [],
-        "subscriptions": [
-            {
-                "id": "SUB-1467-4028-7539",
-                "name": "Subscription for SoftwareOne FinOps for Cloud",
-                "revision": 0,
-            }
-        ],
-        "parameters": {
-            "ordering": [
-                {
-                    "id": "PAR-7208-0459-0001",
-                    "externalId": "organizationName",
-                    "name": "Organization name",
-                    "type": "SingleLineText",
-                    "phase": "Order",
-                    "scope": "Agreement",
-                    "multiple": False,
-                    "displayValue": "Avengers Inc",
-                    "value": "Avengers Inc",
-                },
-                {
-                    "id": "PAR-7208-0459-0002",
-                    "externalId": "organizationAdmin",
-                    "name": "Administrator email",
-                    "type": "SingleLineText",
-                    "phase": "Order",
-                    "scope": "Agreement",
-                    "multiple": False,
-                    "displayValue": "will.smith@avengersinc.com",
-                    "value": "will.smith@avengersinc.com",
-                },
-            ],
-            "fulfillment": [
-                {
-                    "id": "PAR-7208-0459-0003",
-                    "externalId": "organizationId",
-                    "name": "Organization ID",
-                    "type": "SingleLineText",
-                    "phase": "Fulfillment",
-                    "scope": "Agreement",
-                    "multiple": False,
-                    "displayValue": "bc4cd95d-ca9c-45d9-a774-8ecd12ddab05",
-                    "value": "bc4cd95d-ca9c-45d9-a774-8ecd12ddab05",
-                }
-            ],
-        },
-        "licensee": {
-            "id": "LCE-4895-5875-2075",
-            "name": "Meeks Corp HQ - Seller SEL-7282-9889",
-            "revision": 1,
-        },
-        "buyer": {"id": "BUY-5975-3862", "name": "Meeks Corp HQ", "revision": 1},
-        "seller": {
-            "id": "SEL-7282-9889",
-            "name": "SoftwareOne, Inc.",
-            "icon": "/v1/accounts/sellers/SEL-7282-9889/icon",
-            "revision": 2,
-            "externalId": "78ADB9DA-BC69-4CBF-BAA0-CDBC28619EF7",
-        },
-        "product": {
-            "id": "PRD-7208-0459",
-            "name": "SoftwareOne FinOps for Cloud",
-            "icon": "/v1/catalog/products/PRD-7208-0459/icon",
-            "revision": 1,
-            "externalIds": {},
-            "status": "Published",
-        },
-        "externalIds": {"client": ""},
-        "termsAndConditions": [
-            {
-                "id": "TCS-7208-0459-0001",
-                "name": "SoftwareOne FinOps for Cloud - Terms and Conditions",
-                "revision": 1,
-                "accepted": "2024-10-25T05:02:05.677Z",
-                "acceptedBy": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
-            }
-        ],
-        "certificates": [],
-        "audit": {
-            "created": {
-                "at": "2024-10-25T04:57:10.241Z",
-                "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
-            },
-            "updated": {
-                "at": "2024-10-25T05:02:05.481Z",
-                "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
-            },
         },
     }
-    processor.api_modifier_client.create_organization.return_value = Mock(
-        json=Mock(return_value={"id": "optscale-org-id"})
-    )
     mocker.patch.object(processor.ext_client, "get_agreement", return_value=agreement_body)
-    mocker.patch.object(processor.ext_client, "update_agreement")
+    mocked_update_agreement = mocker.patch.object(processor.ext_client, "update_agreement")
+    processor.api_modifier_client.create_organization.return_value = Mock(
+        json=Mock(return_value={"id": "OPT-ORG-0001"})
+    )
+    # created=True with no link yet -> takes the OptScale creation path.
     organization = Mock(
         id="b57b9964-7046-4e20-812c-01ab52cf4661",
         linked_organization_id=None,
     )
     processor.organization_repo.get_or_create.return_value = (organization, True)
-    processor.api_modifier_client.create_organization.return_value = Mock(
-        json=Mock(return_value={"id": "OPT-ORG-0001"})
-    )
+
     with caplog.at_level(logging.INFO):
         result = await processor.get_or_create_organization(employee_id="employee-id")
+
     assert result is organization
-    # name / currency / billing_currency were passed as defaults to get_or_create
+    # The agreement is read to resolve the billing currency.
+    processor.ext_client.get_agreement.assert_awaited_once_with(
+        agreement_id, select=["authorization"]
+    )
+    # name / currency / billing_currency were passed as defaults to get_or_create.
     processor.organization_repo.get_or_create.assert_awaited_once_with(
-        operations_external_id=order["agreement"]["id"],
+        operations_external_id=agreement_id,
         defaults={"name": "ACME Inc", "currency": "USD", "billing_currency": "USD"},
     )
-    # linking was done via update(), using the OptScale org id
+    # A fresh org is provisioned on OptScale...
+    processor.api_modifier_client.create_organization.assert_awaited_once_with(
+        org_name="ACME Inc", user_id="employee-id", currency="USD"
+    )
+    # ...the agreement is linked back to it...
+    mocked_update_agreement.assert_awaited_once_with(
+        agreement_id, externalIds={"vendor": organization.id}
+    )
+    # ...and the OptScale org id is persisted locally via update().
     processor.organization_repo.update.assert_awaited_once_with(
         organization.id,
         {"linked_organization_id": "OPT-ORG-0001"},
@@ -929,19 +792,6 @@ async def test_create_order_subscription_skips_when_subscription_already_exists(
 # -- PurchaseOrderProcessor.process --
 
 
-def _make_purchase_processor(order: dict, settings) -> PurchaseOrderProcessor:
-    return PurchaseOrderProcessor(
-        api_modifier_client=AsyncMock(),
-        client=AsyncMock(),
-        ext_client=AsyncMock(),
-        optscale_auth_client=AsyncMock(),
-        optscale_client=AsyncMock(),
-        organization_repo=AsyncMock(),
-        order=order,
-        settings=settings,
-    )
-
-
 async def test_purchase_order_process_completes_order(mocker, order_factory, test_settings, caplog):
     order = order_factory(
         order_type="Purchase",
@@ -990,3 +840,69 @@ async def test_purchase_order_process_completes_order(mocker, order_factory, tes
     )
     mocked_send_reset_password.assert_awaited_once_with("pl@example.com", False)
     assert f"Order {order['id']} has been completed" in caplog.text
+
+
+async def test_purchase_order_process_new_user_branch(mocker, order_factory, test_settings):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    # isNewUser == ["Yes"] -> new-user (is_new is True).
+    for param in order["parameters"]["fulfillment"]:
+        if param["externalId"] == "isNewUser":
+            param["value"] = ["Yes"]
+    processor = _make_purchase_processor(order, test_settings)
+    organization = Mock(id="b57b9964-7046-4e20-812c-01ab52cf4661")
+
+    mocker.patch.object(processor, "validate_order", AsyncMock())
+    mocker.patch.object(processor, "apply_fulfillment_defaults", AsyncMock())
+    mocker.patch.object(processor, "set_processing_order_template", AsyncMock())
+    mocker.patch.object(
+        processor, "create_employee", AsyncMock(return_value=("employee-id", "new@example.com"))
+    )
+    mocker.patch.object(
+        processor, "get_or_create_organization", AsyncMock(return_value=organization)
+    )
+    mocker.patch.object(processor, "create_order_subscription", AsyncMock())
+    mocked_get_complete_template = mocker.patch.object(
+        processor, "get_complete_template", AsyncMock(return_value="TPL-0005")
+    )
+    mocked_send_reset_password = mocker.patch.object(processor, "send_reset_password", AsyncMock())
+
+    result = await processor.process()
+
+    assert result is processor.order
+    # New user -> completes with the new-user template and triggers a password reset.
+    mocked_get_complete_template.assert_awaited_once_with(True)
+    processor.ext_client.complete_order.assert_awaited_once_with(
+        order_id=order["id"], payload={"template": {"id": "TPL-0005"}}
+    )
+    mocked_send_reset_password.assert_awaited_once_with("new@example.com", True)
+
+
+async def test_purchase_order_process_short_circuits_when_validation_fails(
+    mocker, order_factory, test_settings
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = _make_purchase_processor(order, test_settings)
+
+    mocker.patch.object(
+        processor, "validate_order", AsyncMock(side_effect=OrderMovedToQuery(order["id"]))
+    )
+    mocked_defaults = mocker.patch.object(processor, "apply_fulfillment_defaults", AsyncMock())
+    mocked_create_employee = mocker.patch.object(processor, "create_employee", AsyncMock())
+
+    with pytest.raises(OrderMovedToQuery, match=order["id"]):
+        await processor.process()
+
+    # Nothing past validation runs, and the order is never completed.
+    mocked_defaults.assert_not_awaited()
+    mocked_create_employee.assert_not_awaited()
+    processor.ext_client.complete_order.assert_not_awaited()
