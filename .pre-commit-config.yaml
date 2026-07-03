@@ -33,7 +33,7 @@ repos:
             entry: bash -c 'cd frontend && npm run generate:api'
             language: system
             pass_filenames: false
-            files: ^backend/app/(models|schemas|routers|api)/.*\.py$
+            files: ^backend/app/(schemas|routers)/.*\.py$
           - id: frontend-typecheck
             name: Typecheck frontend (tsc --noEmit)
             entry: bash -c 'cd frontend && npm run typecheck'
