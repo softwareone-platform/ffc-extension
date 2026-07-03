@@ -25,8 +25,10 @@
     "test": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096 --experimental-vm-modules\" jest --config=jest.config.js --passWithNoTests",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096 --experimental-vm-modules\" jest --config=jest-coverage.config.js --passWithNoTests --forceExit",
     "test:coverage:watch": "npm run test:coverage -- --watch",
-    "generate:api-model": "ts-node -P ./tsconfig.json ./tools/api-model/build.ts",
-    "generate-model": "openapi --useUnionTypes --exportServices false --exportCore false --indent 2"
+    "typecheck": "tsc --noEmit",
+    "generate:spec": "uv run --project ../backend ffcops openapi -f json -o src/api/ffc-api-model.json",
+    "generate:models": "npx @hey-api/openapi-ts -i src/api/ffc-api-model.json -o src/api/ffc-api-model",
+    "generate:api": "npm run generate:spec && npm run generate:models && rm -rf src/api/ffc-api-model.json"
   },
   "files": [
     "../static"
@@ -58,6 +60,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@hey-api/openapi-ts": "0.99.0",
     "@swc/core": "^1.15.32",
     "@swc/jest": "^0.2.39",
     "@testing-library/jest-dom": "^6.1.4",
