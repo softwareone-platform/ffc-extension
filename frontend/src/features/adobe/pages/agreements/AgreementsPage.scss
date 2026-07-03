@@ -1,0 +1,40 @@
+.adobe-agreements {
+  display: flex;
+  flex-direction: column;
+
+  &__resale {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+  }
+
+  &__product {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__product-icon {
+    min-width: 40px;
+    flex-shrink: 0;
+  }
+
+  &__seller {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__seller-icon {
+    flex-shrink: 0;
+  }
+
+  &__link {
+    color: var(--color-link, inherit);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

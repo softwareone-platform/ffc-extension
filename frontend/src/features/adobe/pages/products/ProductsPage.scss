@@ -1,0 +1,43 @@
+.adobe-products {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    p {
+      margin: 0;
+    }
+  }
+
+  &__icon {
+    min-width: 32px;
+    flex-shrink: 0;
+  }
+
+  &__header-text {
+    display: flex;
+    flex-direction: column;
+
+    p {
+      padding: 0;
+      margin: 0;
+    }
+  }
+
+  &__tiles {
+    grid-template-columns: repeat(2, 1fr) !important;
+
+    [class*="tile__content__data__item-reference__title"],
+    [class*="tile__content__data__item-reference__subtitle"] {
+      padding: 0;
+      margin: 0;
+    }
+
+    [class*="tile__content__data__sub-heading"] {
+      display: none;
+    }
+  }
+}
