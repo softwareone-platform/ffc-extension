@@ -1,15 +1,36 @@
-from datetime import UTC, datetime
+from datetime import date
 from unittest.mock import AsyncMock
 
 import pytest
 
-from app.fulfilment.error import ERR_DUE_DATE_IS_REACHED
-from app.fulfilment.recovery import handle_exception
-from app.schemas.core import EventResponse
+from app.conf import Settings
+from app.fulfilment.constants import ORDER_TYPE_TERMINATE, ProcessResult
+from app.fulfilment.error import (
+    ERR_DUE_DATE_IS_REACHED,
+    ERR_DUE_DATE_NOT_SET,
+    ERR_ORDER_TYPE_NOT_SUPPORTED,
+)
+from app.fulfilment.exceptions import (
+    OrderMovedToQuery,
+    OrderNotValidError,
+    UnsupportedOrderTypeError,
+)
+from app.fulfilment.processing import PurchaseOrderProcessor
 
-FIXED_NOW = datetime(2026, 6, 8, tzinfo=UTC)
-ORDER_ID = "ORD-1111-2222-3333"
-TASK_ID = "TSK-1111-2222-3333"
+FIXED_NOW = date(2026, 6, 8)
+
+
+def _make_purchase_processor(order: dict, settings) -> PurchaseOrderProcessor:
+    return PurchaseOrderProcessor(
+        api_modifier_client=AsyncMock(),
+        client=AsyncMock(),
+        ext_client=AsyncMock(),
+        optscale_auth_client=AsyncMock(),
+        optscale_client=AsyncMock(),
+        organization_repo=AsyncMock(),
+        order=order,
+        settings=settings,
+    )
 
 
 def _set_due_date(order: dict, value: str | None) -> dict:
@@ -19,14 +40,59 @@ def _set_due_date(order: dict, value: str | None) -> dict:
     return order
 
 
-@pytest.fixture
-def freeze_now(mocker):
-    mocked = mocker.patch("app.fulfilment.recovery.datetime")
-    mocked.now.return_value = FIXED_NOW
-    return mocked
+# -- unsupported order type --
 
 
-async def test_no_due_date_fails_order_and_cancels(order_factory):
+async def test_unsupported_order_type_fails_order_and_completes(
+    order_factory, test_settings: Settings
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = _make_purchase_processor(order, test_settings)
+
+    result = await processor.handle_exception(
+        UnsupportedOrderTypeError(ORDER_TYPE_TERMINATE), now=FIXED_NOW
+    )
+
+    assert result == ProcessResult.COMPLETE
+    processor.ext_client.fail_order.assert_awaited_once_with(
+        order_id=order["id"],
+        payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=ORDER_TYPE_TERMINATE),
+    )
+
+
+# -- errors already handled inside the flow --
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [OrderMovedToQuery("ORD-1111"), OrderNotValidError("ORD-1111")],
+)
+async def test_flow_handled_errors_skip_without_failing_order(
+    order_factory, test_settings: Settings, exc
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = _make_purchase_processor(order, test_settings)
+
+    result = await processor.handle_exception(exc, now=FIXED_NOW)
+
+    assert result == ProcessResult.SKIP
+    processor.ext_client.fail_order.assert_not_awaited()
+
+
+# -- due date recovery --
+
+
+async def test_no_due_date_fails_order_and_cancels(order_factory, test_settings: Settings):
     order = _set_due_date(
         order_factory(
             order_type="Purchase",
@@ -36,49 +102,18 @@ async def test_no_due_date_fails_order_and_cancels(order_factory):
         ),
         None,
     )
-    ext_client = AsyncMock()
+    processor = _make_purchase_processor(order, test_settings)
 
-    response = await handle_exception(RuntimeError("boom"), ext_client, order, ORDER_ID, TASK_ID)
+    result = await processor.handle_exception(RuntimeError("boom"), now=FIXED_NOW)
 
-    assert response == EventResponse.cancel()
-    ext_client.fail_order.assert_awaited_once_with(
-        order_id=ORDER_ID, payload={"description": "due date is not set"}
-    )
-    ext_client.get_task.assert_not_awaited()
-    ext_client.reschedule_task.assert_not_awaited()
-
-
-async def test_missing_order_treated_as_no_due_date(order_factory):
-    ext_client = AsyncMock()
-
-    response = await handle_exception(RuntimeError("boom"), ext_client, None, ORDER_ID, TASK_ID)
-
-    assert response == EventResponse.cancel()
-    ext_client.fail_order.assert_awaited_once_with(
-        order_id=ORDER_ID, payload={"description": "due date is not set"}
+    assert result == ProcessResult.CANCEL
+    processor.ext_client.fail_order.assert_awaited_once_with(
+        order_id=order["id"],
+        payload=ERR_DUE_DATE_NOT_SET.to_dict(),
     )
 
 
-async def test_no_due_date_cancels_even_if_fail_order_raises(order_factory):
-    order = _set_due_date(
-        order_factory(
-            order_type="Purchase",
-            status="Processing",
-            product_id="PRD-4141-4379",
-            product_name="SoftwareOne FinOps for Cloud",
-        ),
-        None,
-    )
-    ext_client = AsyncMock()
-    ext_client.fail_order.side_effect = Exception("MPT down")
-
-    response = await handle_exception(RuntimeError("boom"), ext_client, order, ORDER_ID, TASK_ID)
-
-    assert response == EventResponse.cancel()
-    ext_client.fail_order.assert_awaited_once()
-
-
-async def test_due_date_in_future_reschedules(order_factory, freeze_now):
+async def test_due_date_in_future_reschedules(order_factory, test_settings: Settings):
     order = _set_due_date(
         order_factory(
             order_type="Purchase",
@@ -88,23 +123,18 @@ async def test_due_date_in_future_reschedules(order_factory, freeze_now):
         ),
         "2026-12-31",
     )
-    ext_client = AsyncMock()
-    ext_client.get_task.return_value = {"description": "previous note"}
+    processor = _make_purchase_processor(order, test_settings)
 
-    response = await handle_exception(RuntimeError("boom"), ext_client, order, ORDER_ID, TASK_ID)
+    result = await processor.handle_exception(RuntimeError("boom"), now=FIXED_NOW)
 
-    assert response == EventResponse.reschedule(seconds=300)
-    ext_client.get_task.assert_awaited_once_with(TASK_ID)
-    ext_client.reschedule_task.assert_awaited_once_with(
-        TASK_ID,
-        payload={"description": "previous note - 2026-06-08 - boom"},
-    )
-    ext_client.fail_order.assert_not_awaited()
-    ext_client.complete_task.assert_not_awaited()
+    assert result == ProcessResult.RESCHEDULE
+    processor.ext_client.fail_order.assert_not_awaited()
 
 
 @pytest.mark.parametrize("due_date", ["2026-01-01", "2026-06-08"])  # past and == now
-async def test_due_date_reached_fails_order_and_completes_task(order_factory, freeze_now, due_date):
+async def test_due_date_reached_fails_order_and_completes(
+    order_factory, test_settings: Settings, due_date
+):
     order = _set_due_date(
         order_factory(
             order_type="Purchase",
@@ -114,64 +144,12 @@ async def test_due_date_reached_fails_order_and_completes_task(order_factory, fr
         ),
         due_date,
     )
-    ext_client = AsyncMock()
-    ext_client.get_task.return_value = {"description": "previous note"}
+    processor = _make_purchase_processor(order, test_settings)
 
-    response = await handle_exception(RuntimeError("boom"), ext_client, order, ORDER_ID, TASK_ID)
+    result = await processor.handle_exception(RuntimeError("boom"), now=FIXED_NOW)
 
-    assert response == EventResponse.ok()
-    ext_client.fail_order.assert_awaited_once_with(
-        order_id=ORDER_ID,
+    assert result == ProcessResult.COMPLETE
+    processor.ext_client.fail_order.assert_awaited_once_with(
+        order_id=order["id"],
         payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date),
-    )
-    ext_client.complete_task.assert_awaited_once_with(
-        TASK_ID,
-        payload={"description": "previous note - 2026-06-08 - boom"},
-    )
-    ext_client.reschedule_task.assert_not_awaited()
-
-
-async def test_due_date_reached_cancels_when_fail_order_raises(order_factory, freeze_now, caplog):
-    # Due date reached but failing/completing the order errors out: the error
-    # must be logged and swallowed, returning Cancel.
-    order = _set_due_date(
-        order_factory(
-            order_type="Purchase",
-            status="Processing",
-            product_id="PRD-4141-4379",
-            product_name="SoftwareOne FinOps for Cloud",
-        ),
-        "2026-01-01",
-    )
-    ext_client = AsyncMock()
-    ext_client.get_task.return_value = {"description": "previous note"}
-    ext_client.fail_order.side_effect = Exception("MPT down")
-
-    response = await handle_exception(RuntimeError("boom"), ext_client, order, ORDER_ID, TASK_ID)
-
-    assert response == EventResponse.cancel()
-    ext_client.fail_order.assert_awaited_once()
-    ext_client.complete_task.assert_not_awaited()
-    assert "Failed to fail/complete" in caplog.text
-
-
-async def test_get_task_missing_description_defaults_to_empty(order_factory, freeze_now):
-    order = _set_due_date(
-        order_factory(
-            order_type="Purchase",
-            status="Processing",
-            product_id="PRD-4141-4379",
-            product_name="SoftwareOne FinOps for Cloud",
-        ),
-        "2026-12-31",
-    )
-    ext_client = AsyncMock()
-    ext_client.get_task.return_value = {}
-
-    response = await handle_exception(RuntimeError("boom"), ext_client, order, ORDER_ID, TASK_ID)
-
-    assert response == EventResponse.reschedule(seconds=300)
-    ext_client.reschedule_task.assert_awaited_once_with(
-        TASK_ID,
-        payload={"description": " - 2026-06-08 - boom"},
     )

@@ -789,6 +789,130 @@ async def test_create_order_subscription_skips_when_subscription_already_exists(
     processor.ext_client.create_subscription.assert_not_awaited()
 
 
+async def test_create_order_subscription_creates_missing_subscription(
+    order_factory, make_processor, caplog
+):
+    # No pre-existing subscription for the line -> a new one is created and linked to the org.
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+        subscriptions=[],
+    )
+    processor = make_processor(order)
+    processor.ext_client.create_subscription.return_value = {"id": "SUB-9999-0001"}
+    organization = Mock(id="b57b9964-7046-4e20-812c-01ab52cf4661")
+
+    with caplog.at_level(logging.INFO):
+        await processor.create_order_subscription(organization)
+
+    line = order["lines"][0]
+    processor.ext_client.create_subscription.assert_awaited_once_with(
+        order_id=order["id"],
+        subscription={
+            "name": f"Subscription for {line['item']['name']}",
+            "parameters": {},
+            "externalIds": {"vendor": organization.id},
+            "lines": [{"id": line["id"]}],
+        },
+    )
+    assert f"{order['id']}: subscription {line['id']} (SUB-9999-0001) created" in caplog.text
+
+
+# -- get_complete_template --
+
+
+@pytest.mark.parametrize(
+    ("is_new", "expected_template_id"),
+    [(True, "TPL-0005"), (False, "TPL-0006")],  # PurchaseExisting is the not-new template
+)
+async def test_get_complete_template(
+    mocker, order_factory, make_processor, is_new, expected_template_id
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    template_id = await processor.get_complete_template(is_new)
+    assert template_id == expected_template_id
+
+
+# -- OrderProcessor.handle_exception (base) --
+
+
+async def test_base_handle_exception_is_a_noop(order_factory, make_processor):
+    # The base processor has no recovery behaviour; subclasses override it.
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    assert await processor.handle_exception(RuntimeError("boom"), now=None) is None
+
+
+# -- PurchaseOrderProcessor.send_reset_password --
+
+
+async def test_send_reset_password_new_user_sends_reset(order_factory, test_settings, caplog):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = _make_purchase_processor(order, test_settings)
+
+    with caplog.at_level(logging.INFO):
+        await processor.send_reset_password("pl@example.com", is_new=True)
+
+    processor.optscale_client.reset_password.assert_awaited_once_with("pl@example.com")
+    assert "Employee pl@example.com password reset sent" in caplog.text
+
+
+async def test_send_reset_password_swallows_reset_failure(order_factory, test_settings, caplog):
+    # A failure while sending the reset is logged and swallowed (does not propagate).
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = _make_purchase_processor(order, test_settings)
+    processor.optscale_client.reset_password.side_effect = Exception("OptScale down")
+
+    with caplog.at_level(logging.ERROR):
+        await processor.send_reset_password("pl@example.com", is_new=True)
+
+    assert "Failed to reset password" in caplog.text
+
+
+async def test_send_reset_password_existing_user_is_noop(order_factory, test_settings, caplog):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = _make_purchase_processor(order, test_settings)
+
+    with caplog.at_level(logging.INFO):
+        await processor.send_reset_password("pl@example.com", is_new=False)
+
+    processor.optscale_client.reset_password.assert_not_awaited()
+    assert "No need to send reset password for pl@example.com" in caplog.text
+
+
 # -- PurchaseOrderProcessor.process --
 
 

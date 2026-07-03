@@ -318,7 +318,7 @@ class PurchaseOrderProcessor(OrderProcessor):
             except Exception:
                 logger.exception("Failed to reset password")
         else:
-            logger.info("No need to send reset password", employee_email)
+            logger.info("No need to send reset password for %s", employee_email)
 
     async def process(self):
         await self.validate_order()
@@ -340,38 +340,35 @@ class PurchaseOrderProcessor(OrderProcessor):
         logger.info("Order %s has been completed", self.order["id"])
         return self.order  # return ORDER_COMPLETED
 
-    async def handle_exception(self, exc: Exception, *, now: date):
+    async def handle_exception(self, exc: Exception, *, now: date) -> ProcessResult:
         if isinstance(exc, UnsupportedOrderTypeError):
-            # fail order
+            # Permanent failure: fail the order and let the task complete.
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
                 payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
             )
             return ProcessResult.COMPLETE
         if isinstance(exc, OrderMovedToQuery | OrderNotValidError):
-            # no fail order
+            # Handled inside the flow already: nothing else to do.
             return ProcessResult.SKIP
 
         due_date: date | None = get_due_date(self.order) if self.order else None
         if due_date is None:
-            # fail order
+            # No due date to retry against: fail the order and cancel.
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
-                payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
+                payload=ERR_DUE_DATE_NOT_SET.to_dict(),
             )
-            return ProcessResult.CANCEL, ERR_DUE_DATE_NOT_SET.to_dict()
+            return ProcessResult.CANCEL
         if now < due_date:
-            # reschedule
+            # Still within the due date window: retry later.
             return ProcessResult.RESCHEDULE
-        else:
-            # fail order
-            await self.ext_client.fail_order(
-                order_id=self.order["id"],
-                payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
-            )
-            return ProcessResult.COMPLETE, ERR_DUE_DATE_NOT_SET.to_dict(
-                payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
-            )
+        # Due date reached: fail the order and let the task complete.
+        await self.ext_client.fail_order(
+            order_id=self.order["id"],
+            payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
+        )
+        return ProcessResult.COMPLETE
 
 
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
