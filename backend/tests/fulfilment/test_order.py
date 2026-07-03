@@ -1,28 +1,29 @@
 import copy
+import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from pytest_mock import MockerFixture
 
-from app.api_clients.mpt import MPTClient, MPTExtensionAuth
+from app.api_clients.optscale import UserDoesNotExist
 from app.conf import Settings
 from app.db.handlers import OrganizationHandler
-from app.fulfilment import templates as templates_module
+from app.db.models import Organization
 from app.fulfilment.constants import (
     COMPLETED_TEMPLATE_TYPE,
+    ORDER_TYPE_TERMINATE,
     PROCESSING_TEMPLATE_TYPE,
     PURCHASE_EXISTING_TEMPLATE_NAME,
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
 )
-from app.fulfilment.order import (
-    apply_fulfillment_defaults,
-    complete_purchase_order,
-    start_task_and_get_order,
-    validate_and_move_to_querying_if_needed,
+from app.fulfilment.exceptions import (
+    OrderMovedToQuery,
+    OrderNotValidError,
+    UnsupportedOrderTypeError,
 )
-from app.schemas.core import EventResponse
+from app.fulfilment.processing import OrderProcessor, OrderProcessorFactory, PurchaseOrderProcessor
 
 PRODUCT_ID = "PRD-4141-4379"
 
@@ -46,19 +47,20 @@ PRODUCT_TEMPLATES = [
     },
 ]
 
-
-@pytest.fixture(autouse=True)
-def clear_template_cache():
-    # template_cache is module-level global state, so it leaks between tests unless reset.
-    templates_module.template_cache.clear()
-    yield
-    templates_module.template_cache.clear()
+#
+#
+# @pytest.fixture(autouse=True)
+# def clear_template_cache():
+#     # template_cache is module-level global state, so it leaks between tests unless reset.
+#     templates_module.template_cache.clear()
+#     yield
+#     templates_module.template_cache.clear()
 
 
 @pytest.fixture(autouse=True)
 def mock_get_settings(mocker: MockerFixture) -> None:
     mocker.patch(
-        "app.fulfilment.templates.get_settings",
+        "app.conf.get_settings",
         return_value=SimpleNamespace(mpt_product_id=PRODUCT_ID),
     )
 
@@ -68,30 +70,459 @@ async def _templates_gen():
         yield template
 
 
-# -- apply_fulfillment_defaults_if_needed --
+@pytest.fixture
+def make_processor(order_factory, test_settings):
+    def _make(order):
+        return OrderProcessor(
+            api_modifier_client=AsyncMock(),
+            client=AsyncMock(),
+            ext_client=AsyncMock(),
+            optscale_auth_client=AsyncMock(),
+            optscale_client=AsyncMock(),
+            organization_repo=AsyncMock(),
+            order=order,
+            settings=test_settings,
+        )
+
+    return _make
 
 
-async def test_do_not_apply_fulfillment_defaults(mocker, order_factory, test_settings: Settings):
-    ext_client = AsyncMock()
+def _make_factory(order: dict, settings) -> OrderProcessorFactory:
+    client = AsyncMock()
+    client.get_order = AsyncMock(return_value=order)
+    return OrderProcessorFactory(
+        api_modifier_client=AsyncMock(),
+        client=client,
+        ext_client=AsyncMock(),
+        optscale_auth_client=AsyncMock(),
+        optscale_client=AsyncMock(),
+        organization_repo=AsyncMock(),
+        settings=settings,
+    )
+
+
+# -- get_order_type_processor --
+
+
+async def test_get_order_type_processor(order_factory, test_settings: Settings, make_processor):
     order = order_factory(
         order_type="Purchase",
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
     )
-    mocker.patch.object(ext_client, "get_templates_by_product_id", return_value=order)
-    response = await apply_fulfillment_defaults(ext_client, order, test_settings)
+    factory = _make_factory(order, test_settings)
+    processor = await factory.get_order_type_processor(order_id=order["id"])
+    assert processor.order == order
+    assert isinstance(processor, PurchaseOrderProcessor)
+    factory.client.get_order.assert_awaited_once_with(order["id"])
+
+
+async def test_get_order_type_processor_raises_for_unsupported_type(
+    order_factory, test_settings: Settings
+):
+    order = order_factory(
+        order_type=ORDER_TYPE_TERMINATE,  # not registered in PROCESSOR_BY_TYPE
+        status="Processing",
+        product_id=PRODUCT_ID,
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    factory = _make_factory(order, test_settings)
+    with pytest.raises(UnsupportedOrderTypeError) as exc_info:
+        await factory.get_order_type_processor(order_id=order["id"])
+    assert exc_info.value.order_type == ORDER_TYPE_TERMINATE
+    factory.client.get_order.assert_awaited_once_with(order["id"])
+
+
+# -- OrderProcessor.set_template --
+
+
+async def test_set_template_assigns_id_and_returns_copy(order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    result = processor.set_template(order=order, template_id="TPL-1234-5678-0001")
+    assert processor.order is result
+    assert result["template"]["id"] == "TPL-1234-5678-0001"
+    assert order["template"]["id"] == "TPL-1234-1234-4321"
+    assert order["template"]["name"] == "Default Template"
+
+
+async def test_set_template_raises_when_template_id_is_missing(order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    with pytest.raises(ValueError, match="Template id is required"):
+        processor.set_template(order=order, template_id="")
+
+
+async def test_set_template_raises_when_order_malformed(order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    order.pop("template", None)
+    processor = make_processor(order)
+    with pytest.raises(KeyError, match="Order is malformed"):
+        processor.set_template(order=order, template_id="TPL-1234-5678-0001")
+
+
+# -- get_product_template_id / fetch_product_templates  --
+
+
+async def test_get_product_template_returns_specific_by_name(mocker, order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    template_id = await processor.get_product_template_id(PROCESSING_TEMPLATE_TYPE, "Purchase")
+    assert template_id == "TPL-0001"
+    processor.ext_client.get_templates_by_product_id.assert_called_once_with(product_id=PRODUCT_ID)
+
+
+async def test_get_product_template_fails_back_to_default(mocker, order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    template_id = await processor.get_product_template_id(PROCESSING_TEMPLATE_TYPE, "DoesNotExist")
+    assert template_id == "TPL-0002"
+    processor.ext_client.get_templates_by_product_id.assert_called_once_with(product_id=PRODUCT_ID)
+
+
+async def test_get_product_template_returns_default_when_name_is_none(
+    mocker, order_factory, make_processor
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    template_id = await processor.get_product_template_id(QUERYING_TEMPLATE_TYPE, None)
+    assert template_id == "TPL-0003"
+
+
+async def test_get_product_template_uses_cache_without_http_call(
+    mocker, order_factory, make_processor
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    processor.template_cache[(PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME)] = "TPL-CACHED"
+    processor.template_cache[(PROCESSING_TEMPLATE_TYPE, None)] = "TPL-DEFAULT"
+    template_id = await processor.get_product_template_id(
+        PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME
+    )
+
+    assert template_id == "TPL-CACHED"
+    processor.ext_client.get_templates_by_product_id.assert_not_called()
+
+
+async def test_fetch_product_template_builds_cache(mocker, order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    await processor.fetch_product_templates(PRODUCT_ID)
+    assert processor.template_cache == {
+        (PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME): "TPL-0001",
+        (PROCESSING_TEMPLATE_TYPE, None): "TPL-0002",
+        (QUERYING_TEMPLATE_TYPE, None): "TPL-0003",
+        (COMPLETED_TEMPLATE_TYPE, None): "TPL-0004",
+        (COMPLETED_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME): "TPL-0005",
+        (COMPLETED_TEMPLATE_TYPE, PURCHASE_EXISTING_TEMPLATE_NAME): "TPL-0006",
+    }
+    processor.ext_client.get_templates_by_product_id.assert_called_once_with(product_id=PRODUCT_ID)
+
+
+async def test_fetch_product_templates_with_no_templates_leaves_cache_empty(
+    mocker, order_factory, make_processor
+):
+    async def _empty_gen():
+        yield
+
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _empty_gen()),
+    )
+    await processor.fetch_product_templates(PRODUCT_ID)
+    assert processor.template_cache == {}
+
+
+# -- set_processing_order_template --
+
+
+async def test_start_processing_order_template(mocker, make_processor, order_factory, caplog):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+        template={
+            "id": "TPL-1234-1234-0001",
+            "name": "CurrentTemplate",
+            "revision": 1,
+        },
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+
+    updated_order = copy.deepcopy(order)
+    updated_order["template"]["id"] = "TPL-0001"
+    mocker.patch.object(processor.ext_client, "update_order", return_value=updated_order)
+    with caplog.at_level(logging.INFO):
+        response = await processor.set_processing_order_template(order)
+        assert response == updated_order
+        assert f"{order['id']}: processing template set to Purchase (TPL-0001)" in caplog.text
+
+
+async def test_set_processing_order_template_switches_template(
+    mocker, make_processor, order_factory, caplog
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    updated_order = copy.deepcopy(order)
+    updated_order["template"]["id"] = "TPL-0001"
+    processor.ext_client.update_order.return_value = updated_order
+    with caplog.at_level(logging.INFO):
+        response = await processor.set_processing_order_template(order)
+    assert response == updated_order
+    assert processor.order == updated_order
+    processor.ext_client.update_order.assert_awaited_once_with(
+        order_id=order["id"], template={"id": "TPL-0001"}
+    )
+    assert f"{order['id']}: processing template set to Purchase (TPL-0001)" in caplog.text
+    assert f"{order['id']}: processing template is ok, continue" in caplog.text
+
+
+async def test_start_processing_order_template_with_same_template(
+    mocker, order_factory, make_processor, caplog
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+        template={
+            "id": "TPL-0001",
+            "name": "Purchase",
+            "revision": 1,
+        },
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+
+    mocker.patch.object(processor.ext_client, "update_order", return_value=order)
+    with caplog.at_level(logging.INFO):
+        response = await processor.set_processing_order_template(order)
+        assert response == order
+        assert f"{order['id']}: processing template is ok, continue" in caplog.text
+
+
+async def test_test_validate_returns_true_for_valid_order(
+    mocker, make_processor, order_factory, caplog
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    result = await processor.validate_and_move_to_querying_if_needed()
+    assert result is True
+    processor.ext_client.update_order.assert_not_awaited()
+    processor.ext_client.set_status_to_querying.assert_not_awaited()
+
+
+async def test_validate_moves_invalid_order_to_querying(
+    mocker, order_factory, make_processor, caplog
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    order["parameters"]["ordering"][0]["value"] = None
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    querying_order = copy.deepcopy(order)
+    querying_order["status"] = "Querying"
+    processor.ext_client.set_status_to_querying.return_value = querying_order
+    with caplog.at_level(logging.INFO):
+        result = await processor.validate_and_move_to_querying_if_needed()
+    assert result is False
+    update_call = processor.ext_client.update_order.await_args
+    assert update_call.kwargs["order_id"] == order["id"]
+    assert "error" in update_call.kwargs["parameters"]["ordering"][0]
+    # Validation errors are written back to the order parameters.
+    update_call = processor.ext_client.update_order.await_args
+    assert update_call.kwargs["order_id"] == order["id"]
+    assert "error" in update_call.kwargs["parameters"]["ordering"][0]
+    # The order is moved to querying with the querying (default) template.
+    processor.ext_client.set_status_to_querying.assert_awaited_once_with(
+        order_id=order["id"], payload={"template": {"id": "TPL-0003"}}
+    )
+    assert querying_order["parameters"]["ordering"][0]["error"].message == (
+        "Organization name is required"
+    )
+    assert f"{order['id']}: ordering parameters are invalid, move to querying" in caplog.text
+
+
+async def test_validate_order_status_not_valid(order_factory, make_processor, test_settings):
+    order = order_factory(
+        order_type="Purchase",
+        status="Completed",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    with pytest.raises(OrderNotValidError):
+        await processor.validate_order()
+
+
+async def test_validate_order_passes_for_valid_processing_order(
+    make_processor, order_factory, test_settings
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    assert await processor.validate_order() is None
+    processor.ext_client.set_status_to_querying.assert_not_awaited()
+
+
+async def test_validate_order_raises_when_moved_to_querying(mocker, order_factory, make_processor):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    order["parameters"]["ordering"][0]["value"] = None
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    querying_order = copy.deepcopy(order)
+    querying_order["status"] = "Querying"
+    processor.ext_client.set_status_to_querying.return_value = querying_order
+    with pytest.raises(OrderMovedToQuery, match=order["id"]):
+        await processor.validate_order()
+    processor.ext_client.set_status_to_querying.assert_awaited_once()
+
+
+async def test_do_not_apply_fulfillment_defaults(mocker, make_processor, order_factory):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mocker.patch.object(
+        processor.ext_client,
+        "get_templates_by_product_id",
+        Mock(side_effect=lambda **_: _templates_gen()),
+    )
+    response = await processor.apply_fulfillment_defaults()
     assert response == order
 
 
-async def test_apply_fulfillment_defaults(mocker, order_factory, test_settings: Settings):
-    ext_client = AsyncMock()
+async def test_apply_fulfillment_defaults(mocker, make_processor, order_factory):
     order = order_factory(
         order_type="Purchase",
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
     )
+    processor = make_processor(order)
     for param in order["parameters"]["fulfillment"]:
         if param["externalId"] in {
             "dueDate",
@@ -101,284 +532,461 @@ async def test_apply_fulfillment_defaults(mocker, order_factory, test_settings: 
         }:
             param["value"] = None
     expected_order = copy.deepcopy(order)
-    mocker.patch.object(ext_client, "update_order", return_value=expected_order)
-    response = await apply_fulfillment_defaults(ext_client, order, test_settings)
+    mocker.patch.object(processor.ext_client, "update_order", return_value=expected_order)
+    response = await processor.apply_fulfillment_defaults()
     assert response == expected_order
 
 
-async def test_apply_fulfillment_defaults_should_return_same_order_when_no_parameter_changes_needed(
-    mocker, order_factory, test_settings: Settings
+async def test_get_or_create_organization(
+    mocker, make_processor, caplog, order_factory, db_session
 ):
-    ext_client = AsyncMock()
     order = order_factory(
         order_type="Purchase",
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
     )
+    processor = make_processor(order)
+    agreement_body = {
+        "$meta": {"omitted": ["split"]},
+        "id": "AGR-2234-7614-1678",
+        "name": "SoftwareOne FinOps for Cloud for Stuart Meeks Corp",
+        "revision": 1,
+        "status": "Active",
+        "listing": {"id": "LST-9168-7963", "name": "LST-9168-7963", "revision": 1},
+        "authorization": {
+            "id": "AUT-3727-1184",
+            "name": "SoftwareOne FinOps for Cloud (USD)",
+            "revision": 1,
+            "externalIds": {"operations": "sfc-auth-us-01"},
+            "currency": "USD",
+            "notes": "",
+            "product": {
+                "id": "PRD-7208-0459",
+                "name": "SoftwareOne FinOps for Cloud",
+                "icon": "/v1/catalog/products/PRD-7208-0459/icon",
+                "revision": 1,
+                "externalIds": {},
+                "status": "Published",
+            },
+            "vendor": {
+                "id": "ACC-3805-2089",
+                "name": "SoftwareOne Vendor",
+                "icon": "/v1/accounts/accounts/ACC-3805-2089/icon",
+                "revision": 3,
+                "type": "Vendor",
+                "status": "Active",
+            },
+            "owner": {
+                "id": "SEL-7282-9889",
+                "name": "SoftwareOne, Inc.",
+                "icon": "/v1/accounts/sellers/SEL-7282-9889/icon",
+                "revision": 2,
+                "externalId": "78ADB9DA-BC69-4CBF-BAA0-CDBC28619EF7",
+            },
+            "statistics": {"subscriptions": 21, "agreements": 23, "sellers": 1, "listings": 1},
+            "journal": {"firstInvoiceDate": "2025-02-01T00:00:00.000Z", "frequency": "1m"},
+            "eligibility": {"client": True, "partner": False},
+            "audit": {
+                "created": {
+                    "at": "2024-10-25T04:41:00.053Z",
+                    "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
+                },
+                "updated": {
+                    "at": "2024-10-25T04:41:30.649Z",
+                    "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
+                },
+            },
+        },
+        "vendor": {
+            "id": "ACC-3805-2089",
+            "name": "SoftwareOne Vendor",
+            "icon": "/v1/accounts/accounts/ACC-3805-2089/icon",
+            "revision": 3,
+            "type": "Vendor",
+            "status": "Active",
+        },
+        "client": {
+            "id": "ACC-3131-4670",
+            "name": "Stuart Meeks Corp",
+            "revision": 1,
+            "type": "Client",
+            "status": "Enabled",
+        },
+        "price": {"PPxY": 0.00000, "PPxM": 0.00000, "currency": "USD"},
+        "template": {"id": "TPL-7208-0459-0003", "name": "Default", "revision": 1},
+        "lines": [],
+        "assets": [],
+        "subscriptions": [
+            {
+                "id": "SUB-1467-4028-7539",
+                "name": "Subscription for SoftwareOne FinOps for Cloud",
+                "revision": 0,
+            }
+        ],
+        "parameters": {
+            "ordering": [
+                {
+                    "id": "PAR-7208-0459-0001",
+                    "externalId": "organizationName",
+                    "name": "Organization name",
+                    "type": "SingleLineText",
+                    "phase": "Order",
+                    "scope": "Agreement",
+                    "multiple": False,
+                    "displayValue": "Avengers Inc",
+                    "value": "Avengers Inc",
+                },
+                {
+                    "id": "PAR-7208-0459-0002",
+                    "externalId": "organizationAdmin",
+                    "name": "Administrator email",
+                    "type": "SingleLineText",
+                    "phase": "Order",
+                    "scope": "Agreement",
+                    "multiple": False,
+                    "displayValue": "will.smith@avengersinc.com",
+                    "value": "will.smith@avengersinc.com",
+                },
+            ],
+            "fulfillment": [
+                {
+                    "id": "PAR-7208-0459-0003",
+                    "externalId": "organizationId",
+                    "name": "Organization ID",
+                    "type": "SingleLineText",
+                    "phase": "Fulfillment",
+                    "scope": "Agreement",
+                    "multiple": False,
+                    "displayValue": "bc4cd95d-ca9c-45d9-a774-8ecd12ddab05",
+                    "value": "bc4cd95d-ca9c-45d9-a774-8ecd12ddab05",
+                }
+            ],
+        },
+        "licensee": {
+            "id": "LCE-4895-5875-2075",
+            "name": "Meeks Corp HQ - Seller SEL-7282-9889",
+            "revision": 1,
+        },
+        "buyer": {"id": "BUY-5975-3862", "name": "Meeks Corp HQ", "revision": 1},
+        "seller": {
+            "id": "SEL-7282-9889",
+            "name": "SoftwareOne, Inc.",
+            "icon": "/v1/accounts/sellers/SEL-7282-9889/icon",
+            "revision": 2,
+            "externalId": "78ADB9DA-BC69-4CBF-BAA0-CDBC28619EF7",
+        },
+        "product": {
+            "id": "PRD-7208-0459",
+            "name": "SoftwareOne FinOps for Cloud",
+            "icon": "/v1/catalog/products/PRD-7208-0459/icon",
+            "revision": 1,
+            "externalIds": {},
+            "status": "Published",
+        },
+        "externalIds": {"client": ""},
+        "termsAndConditions": [
+            {
+                "id": "TCS-7208-0459-0001",
+                "name": "SoftwareOne FinOps for Cloud - Terms and Conditions",
+                "revision": 1,
+                "accepted": "2024-10-25T05:02:05.677Z",
+                "acceptedBy": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
+            }
+        ],
+        "certificates": [],
+        "audit": {
+            "created": {
+                "at": "2024-10-25T04:57:10.241Z",
+                "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
+            },
+            "updated": {
+                "at": "2024-10-25T05:02:05.481Z",
+                "by": {"id": "USR-0249-0848", "name": "Stuart Meeks", "revision": 1},
+            },
+        },
+    }
+    processor.api_modifier_client.create_organization.return_value = Mock(
+        json=Mock(return_value={"id": "optscale-org-id"})
+    )
+    mocker.patch.object(processor.ext_client, "get_agreement", return_value=agreement_body)
+    mocker.patch.object(processor.ext_client, "update_agreement")
+    organization = Mock(
+        id="b57b9964-7046-4e20-812c-01ab52cf4661",
+        linked_organization_id=None,
+    )
+    processor.organization_repo.get_or_create.return_value = (organization, True)
+    processor.api_modifier_client.create_organization.return_value = Mock(
+        json=Mock(return_value={"id": "OPT-ORG-0001"})
+    )
+    with caplog.at_level(logging.INFO):
+        result = await processor.get_or_create_organization(employee_id="employee-id")
+    assert result is organization
+    # name / currency / billing_currency were passed as defaults to get_or_create
+    processor.organization_repo.get_or_create.assert_awaited_once_with(
+        operations_external_id=order["agreement"]["id"],
+        defaults={"name": "ACME Inc", "currency": "USD", "billing_currency": "USD"},
+    )
+    # linking was done via update(), using the OptScale org id
+    processor.organization_repo.update.assert_awaited_once_with(
+        organization.id,
+        {"linked_organization_id": "OPT-ORG-0001"},
+    )
 
-    order["parameters"].pop("fulfillment", None)
-    mocked_update = mocker.patch.object(ext_client, "update_order")
 
-    with pytest.raises(KeyError):
-        await apply_fulfillment_defaults(ext_client, order, test_settings)
-
-    mocked_update.assert_not_called()
-
-
-# -- start_task_and_get_order --
-async def test_start_task_and_get_order(mocker, order_factory):
-    ext_client = AsyncMock()
+async def test_get_or_create_organization_already_exists(
+    mocker, order_factory, db_session, make_processor, caplog
+):
     order = order_factory(
         order_type="Purchase",
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
     )
-    task_id = "TSK-1234-1234-1234-4527"
-    order_id = order["id"]
-    ext_ctx = SimpleNamespace(instance_id="INS-4321-4321-4321")
-    client = MPTClient(MPTExtensionAuth())
-
-    mocked_start_task = mocker.patch.object(ext_client, "start_task")
-    mocked_get_order = mocker.patch.object(client, "get_order", return_value=order)
-
-    response = await start_task_and_get_order(
-        task_id=task_id,
-        order_id=order_id,
-        ext_ctx=ext_ctx,
-        ext_client=ext_client,
-        client=client,
+    processor = make_processor(order)
+    agreement_id = order["agreement"]["id"]
+    organization_repo = OrganizationHandler(db_session)
+    processor.organization_repo = organization_repo
+    existing = await organization_repo.create(
+        Organization(
+            name="Pre-existing ORG",
+            currency="EUR",
+            billing_currency="USD",
+            operations_external_id=agreement_id,
+            linked_organization_id="already-linked-optscale-org-id",
+        )
     )
 
-    assert response == order
-    mocked_start_task.assert_called_once_with(task_id, ext_ctx.instance_id)
-    mocked_get_order.assert_called_once_with(order_id)
-
-
-# -- validate_and_move_to_querying_if_needed --
-
-
-async def test_valid_order_doesnot_need_to_move_to_querying(order_factory):
-    ext_client = AsyncMock()
-    order = order_factory(
-        order_type="Purchase",
-        status="Processing",
-        product_id="PRD-4141-4379",
-        product_name="SoftwareOne FinOps for Cloud",
-    )
-    response, validated = await validate_and_move_to_querying_if_needed(
-        order=order, ext_client=ext_client
-    )
-    assert validated
-    assert response == order
-
-
-async def test_invalid_order_moved_to_querying(mocker, order_factory):
-    ext_client = AsyncMock()
-    order = order_factory(
-        order_type="Purchase",
-        status="Processing",
-        product_id="PRD-4141-4379",
-        product_name="SoftwareOne FinOps for Cloud",
-    )
-    order["parameters"]["ordering"][0]["value"] = None
     mocker.patch.object(
-        ext_client, "get_templates_by_product_id", Mock(side_effect=lambda **_: _templates_gen())
+        processor.ext_client, "get_agreement", return_value={"authorization": {"currency": "USD"}}
+    )
+    mocked_update_agreement = mocker.patch.object(processor.ext_client, "update_agreement")
+    with caplog.at_level(logging.INFO):
+        result = await processor.get_or_create_organization("employee-id")
+
+    assert result.id == existing.id
+    assert result.name == "Pre-existing ORG"
+    assert result.currency == "EUR"
+    assert result.linked_organization_id == "already-linked-optscale-org-id"
+
+    processor.api_modifier_client.create_organization.assert_not_called()
+    mocked_update_agreement.assert_not_called()
+    assert f"Organization already exists with id {existing.id}" in caplog.text
+    assert "Organization on OptScale created" not in caplog.text
+
+
+async def test_create_employee_with_existing_user(
+    mocker, order_factory, db_session, make_processor, caplog
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "user_info": {
+            "id": "f0bd0c4a-7c55-45b7-8b58-27740e38789a",
+            "display_name": "Spider Man",
+            "email": "peter.parker@iamspiderman.com",
+        }
+    }
+    mocker.patch.object(
+        processor.optscale_auth_client,
+        "get_existing_user_info",
+        return_value=mock_response,
     )
     expected_order = copy.deepcopy(order)
-    expected_order["status"] = "Querying"
-    expected_order["parameters"]["ordering"][0]["externalId"] = "organizationName"
-    mocker.patch.object(ext_client, "update_order", return_value=expected_order)
-    mocker.patch.object(ext_client, "set_status_to_querying", return_value=expected_order)
-
-    response, validated = await validate_and_move_to_querying_if_needed(
-        order=order, ext_client=ext_client
-    )
-    assert not validated
-    assert "error" in response["parameters"]["ordering"][0]
-    assert response == expected_order
-    assert response["parameters"]["ordering"][0]["error"].message == "Organization name is required"
-
-
-@pytest.mark.parametrize(
-    ("is_new_user_value", "expected_completed_template_id"),
-    [
-        pytest.param(["Yes"], "TPL-0005", id="new-user"),
-        pytest.param(None, "TPL-0006", id="existing-user"),
-    ],
-)
-async def test_fulfill_order_success(
-    mocker,
-    order_factory,
-    is_new_user_value,
-    expected_completed_template_id,
-    db_session,
-):
-    ext_client = AsyncMock()
-    organization_repo = OrganizationHandler(db_session)
-    order = order_factory(
-        order_type="Purchase",
-        status="Processing",
-        product_id="PRD-4141-4379",
-        product_name="SoftwareOne FinOps for Cloud",
-        template={
-            "id": "TPL-1234-1234-0001",
-            "name": "CurrentTemplate",
-            "revision": 1,
-        },
-        # No pre-existing subscriptions -> forces the subscription creation path.
-        subscriptions=[],
-    )
-    for param in order["parameters"]["fulfillment"]:
+    for param in expected_order["parameters"]["fulfillment"]:
         if param["externalId"] == "isNewUser":
-            param["value"] = is_new_user_value
+            param["value"] = None
 
-    processing_order = copy.deepcopy(order)
-    processing_order["template"]["id"] = "TPL-0001"
-    organization = Mock(
-        id="b57b9964-7046-4e20-812c-01ab52cf4661", currency="USD", name="My Big ORG"
-    )
-    api_modifier_client = AsyncMock()
-    optscale_auth_client = AsyncMock()
-    optscale_client = AsyncMock()
-    task_id = "TSK-1234-1234-1234"
-
-    mocker.patch.object(
-        ext_client,
-        "get_templates_by_product_id",
-        Mock(side_effect=lambda **_: _templates_gen()),
-    )
+    expected_parameters = expected_order["parameters"]
     mocked_update_order = mocker.patch.object(
-        ext_client, "update_order", return_value=processing_order
-    )
-    mocked_create_employee = mocker.patch(
-        "app.fulfilment.order.create_employee",
-        return_value=(processing_order, "employee-id", "peter.parker@spiderman.com"),
-    )
-    mocked_get_or_create_organization = mocker.patch(
-        "app.fulfilment.order.get_or_create_organization",
-        return_value=organization,
-    )
-    mocked_create_subscription = mocker.patch.object(
-        ext_client, "create_subscription", return_value={"id": "SUB-0001"}
-    )
-    mocked_complete_order = mocker.patch.object(ext_client, "complete_order")
-    mocked_complete_task = mocker.patch.object(ext_client, "complete_task")
-
-    response = await complete_purchase_order(
-        api_modifier_client=api_modifier_client,
-        ext_client=ext_client,
-        optscale_auth_client=optscale_auth_client,
-        optscale_client=optscale_client,
-        order=order,
-        order_id=order["id"],
-        organization_repo=organization_repo,
-        task_id=task_id,
+        processor.ext_client, "update_order", return_value=expected_order
     )
 
-    assert response == EventResponse.ok()
-
-    # The processing template was switched to the "Purchase" one.
-    mocked_update_order.assert_called_once_with(order_id=order["id"], template={"id": "TPL-0001"})
-    mocked_create_employee.assert_called_once_with(
-        ext_client, api_modifier_client, optscale_auth_client, processing_order
+    with caplog.at_level(logging.INFO):
+        employee_id, employee_email = await processor.create_employee()
+    # create_employee stores the updated order on self.order and returns (id, email).
+    assert processor.order is expected_order
+    assert employee_id == "f0bd0c4a-7c55-45b7-8b58-27740e38789a"
+    assert employee_email == "pl@example.com"
+    processor.optscale_auth_client.get_existing_user_info.assert_called_once_with("pl@example.com")
+    mocked_update_order.assert_called_once_with(order["id"], parameters=expected_parameters)
+    processor.api_modifier_client.create_user.assert_not_called()
+    assert (
+        f"Employee exists with id f0bd0c4a-7c55-45b7-8b58-27740e38789a for order {order['id']}"
+        in caplog.text
     )
-    mocked_get_or_create_organization.assert_called_once_with(
-        ext_client, api_modifier_client, processing_order, organization_repo, "employee-id"
-    )
-    # A subscription was created for the order line, bound to the organization.
-    line = order["lines"][0]
-    mocked_create_subscription.assert_called_once_with(
-        order_id=order["id"],
-        subscription={
-            "name": f"Subscription for {line['item']['name']}",
-            "parameters": {},
-            "externalIds": {"vendor": organization.id},
-            "lines": [{"id": line["id"]}],
-        },
-    )
-    # The order was completed with the template matching the new/existing-user branch.
-    mocked_complete_order.assert_called_once_with(
-        order_id=order["id"], payload={"template": {"id": expected_completed_template_id}}
-    )
-    mocked_complete_task.assert_called_once_with(task_id)
-    if is_new_user_value == ["Yes"]:
-        optscale_client.reset_password.assert_awaited_once_with("peter.parker@spiderman.com")
-    else:
-        optscale_client.reset_password.assert_not_awaited()
 
 
-async def test_fulfill_order_new_user_password_reset_failure_is_swallowed(
-    mocker,
-    order_factory,
-    db_session,
-    caplog,
+async def test_create_employee_with_no_existing_user(
+    mocker, order_factory, make_processor, db_session, caplog
 ):
-    # New-user order whose password reset fails: the error must be logged and
-    # swallowed, the order/task still completed, and the response still OK.
-    ext_client = AsyncMock()
-    organization_repo = OrganizationHandler(db_session)
     order = order_factory(
         order_type="Purchase",
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
-        template={
-            "id": "TPL-1234-1234-0001",
-            "name": "CurrentTemplate",
-            "revision": 1,
-        },
-        subscriptions=[],
     )
-    for param in order["parameters"]["fulfillment"]:
+    processor = make_processor(order)
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "id": "f0bd0c4a-7c55-45b7-8b58-27740e38789a",
+        "display_name": "Spider Man",
+        "email": "peter.parker@iamspiderman.com",
+    }
+    mocker.patch.object(
+        processor.optscale_auth_client,
+        "get_existing_user_info",
+        side_effect=UserDoesNotExist("pl@example.com"),
+    )
+
+    expected_order = copy.deepcopy(order)
+    for param in expected_order["parameters"]["fulfillment"]:
         if param["externalId"] == "isNewUser":
             param["value"] = ["Yes"]
 
-    processing_order = copy.deepcopy(order)
-    processing_order["template"]["id"] = "TPL-0001"
-    organization = Mock(
-        id="b57b9964-7046-4e20-812c-01ab52cf4661", currency="USD", name="My Big ORG"
+    expected_parameters = expected_order["parameters"]
+    mocked_update_order = mocker.patch.object(
+        processor.ext_client, "update_order", return_value=expected_order
     )
-    api_modifier_client = AsyncMock()
-    optscale_auth_client = AsyncMock()
-    optscale_client = AsyncMock()
-    task_id = "TSK-1234-1234-1234"
 
-    mocker.patch.object(
-        ext_client,
-        "get_templates_by_product_id",
-        Mock(side_effect=lambda **_: _templates_gen()),
+    processor.api_modifier_client.create_user.return_value = mock_response
+    with caplog.at_level(logging.INFO):
+        employee_id, employee_email = await processor.create_employee()
+    assert employee_id == "f0bd0c4a-7c55-45b7-8b58-27740e38789a"
+    assert employee_email == "pl@example.com"
+    processor.optscale_auth_client.get_existing_user_info.assert_called_once_with("pl@example.com")
+    mocked_update_order.assert_called_once_with(order["id"], parameters=expected_parameters)
+    processor.api_modifier_client.create_user.assert_called_once_with(
+        email="pl@example.com",
+        display_name="PL NN",
+        password=mocker.ANY,
     )
-    mocker.patch.object(ext_client, "update_order", return_value=processing_order)
-    mocker.patch(
-        "app.fulfilment.order.create_employee",
-        return_value=(processing_order, "employee-id", "peter.parker@spiderman.com"),
+    assert (
+        f"Employee created with id f0bd0c4a-7c55-45b7-8b58-27740e38789a for order {order['id']}"
+        in caplog.text
     )
-    mocker.patch(
-        "app.fulfilment.order.get_or_create_organization",
-        return_value=organization,
-    )
-    mocker.patch.object(ext_client, "create_subscription", return_value={"id": "SUB-0001"})
-    mocked_complete_order = mocker.patch.object(ext_client, "complete_order")
-    mocked_complete_task = mocker.patch.object(ext_client, "complete_task")
-    optscale_client.reset_password.side_effect = Exception("boom")
 
-    response = await complete_purchase_order(
-        api_modifier_client=api_modifier_client,
-        ext_client=ext_client,
-        optscale_auth_client=optscale_auth_client,
-        optscale_client=optscale_client,
+
+async def test_create_employee_with__already_new_user_eq_yes(
+    mocker, order_factory, make_processor, caplog
+):
+    """Retry: user now exists, but order already recorded isNewUser=['Yes']."""
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+
+    for param in order["parameters"]["fulfillment"]:
+        if param["externalId"] == "isNewUser":
+            param["value"] = None
+
+    mock_response = Mock()
+    mock_response.json.return_value = {"user_info": {"id": "f0bd0c4a-7c55-45b7-8b58-27740e38789a"}}
+    processor.optscale_auth_client.get_existing_user_info.return_value = mock_response
+
+    expected_order = copy.deepcopy(order)
+    mocked_update_order = mocker.patch.object(
+        processor.ext_client, "update_order", return_value=expected_order
+    )
+
+    employee_id, employee_email = await processor.create_employee()
+    assert employee_id == "f0bd0c4a-7c55-45b7-8b58-27740e38789a"
+    mocked_update_order.assert_called_once_with(
+        order["id"], parameters=expected_order["parameters"]
+    )
+
+
+# -- subscriptions --
+
+
+async def test_create_order_subscription_skips_when_subscription_already_exists(
+    order_factory, make_processor
+):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    processor = make_processor(order)
+
+    organization = Mock(id="b57b9964-7046-4e20-812c-01ab52cf4661")
+
+    await processor.create_order_subscription(organization)
+
+    processor.ext_client.create_subscription.assert_not_awaited()
+
+
+# -- PurchaseOrderProcessor.process --
+
+
+def _make_purchase_processor(order: dict, settings) -> PurchaseOrderProcessor:
+    return PurchaseOrderProcessor(
+        api_modifier_client=AsyncMock(),
+        client=AsyncMock(),
+        ext_client=AsyncMock(),
+        optscale_auth_client=AsyncMock(),
+        optscale_client=AsyncMock(),
+        organization_repo=AsyncMock(),
         order=order,
-        order_id=order["id"],
-        organization_repo=organization_repo,
-        task_id=task_id,
+        settings=settings,
     )
 
-    assert response == EventResponse.ok()
-    optscale_client.reset_password.assert_awaited_once_with("peter.parker@spiderman.com")
-    mocked_complete_order.assert_called_once_with(
-        order_id=order["id"], payload={"template": {"id": "TPL-0005"}}
+
+async def test_purchase_order_process_completes_order(mocker, order_factory, test_settings, caplog):
+    order = order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
     )
-    mocked_complete_task.assert_called_once_with(task_id)
-    assert "Failed to reset password" in caplog.messages
+    processor = _make_purchase_processor(order, test_settings)
+    organization = Mock(id="b57b9964-7046-4e20-812c-01ab52cf4661")
+
+    mocked_validate = mocker.patch.object(processor, "validate_order", AsyncMock())
+    mocked_defaults = mocker.patch.object(processor, "apply_fulfillment_defaults", AsyncMock())
+    mocked_set_template = mocker.patch.object(
+        processor, "set_processing_order_template", AsyncMock()
+    )
+    mocked_create_employee = mocker.patch.object(
+        processor, "create_employee", AsyncMock(return_value=("employee-id", "pl@example.com"))
+    )
+    mocked_get_or_create_org = mocker.patch.object(
+        processor, "get_or_create_organization", AsyncMock(return_value=organization)
+    )
+    mocked_create_subscription = mocker.patch.object(
+        processor, "create_order_subscription", AsyncMock()
+    )
+    mocked_get_complete_template = mocker.patch.object(
+        processor, "get_complete_template", AsyncMock(return_value="TPL-0006")
+    )
+    mocked_send_reset_password = mocker.patch.object(processor, "send_reset_password", AsyncMock())
+
+    with caplog.at_level(logging.INFO):
+        result = await processor.process()
+
+    assert result is processor.order
+
+    # Each step runs once, in order, with the expected arguments.
+    mocked_validate.assert_awaited_once_with()
+    mocked_defaults.assert_awaited_once_with()
+    mocked_set_template.assert_awaited_once_with(order=processor.order)
+    mocked_create_employee.assert_awaited_once_with()
+    mocked_get_or_create_org.assert_awaited_once_with("employee-id")
+    mocked_create_subscription.assert_awaited_once_with(organization)
+    # isNewUser has no value in the factory order -> existing-user  (is_new is False).
+    mocked_get_complete_template.assert_awaited_once_with(False)
+    processor.ext_client.complete_order.assert_awaited_once_with(
+        order_id=order["id"], payload={"template": {"id": "TPL-0006"}}
+    )
+    mocked_send_reset_password.assert_awaited_once_with("pl@example.com", False)
+    assert f"Order {order['id']} has been completed" in caplog.text

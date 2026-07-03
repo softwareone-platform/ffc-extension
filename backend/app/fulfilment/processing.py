@@ -110,11 +110,14 @@ class OrderProcessor:
 
     async def fetch_product_templates(self, product_id: str) -> None:
         async for template in self.ext_client.get_templates_by_product_id(product_id=product_id):
-            template_id = template["id"]
-            template_type = template["type"]
-            template_name = template["name"] if not template["default"] else None
-            self.template_cache[(template_type, template_name)] = template_id
-            logger.debug("Cached template %s (%s, %s)", template_id, template_type, template_name)
+            if template is not None:
+                template_id = template["id"]
+                template_type = template["type"]
+                template_name = template["name"] if not template["default"] else None
+                self.template_cache[(template_type, template_name)] = template_id
+                logger.debug(
+                    "Cached template %s (%s, %s)", template_id, template_type, template_name
+                )
 
     async def set_processing_order_template(self, order: dict) -> dict:
         """Ensure the order uses the processing template expected for purchase flow."""

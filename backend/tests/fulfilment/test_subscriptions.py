@@ -1,11 +1,6 @@
-from unittest.mock import AsyncMock, Mock
-
 import pytest
 
-from app.fulfilment.subscriptions import (
-    create_order_subscription,
-    get_subscription_by_line_and_item_id,
-)
+from app.fulfilment.subscriptions import get_subscription_by_line_and_item_id
 
 
 def _subscription(sub_id: str, lines: list[dict]) -> dict:
@@ -93,21 +88,3 @@ def test_line_and_item_must_belong_to_same_subscription(item_id, line_id, expect
     result = get_subscription_by_line_and_item_id(subscriptions, item_id=item_id, line_id=line_id)
 
     assert (result["id"] if result else None) == expected_id
-
-
-async def test_create_order_subscription_skips_when_subscription_already_exists():
-    order = {
-        "id": "ORD-1111-2222-3333",
-        "lines": [
-            {"id": "ALI-0001", "item": {"id": "ITM-0001", "name": "FinOps for Cloud"}},
-        ],
-        "subscriptions": [
-            _subscription("SUB-1", [_line("ALI-0001", "ITM-0001")]),
-        ],
-    }
-    ext_client = AsyncMock()
-    organization = Mock(id="b57b9964-7046-4e20-812c-01ab52cf4661")
-
-    await create_order_subscription(ext_client, order, organization)
-
-    ext_client.create_subscription.assert_not_awaited()
