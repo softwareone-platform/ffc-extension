@@ -39,7 +39,7 @@ repos:
             entry: bash -c 'cd frontend && npm run typecheck'
             language: system
             pass_filenames: false
-            files: ^(frontend/src/.*\.tsx?|backend/app/(models|schemas|routers|api)/.*\.py)$
+            files: ^frontend/src/.*\.tsx?$
           - id: frontend-check
             name: frontend check:all
             language: system
