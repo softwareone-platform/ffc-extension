@@ -28,7 +28,7 @@
     "typecheck": "tsc --noEmit",
     "generate:spec": "uv run --project ../backend ffcops openapi -f json -o src/api/ffc-api-model.json",
     "generate:models": "npx @hey-api/openapi-ts -i src/api/ffc-api-model.json -o src/api/ffc-api-model",
-    "generate:api": "npm run generate:spec && npm run generate:models && rm -rf src/api/ffc-api-model.json"
+    "generate:api": "npm run generate:spec && npm run generate:models"
   },
   "files": [
     "../static"

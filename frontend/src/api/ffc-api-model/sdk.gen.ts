@@ -21,8 +21,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * List Datasource Expenses
  *
- *
- *
  * ## Available RQL filters
  *
  * | Field | Operators | Order By |
@@ -81,8 +79,6 @@ export const listDatasourceExpensesOpsV1ExpensesGet = <ThrowOnError extends bool
 
 /**
  * Get Entitlements
- *
- *
  *
  * ## Available RQL filters
  *
@@ -223,8 +219,6 @@ export const redeemEntitlementOpsV1EntitlementsIdRedeemPost = <ThrowOnError exte
 
 /**
  * Get Organizations
- *
- *
  *
  * ## Available RQL filters
  *
@@ -368,8 +362,6 @@ export const addAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPost = <T
 
 /**
  * Get Accounts
- *
- *
  *
  * ## Available RQL filters
  *
