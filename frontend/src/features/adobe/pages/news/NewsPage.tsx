@@ -44,7 +44,7 @@ function MessageCard({ message }: { message: NewsMessage }) {
         </ul>
         <RegularText size={1} className="adobe-news__link">
           For more detailed information, visit:{" "}
-          <a href={message.link} target="_blank" rel="noreferrer">
+          <a href={message.link} target="_top" rel="noreferrer">
             {message.link}
           </a>
         </RegularText>

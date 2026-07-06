@@ -14,11 +14,13 @@ import { AdobeIcon, SellerFlagIcon } from "~features/adobe/icons";
 import { Agreement, agreements } from "./agreements.mock";
 
 function TitleLink({ href, label }: { href: string; label: string }) {
+  // The portal embeds this extension in a sandboxed iframe without `allow-popups`,
+  // so `_blank` is popup-blocked. Navigate the top-level tab instead.
   return (
     <a
       className="adobe-agreements__link"
       href={href}
-      target="_blank"
+      target="_top"
       rel="noopener noreferrer"
     >
       {label}
