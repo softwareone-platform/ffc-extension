@@ -1,0 +1,18 @@
+.legal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+
+  p {
+    margin: 0;
+  }
+
+  &__list {
+    margin: 0;
+    padding-left: var(--spacing-4);
+
+    li {
+      margin-bottom: var(--spacing-1);
+    }
+  }
+}

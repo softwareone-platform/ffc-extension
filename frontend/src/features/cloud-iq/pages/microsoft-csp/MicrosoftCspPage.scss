@@ -1,0 +1,28 @@
+.cloud-iq-microsoft-csp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-left: auto;
+  }
+
+  &__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--spacing-2);
+  }
+
+  &__filter {
+    min-width: 220px;
+  }
+}

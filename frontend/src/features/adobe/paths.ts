@@ -10,6 +10,8 @@ export const SEGMENTS = {
   orders: "orders",
   invoices: "invoices",
   creditMemos: "credit-memos",
+  help: "help",
+  termsAndConditions: "terms-and-conditions",
 } as const;
 
 export const NEWS_SECTIONS = {
@@ -36,4 +38,6 @@ export const PATHS = {
   orders: `/${SEGMENTS.orders}`,
   invoices: `/${SEGMENTS.invoices}`,
   creditMemos: `/${SEGMENTS.creditMemos}`,
+  help: `/${SEGMENTS.help}`,
+  termsAndConditions: `/${SEGMENTS.termsAndConditions}`,
 } as const;

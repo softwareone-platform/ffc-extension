@@ -1,0 +1,9 @@
+.consent-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+
+  p {
+    margin: 0;
+  }
+}

@@ -3,19 +3,19 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@swo/design-system/button";
 import { Navigation } from "@swo/design-system/navigation";
 
-import { sideNavGroups } from "~features/adobe/navigation";
-import { PATHS } from "~features/adobe/paths";
+import { sideNavGroups } from "~features/cloud-iq/navigation";
+import { PATHS } from "~features/cloud-iq/paths";
 import { ConsentModal } from "~shared/components/consent/ConsentModal";
 
-export function AdobeLayout() {
+export function CloudIqLayout() {
   const navigate = useNavigate();
 
   return (
     <>
-      <ConsentModal appName="the Adobe extension" />
+      <ConsentModal appName="Cloud iQ" />
       <Navigation>
         <Navigation.SideNav level={2} groups={sideNavGroups} />
-        <Navigation.HeaderBar title="Adobe extension" subtitle="Version: 0.0.1">
+        <Navigation.HeaderBar title="Cloud iQ" subtitle="Version: 0.0.1">
           <Navigation.HeaderBar.Actions>
             <Button type="primary" onClick={() => navigate(PATHS.help)}>
               Help

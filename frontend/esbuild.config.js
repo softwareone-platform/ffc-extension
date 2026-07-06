@@ -47,6 +47,7 @@ const ctx = await context({
     './src/entries/CreateUserModal.tsx',
     './src/entries/StandaloneRoot.tsx',
     './src/entries/AdobeRoot.tsx',
+    './src/entries/CloudIqRoot.tsx',
   ],
   outdir: '../static',
   outbase: './src/entries',
@@ -63,10 +64,17 @@ const ctx = await context({
     '~organizations': srcDir('features/organizations'),
     '~entitlements': srcDir('features/entitlements'),
     '~shared': srcDir('shared'),
+    '~assets': srcDir('assets'),
     '~i18n': srcDir('i18n'),
   },
   define: {
     "process.env.NODE_ENV": env,
+  },
+  loader: {
+    '.png': 'dataurl',
+    '.jpg': 'dataurl',
+    '.jpeg': 'dataurl',
+    '.webp': 'dataurl',
   },
   plugins: [
     sassPlugin({
