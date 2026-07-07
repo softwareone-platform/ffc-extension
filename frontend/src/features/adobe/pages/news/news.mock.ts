@@ -49,6 +49,6 @@ export const messages: NewsMessage[] = [
       { text: "How to terminate a subscription and understand the implications." },
       { text: "Tips for reviewing your order summary and estimating financial impacts." },
     ],
-    link: "https://docs.platform.softwareone.com/extensions/adobe-vip-marketplace/tutorials-and-videos",
+    link: "https://portal.s1.show/catalog/listings/LST-7312-8143?backUrl=%2Fcatalog%2Flistings&account=ACC-3805-2089",
   },
 ];

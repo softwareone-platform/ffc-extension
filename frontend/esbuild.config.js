@@ -4,11 +4,16 @@ import { exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+import { themeResolver } from './theme-resolver/index.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
+// Active theme for the Adobe feature (build-time only). Overrides live under
+// `src/features/adobe/themes/<APP_THEME>/`. Unset -> canonical sources are used.
+const adobeTheme = process.env.APP_THEME;
 
 // Dev-only: after each successful rebuild, reload any Brave tab pointing at the
 // portal so changes show up without a manual refresh. The portal page is served
@@ -55,6 +60,10 @@ const ctx = await context({
   platform: 'browser',
   mainFields: ["browser", "module", "main"],
   format: 'esm',
+  // Set explicitly so JSX doesn't depend on per-file tsconfig discovery — plugin
+  // resolved files (e.g. theme overrides) otherwise fall back to the classic
+  // `React.createElement` transform and crash with "React is not defined".
+  jsx: 'automatic',
   sourcemap: true,
   allowOverwrite: true,
   // Keep these in sync with `compilerOptions.paths` in tsconfig.json.
@@ -77,6 +86,18 @@ const ctx = await context({
     '.webp': 'dataurl',
   },
   plugins: [
+    // Must run before sassPlugin so themed .scss overrides are redirected
+    // before Sass compiles them.
+    themeResolver({ theme: adobeTheme, featureDir: srcDir('features/adobe') }),
+    // `*.module.scss` -> esbuild CSS modules: hashed, unique class names exposed
+    // as a default-exported class map (`import styles from './x.module.scss'`).
+    // Registered first so it wins for module files; the global instance below
+    // (esbuild's Go regex has no lookbehind) then handles the remaining `.scss`.
+    sassPlugin({
+      filter: /\.module\.scss$/,
+      type: 'local-css',
+    }),
+    // Everything else -> global stylesheet injected as <style> (side-effect import).
     sassPlugin({
       filter: /\.scss$/,
       type: 'style',

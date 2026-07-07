@@ -1,6 +1,10 @@
 // Ambient module declarations for non-code asset imports.
 // Allows TypeScript to resolve side-effect imports like:
 //   import './styles.scss';
+// NOTE: CSS-module typings (`*.module.scss`) live in the non-module ambient file
+// `css-modules.d.ts`. Keeping them out of this module-scoped file (it has a
+// top-level `export {}`) ensures the wildcard participates in relative-import
+// resolution under `moduleResolution: bundler`.
 declare module "*.scss";
 declare module "*.sass";
 declare module "*.css";
