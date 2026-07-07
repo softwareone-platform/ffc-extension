@@ -10,6 +10,9 @@ import { StatusChipLocalisationProvider } from "@swo/mp-status-chip/context";
 
 import { MPTContextProvider } from "~shared/providers/MPTContextProvider";
 
+import { ErrorHandlerProvider } from "./ErrorHandlerProvider";
+import { UserProvider } from "./UserProvider";
+
 // import { i18n } from "~i18n/translations";
 
 type RegionalSettings = {
@@ -50,8 +53,6 @@ export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18
 
   useEffect(() => {
     async function run() {
-      console.log(`Setting language to ${LANGUAGE}`);
-
       await i18n.changeLanguage(LANGUAGE);
 
       setIsLoaded(true);
@@ -66,13 +67,17 @@ export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18
 
   return (
     <QueryClientProvider client={queryClient}>
-      <DesignSystemOptionsProvider value={providerValue}>
-        <StatusChipLocalisationProvider languageCode={LANGUAGE}>
-          <I18nextProvider i18n={i18n}>
-            <MPTContextProvider>{children}</MPTContextProvider>
-          </I18nextProvider>
-        </StatusChipLocalisationProvider>
-      </DesignSystemOptionsProvider>
+      <UserProvider>
+        <DesignSystemOptionsProvider value={providerValue}>
+          <StatusChipLocalisationProvider languageCode={LANGUAGE}>
+            <ErrorHandlerProvider>
+              <I18nextProvider i18n={i18n}>
+                <MPTContextProvider>{children}</MPTContextProvider>
+              </I18nextProvider>
+            </ErrorHandlerProvider>
+          </StatusChipLocalisationProvider>
+        </DesignSystemOptionsProvider>
+      </UserProvider>
     </QueryClientProvider>
   );
 }

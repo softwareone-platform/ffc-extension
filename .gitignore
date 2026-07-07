@@ -196,9 +196,12 @@ static/*
 .secrets.yaml
 
 # claude local settings
-
 .claude/settings.local.json
 
+# frontend local files
 frontend/test-results/
 frontend/coverage/
 frontend/src/api/*.json
+
+# DB dump files
+*.sql

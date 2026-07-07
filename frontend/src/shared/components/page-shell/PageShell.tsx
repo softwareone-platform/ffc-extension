@@ -3,9 +3,12 @@ import React from "react";
 import { AvatarProps } from "@swo/design-system/avatar";
 import { Navigation } from "@swo/design-system/navigation";
 
+import { AccountType } from "~api/ffc-api-model";
+
 export type PageShellNavItem = {
   path: string;
   label: string;
+  role?: AccountType[];
 };
 
 export type PageShellProps = {

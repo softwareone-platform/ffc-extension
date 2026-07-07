@@ -1,5 +1,5 @@
 import { context } from 'esbuild';
-import { sassPlugin } from 'esbuild-sass-plugin';
+import { sassPlugin,postcssModules } from 'esbuild-sass-plugin';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -38,10 +38,12 @@ const ctx = await context({
   define: {
     "process.env.NODE_ENV": env,
   },
-  plugins: [sassPlugin({
+  plugins: [
+    sassPlugin({
     filter: /\.scss$/,
     type: 'style',
-  })],
+  })
+],
 });
 
 if (watch) {
