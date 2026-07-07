@@ -1,16 +1,15 @@
-import { PropsWithChildren, useContext, useEffect } from "react";
+import { PropsWithChildren, useEffect } from "react";
 
 import { AccountType } from "~api/ffc-api-model";
+import { useUserRole } from "~shared/hooks/useUserRole";
 import { useErrorHandler } from "~shared/providers/ErrorHandlerProvider";
-import { UserContext } from "~shared/providers/UserContext";
 
 export interface RouteGuardProps extends PropsWithChildren {
   allowedRoles: readonly AccountType[] | AccountType;
 }
 
 export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
-  const user = useContext(UserContext);
-  const role = user?.account.type;
+  const { role } = useUserRole();
   const { handleError } = useErrorHandler();
 
   useEffect(() => {

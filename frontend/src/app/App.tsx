@@ -3,7 +3,7 @@ import { lazy, Suspense, useContext } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { PATHS } from "~app/paths";
-import { UserContext } from "~shared/providers/UserContext";
+import { useUserRole } from "~shared/hooks/useUserRole";
 
 const MainLayout = lazy(() => import("~app/layouts").then((m) => ({ default: m.MainLayout })));
 const Organizations = lazy(() =>
@@ -14,8 +14,7 @@ const Entitlements = lazy(() =>
 );
 
 export function App() {
-  const user = useContext(UserContext);
-  const role = user?.account.type;
+  const { role } = useUserRole();
 
   return (
     <Routes>

@@ -1,5 +1,3 @@
-import { useContext } from "react";
-
 import { Outlet, useMatch } from "react-router-dom";
 
 import { AccountType } from "~api/ffc-api-model/types.gen";
@@ -11,16 +9,13 @@ import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
+import { useUserRole } from "~shared/hooks/useUserRole";
 import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContext";
-import { UserContext } from "~shared/providers/UserContext";
 
 export function MainLayout() {
   const tNav = useFixedT("shared:nav");
   const { isOpen, open, close } = useModalToggle();
-
-  const user = useContext(UserContext);
-
-  console.log("User account type:", user?.account.type); // Debugging line to check the user account type
+  const { role } = useUserRole();
 
   const navItems: PageShellNavItem[] = [
     {
@@ -34,7 +29,7 @@ export function MainLayout() {
       role: ["admin", "operations", "affiliate"] as AccountType[],
     },
   ].filter((item) => {
-    return item.role?.includes(user?.account.type || "affiliate");
+    return item.role?.includes(role || "affiliate");
   });
 
   const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
