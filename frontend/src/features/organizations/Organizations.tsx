@@ -1,10 +1,11 @@
-import { lazy } from "react";
+import { lazy, useContext } from "react";
 
 import { Route, Routes } from "react-router-dom";
 
 import { DetailsLayout } from "~app/layouts";
 import { PARAMS, SEGMENTS } from "~features/organizations/paths";
 import { RouteGuard } from "~shared/components/RouteGuard";
+import { ExtensionsProviderContext } from "~shared/providers/ExtensionsProvider";
 
 const OrganizationsGrid = lazy(() =>
   import("~features/organizations/list/OrganizationsGrid").then((m) => ({
@@ -39,7 +40,8 @@ const OrganizationUsers = lazy(() =>
 
 const allowedRoles = ["admin", "operations"] as const;
 
-export function Organizations({ isStandalone = true }: { isStandalone?: boolean }) {
+export function Organizations() {
+  const { isStandalone } = useContext(ExtensionsProviderContext);
   return (
     <RouteGuard allowedRoles={allowedRoles}>
       <Routes>

@@ -46,7 +46,6 @@ export function useEntitlementFormController({ onClose }: ModalEntryProps = {}) 
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (formData: AddEntitlementForm) => {
-      console.log("[entitlements] add entitlement submitted", formData);
       return formData;
     },
     onSuccess,

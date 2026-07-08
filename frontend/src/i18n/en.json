@@ -204,5 +204,13 @@
     "errors": {
       "create_failed": "Failed to add entitlement. Please try again."
     }
+  },
+  "errorPage": {
+    "error-handler": {
+      "errorPageCard": {
+        "retry": "Retry",
+        "home": "Go Home"
+      }
+    }
   }
 }

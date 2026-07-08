@@ -5,7 +5,7 @@ import { useUserRole } from "~shared/hooks/useUserRole";
 import { useErrorHandler } from "~shared/providers/ErrorHandlerProvider";
 
 export interface RouteGuardProps extends PropsWithChildren {
-  allowedRoles: readonly AccountType[] | AccountType;
+  readonly allowedRoles: readonly AccountType[] | AccountType;
 }
 
 export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
@@ -14,6 +14,7 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
 
   useEffect(() => {
     const roles = typeof allowedRoles === "string" ? [allowedRoles] : allowedRoles;
+
     if (roles.length > 0 && (!role || !roles.includes(role))) {
       handleError("403", "Access to this module is not allowed for the current user");
     }

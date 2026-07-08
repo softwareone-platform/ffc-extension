@@ -7,5 +7,5 @@ import { mount } from "./mount";
 import "./mountFeatureEntry.scss";
 
 export function mountFeatureEntry(routes: ReactNode) {
-  mount(<BrowserRouter>{routes}</BrowserRouter>);
+  mount(routes, false);
 }

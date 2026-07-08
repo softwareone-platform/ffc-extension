@@ -1,10 +1,11 @@
-import { lazy } from "react";
+import { lazy, useContext } from "react";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { DetailsLayout } from "~app/layouts";
 import { PARAMS, SEGMENTS } from "~features/entitlements/paths";
 import { RouteGuard } from "~shared/components/RouteGuard";
+import { ExtensionsProviderContext } from "~shared/providers/ExtensionsProvider";
 
 import { EntitlementDetailsHeader } from "./components/EntitlementDetailsHeader";
 
@@ -26,7 +27,8 @@ const EntitlementDetailsContent = lazy(() =>
 
 const allowedRoles = ["admin", "operations", "affiliate"] as const;
 
-export function Entitlements({ isStandalone = true }: { isStandalone?: boolean }) {
+export function Entitlements() {
+  const { isStandalone } = useContext(ExtensionsProviderContext);
   return (
     <RouteGuard allowedRoles={allowedRoles}>
       <Routes>

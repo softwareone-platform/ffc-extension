@@ -1,9 +1,10 @@
-import { PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { createContext, PropsWithChildren, useEffect, useMemo, useState } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // import "../styles.scss";
 import type { i18n } from "i18next";
 import { I18nextProvider } from "react-i18next";
+import { BrowserRouter } from "react-router-dom";
 
 import { DesignSystemOptionsProvider, type LanguageCode } from "@swo/design-system/utils";
 import { StatusChipLocalisationProvider } from "@swo/mp-status-chip/context";
@@ -46,7 +47,15 @@ const queryClient = new QueryClient({
   },
 });
 
-export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18n: i18n }) {
+export const ExtensionsProviderContext = createContext<{ isStandalone: boolean }>({
+  isStandalone: false,
+});
+
+export function ExtensionsProvider({
+  children,
+  i18n,
+  isStandalone,
+}: PropsWithChildren & { i18n: i18n; isStandalone: boolean }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const providerValue = useMemo(() => ({ languageCode: LANGUAGE, ...REGIONAL_SETTINGS }), []);
@@ -66,18 +75,22 @@ export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <DesignSystemOptionsProvider value={providerValue}>
-          <StatusChipLocalisationProvider languageCode={LANGUAGE}>
-            <ErrorHandlerProvider>
-              <I18nextProvider i18n={i18n}>
-                <MPTContextProvider>{children}</MPTContextProvider>
-              </I18nextProvider>
-            </ErrorHandlerProvider>
-          </StatusChipLocalisationProvider>
-        </DesignSystemOptionsProvider>
-      </UserProvider>
-    </QueryClientProvider>
+    <ExtensionsProviderContext.Provider value={{ isStandalone }}>
+      <QueryClientProvider client={queryClient}>
+        <UserProvider>
+          <DesignSystemOptionsProvider value={providerValue}>
+            <StatusChipLocalisationProvider languageCode={LANGUAGE}>
+              <BrowserRouter>
+                <I18nextProvider i18n={i18n}>
+                  <ErrorHandlerProvider>
+                    <MPTContextProvider>{children}</MPTContextProvider>
+                  </ErrorHandlerProvider>
+                </I18nextProvider>
+              </BrowserRouter>
+            </StatusChipLocalisationProvider>
+          </DesignSystemOptionsProvider>
+        </UserProvider>
+      </QueryClientProvider>
+    </ExtensionsProviderContext.Provider>
   );
 }

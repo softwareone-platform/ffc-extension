@@ -14,7 +14,7 @@ import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContex
 
 export function MainLayout() {
   const tNav = useFixedT("shared:nav");
-  const { isOpen, open, close } = useModalToggle();
+  const { isOpen, close } = useModalToggle();
   const { role } = useUserRole();
 
   const navItems: PageShellNavItem[] = [
