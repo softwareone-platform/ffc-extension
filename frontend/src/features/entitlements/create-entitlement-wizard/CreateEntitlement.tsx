@@ -19,6 +19,7 @@ import "./CreateEntitlement.scss";
 
 import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useUserRole } from "~shared/hooks/useUserRole";
 
 export function CreateEntitlement() {
   const tEntitlementWizard = useFixedT("entitlements:addWizard");
@@ -32,9 +33,20 @@ export function CreateEntitlement() {
   const { close } = useMPTModal();
   const steps = useSteps(isPending);
 
+  const { user, role } = useUserRole();
+
   const methods = useForm({
     resolver: zodResolver(AddWizardFormSchema),
     mode: "onChange",
+    defaultValues: {
+      affiliate:
+        role === "affiliate"
+          ? {
+              id: user?.account.id || "",
+              name: user?.account.name || "",
+            }
+          : null,
+    },
   });
   const { handleSubmit, reset, setValue } = methods;
 
@@ -52,14 +64,15 @@ export function CreateEntitlement() {
   const onSubmit = useCallback(
     async (form: AddWizardForm) => {
       try {
-        const res = await mutateAsync({
+        const basePayload = {
           name: form.name,
           affiliate_external_id: form.dataSource.affiliate_external_id || "",
           datasource_id: form.dataSource.id,
-          owner: {
-            id: form.affiliate.id,
-          },
-        });
+        };
+
+        const res = await mutateAsync(
+          role === "affiliate" ? basePayload : { ...basePayload, owner: { id: form.affiliate.id } },
+        );
 
         setValue("id", res.data?.id);
 

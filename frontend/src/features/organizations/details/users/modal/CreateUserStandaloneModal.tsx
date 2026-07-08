@@ -5,6 +5,8 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { useUserFormController } from "./hooks/useUserFormController";
 import { UserFormFields } from "./UserFormFields";
 
+import "./CreateUserStandaloneModal.scss";
+
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;

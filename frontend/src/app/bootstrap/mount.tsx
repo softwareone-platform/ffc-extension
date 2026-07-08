@@ -7,8 +7,12 @@ import { setup } from "@mpt-extension/sdk";
 import { i18n } from "~i18n/translations";
 import { ExtensionsProvider } from "~shared/providers/ExtensionsProvider";
 
-export function mount(node: ReactNode) {
+export function mount(node: ReactNode, isStandalone: boolean) {
   setup((element: Element) => {
-    createRoot(element).render(<ExtensionsProvider i18n={i18n}>{node}</ExtensionsProvider>);
+    createRoot(element).render(
+      <ExtensionsProvider i18n={i18n} isStandalone={isStandalone}>
+        {node}
+      </ExtensionsProvider>,
+    );
   });
 }

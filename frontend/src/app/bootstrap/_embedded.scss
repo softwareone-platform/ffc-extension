@@ -16,3 +16,11 @@ body,
     scrollbar-gutter: auto;
   }
 }
+
+.page-embedded {
+  margin: 0 auto 0;
+
+  .error-page-card__content__actions {
+    display: none;
+  }
+}
