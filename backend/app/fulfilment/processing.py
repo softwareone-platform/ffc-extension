@@ -45,7 +45,6 @@ from app.parameters import (
     get_due_date,
     get_fulfillment_parameter,
     get_ordering_parameter,
-    set_fulfillment_parameter,
     set_is_new_user,
 )
 
@@ -74,7 +73,7 @@ class OrderProcessor:
         self.order = order
         self.template_cache = {}
 
-    def set_template(self, order: dict, template_id: str) -> dict:
+    def set_template(self, order: dict, template_id: str | None) -> dict:
         """Return a copy of the order with the provided template assigned."""
         if not template_id:
             raise ValueError("Template id is required")
@@ -83,10 +82,16 @@ class OrderProcessor:
             updated_order["template"]["id"] = template_id
             self.order = updated_order
             return self.order
-        except KeyError:
-            raise KeyError("Order is malformed")
+        except KeyError as exc:
+            logger.error(
+                "%s: order is malformed, missing key %s; template_id=%s",
+                self.order.get("id", "<unknown>"),
+                exc,
+                template_id,
+            )
+            raise KeyError(f"Order is malformed: missing key {exc}") from exc
 
-    async def get_complete_template(self, is_new: bool) -> str | None | Any:
+    async def get_complete_template(self, is_new: bool) -> str | None:
         if is_new:
             template_name = PURCHASE_TEMPLATE_NAME
         else:
@@ -97,15 +102,16 @@ class OrderProcessor:
 
     async def get_product_template_id(
         self, template_type: str, template_name: str | None
-    ) -> str | None | Any:
+    ) -> str | None:
         product_id = self.settings.mpt_product_id
         if not self.template_cache:
             logger.info("Initializing template cache for product %s", product_id)
             await self.fetch_product_templates(product_id)
             logger.info("Template cache initialized with %d entries", len(self.template_cache))
         logger.info("Fetching template %s", template_name)
-        return self.template_cache.get(
-            (template_type, template_name), self.template_cache[(template_type, None)]
+        return (
+            self.template_cache.get((template_type, template_name))
+            or self.template_cache[(template_type, None)]
         )
 
     async def fetch_product_templates(self, product_id: str) -> None:
@@ -119,7 +125,7 @@ class OrderProcessor:
                     "Cached template %s (%s, %s)", template_id, template_type, template_name
                 )
 
-    async def set_processing_order_template(self, order: dict) -> dict:
+    async def set_processing_order_template(self) -> dict:
         """Ensure the order uses the processing template expected for purchase flow."""
         template_id = await self.get_product_template_id(
             PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME
@@ -127,7 +133,7 @@ class OrderProcessor:
         logger.info("Processing order template: %s", template_id)
         current_template_id = self.order.get("template", {}).get("id")
         if template_id != current_template_id:
-            order = self.set_template(order=order, template_id=template_id)
+            order = self.set_template(order=self.order, template_id=template_id)
             order = await self.ext_client.update_order(
                 order_id=order["id"],
                 template={"id": template_id},
@@ -140,7 +146,7 @@ class OrderProcessor:
                 template_id,
             )
 
-        logger.info("%s: processing template is ok, continue", order["id"])
+        logger.info("%s: processing template is ok, continue", self.order["id"])
         return self.order
 
     async def validate_and_move_to_querying_if_needed(self) -> bool:
@@ -177,18 +183,14 @@ class OrderProcessor:
 
     async def apply_fulfillment_defaults(self) -> dict[str, Any]:
         updated_parameters = get_parameter_updates(self.order, self.settings)
-        order = self.order
+        order = copy.deepcopy(self.order)
         if updated_parameters:
             for param_name, param_value in updated_parameters.items():
-                order = set_fulfillment_parameter(
-                    order=order,
-                    parameter=param_name,
-                    value=param_value,
-                )
+                get_fulfillment_parameter(order, param_name)["value"] = param_value
             order = await self.ext_client.update_order(
                 order_id=order["id"], parameters=order["parameters"]
             )
-            logger.info("%s: updating fulfillment parameters", order["id"])
+            logger.info("%s: updating fulfillment parameters", self.order["id"])
         self.order = order
         return self.order
 
@@ -260,7 +262,6 @@ class OrderProcessor:
             )
             response_json = response.json()
             employee_id = response_json["id"]
-            # await optscale_client.reset_password(email)
             is_new = True
             logger.info("Employee created with id %s for order %s", employee_id, self.order["id"])
         updated_order = set_is_new_user(self.order, is_new=is_new)
@@ -304,8 +305,8 @@ class OrderProcessor:
     async def process(self):
         raise NotImplementedError()
 
-    async def handle_exception(self, exc, now):
-        pass
+    async def handle_exception(self, exc, *, now):
+        raise NotImplementedError()
 
 
 class PurchaseOrderProcessor(OrderProcessor):
@@ -323,7 +324,7 @@ class PurchaseOrderProcessor(OrderProcessor):
     async def process(self):
         await self.validate_order()
         await self.apply_fulfillment_defaults()
-        await self.set_processing_order_template(order=self.order)
+        await self.set_processing_order_template()
         employee_id, employee_email = await self.create_employee()
         organization = await self.get_or_create_organization(employee_id)
 
@@ -338,18 +339,16 @@ class PurchaseOrderProcessor(OrderProcessor):
 
         await self.send_reset_password(employee_email, is_new)
         logger.info("Order %s has been completed", self.order["id"])
-        return self.order  # return ORDER_COMPLETED
 
     async def handle_exception(self, exc: Exception, *, now: date) -> ProcessResult:
         if isinstance(exc, UnsupportedOrderTypeError):
-            # Permanent failure: fail the order and let the task complete.
+            # fail the order and let the task complete.
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
                 payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
             )
             return ProcessResult.COMPLETE
         if isinstance(exc, OrderMovedToQuery | OrderNotValidError):
-            # Handled inside the flow already: nothing else to do.
             return ProcessResult.SKIP
 
         due_date: date | None = get_due_date(self.order) if self.order else None

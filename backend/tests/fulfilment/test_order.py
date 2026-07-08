@@ -337,7 +337,7 @@ async def test_start_processing_order_template(mocker, make_processor, order_fac
     updated_order["template"]["id"] = "TPL-0001"
     mocker.patch.object(processor.ext_client, "update_order", return_value=updated_order)
     with caplog.at_level(logging.INFO):
-        response = await processor.set_processing_order_template(order)
+        response = await processor.set_processing_order_template()
         assert response == updated_order
         assert f"{order['id']}: processing template set to Purchase (TPL-0001)" in caplog.text
 
@@ -361,7 +361,7 @@ async def test_set_processing_order_template_switches_template(
     updated_order["template"]["id"] = "TPL-0001"
     processor.ext_client.update_order.return_value = updated_order
     with caplog.at_level(logging.INFO):
-        response = await processor.set_processing_order_template(order)
+        response = await processor.set_processing_order_template()
     assert response == updated_order
     assert processor.order == updated_order
     processor.ext_client.update_order.assert_awaited_once_with(
@@ -394,7 +394,7 @@ async def test_start_processing_order_template_with_same_template(
 
     mocker.patch.object(processor.ext_client, "update_order", return_value=order)
     with caplog.at_level(logging.INFO):
-        response = await processor.set_processing_order_template(order)
+        response = await processor.set_processing_order_template()
         assert response == order
         assert f"{order['id']}: processing template is ok, continue" in caplog.text
 
@@ -849,8 +849,8 @@ async def test_get_complete_template(
 # -- OrderProcessor.handle_exception (base) --
 
 
-async def test_base_handle_exception_is_a_noop(order_factory, make_processor):
-    # The base processor has no recovery behaviour; subclasses override it.
+async def test_base_handle_exception_is_abstract(order_factory, make_processor):
+    # The base processor has no recovery behaviour; subclasses must override it.
     order = order_factory(
         order_type="Purchase",
         status="Processing",
@@ -858,7 +858,8 @@ async def test_base_handle_exception_is_a_noop(order_factory, make_processor):
         product_name="SoftwareOne FinOps for Cloud",
     )
     processor = make_processor(order)
-    assert await processor.handle_exception(RuntimeError("boom"), now=None) is None
+    with pytest.raises(NotImplementedError):
+        await processor.handle_exception(RuntimeError("boom"), now=None)
 
 
 # -- PurchaseOrderProcessor.send_reset_password --
@@ -946,14 +947,12 @@ async def test_purchase_order_process_completes_order(mocker, order_factory, tes
     mocked_send_reset_password = mocker.patch.object(processor, "send_reset_password", AsyncMock())
 
     with caplog.at_level(logging.INFO):
-        result = await processor.process()
-
-    assert result is processor.order
+        await processor.process()
 
     # Each step runs once, in order, with the expected arguments.
     mocked_validate.assert_awaited_once_with()
     mocked_defaults.assert_awaited_once_with()
-    mocked_set_template.assert_awaited_once_with(order=processor.order)
+    mocked_set_template.assert_awaited_once_with()
     mocked_create_employee.assert_awaited_once_with()
     mocked_get_or_create_org.assert_awaited_once_with("employee-id")
     mocked_create_subscription.assert_awaited_once_with(organization)
@@ -995,9 +994,8 @@ async def test_purchase_order_process_new_user_branch(mocker, order_factory, tes
     )
     mocked_send_reset_password = mocker.patch.object(processor, "send_reset_password", AsyncMock())
 
-    result = await processor.process()
+    await processor.process()
 
-    assert result is processor.order
     # New user -> completes with the new-user template and triggers a password reset.
     mocked_get_complete_template.assert_awaited_once_with(True)
     processor.ext_client.complete_order.assert_awaited_once_with(

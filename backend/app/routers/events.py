@@ -29,8 +29,9 @@ async def process_order(
     task_id = event.task.id
     logger.info("Changing task %s status to Processing", task_id)
     await ext_client.start_task(task_id, ext_ctx.instance_id)
-    processor = await factory.get_order_type_processor(order_id)
+
     try:
+        processor = await factory.get_order_type_processor(order_id)
         await processor.process()
         await ext_client.complete_task(task_id)
         logger.info("Task %s has been completed", task_id)
