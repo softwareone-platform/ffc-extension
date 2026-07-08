@@ -97,6 +97,7 @@ def test_settings() -> Settings:
     settings.opentelemetry_exporter = None
     settings.cli_rich_logging = False
     settings.msteams_notifications_webhook_url = "https://example.com/webhook"
+    settings.max_parallel_tasks = 1
     return settings
 
 
@@ -120,21 +121,45 @@ async def setup_db_tables(db_engine: AsyncEngine) -> AsyncGenerator[None]:
 
 
 @pytest.fixture
-async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
-    # Use nested transactions to avoid committing changes to the database, speeding up
-    # the tests significantly and avoiding side effects between them.
-    #
-    # ref: https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites
-
-    async with db_engine.connect() as conn:
-        outer_transaction = await conn.begin()
-        session_factory.configure(bind=conn, join_transaction_mode="create_savepoint")
-
+async def db_session(
+    request: pytest.FixtureRequest,
+    db_engine: AsyncEngine,
+) -> AsyncGenerator[AsyncSession, None]:
+    if request.node.get_closest_marker("transactional_db") is None:
+        # --- DEFAULT: fast rollback mode ---
+        # Single shared connection + savepoints, rolled back at the end.
+        # Use nested transactions to avoid committing changes to the database, speeding up
+        # the tests significantly and avoiding side effects between them.
+        #
+        # ref: https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites
+        async with db_engine.connect() as conn:
+            outer_transaction = await conn.begin()
+            session_factory.configure(bind=conn, join_transaction_mode="create_savepoint")
+            try:
+                async with session_factory() as s:
+                    yield s
+            finally:
+                await outer_transaction.rollback()
+                # Always leave the factory bound to the engine for the next test.
+                session_factory.configure(
+                    bind=db_engine, join_transaction_mode="conditional_savepoint"
+                )
+    else:
+        # --- transactional_db: real commits, TRUNCATE cleanup ---
+        # Bind the factory to the ENGINE, so every session() (the test's AND each task's)
+        # checks out its OWN connection from the pool and commits for real.
+        session_factory.configure(bind=db_engine, join_transaction_mode="conditional_savepoint")
         try:
             async with session_factory() as s:
                 yield s
         finally:
-            await outer_transaction.rollback()
+            # Drop every pooled connection first, so none can hold a lock TRUNCATE waits on.
+            # lock_timeout turns any stray lock into a fast, loud error instead of a hang.
+            await db_engine.dispose()
+            tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
+            async with db_engine.begin() as conn:
+                await conn.exec_driver_sql("SET LOCAL lock_timeout = '5s'")
+                await conn.exec_driver_sql(f"TRUNCATE {tables} RESTART IDENTITY CASCADE")
 
 
 @pytest.fixture(scope="session")

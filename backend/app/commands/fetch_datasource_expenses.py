@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from collections.abc import Sequence
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 import typer
@@ -19,6 +19,42 @@ from app.notifications import send_exception, send_info
 from app.telemetry import capture_telemetry_cli_command
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class OrganizationResult:
+    """Outcome of processing organization expenses, aggregated for the final notification."""
+
+    organization_id: str
+    datasource_count: int = 0
+    succeeded: bool = True
+    error: str | None = None
+
+
+@dataclass(frozen=True)
+class ExpensePeriod:
+    """Dates a single run targets: current month (today) and the daily figure (yesterday)."""
+
+    today: date
+    yesterday: date
+    day_start: int
+    day_end: int
+
+    @classmethod
+    def for_now(cls, now: datetime) -> "ExpensePeriod":
+        today = now.date()
+        yesterday = today - relativedelta(days=1)
+        day_start = int(
+            datetime(
+                yesterday.year, yesterday.month, yesterday.day, 0, 0, 0, tzinfo=UTC
+            ).timestamp()
+        )
+        day_end = int(
+            datetime(
+                yesterday.year, yesterday.month, yesterday.day, 23, 59, 59, tzinfo=UTC
+            ).timestamp()
+        )
+        return cls(today=today, yesterday=yesterday, day_start=day_start, day_end=day_end)
 
 
 def filter_relevant_datasources(datasources: list[dict]) -> list[dict]:
@@ -98,7 +134,7 @@ async def fetch_total_monthly_organization_expenses(
 
         response_datasources = response.json()["cloud_accounts"]
         logger.info(
-            "Fetched %d datasources for organization %s - %s",
+            "Fetched %d monthly datasource expenses for organization %s - %s",
             len(response_datasources),
             organization.id,
             organization.name,
@@ -122,166 +158,154 @@ async def fetch_total_monthly_organization_expenses(
     return expenses
 
 
-async def fetch_datasource_expenses(
-    organizations: Sequence[Organization],
-    optscale_client: OptscaleClient,
-    year: int,
-    month: int,
-    day: int,
-    is_daily: bool = False,
-) -> dict[str, list[dict]]:
-    expenses: dict[str, list[dict]] = {}
-    day_start = int((datetime(year, month, day, 0, 0, 0, tzinfo=UTC)).timestamp())
-    day_end = int((datetime(year, month, day, 23, 59, 59, tzinfo=UTC)).timestamp())
-
-    for organization in organizations:
-        if organization.linked_organization_id is None:
-            logger.warning(
-                "Organization %s - %s has no linked organization ID. Skipping...",
-                organization.id,
-                organization.name,
-            )
-            continue
-
-        if is_daily:
-            organization_expenses = await fetch_daily_organization_expenses(
-                organization,
-                optscale_client,
-                day_start,
-                day_end,
-            )
-        else:
-            organization_expenses = await fetch_total_monthly_organization_expenses(
-                organization,
-                optscale_client,
-            )
-        expenses[organization.id] = organization_expenses
-
-    return expenses
-
-
-async def store_datasource_expenses(
+async def store_organization_expenses(
     datasource_expense_handler: DatasourceExpenseHandler,
-    expenses_per_organization: dict[str, list[dict]],
+    organization_id: str,
+    expenses: list[dict],
     year: int,
     month: int,
     day: int,
     is_daily: bool = False,
-) -> None:
-    org_count = 0
-    ds_count = 0
+) -> int:
+    for expense in expenses:
+        defaults = {
+            "datasource_name": expense["name"],
+            "linked_datasource_id": expense["id"],
+            "linked_datasource_type": expense["type"],
+        }
+        if is_daily:
+            defaults["expenses"] = expense["total"]
+            existing_ds_expense = await datasource_expense_handler.first(
+                where_clauses=[
+                    DatasourceExpense.datasource_id == expense["account_id"],
+                    DatasourceExpense.organization_id == organization_id,
+                    DatasourceExpense.year == year,
+                    DatasourceExpense.month == month,
+                    DatasourceExpense.day == day,
+                    DatasourceExpense.linked_datasource_type.in_(
+                        [DatasourceType.UNKNOWN, expense["type"]]
+                    ),
+                ],
+            )
+            created = False
+        else:
+            defaults["total_expenses"] = expense["details"]["cost"]
+            existing_ds_expense, created = await datasource_expense_handler.get_or_create(
+                datasource_id=expense["account_id"],
+                organization_id=organization_id,
+                year=year,
+                month=month,
+                day=day,
+                defaults=defaults,
+                extra_conditions=[
+                    DatasourceExpense.linked_datasource_type.in_(
+                        [DatasourceType.UNKNOWN, expense["type"]]
+                    )
+                ],
+            )
 
-    for organization_id, datasources in expenses_per_organization.items():
-        org_count += 1
-        ds_count += len(datasources)
+        if not created and existing_ds_expense:
+            await datasource_expense_handler.update(existing_ds_expense, defaults)
+    return len(expenses)
 
-        for datasource in datasources:
-            defaults = {
-                "datasource_name": datasource["name"],
-                "linked_datasource_id": datasource["id"],
-                "linked_datasource_type": datasource["type"],
-            }
-            if is_daily:
-                defaults["expenses"] = datasource["total"]
 
-                existing_ds_expense = await datasource_expense_handler.first(
-                    where_clauses=[
-                        DatasourceExpense.datasource_id == datasource["account_id"],
-                        DatasourceExpense.organization_id == organization_id,
-                        DatasourceExpense.year == year,
-                        DatasourceExpense.month == month,
-                        DatasourceExpense.day == day,
-                        DatasourceExpense.linked_datasource_type.in_(
-                            [DatasourceType.UNKNOWN, datasource["type"]]
-                        ),
-                    ],
+async def process_organization(
+    organization: Organization,
+    settings: Settings,
+    period: ExpensePeriod,
+    semaphore: asyncio.Semaphore,
+) -> OrganizationResult:
+    result = OrganizationResult(organization_id=organization.id)
+
+    async with semaphore:
+        try:
+            async with OptscaleClient(settings) as optscale_client:
+                monthly_expenses = await fetch_total_monthly_organization_expenses(
+                    organization, optscale_client
                 )
-                created = False
-            else:
-                defaults["total_expenses"] = datasource["details"]["cost"]
-
-                existing_ds_expense, created = await datasource_expense_handler.get_or_create(
-                    datasource_id=datasource["account_id"],
-                    organization_id=organization_id,
-                    year=year,
-                    month=month,
-                    day=day,
-                    defaults=defaults,
-                    extra_conditions=[
-                        DatasourceExpense.linked_datasource_type.in_(
-                            [DatasourceType.UNKNOWN, datasource["type"]]
-                        )
-                    ],
+                daily_expenses = await fetch_daily_organization_expenses(
+                    organization, optscale_client, period.day_start, period.day_end
                 )
 
-            if not created and existing_ds_expense:
-                await datasource_expense_handler.update(
-                    existing_ds_expense,
-                    defaults,
-                )
-    msg = (
-        f"{'Daily' if is_daily else 'Monthly'} expenses of {ds_count} datasources "
-        f"configured by {org_count} Organizations have been updated."
-    )
-    logger.info(msg)
-    await send_info("Datasource Expenses Update Success", msg)
+            async with session_factory() as session:
+                datasource_expense_handler = DatasourceExpenseHandler(session)
+                async with session.begin():
+                    monthly_count = await store_organization_expenses(
+                        datasource_expense_handler,
+                        organization.id,
+                        monthly_expenses,
+                        year=period.today.year,
+                        month=period.today.month,
+                        day=period.today.day,
+                        is_daily=False,
+                    )
+                    daily_count = await store_organization_expenses(
+                        datasource_expense_handler,
+                        organization.id,
+                        daily_expenses,
+                        year=period.yesterday.year,
+                        month=period.yesterday.month,
+                        day=period.yesterday.day,
+                        is_daily=True,
+                    )
+                result.datasource_count = monthly_count + daily_count
+
+        except Exception as exc:
+            logger.exception(f"Failed to process organization {organization.id}: {exc}")
+            result.succeeded = False
+            result.error = str(exc)
+
+    return result
 
 
 @capture_telemetry_cli_command(__name__, "Update Current Month Datasource Expenses")
 async def main(settings: Settings, organization_id: str | None = None) -> None:
-    today = datetime.now(UTC).date()
-    yesterday = today - relativedelta(days=1)
+    period = ExpensePeriod.for_now(datetime.now(UTC))
+    semaphore = asyncio.Semaphore(settings.max_parallel_tasks)
 
     async with session_factory() as session:
-        datasource_expense_handler = DatasourceExpenseHandler(session)
+        logger.info("Querying organizations")
         organization_handler = OrganizationHandler(session)
+        where_clauses = [Organization.status != OrganizationStatus.DELETED]
+        if organization_id:
+            where_clauses.append(Organization.id == organization_id)
 
-        async with session.begin():
-            if organization_id:
-                logger.info(f"Querying for provided organization {organization_id}")
-                organizations = await organization_handler.query_db(
-                    where_clauses=[
-                        Organization.id == organization_id,
-                        Organization.status != OrganizationStatus.DELETED,
-                    ],
-                )
-            else:
-                logger.info("Querying organizations")
-                organizations = await organization_handler.query_db(
-                    where_clauses=[Organization.status != OrganizationStatus.DELETED]
-                )
-            logger.info("Found %d organizations to process", len(organizations))
+        organizations = await organization_handler.query_db(where_clauses=where_clauses)
+        logger.info(f"Found {len(organizations)} organizations to process")
 
-        for day, is_daily, frq in [
-            (today, False, "monthly"),
-            (yesterday, True, "daily"),
-        ]:
-            async with OptscaleClient(settings) as optscale_client:
-                logger.info(
-                    f"Fetching {frq} datasource's expenses for the organizations from Optscale"
-                )
-                expenses = await fetch_datasource_expenses(
-                    organizations, optscale_client, day.year, day.month, day.day, is_daily=is_daily
-                )
-                logger.info(f"Completed fetching {frq} expenses")
+    not_linked_orgs = [org.id for org in organizations if org.linked_organization_id is None]
+    if len(not_linked_orgs) > 0:
+        logger.warning(
+            f"Found {len(not_linked_orgs)} organizations without "
+            f"linked organization ID: {not_linked_orgs}. Skipping..."
+        )
 
-            async with session.begin():
-                logger.info(
-                    "Storing %s datasource expenses for %s organizations for %s",
-                    frq,
-                    len(organizations),
-                    today.strftime("%d %B %Y"),  # e.g. "20 March 2025"
-                )
-                await store_datasource_expenses(
-                    datasource_expense_handler,
-                    expenses,
-                    year=day.year,
-                    month=day.month,
-                    day=day.day,
-                    is_daily=is_daily,
-                )
+    tasks = [
+        asyncio.create_task(process_organization(org, settings, period, semaphore))
+        for org in organizations
+        if org.linked_organization_id is not None
+    ]
+    results = await asyncio.gather(*tasks)
 
-                logger.info(f"Completed storing {frq} datasource expenses")
+    succeeded = [r for r in results if r.succeeded]
+    failed = [r for r in results if not r.succeeded]
+    total_ds = sum(r.datasource_count for r in succeeded)
+
+    if failed:
+        detail = "; ".join(f"{r.organization_id}: {r.error}" for r in failed)
+        msg = (
+            f"Datasource expenses updated for {len(succeeded)} organizations "
+            f"({total_ds} data sources expenses processed). {len(failed)} failed: {detail}"
+        )
+        logger.warning(msg)
+        await send_exception("Datasource Expenses Update Partial Failure", msg)
+    else:
+        msg = (
+            f"Datasource expenses updated for {len(succeeded)} organizations "
+            f"({total_ds} data sources expenses processed)."
+        )
+        logger.info(msg)
+        await send_info("Datasource Expenses Update Success", msg)
 
 
 def command(

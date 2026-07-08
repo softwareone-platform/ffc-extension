@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     billing_percentage: float = 1.0
     ffc_external_product_id: str = "FIN-0001-P1M"
 
+    httpx_retry_count: int = 5
+    httpx_retry_backoff_factor: float = 0.5
+
     optscale_auth_api_base_url: str
     optscale_rest_api_base_url: str
     optscale_ffc_api_base_url: str
@@ -70,6 +73,9 @@ class Settings(BaseSettings):
 
     # Billing command constraints
     lower_billing_year: int = 2025
+
+    # Limit parallel tasks in commands execution
+    max_parallel_tasks: int = 10
 
     ui_plugs_prefix: str = "ffc"
 

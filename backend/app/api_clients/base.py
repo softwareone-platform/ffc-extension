@@ -5,6 +5,7 @@ from types import TracebackType
 from typing import ClassVar, Self
 
 import httpx
+from httpx_retries import Retry, RetryTransport
 
 from app.conf import Settings
 
@@ -38,6 +39,14 @@ class BaseAPIClient(ABC):
     def auth(self):
         raise NotImplementedError("base_url property must be implemented in subclasses")
 
+    @property
+    def transport(self) -> RetryTransport:
+        retry = Retry(
+            total=self.settings.httpx_retry_count,
+            backoff_factor=self.settings.httpx_retry_backoff_factor,
+        )
+        return RetryTransport(retry=retry)
+
     @cached_property
     def httpx_client(self) -> httpx.AsyncClient:
         return httpx.AsyncClient(
@@ -49,6 +58,7 @@ class BaseAPIClient(ABC):
                 write=2.0,
                 pool=5.0,
             ),
+            transport=self.transport,
         )
 
     async def __aenter__(self) -> Self:
