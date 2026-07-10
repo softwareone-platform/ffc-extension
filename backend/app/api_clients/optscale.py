@@ -214,7 +214,7 @@ class OptscaleAuthClient(BaseAPIClient):
         response.raise_for_status()
         response_data = response.json()
 
-        if not response_data.get("exists", False):
+        if not response_data["exists"]:
             raise UserDoesNotExist(email)
 
         return response

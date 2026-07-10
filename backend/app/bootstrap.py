@@ -31,8 +31,9 @@ def bootstrap(
     }
 
     external_id = get_instance_external_id()
-    identity_file = pathlib.Path.cwd() / f"{external_id}_identity.json"
-
+    identity_file = (
+        pathlib.Path(__file__).parent.parent.parent.resolve() / f"{external_id}_identity.json"
+    )
     logger.info(
         f"Boostrap instance for extension {settings.mpt_extension_id}: externalId={external_id}",
     )
