@@ -9,11 +9,14 @@ from pydantic.v1.utils import deep_update
 from pytest_httpx import HTTPXMock
 
 from app.api_clients.base import BaseAPIClient
+from app.api_clients.mpt import MPTClient, MPTExtensionAuth
 from app.api_clients.optscale import OptscaleClient
 from app.conf import Settings
 from app.db.models import Organization
 
-C = TypeVar("C", bound=BaseAPIClient)
+# Unbounded: most real clients subclass BaseAPIClient, but some (e.g. MPTClient) don't.
+# The default _build_real_client still enforces the BaseAPIClient contract at runtime.
+C = TypeVar("C")
 
 
 class BaseMockAPIClient(Protocol[C]):
@@ -21,10 +24,21 @@ class BaseMockAPIClient(Protocol[C]):
     httpx_mock: HTTPXMock
 
     def __init__(self, test_settings: Settings, httpx_mock: HTTPXMock):
-        real_client_cls = self._get_real_client_cls()
-
-        self.real_client = real_client_cls(test_settings)
+        self.real_client = self._build_real_client(test_settings)
         self.httpx_mock = httpx_mock
+
+    def _build_real_client(self, test_settings: Settings) -> C:
+        """Construct the real client under test.
+
+        Default works for ``BaseAPIClient`` subclasses (``cls(settings)``); override
+        for clients whose constructor differs (e.g. ``MPTClient(auth=...)``).
+        """
+        return self._get_real_client_cls()(test_settings)
+
+    @property
+    def base_url(self) -> str:
+        """Base URL the real client issues requests against, for mock matching."""
+        return self.real_client.base_url
 
     @classmethod
     def _get_real_client_cls(cls) -> type[C]:
@@ -56,7 +70,7 @@ class BaseMockAPIClient(Protocol[C]):
     def add_mock_response(self, method: str, url: str, **kwargs: Any) -> None:
         self.httpx_mock.add_response(
             method=method,
-            url=f"{self.real_client.base_url}/{url.removeprefix('/')}",
+            url=f"{self.base_url}/{url.removeprefix('/')}",
             **self.common_matchers(),
             **kwargs,
         )
@@ -153,6 +167,77 @@ class MockOptscaleClient(BaseMockAPIClient[OptscaleClient]):
             json=json,
             status_code=status_code,
         )
+
+
+class MockExtensionClient(BaseMockAPIClient[MPTClient]):
+    """HTTP-level mock for the MPT extension client (``MPTClient``).
+
+    Mirrors ``MockOptscaleClient``: it wraps a *real* ``MPTClient`` and stubs the HTTP
+    responses for its endpoints via ``httpx_mock``. Tests therefore exercise the real
+    client (URL building, pagination, parsing) while the network is mocked. Stub data
+    (orders, templates, ...) is passed to the ``mock_*`` helpers rather than stored on
+    the client, and any endpoint without a dedicated helper can be stubbed directly
+    with the inherited ``add_mock_response``.
+    """
+
+    def _build_real_client(self, test_settings: Settings) -> MPTClient:
+        client = MPTClient(auth=MPTExtensionAuth())
+        # Pin settings so base_url / page size match what the mock registers below.
+        client.settings = test_settings
+        return client
+
+    @property
+    def base_url(self) -> str:
+        return self.real_client.settings.mpt_api_base_url
+
+    # ---- Orders ------------------------------------------------------
+
+    def mock_get_order(self, order: dict, *, status_code: int = status.HTTP_200_OK) -> None:
+        self.add_mock_response(
+            "GET", f"commerce/orders/{order['id']}", json=order, status_code=status_code
+        )
+
+    def mock_update_order(
+        self, order_id: str, order: dict, *, status_code: int = status.HTTP_200_OK
+    ) -> None:
+        self.add_mock_response(
+            "PUT", f"commerce/orders/{order_id}", json=order, status_code=status_code
+        )
+
+    def mock_complete_order(
+        self, order_id: str, order: dict, *, status_code: int = status.HTTP_200_OK
+    ) -> None:
+        self.add_mock_response(
+            "POST", f"commerce/orders/{order_id}/complete", json=order, status_code=status_code
+        )
+
+    # ---- Templates ---------------------------------------------------
+
+    def mock_get_product_templates(
+        self, product_id: str, templates: list[dict], *, status_code: int = status.HTTP_200_OK
+    ) -> None:
+        rows = self.real_client.settings.mpt_api_rows_per_page
+        self.add_mock_response(
+            "GET",
+            f"catalog/products/{product_id}/templates?limit={rows}&offset=0",
+            json={"data": templates, "$meta": {"pagination": {"total": len(templates)}}},
+            status_code=status_code,
+        )
+
+    # ---- Agreements --------------------------------------------------
+
+    def mock_get_agreement(self, agreement: dict, *, status_code: int = status.HTTP_200_OK) -> None:
+        self.add_mock_response(
+            "GET",
+            f"commerce/agreements/{agreement['id']}",
+            json=agreement,
+            status_code=status_code,
+        )
+
+
+@pytest.fixture
+def mock_extension_client(test_settings: Settings, httpx_mock: HTTPXMock) -> MockExtensionClient:
+    return MockExtensionClient(test_settings, httpx_mock)
 
 
 @pytest.fixture

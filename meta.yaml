@@ -1,6 +1,10 @@
-version: 1.0.0
+version: 6.0.0
 openapi: /bypass/openapi.json
 events:
+  - event: platform.commerce.order.created
+    condition: "and(eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
+    path: "/events/commerce/orders"
+    task: true
   - event: platform.commerce.order.status_changed
     condition: "and(eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
     path: "/events/commerce/orders"

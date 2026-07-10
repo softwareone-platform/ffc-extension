@@ -363,6 +363,49 @@ async def test_async_client_retries_on_timeout(httpx_mock: HTTPXMock) -> None:
 
 `pytest-httpx` fails the test if a registered response is never matched, which catches dead test setup. To allow unmatched responses (rarely needed), pass `assert_all_responses_were_requested=False` to a per-test marker.
 
+### Assert the request through matchers, not by fetching it back
+
+Register what the request must look like on `add_response` itself, using the built-in matchers. **Do not** pull the request out afterwards with `httpx_mock.get_request()` / `get_requests()` and then assert on `.url`, `.headers`, `.content`, or a parsed body. Because `pytest-httpx` fails the test when no registered response matches, a matcher on `add_response` *is* the assertion — and it's stronger: `get_request()` raises `AssertionError` the moment a second request is made, so hand-rolled `_last_request`-style helpers silently break as soon as the code under test makes more than one call.
+
+Match with these `add_response`/`add_exception` keywords:
+
+- `url=` — full URL **including query string**; query params are compared order-independently.
+- `method=` — the HTTP verb.
+- `match_json=` — the request body, JSON-decoded and compared structurally.
+- `match_headers=` — a dict of headers the request must carry (subset match).
+- `match_params=` — query params as a dict, when you'd rather not inline them in `url`.
+- `match_content=` / `match_data=` / `match_files=` — raw bytes, form data, multipart files.
+
+```python
+# Bad: fetch the request back and assert on it. Breaks on a second request,
+# and needs a helper that re-implements what the matchers already do.
+def _last_request(httpx_mock: HTTPXMock) -> httpx.Request:
+    request = httpx_mock.get_request()
+    assert request is not None
+    return request
+
+async def test_create_posts_payload(client: ApiClient, httpx_mock: HTTPXMock) -> None:
+    """`create` POSTs the payload to the resource URL."""
+    httpx_mock.add_response(method="POST", json={"id": "OBJ-1"})
+    await client.create("billing/journals", {"name": "j"})
+    assert _last_request(httpx_mock).url.path.endswith("billing/journals")  # don't
+    assert json.loads(_last_request(httpx_mock).content) == {"name": "j"}   # don't
+
+# Good: the matchers ARE the assertion — the test fails if the request doesn't match.
+async def test_create_posts_payload(client: ApiClient, httpx_mock: HTTPXMock) -> None:
+    """`create` POSTs the payload to the resource URL."""
+    httpx_mock.add_response(
+        method="POST",
+        url="https://api.example/v1/billing/journals",
+        match_json={"name": "j"},
+        json={"id": "OBJ-1"},
+    )
+    result = await client.create("billing/journals", {"name": "j"})
+    assert result == {"id": "OBJ-1"}
+```
+
+**The one legitimate use of `get_requests()`** is asserting *emergent, cross-request* behavior that no single matcher can express: how many requests were made (retry counts, pacing), how a payload was split across a runtime-determined number of requests (chunking/pagination distribution), or a wire-format property of the serialized body (e.g. compact JSON has no `", "` separators). Verifying that *one* request had the right URL / body / params / headers is never one of those cases — use matchers.
+
 For codebases on `requests`, prefer migrating to `httpx` so you can use `pytest-httpx` everywhere; if that's not feasible, use `respx` (httpx) or `pytest-httpserver`. Pick one tool for the project and stick with it — don't mix.
 
 The "don't mix" rule is about **mocking** libraries. A tool that serves *real* HTTP for a test (e.g. `pytest-httpserver`) operates at a different layer and may coexist with a mocking tool — for example, mocking an upstream API while serving local fixture documents over HTTP to exercise a loader end-to-end.
@@ -517,6 +560,7 @@ dev = [
 - [ ] Fixtures live in `conftest.py` or modules imported by it — never in the test file.
 - [ ] Mocks use `mocker` (pytest-mock); no direct `unittest.mock.patch`.
 - [ ] HTTP mocks use `httpx_mock` (pytest-httpx); no hand-patched `requests`/`httpx`.
+- [ ] HTTP requests are asserted via `add_response` matchers (`url`, `method`, `match_json`, `match_headers`, `match_params`), not by fetching the request back with `get_request()`/`get_requests()` — the latter is reserved for cross-request behavior (counts, chunking distribution, wire format).
 - [ ] Test data comes from factories, not bespoke dicts or repeated constructor calls.
 - [ ] `pytest.raises` calls include `match=`.
 - [ ] Coverage ≥ 90 % on the changed module (target 95 %); branch coverage on.

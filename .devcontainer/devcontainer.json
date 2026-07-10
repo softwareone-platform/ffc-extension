@@ -32,11 +32,14 @@
         "ms-python.mypy-type-checker",
         "anthropic.claude-code",
         "knisterpeter.vscode-commitizen",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "astral-sh.ty"
       ],
       "settings": {
         "python.terminal.activateEnvironment": false,
-        "python.defaultInterpreterPath": "/opt/venv/bin/python"
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "python.languageServer": "Pylance",
+        "ty.disableLanguageServices": true
       }
     },
     "jetbrains": {

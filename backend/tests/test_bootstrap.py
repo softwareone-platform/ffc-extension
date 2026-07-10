@@ -19,7 +19,7 @@ def test_bootstrap_requests_new_identity_and_saves_it(
     """`bootstrap` requests a fresh identity when no identity file exists and saves the result."""
     ziti = mocker.patch("app.bootstrap.ziticorn")
     mocker.patch("app.bootstrap.get_instance_external_id", return_value=EXTERNAL_ID)
-    mocker.patch("app.bootstrap.pathlib.Path.cwd", return_value=tmp_path)
+    mocker.patch("app.bootstrap.pathlib.Path.resolve", return_value=tmp_path)
     httpx_mock.add_response(
         method="POST", json={"id": "INS-1", "channel": {"identity": {"key": "value"}}}
     )
@@ -40,7 +40,7 @@ def test_bootstrap_reuses_matching_identity_without_overwriting(
     """`bootstrap` keeps a matching identity file when the response carries no new identity."""
     ziti = mocker.patch("app.bootstrap.ziticorn")
     mocker.patch("app.bootstrap.get_instance_external_id", return_value=EXTERNAL_ID)
-    mocker.patch("app.bootstrap.pathlib.Path.cwd", return_value=tmp_path)
+    mocker.patch("app.bootstrap.pathlib.Path.resolve", return_value=tmp_path)
     identity_file = tmp_path / f"{EXTERNAL_ID}_identity.json"
     original = {"mrok": {"extension": test_settings.mpt_extension_id}}
     identity_file.write_text(json.dumps(original))
@@ -61,7 +61,7 @@ def test_bootstrap_replaces_identity_from_a_different_extension(
     """`bootstrap` requests and stores a new identity when the existing one is another extension."""
     mocker.patch("app.bootstrap.ziticorn")
     mocker.patch("app.bootstrap.get_instance_external_id", return_value=EXTERNAL_ID)
-    mocker.patch("app.bootstrap.pathlib.Path.cwd", return_value=tmp_path)
+    mocker.patch("app.bootstrap.pathlib.Path.resolve", return_value=tmp_path)
     identity_file = tmp_path / f"{EXTERNAL_ID}_identity.json"
     identity_file.write_text(json.dumps({"mrok": {"extension": "EXT-0000-0000"}}))
     httpx_mock.add_response(
