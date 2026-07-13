@@ -21,6 +21,7 @@ from app.dependencies.db import OrganizationRepository
 from app.fulfilment.constants import (
     COMPLETED_TEMPLATE_TYPE,
     MPT_ORDER_STATUS_PROCESSING,
+    ORDER_TYPE_CHANGE,
     ORDER_TYPE_PURCHASE,
     PROCESSING_TEMPLATE_TYPE,
     PURCHASE_EXISTING_TEMPLATE_NAME,
@@ -30,6 +31,7 @@ from app.fulfilment.constants import (
 from app.fulfilment.error import (
     ERR_DUE_DATE_IS_REACHED,
     ERR_DUE_DATE_NOT_SET,
+    ERR_ORDER_TYPE_NOT_SUPPORTED,
 )
 from app.fulfilment.exceptions import (
     OrderMovedToQuery,
@@ -365,7 +367,7 @@ class PurchaseOrderProcessor(OrderProcessor):
                 # No due date to retry against: fail the order and cancel.
                 await self.ext_client.fail_order(
                     order_id=self.order["id"],
-                    payload=ERR_DUE_DATE_NOT_SET.to_dict(),
+                    payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
                 )
                 return ProcessingResult(
                     status=ProcessingStatus.CANCEL,
@@ -383,7 +385,11 @@ class PurchaseOrderProcessor(OrderProcessor):
             # Due date reached: fail the order and let the task complete.
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
-                payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
+                payload={
+                    "statusNotes": ERR_DUE_DATE_IS_REACHED.to_dict(
+                        due_date=due_date.strftime("%Y-%m-%d")
+                    )
+                },
             )
             return ProcessingResult(
                 status=ProcessingStatus.COMPLETE,
@@ -392,8 +398,24 @@ class PurchaseOrderProcessor(OrderProcessor):
             )
 
 
+class ChangeOrderProcessor(OrderProcessor):
+    async def process(self):
+        await self.ext_client.fail_order(
+            order_id=self.order["id"],
+            payload={
+                "statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=self.order["type"])
+            },
+        )
+        return ProcessingResult(
+            status=ProcessingStatus.COMPLETE,
+            severity="Warning",
+            message="Change orders are not supported.",
+        )
+
+
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
     ORDER_TYPE_PURCHASE: PurchaseOrderProcessor,
+    ORDER_TYPE_CHANGE: ChangeOrderProcessor,
 }
 
 

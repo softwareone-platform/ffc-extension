@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Protocol, TypeVar
 
 from app.db.models import Base
+from app.fulfilment.processing import OrderProcessor, OrderProcessorFactory
 
 ModelT = TypeVar("ModelT", bound=Base)
 ModelFactory = Callable[..., Awaitable[ModelT]]
@@ -19,3 +20,8 @@ class JWTTokenFactory(Protocol):
         iat: datetime | None = None,
         nbf: datetime | None = None,
     ) -> str: ...
+
+
+ProcessorBuilder = Callable[[dict[str, Any]], OrderProcessor]
+FactoryBuilder = Callable[[dict[str, Any]], OrderProcessorFactory]
+TemplatesMocker = Callable[..., None]

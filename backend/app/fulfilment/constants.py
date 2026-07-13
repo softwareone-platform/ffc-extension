@@ -8,6 +8,7 @@ TERMINATE_TEMPLATE_NAME = "Terminate"
 
 ORDER_TYPE_PURCHASE = "Purchase"
 ORDER_TYPE_TERMINATE = "Termination"
+ORDER_TYPE_CHANGE = "Change"
 
 # MPT product template types
 PROCESSING_TEMPLATE_TYPE = "OrderProcessing"

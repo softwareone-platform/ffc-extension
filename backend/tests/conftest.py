@@ -58,7 +58,12 @@ from app.fulfilment.constants import (
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
 )
-from app.fulfilment.processing import OrderProcessorFactory, PurchaseOrderProcessor
+from app.fulfilment.processing import (
+    PROCESSOR_BY_TYPE,
+    OrderProcessor,
+    OrderProcessorFactory,
+    PurchaseOrderProcessor,
+)
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import ModelFactory, OrderFactory
@@ -1141,6 +1146,16 @@ def purchase_order(order_factory: OrderFactory) -> dict[str, Any]:
     """A fresh Purchase order in Processing status for the FinOps product."""
     return order_factory(
         order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+
+
+@pytest.fixture()
+def change_order(order_factory: OrderFactory) -> dict[str, Any]:
+    return order_factory(
+        order_type="Change",
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
@@ -2746,8 +2761,9 @@ def make_processor(
 ) -> Callable[[dict[str, Any]], PurchaseOrderProcessor]:
     """Return a builder for a `PurchaseOrderProcessor` with all collaborators mocked."""
 
-    def _make(order: dict[str, Any]) -> PurchaseOrderProcessor:
-        return PurchaseOrderProcessor(
+    def _make(order: dict[str, Any]) -> OrderProcessor:
+        processor_cls = PROCESSOR_BY_TYPE[order["type"]]
+        return processor_cls(
             api_modifier_client=mocker.AsyncMock(),
             client=mocker.AsyncMock(),
             ext_client=mocker.AsyncMock(),
