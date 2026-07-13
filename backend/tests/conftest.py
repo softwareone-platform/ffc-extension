@@ -2,7 +2,7 @@ import inspect
 import secrets
 import tempfile
 import uuid
-from collections.abc import AsyncGenerator, Callable, Generator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
@@ -14,7 +14,7 @@ import responses
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import (
@@ -51,7 +51,15 @@ from app.enums import (
     UserStatus,
 )
 from app.fastapi import setup_app
-from app.schemas.core import ExtensionContext
+from app.fulfilment.constants import (
+    COMPLETED_TEMPLATE_TYPE,
+    PROCESSING_TEMPLATE_TYPE,
+    PURCHASE_EXISTING_TEMPLATE_NAME,
+    PURCHASE_TEMPLATE_NAME,
+    QUERYING_TEMPLATE_TYPE,
+)
+from app.fulfilment.processing import OrderProcessorFactory, PurchaseOrderProcessor
+from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import ModelFactory, OrderFactory
 
@@ -1126,6 +1134,17 @@ def order_factory(
         return order
 
     return _order
+
+
+@pytest.fixture()
+def purchase_order(order_factory: OrderFactory) -> dict[str, Any]:
+    """A fresh Purchase order in Processing status for the FinOps product."""
+    return order_factory(
+        order_type="Purchase",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
 
 
 @pytest.fixture()
@@ -2659,3 +2678,153 @@ def _no_msteams_pacing(mocker):
         "app.notifications.asyncio.sleep",
         new_callable=mocker.AsyncMock,
     )
+
+
+# ---------------------------------------------------------------------------
+# CLI commands
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def mock_cli_settings(mocker: MockerFixture, test_settings: Settings) -> None:
+    mocker.patch("app.cli.get_settings", return_value=test_settings)
+
+
+# ---------------------------------------------------------------------------
+# Order events API
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def event_factory() -> Callable[..., Event]:
+    """Return a builder for an order `status_changed` marketplace event."""
+
+    def _event(
+        *,
+        order_id: str,
+        task_id: str = "TSK-0014-5578-6577-4688",
+        event_id: str = "01ef68d7-3792-48cc-96cc-924599f6d490",
+    ) -> Event:
+        return Event(
+            id=event_id,
+            object=Object(id=order_id, name="order", object_type="Order"),
+            details=Details(
+                event_type="status_changed",
+                enqueue_time=datetime(2026, 6, 10, 14, 50, 30, 609000, tzinfo=UTC),
+                delivery_time=datetime(2026, 6, 10, 14, 51, 12, 681000, tzinfo=UTC),
+            ),
+            task=Task(id=task_id),
+        )
+
+    return _event
+
+
+@pytest.fixture
+def post_order_event(
+    mpt_api_client: AsyncClient, ffc_jwt_token: str
+) -> Callable[[Event], Awaitable[Response]]:
+    """Return a helper that posts an event to the orders endpoint as the extension."""
+
+    async def _post(event: Event) -> Response:
+        return await mpt_api_client.post(
+            "/events/commerce/orders",
+            headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+            json=event.model_dump(mode="json", by_alias=True),
+        )
+
+    return _post
+
+
+# ---------------------------------------------------------------------------
+# Fulfilment order processors
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def make_processor(
+    test_settings: Settings, mocker: MockerFixture
+) -> Callable[[dict[str, Any]], PurchaseOrderProcessor]:
+    """Return a builder for a `PurchaseOrderProcessor` with all collaborators mocked."""
+
+    def _make(order: dict[str, Any]) -> PurchaseOrderProcessor:
+        return PurchaseOrderProcessor(
+            api_modifier_client=mocker.AsyncMock(),
+            client=mocker.AsyncMock(),
+            ext_client=mocker.AsyncMock(),
+            optscale_auth_client=mocker.AsyncMock(),
+            optscale_client=mocker.AsyncMock(),
+            organization_repo=mocker.AsyncMock(),
+            order=order,
+            settings=test_settings,
+        )
+
+    return _make
+
+
+@pytest.fixture
+def make_order_processor_factory(
+    test_settings: Settings, mocker: MockerFixture
+) -> Callable[[dict[str, Any]], OrderProcessorFactory]:
+    """Return a builder for an `OrderProcessorFactory` whose client yields the given order."""
+
+    def _make(order: dict[str, Any]) -> OrderProcessorFactory:
+        client = mocker.AsyncMock()
+        client.get_order = mocker.AsyncMock(return_value=order)
+        return OrderProcessorFactory(
+            api_modifier_client=mocker.AsyncMock(),
+            client=client,
+            ext_client=mocker.AsyncMock(),
+            optscale_auth_client=mocker.AsyncMock(),
+            optscale_client=mocker.AsyncMock(),
+            organization_repo=mocker.AsyncMock(),
+            settings=test_settings,
+        )
+
+    return _make
+
+
+@pytest.fixture
+def product_templates() -> list[dict[str, Any]]:
+    """The templates the marketplace returns for the purchase product."""
+    return [
+        {"id": "TPL-0001", "type": PROCESSING_TEMPLATE_TYPE, "name": "Purchase", "default": False},
+        {"id": "TPL-0002", "type": PROCESSING_TEMPLATE_TYPE, "name": "Standard", "default": True},
+        {"id": "TPL-0003", "type": QUERYING_TEMPLATE_TYPE, "name": None, "default": True},
+        {"id": "TPL-0004", "type": COMPLETED_TEMPLATE_TYPE, "name": None, "default": False},
+        {
+            "id": "TPL-0005",
+            "type": COMPLETED_TEMPLATE_TYPE,
+            "name": PURCHASE_TEMPLATE_NAME,
+            "default": False,
+        },
+        {
+            "id": "TPL-0006",
+            "type": COMPLETED_TEMPLATE_TYPE,
+            "name": PURCHASE_EXISTING_TEMPLATE_NAME,
+            "default": False,
+        },
+    ]
+
+
+@pytest.fixture
+def mock_product_templates(
+    mocker: MockerFixture, product_templates: list[dict[str, Any]]
+) -> Callable[..., None]:
+    """Return a helper that patches a processor to stream product templates."""
+
+    def _mock(
+        processor: PurchaseOrderProcessor, templates: list[dict[str, Any]] | None = None
+    ) -> None:
+        streamed = product_templates if templates is None else templates
+
+        async def _gen() -> Any:
+            for template in streamed:
+                yield template
+
+        mocker.patch.object(
+            processor.ext_client,
+            "get_templates_by_product_id",
+            mocker.Mock(side_effect=lambda **_: _gen()),
+        )
+
+    return _mock

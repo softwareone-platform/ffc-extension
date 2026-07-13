@@ -11,7 +11,7 @@ from app.dependencies.api_clients import (
 )
 from app.dependencies.core import AppSettings
 from app.dependencies.db import OrganizationRepository
-from app.fulfilment.processing import OrderProcessorFactory
+from app.fulfilment.processing import OrderProcessorFactory as _OrderProcessorFactory
 
 
 def get_order_processor_factory(
@@ -22,8 +22,8 @@ def get_order_processor_factory(
     optscale_client: OptscaleClient,
     organization_repo: OrganizationRepository,
     settings: AppSettings,
-) -> OrderProcessorFactory:
-    return OrderProcessorFactory(
+) -> _OrderProcessorFactory:
+    return _OrderProcessorFactory(
         api_modifier_client=api_modifier_client,
         client=client,
         ext_client=ext_client,
@@ -34,4 +34,4 @@ def get_order_processor_factory(
     )
 
 
-OrderProcessorFactoryDep = Annotated[OrderProcessorFactory, Depends(get_order_processor_factory)]
+OrderProcessorFactory = Annotated[_OrderProcessorFactory, Depends(get_order_processor_factory)]

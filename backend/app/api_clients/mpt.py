@@ -12,7 +12,6 @@ import httpx
 
 from app.billing.enum import JournalStatus
 from app.conf import get_settings
-from app.fulfilment.constants import ExceptionSeverity
 from app.utils import get_jwt_token_expires
 
 logger = logging.getLogger(__name__)
@@ -275,14 +274,14 @@ class MPTClient:
         return await self.run_object_action("system/tasks", task_id, "reschedule", payload=payload)
 
     async def log_task(
-        self, task_id: str, severity: ExceptionSeverity, error_message: str | None = None
+        self, task_id: str, severity: str | None = None, error_message: str | None = None
     ):
         return (
             await self.httpx_client.post(
                 f"system/tasks/{task_id}/logs",
                 json={
                     "task": {"id": task_id},
-                    "severity": severity,
+                    "severity": severity or "Info",
                     "message": error_message,
                 },
             ),

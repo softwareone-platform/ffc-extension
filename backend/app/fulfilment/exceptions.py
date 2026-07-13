@@ -13,14 +13,6 @@ class FulfilmentError(Exception):
         super().__init__(message)
 
 
-class UnsupportedOrderTypeError(FulfilmentError):
-    """No handler is registered for this order type — permanent failure."""
-
-    def __init__(self, order_type: str, *, order: dict[str, Any] | None = None):
-        self.order_type = order_type
-        super().__init__(f"Order type {order_type} is not supported", order=order)
-
-
 class OrderMovedToQuery(FulfilmentError):
     """The order was moved to query"""
 
