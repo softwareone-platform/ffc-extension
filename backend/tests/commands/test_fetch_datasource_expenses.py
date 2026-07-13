@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -14,6 +15,7 @@ from typer.testing import CliRunner
 from app.cli import app
 from app.commands import fetch_datasource_expenses
 from app.conf import Settings
+from app.db.base import session_factory
 from app.db.handlers import DatasourceExpenseHandler
 from app.db.models import DatasourceExpense, Organization
 from app.enums import DatasourceType, OrganizationStatus
@@ -441,47 +443,13 @@ async def test_organization_with_no_linked_organization_id(
     with caplog.at_level(logging.WARNING):
         await fetch_datasource_expenses.main(test_settings)
 
-    assert (
-        f"Organization {organization.id} - {organization.name} has no "
-        "linked organization ID. Skipping..."
-    ) in caplog.text
+    assert "1 organizations without linked organization ID" in caplog.text
+    assert organization.id in caplog.text
 
     new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
     assert len(new_datasource_expenses) == 0
 
     assert not httpx_mock.get_request()
-
-
-@time_machine.travel("2025-03-20T10:00:00Z", tick=False)
-async def test_organization_with_recent_updates_to_datasource_expenses(
-    test_settings: Settings,
-    db_session: AsyncSession,
-    organization_factory: ModelFactory[Organization],
-    datasource_expense_factory: ModelFactory[DatasourceExpense],
-    httpx_mock: HTTPXMock,
-    mocker: MockerFixture,
-):
-    organization = await organization_factory(linked_organization_id=None)
-
-    store_datasource_expenses_mock = mocker.patch(
-        "app.commands.fetch_datasource_expenses.store_datasource_expenses"
-    )
-
-    await datasource_expense_factory(
-        organization=organization,
-        year=2025,
-        month=3,
-        day=20,
-        expenses=Decimal("123.45"),
-        updated_at=datetime.now(UTC),
-    )
-
-    await fetch_datasource_expenses.main(test_settings)
-    assert not httpx_mock.get_request()
-    assert store_datasource_expenses_mock.call_count == 2
-    # store_datasource_expenses_mock expenses_per_organization argument
-    assert store_datasource_expenses_mock.call_args_list[0][0][1] == {}
-    assert store_datasource_expenses_mock.call_args_list[1][0][1] == {}
 
 
 @pytest.mark.parametrize(
@@ -904,6 +872,168 @@ async def test_multiple_datasources_are_handled_correctly(
     }
 
 
+@time_machine.travel("2025-03-20T10:00:00Z", tick=False)
+async def test_main_sends_one_success_notification_for_all_organizations(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    db_session: AsyncSession,
+    mock_optscale_client: MockOptscaleClient,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    send_info = mocker.patch("app.commands.fetch_datasource_expenses.send_info")
+    send_exception = mocker.patch("app.commands.fetch_datasource_expenses.send_exception")
+
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+    for i in range(2):
+        organization = await organization_factory(
+            linked_organization_id=str(uuid.uuid4()), operations_external_id=f"NOTIFY_{i}"
+        )
+        mock_optscale_client.mock_fetch_datasources_for_organization(
+            organization,
+            [
+                {
+                    "id": str(uuid.uuid4()),
+                    "account_id": str(uuid.uuid4()),
+                    "type": "aws_cnr",
+                    "name": "cloud account",
+                    "details": {"cost": 10.0},
+                }
+            ],
+        )
+        mock_optscale_client.mock_fetch_daily_expenses_for_organization(
+            organization, day_start, day_end, {}
+        )
+
+    await fetch_datasource_expenses.main(test_settings)
+
+    send_info.assert_awaited_once()
+    send_exception.assert_not_awaited()
+    _title, message = send_info.await_args.args
+    assert "2 organizations" in message
+
+
+@pytest.mark.transactional_db
+@time_machine.travel("2025-03-20T10:00:00Z", tick=False)
+async def test_each_organization_commits_in_its_own_transaction(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    db_session: AsyncSession,
+    mock_optscale_client: MockOptscaleClient,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    mocker.patch("app.commands.fetch_datasource_expenses.send_info")
+    mocker.patch.object(test_settings, "max_parallel_tasks", 5)
+
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+    organizations = []
+    for i in range(5):
+        organization = await organization_factory(
+            linked_organization_id=str(uuid.uuid4()), operations_external_id=f"org_{i}_ext_id"
+        )
+        organizations.append(organization)
+        mock_optscale_client.mock_fetch_datasources_for_organization(
+            organization,
+            [
+                {
+                    "id": str(uuid.uuid4()),
+                    "account_id": str(uuid.uuid4()),
+                    "type": "aws_cnr",
+                    "name": "cloud account",
+                    "details": {"cost": 10.0},
+                }
+            ],
+        )
+        mock_optscale_client.mock_fetch_daily_expenses_for_organization(
+            organization, day_start, day_end, {}
+        )
+
+    await fetch_datasource_expenses.main(test_settings)
+
+    async with session_factory() as verify_session:
+        rows = await DatasourceExpenseHandler(verify_session).query_db(unique=True)
+    assert {row.organization_id for row in rows} == {org.id for org in organizations}
+
+
+@pytest.mark.transactional_db
+@time_machine.travel("2025-03-20T10:00:00Z", tick=False)
+async def test_one_organization_failure(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    db_session: AsyncSession,
+    mock_optscale_client: MockOptscaleClient,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    send_info = mocker.patch("app.commands.fetch_datasource_expenses.send_info")
+    send_exception = mocker.patch("app.commands.fetch_datasource_expenses.send_exception")
+    mocker.patch.object(test_settings, "max_parallel_tasks", 5)
+
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+
+    healthy = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_1_ext_id"
+    )
+    mock_optscale_client.mock_fetch_datasources_for_organization(
+        healthy,
+        [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(uuid.uuid4()),
+                "type": "aws_cnr",
+                "name": "cloud account",
+                "details": {"cost": 10.0},
+            }
+        ],
+    )
+    mock_optscale_client.mock_fetch_daily_expenses_for_organization(healthy, day_start, day_end, {})
+
+    broken = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_2_ext_id"
+    )
+    mock_optscale_client.mock_fetch_datasources_for_organization(
+        broken,
+        [
+            {
+                "id": str(uuid.uuid4()),
+                "account_id": str(uuid.uuid4()),
+                "type": "aws_cnr",
+                "name": "cloud account",
+                "details": {"cost": 10.0},
+            }
+        ],
+    )
+    broken_ds_id = str(uuid.uuid4())
+    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
+        broken,
+        day_start,
+        day_end,
+        {
+            broken_ds_id: {
+                "id": broken_ds_id,
+                "account_id": str(uuid.uuid4()),
+                "type": "aws_cnr",
+                "total": 5.0,
+            }
+        },
+    )
+
+    await fetch_datasource_expenses.main(test_settings)
+
+    async with session_factory() as verify_session:
+        rows = await DatasourceExpenseHandler(verify_session).query_db(unique=True)
+    committed_org_ids = {row.organization_id for row in rows}
+    assert healthy.id in committed_org_ids
+    assert broken.id not in committed_org_ids
+
+    send_info.assert_not_awaited()
+    send_exception.assert_awaited_once()
+    _title, message = send_exception.await_args.args
+    assert _title == "Datasource Expenses Update Partial Failure"
+    assert "1 failed" in message
+
+
 def test_cli_command(mocker: MockerFixture):
     mock_command_coro = mocker.MagicMock()
     mock_command = mocker.MagicMock(return_value=mock_command_coro)
@@ -915,3 +1045,24 @@ def test_cli_command(mocker: MockerFixture):
     result = runner.invoke(app, ["fetch-datasource-expenses"])
     assert result.exit_code == 0
     mock_run.assert_called_once_with(mock_command_coro)
+
+
+async def test_main_wires_max_parallel_tasks_into_the_semaphore(
+    mocker: MockerFixture,
+    test_settings: Settings,
+):
+    """Guards that main() builds the semaphore from settings.max_parallel_tasks."""
+    mocker.patch.object(test_settings, "max_parallel_tasks", 7)
+    mocker.patch.object(
+        fetch_datasource_expenses,
+        "OrganizationHandler",
+        side_effect=RuntimeError("stop here"),
+    )
+    semaphore_spy = mocker.patch.object(
+        fetch_datasource_expenses.asyncio, "Semaphore", wraps=asyncio.Semaphore
+    )
+
+    with pytest.raises(RuntimeError, match="stop here"):
+        await fetch_datasource_expenses.main(test_settings)
+
+    semaphore_spy.assert_called_once_with(7)

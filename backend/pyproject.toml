@@ -52,6 +52,7 @@ dependencies = [
     "mrok>=0.10.2",
     "freezegun>=1.5.5,<2.0.0",
     "responses>=0.26.2,<0.27.0",
+    "httpx-retries>=0.6.0,<0.7.0",
 ]
 
 [dependency-groups]
@@ -140,6 +141,9 @@ testpaths = "tests/"
 pythonpath = "."
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
+markers = [
+    "transactional_db: real committed transactions with TRUNCATE cleanup instead of the default rollback",
+]
 addopts = "--cov=app --cov-report=term-missing --cov-report=html --cov-report=xml"
 cache_dir = ".cache/pytest"
 env_override_existing_values = 1

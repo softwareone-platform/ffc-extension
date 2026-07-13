@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     billing_percentage: float = 1.0  # todo : ask if the default is 4 or 1.
     ffc_external_product_id: str = "FIN-0001-P1M"
 
+    httpx_retry_count: int = 5
+    httpx_retry_backoff_factor: float = 0.5
+
     optscale_auth_api_base_url: str
     optscale_rest_api_base_url: str
     optscale_ffc_api_base_url: str
@@ -73,6 +76,10 @@ class Settings(BaseSettings):
     default_trial_period_duration_days: int = 30
     due_date_days: int = 30
     lower_billing_year: int = 2025
+
+    # Limit parallel tasks in commands execution
+    max_parallel_tasks: int = 10
+
     reschedule_seconds: int = 300
     ui_plugs_prefix: str = "ffc"
 
