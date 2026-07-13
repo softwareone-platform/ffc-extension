@@ -1,3 +1,6 @@
+from urllib.parse import unquote
+
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
@@ -32,15 +35,26 @@ async def test_set_entitlements_tag(
         linked_datasource_id="ds-new",
     )
 
-    httpx_mock.add_response(
+    # The two active entitlement ids are streamed from the DB in an unspecified order, so the
+    # request may list them either way round; match on their presence rather than their order.
+    def respond_with_tags(request: httpx.Request) -> httpx.Response:
+        query = unquote(request.url.query.decode())
+        assert "and(eq(name,entitlement),in(value,(" in query
+        assert ent_tagged.id in query
+        assert ent_untagged.id in query
+        return httpx.Response(
+            status_code=200,
+            json={
+                "items": [{"name": "entitlement", "value": ent_tagged.id}],
+                "limit": 100,
+                "offset": 0,
+            },
+        )
+
+    httpx_mock.add_callback(
+        respond_with_tags,
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags?limit=100&and(eq(name,entitlement),in(value,({ent_tagged.id},{ent_untagged.id})))",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
-        json={
-            "items": [{"name": "entitlement", "value": ent_tagged.id}],
-            "limit": 100,
-            "offset": 0,
-        },
     )
     httpx_mock.add_response(
         method="POST",

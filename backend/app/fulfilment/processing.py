@@ -1,6 +1,9 @@
 import copy
+import enum
 import logging
 import secrets
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
@@ -23,17 +26,14 @@ from app.fulfilment.constants import (
     PURCHASE_EXISTING_TEMPLATE_NAME,
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
-    ProcessResult,
 )
 from app.fulfilment.error import (
     ERR_DUE_DATE_IS_REACHED,
     ERR_DUE_DATE_NOT_SET,
-    ERR_ORDER_TYPE_NOT_SUPPORTED,
 )
 from app.fulfilment.exceptions import (
     OrderMovedToQuery,
     OrderNotValidError,
-    UnsupportedOrderTypeError,
 )
 from app.fulfilment.parameters import check_order_parameters, get_parameter_updates
 from app.fulfilment.subscriptions import get_subscription_by_line_and_item_id
@@ -51,7 +51,21 @@ from app.parameters import (
 logger = logging.getLogger(__name__)
 
 
-class OrderProcessor:
+class ProcessingStatus(enum.StrEnum):
+    COMPLETE = "Complete"
+    RESCHEDULE = "Reschedule"
+    CANCEL = "Cancel"
+    SKIP = "Skip"
+
+
+@dataclass
+class ProcessingResult:
+    status: ProcessingStatus
+    severity: str | None = None
+    message: str | None = None
+
+
+class OrderProcessor(ABC):
     def __init__(
         self,
         api_modifier_client: APIModifierClient,
@@ -299,10 +313,8 @@ class OrderProcessor:
                     subscription["id"],
                 )
 
-    async def process(self):
-        raise NotImplementedError()
-
-    async def handle_exception(self, exc, *, now):
+    @abstractmethod
+    async def process(self) -> ProcessingResult:
         raise NotImplementedError()
 
 
@@ -318,53 +330,66 @@ class PurchaseOrderProcessor(OrderProcessor):
         else:
             logger.info("No need to send reset password for %s", employee_email)
 
-    async def process(self):
-        await self.validate_order()
-        await self.apply_fulfillment_defaults()
-        await self.set_processing_order_template()
-        employee_id, employee_email = await self.create_employee()
-        organization = await self.get_or_create_organization(employee_id)
+    async def process(self) -> ProcessingResult:
+        try:
+            await self.validate_order()
+            await self.apply_fulfillment_defaults()
+            await self.set_processing_order_template()
+            employee_id, employee_email = await self.create_employee()
+            organization = await self.get_or_create_organization(employee_id)
 
-        await self.create_order_subscription(organization)
-        is_new_user_param = get_fulfillment_parameter(self.order, PARAM_IS_NEW_USER)
-        is_new = is_new_user_param.get("value") == ["Yes"]
-        template_id = await self.get_complete_template(is_new)
+            await self.create_order_subscription(organization)
+            is_new_user_param = get_fulfillment_parameter(self.order, PARAM_IS_NEW_USER)
+            is_new = is_new_user_param.get("value") == ["Yes"]
+            template_id = await self.get_complete_template(is_new)
 
-        await self.ext_client.complete_order(
-            order_id=self.order["id"], payload={"template": {"id": template_id}}
-        )
+            await self.ext_client.complete_order(
+                order_id=self.order["id"], payload={"template": {"id": template_id}}
+            )
 
-        await self.send_reset_password(employee_email, is_new)
-        logger.info("Order %s has been completed", self.order["id"])
+            await self.send_reset_password(employee_email, is_new)
+            logger.info("Order %s has been completed", self.order["id"])
+            return ProcessingResult(status=ProcessingStatus.COMPLETE)
+        except Exception as exc:
+            if isinstance(exc, OrderMovedToQuery | OrderNotValidError):
+                return ProcessingResult(
+                    status=ProcessingStatus.SKIP,
+                    severity="Info",
+                    message=(
+                        "Order parameters are missing or invalid. Order switched to 'Querying.'"
+                    ),
+                )
 
-    async def handle_exception(self, exc: Exception, *, now: date) -> ProcessResult:
-        if isinstance(exc, UnsupportedOrderTypeError):
-            # fail the order and let the task complete.
+            due_date: date | None = get_due_date(self.order) if self.order else None
+            if due_date is None:
+                # No due date to retry against: fail the order and cancel.
+                await self.ext_client.fail_order(
+                    order_id=self.order["id"],
+                    payload=ERR_DUE_DATE_NOT_SET.to_dict(),
+                )
+                return ProcessingResult(
+                    status=ProcessingStatus.CANCEL,
+                    severity="Error",
+                    message="No due date fulfillment parameter found.",
+                )
+            now = date.today()
+            if now < due_date:
+                # Still within the due date window: retry later.
+                return ProcessingResult(
+                    status=ProcessingStatus.RESCHEDULE,
+                    severity="Warning",
+                    message=f"An error occurred while processing the order: {exc}",
+                )
+            # Due date reached: fail the order and let the task complete.
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
-                payload=ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=exc.order_type),
+                payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
             )
-            return ProcessResult.COMPLETE
-        if isinstance(exc, OrderMovedToQuery | OrderNotValidError):
-            return ProcessResult.SKIP
-
-        due_date: date | None = get_due_date(self.order) if self.order else None
-        if due_date is None:
-            # No due date to retry against: fail the order and cancel.
-            await self.ext_client.fail_order(
-                order_id=self.order["id"],
-                payload=ERR_DUE_DATE_NOT_SET.to_dict(),
+            return ProcessingResult(
+                status=ProcessingStatus.COMPLETE,
+                severity="Error",
+                message=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
             )
-            return ProcessResult.CANCEL
-        if now < due_date:
-            # Still within the due date window: retry later.
-            return ProcessResult.RESCHEDULE
-        # Due date reached: fail the order and let the task complete.
-        await self.ext_client.fail_order(
-            order_id=self.order["id"],
-            payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
-        )
-        return ProcessResult.COMPLETE
 
 
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
@@ -394,17 +419,14 @@ class OrderProcessorFactory:
     async def get_order_type_processor(self, order_id: str) -> OrderProcessor:
         order = await self.client.get_order(order_id)
         order_type = order["type"]
-        try:
-            processor_cls = PROCESSOR_BY_TYPE[order_type]
-            return processor_cls(
-                api_modifier_client=self.api_modifier_client,
-                client=self.client,
-                ext_client=self.ext_client,
-                optscale_auth_client=self.optscale_auth_client,
-                optscale_client=self.optscale_client,
-                organization_repo=self.organization_repo,
-                order=order,
-                settings=self.settings,
-            )
-        except KeyError as exc:
-            raise UnsupportedOrderTypeError(order_type) from exc
+        processor_cls = PROCESSOR_BY_TYPE[order_type]
+        return processor_cls(
+            api_modifier_client=self.api_modifier_client,
+            client=self.client,
+            ext_client=self.ext_client,
+            optscale_auth_client=self.optscale_auth_client,
+            optscale_client=self.optscale_client,
+            organization_repo=self.organization_repo,
+            order=order,
+            settings=self.settings,
+        )
