@@ -17,19 +17,19 @@ from app.fulfilment.constants import (
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
 )
-from app.fulfilment.error import ERR_DUE_DATE_IS_REACHED, ERR_DUE_DATE_NOT_SET
+from app.fulfilment.error import (
+    ERR_DUE_DATE_IS_REACHED,
+    ERR_DUE_DATE_NOT_SET,
+    ERR_ORDER_TYPE_NOT_SUPPORTED,
+)
 from app.fulfilment.exceptions import OrderMovedToQuery, OrderNotValidError
 from app.fulfilment.processing import (
-    OrderProcessorFactory,
     ProcessingStatus,
     PurchaseOrderProcessor,
 )
+from tests.types import FactoryBuilder, ProcessorBuilder, TemplatesMocker
 
 PRODUCT_ID = "PRD-4141-4379"
-
-ProcessorBuilder = Callable[[dict[str, Any]], PurchaseOrderProcessor]
-FactoryBuilder = Callable[[dict[str, Any]], OrderProcessorFactory]
-TemplatesMocker = Callable[..., None]
 
 
 # -- get_order_type_processor --
@@ -763,7 +763,7 @@ async def test_purchase_order_process_cancels_when_no_due_date(
 
     assert result.status is ProcessingStatus.CANCEL
     processor.ext_client.fail_order.assert_awaited_once_with(
-        order_id=purchase_order["id"], payload=ERR_DUE_DATE_NOT_SET.to_dict()
+        order_id=purchase_order["id"], payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()}
     )
     processor.ext_client.complete_order.assert_not_awaited()
 
@@ -798,5 +798,17 @@ async def test_purchase_order_process_fails_when_due_date_reached(
     assert result.status is ProcessingStatus.COMPLETE
     processor.ext_client.fail_order.assert_awaited_once_with(
         order_id=purchase_order["id"],
-        payload=ERR_DUE_DATE_IS_REACHED.to_dict(due_date="2025-01-01"),
+        payload={"statusNotes": ERR_DUE_DATE_IS_REACHED.to_dict(due_date="2025-01-01")},
+    )
+
+
+async def test_change_order_process_fail(
+    make_processor: ProcessorBuilder, change_order: dict[str, Any]
+) -> None:
+    processor = make_processor(change_order)
+    result = await processor.process()
+    assert result.status is ProcessingStatus.COMPLETE
+    processor.ext_client.fail_order.assert_awaited_once_with(  # ty:ignore[unresolved-attribute]
+        order_id=change_order["id"],
+        payload={"statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type="Change")},
     )
