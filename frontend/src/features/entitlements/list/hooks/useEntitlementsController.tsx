@@ -9,7 +9,7 @@ import { ModalEntryProps } from "~shared/components/modal/modalEntry";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 export function useEntitlementController({ onClose }: ModalEntryProps = {}) {
-  const { terminateEntitlement } = useEntitlementsApi();
+  const { terminateEntitlement, deleteEntitlement } = useEntitlementsApi();
   const [error, setError] = useState<string | null>(null);
   const tErrors = useFixedT("entitlements:terminate:errors");
 
@@ -34,15 +34,25 @@ export function useEntitlementController({ onClose }: ModalEntryProps = {}) {
     }
   }, [onClose]);
 
-  const { mutateAsync, isPending } = useMutation({
+  const { mutateAsync: mutateTerminate, isPending: isPendingTerminate } = useMutation({
     mutationFn: (entitlementId: string) => terminateEntitlement(entitlementId),
     onSuccess,
     onError,
   });
 
   const terminate = async (entitlement: Entitlement) => {
-    await mutateAsync(entitlement.id);
+    await mutateTerminate(entitlement.id);
   };
 
-  return { terminate, error, isPending, cancel };
+  const { mutateAsync: mutateRemove, isPending: isPendingRemove } = useMutation({
+    mutationFn: (entitlementId: string) => deleteEntitlement(entitlementId),
+    onSuccess,
+    onError,
+  });
+
+  const remove = async (entitlement: Entitlement) => {
+    await mutateRemove(entitlement.id);
+  };
+
+  return { terminate, remove, error, isPendingTerminate, isPendingRemove, cancel };
 }

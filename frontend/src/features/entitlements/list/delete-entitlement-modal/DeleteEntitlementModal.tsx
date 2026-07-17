@@ -15,15 +15,15 @@ type Props = {
   onSuccess?: () => void;
 };
 
-export function TerminateEntitlementModal({
+export function DeleteEntitlementModal({
   isOpen,
   onClose,
   className,
   entitlement,
   onSuccess,
 }: Readonly<Props>) {
-  const tEntitlement = useFixedT("entitlements:terminate_entitlement");
-  const { cancel, terminate, isPendingTerminate, error } = useEntitlementController({ onClose });
+  const tEntitlement = useFixedT("entitlements:delete_entitlement");
+  const { cancel, remove, isPendingRemove, error } = useEntitlementController({ onClose });
 
   return (
     <StandaloneModal
@@ -32,9 +32,9 @@ export function TerminateEntitlementModal({
       title={tEntitlement("title")}
       className={className}
       onCancel={cancel}
-      onSubmit={() => entitlement && terminate(entitlement).then(() => onSuccess?.())}
-      submitLabel={tEntitlement("terminate")}
-      isSubmitting={isPendingTerminate}
+      onSubmit={() => entitlement && remove(entitlement).then(() => onSuccess?.())}
+      submitLabel={tEntitlement("delete")}
+      isSubmitting={isPendingRemove}
       submitButtonColor="danger"
     >
       {error && (
@@ -48,12 +48,11 @@ export function TerminateEntitlementModal({
         </InlineNotification>
       )}
       <p>
-        {tEntitlement("terminate_entitlement_warning_line1", {
+        {tEntitlement("delete_entitlement_warning_line1", {
           entitlementId: entitlement?.id ?? "error",
         })}
       </p>
-      <p>{tEntitlement("terminate_entitlement_warning_line2")}</p>
-      <p>{tEntitlement("terminate_entitlement_warning_line3")}</p>
+      <p>{tEntitlement("delete_entitlement_warning_line2")}</p>
     </StandaloneModal>
   );
 }

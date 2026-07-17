@@ -94,9 +94,16 @@
     "terminate_entitlement": {
       "title": "Terminate entitlement",
       "terminate_entitlement_warning_line1": "Are you sure you want to terminate entitlement {{entitlementId}}?",
-      "terminate_entitlement_warning_line2": "Once this entitlement has been terminated, the customer will be charged for the corresponding FinOps for Cloud data source from that moment onwards.\n\nThis process cannot be reversed.",
+      "terminate_entitlement_warning_line2": "Once this entitlement has been terminated, the customer will be charged for the corresponding FinOps for Cloud data source from that moment onwards.",
       "terminate_entitlement_warning_line3": "This process cannot be reversed.",
       "terminate": "Terminate",
+      "cancel": "Cancel"
+    },
+    "delete_entitlement": {
+      "title": "Delete entitlement",
+      "delete_entitlement_warning_line1": "Are you sure you want to delete entitlement {{entitlementId}}?",
+      "delete_entitlement_warning_line2": "This process cannot be reversed.",
+      "delete": "Delete",
       "cancel": "Cancel"
     }
   },

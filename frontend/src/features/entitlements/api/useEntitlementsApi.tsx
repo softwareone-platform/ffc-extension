@@ -58,8 +58,15 @@ export function useEntitlementsApi() {
     });
   }, []);
 
+  const deleteEntitlement = useCallback(async (entitlementId: string) => {
+    return http<Entitlement>({
+      method: "DELETE",
+      url: `${rootPath}/${entitlementId}`,
+    });
+  }, []);
+
   return useMemo(
-    () => ({ list, get, save, terminateEntitlement }),
-    [list, get, save, terminateEntitlement],
+    () => ({ list, get, save, terminateEntitlement, deleteEntitlement }),
+    [list, get, save, terminateEntitlement, deleteEntitlement],
   );
 }
