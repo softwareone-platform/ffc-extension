@@ -1,11 +1,13 @@
 import { useMemo } from "react";
+import { useCallback } from "react";
 
 import { Link } from "react-router-dom";
 
 import { EntityReference } from "@swo/design-system/entity-reference";
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridFieldDefinition } from "@swo/design-system/grid";
+import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
+  GridCellActions,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -22,7 +24,8 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
-import { Entitlement } from "../api/model";
+import { Entitlement, EntitlementAction } from "../api/model";
+import { useActionOptions } from "./hooks/useActionOptions";
 
 type Columns = Array<
   Omit<GridColumnDefinition<Entitlement>, "fields"> & {
@@ -32,6 +35,7 @@ type Columns = Array<
 
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
+  const getActions = useActionOptions();
 
   return useMemo(() => {
     return [
@@ -115,6 +119,15 @@ export function useColumns(): Columns {
         ),
         initialWidth: 100,
       },
+      {
+        name: "actions",
+        title: "Actions",
+        fields: [],
+        cell: (item: Entitlement) => <GridCellActions item={item} actions={getActions(item)} />,
+        initialWidth: 100,
+        type: "Actions",
+        isScalable: false,
+      },
     ];
   }, [tColumns]);
 }
@@ -164,10 +177,25 @@ export function useAsyncOptions() {
   );
 }
 
-export function useGridConfig() {
+export function useGridConfig(
+  onAction?: (action: EntitlementAction, item: Entitlement, silentRefresh: () => void) => void,
+) {
   const columns = useColumns();
   const fields = useFields();
   const asyncOptions = useAsyncOptions();
+
+  const onGridActionEvent = useCallback(
+    (event: GridEvents) => {
+      if (event.type === "RowActionTriggered") {
+        onAction?.(
+          event.data.action as EntitlementAction,
+          event.data.item as Entitlement,
+          asyncOptions.silentRefresh,
+        );
+      }
+    },
+    [asyncOptions.silentRefresh, onAction],
+  );
 
   const config = useMemo(
     () =>
@@ -178,6 +206,7 @@ export function useGridConfig() {
         isDefaultView: true,
         selectedView: "default",
         ...asyncOptions,
+        onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
     [columns, fields, asyncOptions],
   );

@@ -51,5 +51,15 @@ export function useEntitlementsApi() {
     );
   }, []);
 
-  return useMemo(() => ({ list, get, save }), [list, get, save]);
+  const terminateEntitlement = useCallback(async (entitlementId: string) => {
+    return http<Entitlement>({
+      method: "POST",
+      url: `${rootPath}/${entitlementId}/terminate`,
+    });
+  }, []);
+
+  return useMemo(
+    () => ({ list, get, save, terminateEntitlement }),
+    [list, get, save, terminateEntitlement],
+  );
 }

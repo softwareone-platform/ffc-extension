@@ -1,0 +1,48 @@
+import { useCallback, useState } from "react";
+
+import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+
+import { Entitlement } from "~features/entitlements/api/model";
+import { useEntitlementsApi } from "~features/entitlements/api/useEntitlementsApi";
+import { ModalEntryProps } from "~shared/components/modal/modalEntry";
+import { useFixedT } from "~shared/hooks/useFixedT";
+
+export function useEntitlementController({ onClose }: ModalEntryProps = {}) {
+  const { terminateEntitlement } = useEntitlementsApi();
+  const [error, setError] = useState<string | null>(null);
+  const tErrors = useFixedT("entitlements:terminate:errors");
+
+  const cancel = useCallback((): void => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+  }, [onClose]);
+
+  const onError = useCallback(
+    (err: AxiosError): void => {
+      setError(tErrors("terminate_entitlement_failed_with_code_" + (err.status || "unknown")));
+    },
+    [tErrors],
+  );
+
+  const onSuccess = useCallback((): void => {
+    if (onClose) {
+      onClose({ success: true });
+      return;
+    }
+  }, [onClose]);
+
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: (entitlementId: string) => terminateEntitlement(entitlementId),
+    onSuccess,
+    onError,
+  });
+
+  const terminate = async (entitlement: Entitlement) => {
+    await mutateAsync(entitlement.id);
+  };
+
+  return { terminate, error, isPending, cancel };
+}

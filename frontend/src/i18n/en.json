@@ -90,16 +90,43 @@
           "id": { "required": "Data Source ID is required" }
         }
       }
+    },
+    "terminate_entitlement": {
+      "title": "Terminate entitlement",
+      "terminate_entitlement_warning_line1": "Are you sure you want to terminate entitlement {{entitlementId}}?",
+      "terminate_entitlement_warning_line2": "Once this entitlement has been terminated, the customer will be charged for the corresponding FinOps for Cloud data source from that moment onwards.\n\nThis process cannot be reversed.",
+      "terminate_entitlement_warning_line3": "This process cannot be reversed.",
+      "terminate": "Terminate",
+      "cancel": "Cancel"
     }
   },
   "shared": {
+    "error": {
+      "title": {
+        "403": "Unauthorized Page",
+        "Forbidden": "Unauthorized Page",
+        "404": "404 Not Found",
+        "NotFound": "404 Not Found",
+        "500": "500 Internal Server Error",
+        "InternalServerError": "500 Internal Server Error"
+      },
+      "description": {
+        "forbidden": "Access to this module is not allowed for the current user",
+        "403": "You do not have permission to access this resource.",
+        "404": "The requested resource could not be found.",
+        "internalServerError": "An unexpected error occurred."
+      }
+    },
     "nav": {
       "organizations": "Organizations",
       "entitlements": "Entitlements"
     },
     "actions": {
       "add": "Add",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "redeem": "Redeem",
+      "terminate": "Terminate",
+      "delete": "Delete"
     },
     "grid": {
       "views": {
