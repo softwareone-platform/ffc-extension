@@ -22,13 +22,17 @@ export function EntityProps({ entity }: EntityPropertiesProps) {
       direction="vertical"
       className={"in-page-highlight-form"}
     >
-      {entity?.id && (
-        <InPageHighlight.Item title={tProperties("entitlementId")}>
-          <BoldText color="brand-type">
-            {entity.id} <Status<{ status: string }> item={{ status: "New" }}></Status>
-          </BoldText>
-        </InPageHighlight.Item>
-      )}
+      <InPageHighlight.Item title={tProperties("entitlementId")}>
+        <EntityReference
+          primaryContent={
+            <>
+              {entity.name} <Status<{ status: string }> item={{ status: "New" }}></Status>
+            </>
+          }
+          secondaryContent={entity.id ?? "-"}
+          isPrimaryContentBold={true}
+        />
+      </InPageHighlight.Item>
       <InPageHighlight.Item title={tProperties("affiliate")}>
         {entity?.affiliate && (
           <EntityReference

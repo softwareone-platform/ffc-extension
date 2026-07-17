@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-import { Button } from "@swo/design-system/button";
+import { Button, ButtonColor } from "@swo/design-system/button";
 import { Modal } from "@swo/design-system/modal";
 
 import { ModalCancelButton } from "./ModalCancelButton";
@@ -27,6 +27,7 @@ type Props = {
   onSubmit?: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
+  submitButtonColor?: ButtonColor;
 };
 
 export function StandaloneModal({
@@ -48,11 +49,18 @@ export function StandaloneModal({
   onSubmit,
   submitLabel,
   isSubmitting,
+  submitButtonColor = "primary",
 }: Readonly<Props>) {
   const mergedClassName = className ? `${DEFAULT_CLASS} ${className}` : DEFAULT_CLASS;
   const resolvedActions =
     actions ??
-    buildDefaultActions({ onCancel: onCancel ?? onClose, onSubmit, submitLabel, isSubmitting });
+    buildDefaultActions({
+      onCancel: onCancel ?? onClose,
+      onSubmit,
+      submitLabel,
+      isSubmitting,
+      submitButtonColor,
+    });
 
   return (
     <Modal
@@ -80,17 +88,19 @@ function buildDefaultActions({
   onSubmit,
   submitLabel,
   isSubmitting,
+  submitButtonColor = "primary",
 }: {
   onCancel: () => void;
   onSubmit?: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
+  submitButtonColor: ButtonColor;
 }): ReactNode | undefined {
   if (!onSubmit) return undefined;
   return (
     <>
       <ModalCancelButton onClick={onCancel} isDisabled={isSubmitting} />
-      <Button type="primary" onClick={onSubmit} isBusy={isSubmitting}>
+      <Button type="primary" color={submitButtonColor} onClick={onSubmit} isBusy={isSubmitting}>
         {submitLabel}
       </Button>
     </>

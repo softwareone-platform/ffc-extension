@@ -10,3 +10,5 @@ export type Entitlement = EntitlementRead & {
     integration: "aws" | "google" | "microsoft";
   };
 };
+
+export type EntitlementAction = "redeem" | "terminate" | "delete";

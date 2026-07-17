@@ -13,6 +13,7 @@ import {
 import { useLocation } from "react-router-dom";
 
 import { ErrorPage } from "~shared/components/error/ErrorPage";
+import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ExtensionsProviderContext } from "./ExtensionsProvider";
@@ -33,7 +34,7 @@ export function ErrorHandlerProvider({ children }: PropsWithChildren) {
   const { isStandalone } = useContext(ExtensionsProviderContext);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [errorDescription, setErrorDescription] = useState<ReactNode | null>(null);
-
+  const tError = useFixedT("shared:error");
   const location = useLocation();
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export function ErrorHandlerProvider({ children }: PropsWithChildren) {
     case "InternalServerError":
       return (
         <Suspense>
-          <ErrorPage title={error} subtitle={errorDescription} />
+          <ErrorPage title={tError(`title:${error}`)} subtitle={errorDescription} />
         </Suspense>
       );
   }
@@ -69,7 +70,10 @@ export function ErrorHandlerProvider({ children }: PropsWithChildren) {
       <ErrorBoundary
         fallback={
           <Suspense>
-            <ErrorPage title="500 Internal Server Error" subtitle="An unexpected error occurred." />
+            <ErrorPage
+              title={tError("title:500")}
+              subtitle={tError("description:internalServerError")}
+            />
           </Suspense>
         }
       >
