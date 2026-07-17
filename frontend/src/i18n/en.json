@@ -36,6 +36,14 @@
       "save": "Save"
     }
   },
+  "organizations": {
+    "make_admin": {
+      "title": "Make user admin",
+      "promote_to_admin": "Promote to admin",
+      "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
+      "make_admin_warning_line2": "This action cannot be undone."
+    }
+  },
   "entitlements": {
     "addWizard": {
       "title": "Add entitlement",
@@ -133,7 +141,8 @@
       "cancel": "Cancel",
       "redeem": "Redeem",
       "terminate": "Terminate",
-      "delete": "Delete"
+      "delete": "Delete",
+      "make_admin": "Make Admin"
     },
     "grid": {
       "views": {

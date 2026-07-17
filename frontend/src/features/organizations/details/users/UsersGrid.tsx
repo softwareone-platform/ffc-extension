@@ -6,13 +6,30 @@ import { CreateUserModal } from "~organizations/details/users/modal/CreateUserMo
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 
+import { UserMakeAdminModal } from "./make-admin-modal/UserMakeAdminModal";
 import { useGridConfig } from "./UsersGrid.config";
 
 export function UsersGrid({ organizationId }: { organizationId: string }) {
   const { refresh, ...gridProps } = useGridConfig(organizationId);
   const addUserModal = useModalToggle({ onSuccess: refresh });
+  const makeUsedAdminModal = useModalToggle<{ employee: Employee; organizationId: string }>({
+    onSuccess: refresh,
+  });
 
   useNotifyParentChildModal(addUserModal.isOpen);
+
+  function onAction(action: EmployeeActions, item: Employee) {
+    switch (action) {
+      case "make_admin":
+        makeUsedAdminModal.open({
+          employee: item,
+          organizationId,
+        });
+        break;
+      default:
+        break;
+    }
+  }
 
   return (
     <>
@@ -27,6 +44,13 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
         isOpen={addUserModal.isOpen}
         onClose={addUserModal.close}
         className="add-user-modal"
+      />
+      <UserMakeAdminModal
+        isOpen={makeUsedAdminModal.isOpen}
+        onClose={makeUsedAdminModal.close}
+        className="make-admin-modal"
+        employee={makeUsedAdminModal.data?.employee ?? null}
+        organizationId={makeUsedAdminModal.data?.organizationId ?? null}
       />
     </>
   );
