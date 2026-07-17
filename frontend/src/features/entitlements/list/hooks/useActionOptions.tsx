@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { ListItem, ListOption } from "@swo/dropdown";
+import { ListOption } from "@swo/dropdown";
 
 import { EntitlementStatus } from "~api/ffc-api-model";
 import { Entitlement, EntitlementAction } from "~features/entitlements/api/model";
@@ -11,17 +11,16 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
   const { role } = useUserRole();
   const tActions = useFixedT("shared:actions");
 
-  const terminateEnabledStatus: EntitlementStatus[] = ["active"];
-  const deleteEnabledStatus: EntitlementStatus[] = ["new"];
-
   return useCallback(
     (item: Entitlement): ListOption<EntitlementAction>[] => {
+      const terminateEnabledStatus: Set<EntitlementStatus> = new Set(["active"]);
+      const deleteEnabledStatus: Set<EntitlementStatus> = new Set(["new"]);
       const adminActions: ListOption<EntitlementAction>[] = [
         { type: "divider" },
         {
           label: tActions("delete"),
           value: "delete",
-          isDisabled: role !== "admin" || !deleteEnabledStatus.includes(item.status!),
+          isDisabled: role !== "admin" || !deleteEnabledStatus.has(item.status!),
           props: { className: "dangerous-option" },
         },
       ];
@@ -32,7 +31,7 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
         {
           label: tActions("terminate"),
           value: "terminate",
-          isDisabled: !terminateEnabledStatus.includes(item.status!),
+          isDisabled: !terminateEnabledStatus.has(item.status!),
           props: { className: "dangerous-option" },
         },
       ];

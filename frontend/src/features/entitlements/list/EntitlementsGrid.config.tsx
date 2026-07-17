@@ -1,16 +1,16 @@
-import { useMemo } from "react";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { Link } from "react-router-dom";
 
 import { EntityReference } from "@swo/design-system/entity-reference";
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellActions,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
+  GridEvents,
+  GridFieldDefinition,
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
@@ -121,7 +121,7 @@ export function useColumns(): Columns {
       },
       {
         name: "actions",
-        title: "Actions",
+        title: tColumns("actions"),
         fields: [],
         cell: (item: Entitlement) => <GridCellActions item={item} actions={getActions(item)} />,
         initialWidth: 100,
@@ -208,7 +208,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
-    [columns, fields, asyncOptions],
+    [columns, fields, asyncOptions, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
