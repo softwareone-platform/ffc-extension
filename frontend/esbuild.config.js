@@ -1,5 +1,5 @@
 import { context } from 'esbuild';
-import { sassPlugin,postcssModules } from 'esbuild-sass-plugin';
+import { sassPlugin } from 'esbuild-sass-plugin';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -11,10 +11,6 @@ const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
 
 const ctx = await context({
   entryPoints: [
-    './src/entries/OrganizationsEntry.tsx',
-    './src/entries/EntitlementsEntry.tsx',
-    './src/entries/CreateEntitlementModal.tsx',
-    './src/entries/CreateUserModal.tsx',
     './src/entries/StandaloneRoot.tsx',
   ],
   outdir: '../static',

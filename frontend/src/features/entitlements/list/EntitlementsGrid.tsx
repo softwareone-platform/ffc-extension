@@ -6,8 +6,11 @@ import { useMPTModal } from "@mpt-extension/sdk-react";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
+import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
+import { useIsStandaloneShell } from "~shared/providers/StandaloneShellContext";
 
 import { Entitlement, EntitlementAction } from "../api/model";
+import { CreateEntitlementWizard } from "../create-entitlement-wizard/CreateEntitlementWizard";
 import { DeleteEntitlementModal } from "./delete-entitlement-modal/DeleteEntitlementModal";
 import { useGridConfig } from "./EntitlementsGrid.config";
 import { TerminateEntitlementModal } from "./terminate-entitlement-modal/TerminateEntitlementModal";
@@ -17,8 +20,20 @@ export function EntitlementsGrid() {
   const tActions = useFixedT("shared:grid:actions");
   const { refresh, ...gridProps } = useGridConfig(onAction);
   const { open } = useMPTModal();
+  const isStandaloneShell = useIsStandaloneShell();
+  const createEntitlementModal = useModalToggle({ onSuccess: refresh });
   const terminateEntitlementModal = useModalToggle<Entitlement>({ onSuccess: refresh });
   const deleteEntitlementModal = useModalToggle<Entitlement>({ onSuccess: refresh });
+
+  useNotifyParentChildModal(createEntitlementModal.isOpen);
+
+  const openMptCreateEntitlementModal = () =>
+    open("finops.admin.create-entitlement-modal", {
+      context: {},
+      onClose: (result) => {
+        if (result.entitlementCreated) refresh();
+      },
+    });
 
   function onAction(action: EntitlementAction, item: Entitlement) {
     switch (action) {
@@ -39,13 +54,10 @@ export function EntitlementsGrid() {
         <Grid<Entitlement> {...gridProps}>
           <Grid.Actions>
             <Button
-              onClick={() =>
-                open("finops.admin.create-entitlement-modal", {
-                  context: {},
-                  onClose: (result) => {
-                    result.entitlementCreated && refresh();
-                  },
-                })
+              onClick={
+                isStandaloneShell
+                  ? () => createEntitlementModal.open()
+                  : openMptCreateEntitlementModal
               }
             >
               {tActions("add")}
@@ -53,6 +65,12 @@ export function EntitlementsGrid() {
           </Grid.Actions>
         </Grid>
       </Card>
+      {isStandaloneShell && (
+        <CreateEntitlementWizard
+          isOpen={createEntitlementModal.isOpen}
+          onClose={createEntitlementModal.close}
+        />
+      )}
       <TerminateEntitlementModal
         className="terminate-entitlement-modal"
         entitlement={terminateEntitlementModal.data}

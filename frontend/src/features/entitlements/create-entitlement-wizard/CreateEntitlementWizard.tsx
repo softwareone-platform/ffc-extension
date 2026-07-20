@@ -4,9 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 import { useMutation } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";
 
+import { Modal } from "@swo/design-system/modal";
 import { Wizard, WizardContextProps } from "@swo/design-system/wizard";
 
-import { useMPTModal } from "@mpt-extension/sdk-react";
+import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
+import { ModalCloseResult } from "~shared/components/modal/modalEntry";
+import { useFixedT } from "~shared/hooks/useFixedT";
+import { useUserRole } from "~shared/hooks/useUserRole";
 
 import { AddWizardForm, AddWizardFormSchema } from "./CreateEntitlement.Schema";
 import { AffiliateStep } from "./steps/AffiliateStep";
@@ -15,24 +19,20 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { useSteps } from "./useSteps";
 
-import "./CreateEntitlement.scss";
 
-import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
-import { useFixedT } from "~shared/hooks/useFixedT";
-import { useUserRole } from "~shared/hooks/useUserRole";
+type Props = {
+  isOpen: boolean;
+  onClose: (result?: ModalCloseResult) => void;
+};
 
-export function CreateEntitlement() {
+export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   const tEntitlementWizard = useFixedT("entitlements:addWizard");
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [entitlementCreated, setEntitlementCreated] = useState(false);
   const [error, setError] = useState("");
   const { save } = useEntitlementsApi();
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: save,
-  });
-  const { close } = useMPTModal();
+  const { mutateAsync, isPending } = useMutation({ mutationFn: save });
   const steps = useSteps(isPending);
-
   const { user, role } = useUserRole();
 
   const methods = useForm({
@@ -41,25 +41,21 @@ export function CreateEntitlement() {
     defaultValues: {
       affiliate:
         role === "affiliate"
-          ? {
-              id: user?.account.id || "",
-              name: user?.account.name || "",
-            }
+          ? { id: user?.account.id || "", name: user?.account.name || "" }
           : null,
     },
   });
   const { handleSubmit, reset, setValue } = methods;
 
-  const onClose = useCallback(() => {
-    const closeContext = { entitlementCreated };
-    close(closeContext);
-  }, [entitlementCreated, close]);
-
   const closeWizard = useCallback(() => {
     reset();
     setError("");
-    onClose?.();
-  }, [onClose, reset]);
+    onClose({ success: entitlementCreated });
+  }, [reset, onClose, entitlementCreated]);
+
+  const finish = useCallback(() => {
+    onClose({ success: entitlementCreated });
+  }, [onClose, entitlementCreated]);
 
   const onSubmit = useCallback(
     async (form: AddWizardForm) => {
@@ -82,23 +78,28 @@ export function CreateEntitlement() {
         }
 
         setEntitlementCreated(true);
-
         setActiveStepIndex((i) => i + 1);
       } catch (err) {
         setError(err + "");
       }
     },
-    [mutateAsync, setValue],
+    [mutateAsync, role, setValue],
   );
 
   return (
-    <div className="wizard">
+    <Modal
+      isOpen={isOpen}
+      onClose={() => onClose()}
+      isFullScreen
+      isToHidePadding
+      testId="create-entitlement-wizard-modal"
+    >
       <FormProvider {...methods}>
         <Wizard
-          testId={"create-entitlement-wizard"}
+          testId="create-entitlement-wizard"
           stepsProps={steps}
           onClose={closeWizard}
-          onSave={onClose}
+          onSave={finish}
           isToDisableSideNavigation={true}
           onSubmit={handleSubmit(onSubmit)}
           activeStepIndex={activeStepIndex}
@@ -125,8 +126,6 @@ export function CreateEntitlement() {
           <Wizard.Actions />
         </Wizard>
       </FormProvider>
-    </div>
+    </Modal>
   );
 }
-
-export default CreateEntitlement;

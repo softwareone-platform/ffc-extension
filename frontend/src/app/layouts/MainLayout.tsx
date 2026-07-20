@@ -2,19 +2,15 @@ import { Outlet, useMatch } from "react-router-dom";
 
 import { AccountType } from "~api/ffc-api-model/types.gen";
 import { PATHS } from "~app/paths";
-import { CreateEntitlementStandaloneModal } from "~entitlements/modal/CreateEntitlementStandaloneModal";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useModalToggle } from "~shared/hooks/useModalToggle";
-import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 import { useUserRole } from "~shared/hooks/useUserRole";
 import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContext";
 
 export function MainLayout() {
   const tNav = useFixedT("shared:nav");
-  const { isOpen, close } = useModalToggle();
   const { role } = useUserRole();
 
   const navItems: PageShellNavItem[] = [
@@ -34,8 +30,6 @@ export function MainLayout() {
 
   const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
   const organizationMatch = useMatch(PATHS.organizations.detailMatch);
-
-  useNotifyParentChildModal(isOpen);
 
   const header = renderHeader();
 
@@ -67,7 +61,6 @@ export function MainLayout() {
           <Outlet />
         </PageShell.Content>
       </PageShell>
-      <CreateEntitlementStandaloneModal isOpen={isOpen} onClose={close} />
     </StandaloneShellProvider>
   );
 }

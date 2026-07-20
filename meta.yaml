@@ -16,13 +16,3 @@ plugs:
   icon: adobe.png
   socket: portal.root
   href: "/static/StandaloneRoot.js"
-- id: finops.admin.create-user-modal
-  name: Create User Modal
-  description: Wizard to create a new user
-  icon: adobe.png
-  href: "/static/CreateUserModal.js"
-- id: finops.admin.create-entitlement-modal
-  name: Create Entitlement Modal
-  description: Wizard to create a new entitlement
-  icon: adobe.png
-  href: "/static/CreateEntitlementModal.js"

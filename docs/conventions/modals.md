@@ -1,10 +1,16 @@
 # Modal conventions
 
-Every "create / edit" modal in this app ships in **two** shapes that share
-their form logic. Pick the right one for the call site; if you find
-yourself writing only one of them, you're probably missing the other.
+Modals in this app come in two flavours:
 
-## The two shapes
+- **Simple form modals** ship in **two shapes** that share their form logic —
+  an `<Entity>EntryModal` (host-mounted) and an `<Entity>StandaloneModal`
+  (in-app). Pick the right one for the call site; if you find yourself writing
+  only one of them, you're probably missing the other.
+- **Wizard modals** (multi-step) ship as a **single shared body** mounted in
+  both modes. See [Wizard modals](#wizard-modals-multi-step) below — entitlement
+  creation is the current example.
+
+## The two shapes (simple form modals)
 
 ### `<Entity>EntryModal` — host-mounted, separate bundle
 
@@ -39,6 +45,36 @@ which renders `@swo/design-system/modal`'s `<Modal>` with our common defaults.
   to manage the open/close state — it calls `onSuccess` only when the modal
   closes with `{ success: true }`.
 
+## Wizard modals (multi-step)
+
+Multi-step create flows don't fit the two-shape form pair — instead a **single
+shared wizard body** is mounted in both modes. Entitlement creation is the
+current example (`features/entitlements/create-entitlement-wizard/`):
+
+- **Body**: `CreateEntitlement.tsx` (default export, imported as
+  `EntitlementWizard`). It renders `@swo/design-system/wizard`'s `<Wizard>`
+  with its own header/steps/actions, and owns its `react-hook-form` +
+  `react-query` mutation across steps — there is **no** `use<Entity>FormController`.
+- **Host-mounted**: `entries/CreateEntitlementModal.tsx` does
+  `mountModalEntry(<EntitlementWizard />)`. No `EntryModalWidget` wrapper — the
+  wizard is the whole modal body and the host provides the frame.
+- **In-app**: `CreateEntitlementWizard.tsx` wraps the body in
+  `<StandaloneModal isFullScreen isToHidePadding>` (no title/footer — the wizard
+  supplies its own).
+
+Close plumbing is built into the body via an optional prop:
+
+```ts
+type Props = { onClose?: (result?: ModalCloseResult) => void };
+```
+
+- **Standalone** passes `onClose`; the wizard calls it with
+  `{ success: entitlementCreated }`.
+- **Embedded** omits it; the wizard falls back to `useMPTModal().close({ entitlementCreated })`.
+
+Same `ModalCloseResult` contract as the form modals, so `useModalToggle`'s
+`onSuccess` still fires on a successful create.
+
 ## Picking which to render
 
 Use `useIsStandaloneShell()` (see [`standalone-mode.md`](../architecture/standalone-mode.md)):
@@ -52,7 +88,7 @@ return (
     {isStandaloneShell ? (
       <Button onClick={addUserModal.open}>Add user</Button>
     ) : (
-      <Button onClick={() => mpt.open("finops.admin.create-user-modal", { … })}>
+      <Button onClick={() => mpt.open("finops.admin.create-user-modal", )}>
         Add user
       </Button>
     )}
@@ -71,6 +107,9 @@ The MPT host knows about `EntryModal`s via its modal registry; the in-app
 `StandaloneModal` lives entirely in our tree.
 
 ## Shared form controller
+
+> Applies to the **simple form modal** pair only. Wizard modals (above) manage
+> their own form state across steps and do not use a form controller.
 
 Both shapes consume the same `use<Entity>FormController({ onClose })` hook,
 which owns:
@@ -96,6 +135,8 @@ behave identically.
 
 Modal code lives next to the feature it belongs to (not in a separate `features/modal/` tree), and nests under the parent resource when applicable (e.g. user modals under `organizations/details/users/`).
 
+Simple form modals:
+
 ```
 features/<feature>/modal/
 ├── Add<Thing>Form.Schema.tsx       # zod schema + types
@@ -105,6 +146,16 @@ features/<feature>/modal/
 └── hooks/
     ├── useAdd<Thing>Form.tsx       # react-hook-form wrapper
     └── use<Thing>FormController.ts # mutation + onClose plumbing
+```
+
+Wizard modals (see [Wizard modals](#wizard-modals-multi-step)):
+
+```
+features/<feature>/<flow>-wizard/
+├── Create<Thing>.tsx                       # shared wizard body (default export)
+├── Create<Thing>WizardStandaloneModal.tsx  # in-app wrapper (<StandaloneModal>)
+├── steps/                                  # one component per step
+└── useSteps.tsx
 ```
 
 ## Shared modal pieces
@@ -124,6 +175,13 @@ In `frontend/src/shared/`:
   `onSuccess` callback.
 
 ## Adding a new modal
+
+> For a **multi-step** flow, skip the form pair below and build a wizard instead
+> (see [Wizard modals](#wizard-modals-multi-step)): one shared body mounted by
+> `mountModalEntry` for the host and wrapped in `<StandaloneModal>` for in-app,
+> with an optional `onClose` prop for the standalone case.
+
+For a single-step **simple form modal**:
 
 1. Create `Add<Entity>Form.Schema.tsx` with a `zod` schema + inferred type.
 2. Create `<Entity>FormFields.tsx` — the actual inputs, controlled via
