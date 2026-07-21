@@ -11,6 +11,8 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { AddWizardForm } from "../CreateEntitlement.Schema";
 
+import "./DataSourceStep.scss";
+
 export function DataSourceStep() {
   const tStep = useFixedT("entitlements:addWizard:steps:dataSource");
   const tProperties = useFixedT("entitlements:addWizard:properties:dataSource");
