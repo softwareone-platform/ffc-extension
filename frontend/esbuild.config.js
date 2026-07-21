@@ -2,12 +2,15 @@ import { context } from 'esbuild';
 import { sassPlugin } from 'esbuild-sass-plugin';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { reloadBrowsersPlugin } from './devtools/reloadBrowsersPlugin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
+
+const RELOAD_URL_MATCH = 'portal.s1.show';
 
 const ctx = await context({
   entryPoints: [
@@ -36,10 +39,11 @@ const ctx = await context({
   },
   plugins: [
     sassPlugin({
-    filter: /\.scss$/,
-    type: 'style',
-  })
-],
+      filter: /\.scss$/,
+      type: 'style',
+    }),
+    reloadBrowsersPlugin({ watch, urlMatch: RELOAD_URL_MATCH }),
+  ],
 });
 
 if (watch) {
