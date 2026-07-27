@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 import { Button, ButtonColor } from "@swo/design-system/button";
-import { Modal } from "@swo/design-system/modal";
+import { Modal as DSModal } from "@swo/design-system/modal";
 
 import { ModalCancelButton } from "./ModalCancelButton";
 
@@ -30,7 +30,7 @@ type Props = {
   submitButtonColor?: ButtonColor;
 };
 
-export function StandaloneModal({
+export function Modal({
   isOpen,
   onClose,
   children,
@@ -63,7 +63,7 @@ export function StandaloneModal({
     });
 
   return (
-    <Modal
+    <DSModal
       isOpen={isOpen}
       onClose={onClose}
       title={title}
@@ -79,7 +79,7 @@ export function StandaloneModal({
       actions={resolvedActions}
     >
       {children}
-    </Modal>
+    </DSModal>
   );
 }
 

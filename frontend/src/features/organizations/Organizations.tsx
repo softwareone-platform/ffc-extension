@@ -1,20 +1,13 @@
-import { lazy, useContext } from "react";
+import { lazy } from "react";
 
 import { Route, Routes } from "react-router-dom";
 
-import { DetailsLayout } from "~app/layouts";
-import { PARAMS, SEGMENTS } from "~features/organizations/paths";
+import { SEGMENTS } from "~features/organizations/paths";
 import { RouteGuard } from "~shared/components/RouteGuard";
-import { ExtensionsProviderContext } from "~shared/providers/ExtensionsProvider";
 
 const OrganizationsGrid = lazy(() =>
   import("~features/organizations/list/OrganizationsGrid").then((m) => ({
     default: m.OrganizationsGrid,
-  })),
-);
-const OrganizationDetailsHeader = lazy(() =>
-  import("~features/organizations/components/OrganizationDetailsHeader").then((m) => ({
-    default: m.OrganizationDetailsHeader,
   })),
 );
 const OrganizationDetailsContent = lazy(() =>
@@ -41,28 +34,11 @@ const OrganizationUsers = lazy(() =>
 const allowedRoles = ["admin", "operations"] as const;
 
 export function Organizations() {
-  const { isStandalone } = useContext(ExtensionsProviderContext);
   return (
     <RouteGuard allowedRoles={allowedRoles}>
       <Routes>
         <Route index element={<OrganizationsGrid />} />
-        <Route
-          path={SEGMENTS.idParam}
-          element={
-            isStandalone ? (
-              <OrganizationDetailsContent />
-            ) : (
-              <DetailsLayout
-                paramKey={PARAMS.organizationId}
-                renderHeader={(id, backUrl) => (
-                  <OrganizationDetailsHeader organizationId={id} backUrl={backUrl} />
-                )}
-              >
-                <OrganizationDetailsContent />
-              </DetailsLayout>
-            )
-          }
-        >
+        <Route path={SEGMENTS.idParam} element={<OrganizationDetailsContent />}>
           <Route index element={<OrganizationGeneralDetails />} />
           <Route path={SEGMENTS.general} element={<OrganizationGeneralDetails />} />
           <Route path={SEGMENTS.dataSources} element={<OrganizationDataSources />} />

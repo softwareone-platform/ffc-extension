@@ -19,8 +19,8 @@ files under `frontend/src`, follow the rules below.
      `Grid.Toolbar.Shared.ButtonLink-*.mjs`.
    - In `src`: `MainLayout.tsx`, `PageShell.tsx`,
      `EntityStatusChip.tsx`, `ExtensionsProvider.tsx`, `MPTContextProvider.tsx`,
-     `OrganizationsGrid.tsx`, `DetailsLayout.tsx`, `EntitlementsGrid.tsx`,
-     `EntitlementsFormFields.tsx`, `Users.tsx`, `DataSources.tsx`.
+     `OrganizationsGrid.tsx`, `Modal.tsx`, `EntitlementsGrid.tsx`,
+     `UserFormFields.tsx`, `Users.tsx`, `DataSources.tsx`.
 
 3. **Hooks: `camelCase` starting with `use…` + `.ts`/`.tsx`.**
    - Examples (from `@swo/modal/lib/hooks`): `useConfirm.d.ts`, `useConfirmModal.d.ts`,
@@ -36,7 +36,7 @@ files under `frontend/src`, follow the rules below.
      `DataSourcesGrid.tsx` + `DataSourcesGrid.config.tsx`,
      `UsersGrid.tsx` + `UsersGrid.config.tsx`,
      `General.tsx` + `General.scss`,
-     `EntryModalWidget.tsx` + `EntryModalWidget.scss`.
+     `CreateUserModal.tsx` + `CreateUserModal.scss`.
 
 5. **SCSS files for a component share the component's PascalCase base name**
    (`Component.scss`), imported relatively (`import './Component.scss'`).

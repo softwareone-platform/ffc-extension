@@ -1,8 +1,8 @@
 import { InlineNotification } from "@swo/notification";
 
 import { Entitlement } from "~features/entitlements/api/model";
-import { ModalCloseResult } from "~shared/components/modal/modalEntry";
-import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
+import { ModalCloseResult } from "~shared/components/modal/types";
+import { Modal } from "~shared/components/modal/Modal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEntitlementController } from "../hooks/useEntitlementsController";
@@ -26,7 +26,7 @@ export function TerminateEntitlementModal({
   const { cancel, terminate, isPendingTerminate, error } = useEntitlementController({ onClose });
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={tEntitlement("title")}
@@ -54,6 +54,6 @@ export function TerminateEntitlementModal({
       </p>
       <p>{tEntitlement("terminate_entitlement_warning_line2")}</p>
       <p>{tEntitlement("terminate_entitlement_warning_line3")}</p>
-    </StandaloneModal>
+    </Modal>
   );
 }

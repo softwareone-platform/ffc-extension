@@ -1,11 +1,11 @@
-import { ModalCloseResult } from "~shared/components/modal/modalEntry";
-import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
+import { Modal } from "~shared/components/modal/Modal";
+import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useUserFormController } from "./hooks/useUserFormController";
 import { UserFormFields } from "./UserFormFields";
 
-import "./CreateUserStandaloneModal.scss";
+import "./CreateUserModal.scss";
 
 type Props = {
   isOpen: boolean;
@@ -13,12 +13,12 @@ type Props = {
   className?: string;
 };
 
-export function CreateUserStandaloneModal({ isOpen, onClose, className }: Readonly<Props>) {
+export function CreateUserModal({ isOpen, onClose, className }: Readonly<Props>) {
   const tUsers = useFixedT("organization:users");
   const { control, error, isPending, submit, handleCancel } = useUserFormController({ onClose });
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={tUsers("add_user")}
@@ -31,6 +31,6 @@ export function CreateUserStandaloneModal({ isOpen, onClose, className }: Readon
       <form onSubmit={submit}>
         <UserFormFields control={control} error={error} />
       </form>
-    </StandaloneModal>
+    </Modal>
   );
 }

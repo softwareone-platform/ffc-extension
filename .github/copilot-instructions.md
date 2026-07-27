@@ -16,7 +16,7 @@ TL;DR:
 - **Components / providers / layouts** — `PascalCase.tsx` matching the export.
 - **Hooks** — `camelCase.ts` starting with `use`.
 - **Companion files** — share the PascalCase base with a `.` qualifier
-  (`OrganizationsGrid.config.tsx`, `DetailsLayout.scss`).
+  (`OrganizationsGrid.config.tsx`, `StandaloneRoot.scss`).
 - **Barrels** — `index.ts`, re-export from PascalCase files.
 - **Path aliases** (`~app`, `~features`, `~shared`, `~organizations`,
   `~entitlements`, `~i18n`, `~styles`) — target `kebab-case` folders.
@@ -33,22 +33,19 @@ is `:`. Top-level namespaces are `<feature>` and `shared`. Mirror API
 field names in `snake_case`; use `camelCase` for UI-only labels.
 
 For modals see [`../docs/conventions/modals.md`](../docs/conventions/modals.md).
-Every "create" modal ships as a pair: `Create<Entity>EntryModal` (host-mounted)
-+ `Create<Entity>StandaloneModal` (in-app), sharing a `use<Entity>FormController`.
+Modals are in-app: a `Create<Entity>Modal` wrapping `<Modal>`,
+its open/close state driven by `useModalToggle`, with form logic in a shared
+`use<Entity>FormController`.
 
 ### Runtime context
 
-The frontend runs in two modes (embedded inside MPT host, or standalone).
-Before adding behavior that varies between them, read
+The app ships as a single standalone bundle that can run inside the MPT host
+iframe or loaded directly. Before adding behavior that varies with host
+presence, read
 [`../docs/architecture/standalone-mode.md`](../docs/architecture/standalone-mode.md)
-to pick the right hook (`useHasMPTHost` / `useIsRootPage` /
-`useIsStandaloneShell` are **not** interchangeable). For how the host bridge
-is detected, see
+to pick the right hook (`useHasMPTHost` and `useIsRootPage` are **not**
+interchangeable). For how the host bridge is detected, see
 [`../docs/architecture/mpt-host-integration.md`](../docs/architecture/mpt-host-integration.md).
-
-Each file in `frontend/src/entries/` is a separate esbuild bundle (standalone
-SPA, per-feature, or per-modal). When adding an entry, see
-[`../docs/architecture/entry-mode.md`](../docs/architecture/entry-mode.md).
 
 ### Renames
 
