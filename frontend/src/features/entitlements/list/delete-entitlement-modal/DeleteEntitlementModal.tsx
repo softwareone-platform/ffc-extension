@@ -2,7 +2,7 @@ import { InlineNotification } from "@swo/notification";
 
 import { Entitlement } from "~features/entitlements/api/model";
 import { ModalCloseResult } from "~shared/components/modal/types";
-import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
+import { Modal } from "~shared/components/modal/Modal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEntitlementController } from "../hooks/useEntitlementsController";
@@ -26,7 +26,7 @@ export function DeleteEntitlementModal({
   const { cancel, remove, isPendingRemove, error } = useEntitlementController({ onClose });
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={tEntitlement("title")}
@@ -53,6 +53,6 @@ export function DeleteEntitlementModal({
         })}
       </p>
       <p>{tEntitlement("delete_entitlement_warning_line2")}</p>
-    </StandaloneModal>
+    </Modal>
   );
 }

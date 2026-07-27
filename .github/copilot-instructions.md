@@ -33,7 +33,7 @@ is `:`. Top-level namespaces are `<feature>` and `shared`. Mirror API
 field names in `snake_case`; use `camelCase` for UI-only labels.
 
 For modals see [`../docs/conventions/modals.md`](../docs/conventions/modals.md).
-Modals are in-app: a `Create<Entity>StandaloneModal` wrapping `<StandaloneModal>`,
+Modals are in-app: a `Create<Entity>Modal` wrapping `<Modal>`,
 its open/close state driven by `useModalToggle`, with form logic in a shared
 `use<Entity>FormController`.
 

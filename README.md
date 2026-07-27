@@ -18,7 +18,7 @@ The FinOps for Cloud Extension enables SoftwareOne to manage the FinOps for Clou
 - [`docs/conventions/naming.md`](docs/conventions/naming.md) — frontend file & folder naming.
 - [`docs/conventions/api-hooks.md`](docs/conventions/api-hooks.md) — `useFooApi` vs `useFooDetailsApi` patterns.
 - [`docs/conventions/i18n.md`](docs/conventions/i18n.md) — translation namespaces, `useFixedT`, dynamic keys.
-- [`docs/conventions/modals.md`](docs/conventions/modals.md) — in-app modal pattern (`StandaloneModal`, `useModalToggle`, form controllers).
+- [`docs/conventions/modals.md`](docs/conventions/modals.md) — in-app modal pattern (`Modal`, `useModalToggle`, form controllers).
 - [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md) — iframe-as-extension runtime.
 - [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md) — `useHasMPTHost` / `useIsRootPage`.
 - [`docs/dev/devcontainer.md`](docs/dev/devcontainer.md) — devcontainer setup.

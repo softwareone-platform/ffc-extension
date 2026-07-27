@@ -6,8 +6,8 @@ modal**: rendered inside the React tree, its open/close state driven by
 
 Two flavours exist:
 
-- **Simple form modals** — a `Create<Entity>StandaloneModal` that wraps
-  `<StandaloneModal>` around a form.
+- **Simple form modals** — a `Create<Entity>Modal` that wraps
+  `<Modal>` around a form.
 - **Wizard modals** (multi-step) — a single component that renders
   `@swo/design-system/wizard`'s `<Wizard>` inside a modal. Entitlement
   creation is the current example.
@@ -21,7 +21,7 @@ open/close boolean and optional payload:
 const addUserModal = useModalToggle({ onSuccess: refresh });
 
 <Button onClick={addUserModal.open}>Add user</Button>
-<CreateUserStandaloneModal
+<CreateUserModal
   isOpen={addUserModal.isOpen}
   onClose={addUserModal.close}
 />
@@ -44,18 +44,18 @@ A modal calls `onClose({ success: true })` on a successful submit and
 
 ## Simple form modals
 
-The modal wraps `<StandaloneModal>` (`src/shared/components/modal/StandaloneModal.tsx`),
-which renders `@swo/design-system/modal`'s `<Modal>` with our common defaults
-(width, cancel/submit actions via `ModalCancelButton`). Form logic lives in a
-shared `use<Entity>FormController` hook so the modal component stays thin.
+The modal wraps our `<Modal>` (`src/shared/components/modal/Modal.tsx`), which
+renders `@swo/design-system/modal`'s modal with our common defaults (width,
+cancel/submit actions via `ModalCancelButton`). Form logic lives in a shared
+`use<Entity>FormController` hook so the modal component stays thin.
 
 ```tsx
-export function CreateUserStandaloneModal({ isOpen, onClose, className }: Props) {
+export function CreateUserModal({ isOpen, onClose, className }: Props) {
   const { control, error, isPending, submit, handleCancel } =
     useUserFormController({ onClose });
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       onCancel={handleCancel}
@@ -65,7 +65,7 @@ export function CreateUserStandaloneModal({ isOpen, onClose, className }: Props)
       <form onSubmit={submit}>
         <UserFormFields control={control} error={error} />
       </form>
-    </StandaloneModal>
+    </Modal>
   );
 }
 ```
@@ -111,7 +111,7 @@ Simple form modal:
 features/<feature>/modal/
 ├── Add<Thing>Form.Schema.tsx        # zod schema + types
 ├── <Thing>FormFields.tsx            # the actual <input>s
-├── Create<Thing>StandaloneModal.tsx # the modal component
+├── Create<Thing>Modal.tsx # the modal component
 └── hooks/
     ├── useAdd<Thing>Form.tsx        # react-hook-form wrapper
     └── use<Thing>FormController.ts  # mutation + onClose plumbing
@@ -131,9 +131,9 @@ features/<feature>/<flow>-wizard/
 
 In `frontend/src/shared/`:
 
-- `shared/components/modal/StandaloneModal.tsx` — the `<Modal>` wrapper.
-  Forwards the design-system props and provides default cancel/submit actions
-  if `actions` isn't passed.
+- `shared/components/modal/Modal.tsx` — the app wrapper around
+  `@swo/design-system/modal`. Forwards the design-system props and provides
+  default cancel/submit actions if `actions` isn't passed.
 - `shared/components/modal/ModalCancelButton.tsx` — the cancel button variant.
 - `shared/components/modal/types.ts` — the `ModalCloseResult` /
   `ModalControllerProps` types.
@@ -151,7 +151,7 @@ For a single-step **simple form modal**:
    `zodResolver`.
 4. Create `hooks/use<Entity>FormController.ts` — mutation + cancel + close
    plumbing. Take `{ onClose }`.
-5. Create `Create<Entity>StandaloneModal.tsx` wrapping `<StandaloneModal>`.
+5. Create `Create<Entity>Modal.tsx` wrapping `<Modal>`.
 6. Render it in the feature, gated by a `useModalToggle()` boolean.
 
 For a **multi-step** flow, build a wizard instead (see

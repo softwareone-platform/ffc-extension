@@ -2,7 +2,7 @@ import { Button } from "@swo/design-system/button";
 import { Grid } from "@swo/design-system/grid";
 
 import { EmployeeRead } from "~api/ffc-api-model";
-import { CreateUserStandaloneModal } from "~organizations/details/users/modal/CreateUserStandaloneModal";
+import { CreateUserModal } from "~organizations/details/users/modal/CreateUserModal";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 
@@ -23,7 +23,7 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
             </Button>
         </Grid.Actions>
       </Grid>
-      <CreateUserStandaloneModal
+      <CreateUserModal
         isOpen={addUserModal.isOpen}
         onClose={addUserModal.close}
         className="add-user-modal"
