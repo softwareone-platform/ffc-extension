@@ -1,9 +1,5 @@
-@use "../../../node_modules/@swo/design-tokens/src/index" as *;
-@use "../../../node_modules/@swo/design-tokens/src/style" as *;
-
-// Global styles applied to every entry. Height is intentionally left to the
-// per-mode partials (_embedded / _standalone) so it isn't set here then
-// immediately overridden.
+@use "../../node_modules/@swo/design-tokens/src/index" as *;
+@use "../../node_modules/@swo/design-tokens/src/style" as *;
 
 // --- resets --------------------------------------------------------------
 // Platform assumes box-sizing: border-box globally. Without it, design system
@@ -14,10 +10,15 @@
   box-sizing: border-box;
 }
 
+// The standalone entry is a full-page SPA, whether opened in its own browser
+// tab or loaded into the portal.root iframe. Fill the viewport and let the app
+// manage its own scroll.
 html,
 body,
 #root {
   margin: 0;
+  height: 100%;
+  position: relative;
 }
 
 // --- typography ----------------------------------------------------------

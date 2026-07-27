@@ -1,10 +1,11 @@
-# Standalone mode flags
+# Host-presence flags
 
-There are **three** different "am I standalone?" signals in this codebase.
-They mean different things and have different sources of truth. Pick the
-right one or behavior will diverge between embedded and standalone runs.
+The app ships as a single standalone bundle that can run **inside the MPT host
+iframe** or **loaded directly**. Two hooks answer "is a host present, and what
+did it tell us?" — they mean different things and have different sources of
+truth. Pick the right one or behavior will diverge between the two runs.
 
-## The three hooks
+## The two hooks
 
 ### `useHasMPTHost()`
 **File:** `frontend/src/shared/providers/MPTContextProvider.tsx`
@@ -16,42 +17,30 @@ this is true).
 
 ### `useIsRootPage()`
 **File:** `frontend/src/shared/providers/MPTContextProvider.tsx`
-**Source of truth:** `MPTContextValue.data.isRootPage === true` (set by
-the host via `globalThis.__MPT__.context`).
-**Returns `true` when:** the host has told us this slot is the root slot
-via its MPT data payload.
-**Use when:** behavior depends on the host's intent, not on whether the host
-is present. Rare.
-
-### `useIsStandaloneShell()`
-**File:** `frontend/src/shared/providers/StandaloneShellContext.tsx`
-**Source of truth:** a React context populated by `<StandaloneShellProvider>`
-(currently wrapped around `MainLayout`).
-**Returns `true` when:** the component tree is rendered under the standalone
-shell layout — i.e. `MainLayout` is the active layout.
-**Use when:** UI varies depending on which layout shell is rendering (e.g.
-`UsersGrid` shows a custom standalone modal in shell mode, vs. opening an MPT
-modal entry when embedded).
+**Source of truth:** `MPTContextValue.data.isRootPage === true` (set by the
+host via `globalThis.__MPT__.context`).
+**Returns `true` when:** the host has told us this slot is the root slot via
+its MPT data payload.
+**Use when:** behavior depends on the host's intent, not merely on whether the
+host is present. Rare.
 
 ## How they differ in practice
 
-| Scenario | `useHasMPTHost` | `useIsRootPage` | `useIsStandaloneShell` |
-|---|---|---|---|
-| App loaded inside MPT host iframe, normal flow | `true` | `false` | `false` |
-| App loaded inside MPT host with `isRootPage: true` in data | `true` | `true` | depends on route |
-| App loaded directly (no host injection within 5s) | `false` | `false` | depends on route |
-| Component rendered under `MainLayout` | independent | independent | `true` |
+| Scenario | `useHasMPTHost` | `useIsRootPage` |
+|---|---|---|
+| App loaded inside MPT host iframe, normal flow | `true` | `false` |
+| App loaded inside MPT host with `isRootPage: true` in data | `true` | `true` |
+| App loaded directly (no host injection within 5s) | `false` | `false` |
 
-The key insight: **host presence**, **host intent**, and **active layout
-shell** are three independent axes. Don't conflate them — a component can be
-inside the standalone shell while still having a host bridge available.
+The key insight: **host presence** and **host intent** are independent axes.
+Don't conflate them.
 
 ## Common mistakes
 
-- Using `useIsRootPage` to decide whether to show a standalone-styled
-  modal. The standalone *shell* is the right signal; use `useIsStandaloneShell`.
-- Using `useIsStandaloneShell` to decide whether to call `emit()` from the MPT
-  SDK. The SDK only works with a host bridge; gate on `useHasMPTHost` instead.
+- Using `useIsRootPage` to gate host-only side effects. Host *presence* is the
+  right signal there; use `useHasMPTHost`.
+- Calling `emit()` (or any MPT SDK bridge) without gating on `useHasMPTHost` —
+  the SDK only works when a host bridge is present.
 
 ## See also
 

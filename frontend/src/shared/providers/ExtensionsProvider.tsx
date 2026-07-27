@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // import "../styles.scss";
@@ -47,15 +47,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export const ExtensionsProviderContext = createContext<{ isStandalone: boolean }>({
-  isStandalone: false,
-});
-
-export function ExtensionsProvider({
-  children,
-  i18n,
-  isStandalone,
-}: PropsWithChildren & { i18n: i18n; isStandalone: boolean }) {
+export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18n: i18n }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const providerValue = useMemo(() => ({ languageCode: LANGUAGE, ...REGIONAL_SETTINGS }), []);
@@ -75,22 +67,20 @@ export function ExtensionsProvider({
   }
 
   return (
-    <ExtensionsProviderContext.Provider value={{ isStandalone }}>
-      <QueryClientProvider client={queryClient}>
-        <UserProvider>
-          <DesignSystemOptionsProvider value={providerValue}>
-            <StatusChipLocalisationProvider languageCode={LANGUAGE}>
-              <BrowserRouter>
-                <I18nextProvider i18n={i18n}>
-                  <ErrorHandlerProvider>
-                    <MPTContextProvider>{children}</MPTContextProvider>
-                  </ErrorHandlerProvider>
-                </I18nextProvider>
-              </BrowserRouter>
-            </StatusChipLocalisationProvider>
-          </DesignSystemOptionsProvider>
-        </UserProvider>
-      </QueryClientProvider>
-    </ExtensionsProviderContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <DesignSystemOptionsProvider value={providerValue}>
+          <StatusChipLocalisationProvider languageCode={LANGUAGE}>
+            <BrowserRouter>
+              <I18nextProvider i18n={i18n}>
+                <ErrorHandlerProvider>
+                  <MPTContextProvider>{children}</MPTContextProvider>
+                </ErrorHandlerProvider>
+              </I18nextProvider>
+            </BrowserRouter>
+          </StatusChipLocalisationProvider>
+        </DesignSystemOptionsProvider>
+      </UserProvider>
+    </QueryClientProvider>
   );
 }

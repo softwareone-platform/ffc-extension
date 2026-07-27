@@ -9,8 +9,7 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 
-// Inner content for organization details. Outer chrome comes from MainLayout
-// (standalone) or DetailsLayout (per-feature entry).
+// Inner content for organization details. Outer chrome comes from MainLayout.
 export function OrganizationDetailsContent() {
   const { organizationId } = useParams();
   const { data: entity } = useOrganizationDetailsApi(organizationId);

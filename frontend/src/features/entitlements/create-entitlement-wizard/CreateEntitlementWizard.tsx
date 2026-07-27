@@ -8,7 +8,7 @@ import { Modal } from "@swo/design-system/modal";
 import { Wizard, WizardContextProps } from "@swo/design-system/wizard";
 
 import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
-import { ModalCloseResult } from "~shared/components/modal/modalEntry";
+import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useUserRole } from "~shared/hooks/useUserRole";
 

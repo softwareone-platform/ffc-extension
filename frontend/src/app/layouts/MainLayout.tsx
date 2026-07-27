@@ -7,7 +7,6 @@ import { OrganizationDetailsHeader } from "~features/organizations/components/Or
 import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useUserRole } from "~shared/hooks/useUserRole";
-import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContext";
 
 export function MainLayout() {
   const tNav = useFixedT("shared:nav");
@@ -54,13 +53,11 @@ export function MainLayout() {
   }
 
   return (
-    <StandaloneShellProvider>
-      <PageShell>
-        {header}
-        <PageShell.Content>
-          <Outlet />
-        </PageShell.Content>
-      </PageShell>
-    </StandaloneShellProvider>
+    <PageShell>
+      {header}
+      <PageShell.Content>
+        <Outlet />
+      </PageShell.Content>
+    </PageShell>
   );
 }

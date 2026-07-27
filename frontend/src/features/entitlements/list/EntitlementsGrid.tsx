@@ -2,12 +2,9 @@ import { Button } from "@swo/design-system/button";
 import { Card } from "@swo/design-system/card";
 import { Grid } from "@swo/design-system/grid";
 
-import { useMPTModal } from "@mpt-extension/sdk-react";
-
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
-import { useIsStandaloneShell } from "~shared/providers/StandaloneShellContext";
 
 import { Entitlement, EntitlementAction } from "../api/model";
 import { CreateEntitlementWizard } from "../create-entitlement-wizard/CreateEntitlementWizard";
@@ -19,21 +16,11 @@ export function EntitlementsGrid() {
   const tProperties = useFixedT("shared:grid:columns");
   const tActions = useFixedT("shared:grid:actions");
   const { refresh, ...gridProps } = useGridConfig(onAction);
-  const { open } = useMPTModal();
-  const isStandaloneShell = useIsStandaloneShell();
   const createEntitlementModal = useModalToggle({ onSuccess: refresh });
   const terminateEntitlementModal = useModalToggle<Entitlement>({ onSuccess: refresh });
   const deleteEntitlementModal = useModalToggle<Entitlement>({ onSuccess: refresh });
 
   useNotifyParentChildModal(createEntitlementModal.isOpen);
-
-  const openMptCreateEntitlementModal = () =>
-    open("finops.admin.create-entitlement-modal", {
-      context: {},
-      onClose: (result) => {
-        if (result.entitlementCreated) refresh();
-      },
-    });
 
   function onAction(action: EntitlementAction, item: Entitlement) {
     switch (action) {
@@ -53,24 +40,14 @@ export function EntitlementsGrid() {
       <Card testId={"ffc-extension__entitlements-grid"} title={tProperties("entitlements")}>
         <Grid<Entitlement> {...gridProps}>
           <Grid.Actions>
-            <Button
-              onClick={
-                isStandaloneShell
-                  ? () => createEntitlementModal.open()
-                  : openMptCreateEntitlementModal
-              }
-            >
-              {tActions("add")}
-            </Button>
+            <Button onClick={() => createEntitlementModal.open()}>{tActions("add")}</Button>
           </Grid.Actions>
         </Grid>
       </Card>
-      {isStandaloneShell && (
-        <CreateEntitlementWizard
-          isOpen={createEntitlementModal.isOpen}
-          onClose={createEntitlementModal.close}
-        />
-      )}
+      <CreateEntitlementWizard
+        isOpen={createEntitlementModal.isOpen}
+        onClose={createEntitlementModal.close}
+      />
       <TerminateEntitlementModal
         className="terminate-entitlement-modal"
         entitlement={terminateEntitlementModal.data}

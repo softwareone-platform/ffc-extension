@@ -3,17 +3,20 @@ import { useCallback, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
-import { useMPTContext, useMPTModal } from "@mpt-extension/sdk-react";
+import { useMPTContext } from "@mpt-extension/sdk-react";
 
 import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
-import { ModalEntryProps } from "~shared/components/modal/modalEntry";
+import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { AddUserForm } from "../AddUserForm.Schema";
 import { useAddUserForm } from "./useAddUserForm";
 
-export function useUserFormController({ onClose }: ModalEntryProps = {}) {
-  const { close } = useMPTModal();
+export function useUserFormController({
+  onClose,
+}: {
+  onClose: (result?: ModalCloseResult) => void;
+}) {
   const { data } = useMPTContext();
   const { addAdmin } = useEmployeesApi();
   const [error, setError] = useState<string | null>(null);
@@ -21,12 +24,8 @@ export function useUserFormController({ onClose }: ModalEntryProps = {}) {
   const tErrors = useFixedT("organization:users:errors");
 
   const handleCancel = useCallback((): void => {
-    if (onClose) {
-      onClose();
-      return;
-    }
-    close("cancel");
-  }, [onClose, close]);
+    onClose();
+  }, [onClose]);
 
   const onError = useCallback(
     (err: AxiosError): void => {
@@ -36,12 +35,8 @@ export function useUserFormController({ onClose }: ModalEntryProps = {}) {
   );
 
   const onSuccess = useCallback((): void => {
-    if (onClose) {
-      onClose({ success: true });
-      return;
-    }
-    close({ success: true });
-  }, [onClose, close]);
+    onClose({ success: true });
+  }, [onClose]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (formData: AddUserForm) => addAdmin(data.organizationId, formData),

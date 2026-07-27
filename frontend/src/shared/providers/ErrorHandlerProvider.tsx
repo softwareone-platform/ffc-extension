@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   PropsWithChildren,
@@ -5,7 +6,6 @@ import {
   Suspense,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -16,7 +16,6 @@ import { ErrorPage } from "~shared/components/error/ErrorPage";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { ErrorBoundary } from "./ErrorBoundary";
-import { ExtensionsProviderContext } from "./ExtensionsProvider";
 
 export type ErrorCode = "403" | "404" | "500" | "Forbidden" | "NotFound" | "InternalServerError";
 
@@ -31,18 +30,20 @@ export const ErrorHandlerContext = createContext<{
 });
 
 export function ErrorHandlerProvider({ children }: PropsWithChildren) {
-  const { isStandalone } = useContext(ExtensionsProviderContext);
+  const location = useLocation();
   const [error, setError] = useState<ErrorCode | null>(null);
   const [errorDescription, setErrorDescription] = useState<ReactNode | null>(null);
+  const [prevLocationKey, setPrevLocationKey] = useState(location.key);
   const tError = useFixedT("shared:error");
-  const location = useLocation();
 
-  useEffect(() => {
-    if (isStandalone) {
-      setError(null);
-      setErrorDescription(null);
-    }
-  }, [location, isStandalone]);
+  // Clear any displayed error page when the route changes. Adjusting state
+  // during render (React's documented pattern) instead of in an effect avoids
+  // a cascading re-render.
+  if (location.key !== prevLocationKey) {
+    setPrevLocationKey(location.key);
+    setError(null);
+    setErrorDescription(null);
+  }
 
   const handleError = useCallback((errorCode: ErrorCode, data?: ReactNode) => {
     setError(errorCode);

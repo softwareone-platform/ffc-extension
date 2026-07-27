@@ -5,10 +5,10 @@ import { AxiosError } from "axios";
 
 import { Entitlement } from "~features/entitlements/api/model";
 import { useEntitlementsApi } from "~features/entitlements/api/useEntitlementsApi";
-import { ModalEntryProps } from "~shared/components/modal/modalEntry";
+import { ModalControllerProps } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-export function useEntitlementController({ onClose }: ModalEntryProps = {}) {
+export function useEntitlementController({ onClose }: ModalControllerProps = {}) {
   const { terminateEntitlement, deleteEntitlement } = useEntitlementsApi();
   const [error, setError] = useState<string | null>(null);
   const tErrors = useFixedT("entitlements:terminate:errors");

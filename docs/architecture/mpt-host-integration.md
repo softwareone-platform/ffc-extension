@@ -1,9 +1,10 @@
 # MPT host integration (iframe-as-extension)
 
-The frontend can run two ways: **embedded** inside the MPT host shell, or
-**standalone**. The host injects `globalThis.__MPT__` into the iframe around
-mount time. This document explains how the React tree detects which mode it's
-in and how it talks back to the host.
+The frontend ships as a single standalone bundle that can run **inside the MPT
+host iframe** or **loaded directly**. When embedded, the host injects
+`globalThis.__MPT__` into the iframe around mount time. This document explains
+how the React tree detects whether a host bridge is present and how it talks
+back to the host.
 
 ## Pieces
 
@@ -33,7 +34,5 @@ The 5s-bounded polling is a workaround because the host doesn't signal injection
 
 ## See also
 
-- [Standalone mode flags](./standalone-mode.md) — the three different
-  "am I standalone?" hooks and when to use each.
-- [Entry modes](./entry-mode.md) — which bundle gets loaded into the iframe
-  for which routes.
+- [Host-presence flags](./standalone-mode.md) — the two host-detection hooks
+  (`useHasMPTHost` / `useIsRootPage`) and when to use each.

@@ -1,4 +1,4 @@
-import { ModalCloseResult } from "~shared/components/modal/modalEntry";
+import { ModalCloseResult } from "~shared/components/modal/types";
 import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
