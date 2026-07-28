@@ -148,7 +148,9 @@
       "views": {
         "activeOrganizations": "Active Organizations",
         "deletedOrganizations": "Deleted Organizations",
-        "activeEntitlements": "Active Entitlements"
+        "activeEntitlements": "Active Entitlements",
+        "inactiveEntitlements": "Inactive Entitlements",
+        "allEntitlements": "All Entitlements"
       },
       "columns": {
         "actions": "Actions",
