@@ -5,10 +5,10 @@ import { AxiosError } from "axios";
 
 import { Employee } from "~features/organizations/api/model";
 import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
-import { ModalEntryProps } from "~shared/components/modal/modalEntry";
+import { ModalControllerProps } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-export function useEmployeeController({ onClose }: ModalEntryProps = {}) {
+export function useEmployeeController({ onClose }: ModalControllerProps = {}) {
   const [error, setError] = useState<string | null>(null);
   const { promoteToAdmin } = useEmployeesApi();
   const tErrors = useFixedT("organizations:make_admin:errors");

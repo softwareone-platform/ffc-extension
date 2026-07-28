@@ -2,6 +2,7 @@ import { Button } from "@swo/design-system/button";
 import { Grid } from "@swo/design-system/grid";
 
 import { EmployeeRead } from "~api/ffc-api-model";
+import { Employee, EmployeeActions } from "~features/organizations/api/model";
 import { CreateUserModal } from "~organizations/details/users/modal/CreateUserModal";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
@@ -10,7 +11,7 @@ import { UserMakeAdminModal } from "./make-admin-modal/UserMakeAdminModal";
 import { useGridConfig } from "./UsersGrid.config";
 
 export function UsersGrid({ organizationId }: { organizationId: string }) {
-  const { refresh, ...gridProps } = useGridConfig(organizationId);
+  const { refresh, ...gridProps } = useGridConfig(organizationId, onAction);
   const addUserModal = useModalToggle({ onSuccess: refresh });
   const makeUsedAdminModal = useModalToggle<{ employee: Employee; organizationId: string }>({
     onSuccess: refresh,
@@ -35,9 +36,9 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
     <>
       <Grid<EmployeeRead> {...gridProps}>
         <Grid.Actions>
-            <Button type="primary" onClick={addUserModal.open} testId="add-user-button">
-              Add user
-            </Button>
+          <Button type="primary" onClick={addUserModal.open} testId="add-user-button">
+            Add user
+          </Button>
         </Grid.Actions>
       </Grid>
       <CreateUserModal

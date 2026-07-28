@@ -1,8 +1,8 @@
 import { InlineNotification } from "@swo/notification";
 
 import { Entitlement } from "~features/entitlements/api/model";
-import { ModalCloseResult } from "~shared/components/modal/types";
 import { Modal } from "~shared/components/modal/Modal";
+import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEntitlementController } from "../hooks/useEntitlementsController";

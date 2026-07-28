@@ -19,7 +19,6 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { useSteps } from "./useSteps";
 
-
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;

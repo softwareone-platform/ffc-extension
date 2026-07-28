@@ -1,8 +1,8 @@
 import { InlineNotification } from "@swo/notification";
 
 import { Employee } from "~features/organizations/api/model";
-import { ModalCloseResult } from "~shared/components/modal/modalEntry";
-import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
+import { Modal } from "~shared/components/modal/Modal";
+import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEmployeeController } from "../hooks/useEmployeeController";
@@ -28,7 +28,7 @@ export function UserMakeAdminModal({
   const { cancel, makeAdmin, isPending, error } = useEmployeeController({ onClose });
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={tEntitlement("title")}
@@ -61,6 +61,6 @@ export function UserMakeAdminModal({
         })}
       </p>
       <p>{tEntitlement("make_admin_warning_line2")}</p>
-    </StandaloneModal>
+    </Modal>
   );
 }
