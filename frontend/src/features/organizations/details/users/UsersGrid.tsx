@@ -20,15 +20,11 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
   useNotifyParentChildModal(addUserModal.isOpen);
 
   function onAction(action: EmployeeActions, item: Employee) {
-    switch (action) {
-      case "make_admin":
-        makeUsedAdminModal.open({
-          employee: item,
-          organizationId,
-        });
-        break;
-      default:
-        break;
+    if (action === "make_admin") {
+      makeUsedAdminModal.open({
+        employee: item,
+        organizationId,
+      });
     }
   }
 

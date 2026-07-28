@@ -16,7 +16,6 @@ export function useEmployeeController({ onClose }: ModalControllerProps = {}) {
   const cancel = useCallback((): void => {
     if (onClose) {
       onClose();
-      return;
     }
   }, [onClose]);
 
@@ -30,7 +29,6 @@ export function useEmployeeController({ onClose }: ModalControllerProps = {}) {
   const onSuccess = useCallback((): void => {
     if (onClose) {
       onClose({ success: true });
-      return;
     }
   }, [onClose]);
 
