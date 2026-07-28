@@ -42,5 +42,12 @@ export function useEmployeesApi() {
     });
   }, []);
 
-  return useMemo(() => ({ list, addAdmin }), [list, addAdmin]);
+  const promoteToAdmin = useCallback(async (organizationId: string, employeeId: string) => {
+    return http<EmployeeRead>({
+      method: "POST",
+      url: `${rootPath}/${organizationId}/employees/${employeeId}/make-admin`,
+    });
+  }, []);
+
+  return useMemo(() => ({ list, addAdmin, promoteToAdmin }), [list, addAdmin, promoteToAdmin]);
 }

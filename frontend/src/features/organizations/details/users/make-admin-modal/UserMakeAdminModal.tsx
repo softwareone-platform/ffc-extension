@@ -1,29 +1,31 @@
 import { InlineNotification } from "@swo/notification";
 
-import { Entitlement } from "~features/entitlements/api/model";
+import { Employee } from "~features/organizations/api/model";
 import { Modal } from "~shared/components/modal/Modal";
 import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { useEntitlementController } from "../hooks/useEntitlementsController";
+import { useEmployeeController } from "../hooks/useEmployeeController";
 
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;
   className?: string;
-  entitlement: Entitlement | null;
+  employee: Employee | null;
+  organizationId: string | null;
   onSuccess?: () => void;
 };
 
-export function DeleteEntitlementModal({
+export function UserMakeAdminModal({
   isOpen,
   onClose,
   className,
-  entitlement,
+  employee,
+  organizationId,
   onSuccess,
 }: Readonly<Props>) {
-  const tEntitlement = useFixedT("entitlements:delete_entitlement");
-  const { cancel, remove, isPendingRemove, error } = useEntitlementController({ onClose });
+  const tEntitlement = useFixedT("organizations:make_admin");
+  const { cancel, makeAdmin, isPending, error } = useEmployeeController({ onClose });
 
   return (
     <Modal
@@ -32,9 +34,13 @@ export function DeleteEntitlementModal({
       title={tEntitlement("title")}
       className={className}
       onCancel={cancel}
-      onSubmit={() => entitlement && remove(entitlement).then(() => onSuccess?.())}
-      submitLabel={tEntitlement("delete")}
-      isSubmitting={isPendingRemove}
+      onSubmit={() =>
+        employee &&
+        organizationId &&
+        makeAdmin({ organizationId, employee }).then(() => onSuccess?.())
+      }
+      submitLabel={tEntitlement("promote_to_admin")}
+      isSubmitting={isPending}
       submitButtonColor="danger"
     >
       {error && (
@@ -48,11 +54,13 @@ export function DeleteEntitlementModal({
         </InlineNotification>
       )}
       <p>
-        {tEntitlement("delete_entitlement_warning_line1", {
-          entitlementId: entitlement?.id ?? "error",
+        {tEntitlement("make_admin_warning_line1", {
+          employeeId: employee?.id ?? "error",
+          employeeName: employee?.display_name ?? "error",
+          employeeEmail: employee?.email ?? "error",
         })}
       </p>
-      <p>{tEntitlement("delete_entitlement_warning_line2")}</p>
+      <p>{tEntitlement("make_admin_warning_line2")}</p>
     </Modal>
   );
 }

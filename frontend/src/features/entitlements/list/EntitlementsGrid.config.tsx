@@ -129,7 +129,7 @@ export function useColumns(): Columns {
         isScalable: false,
       },
     ];
-  }, [tColumns]);
+  }, [tColumns, getActions]);
 }
 
 export function useFields() {
@@ -149,6 +149,10 @@ export function useFields() {
         name: "affiliate_external_id",
       },
       {
+        title: tFields("created_at"),
+        name: "events.created.at",
+      },
+      {
         name: "status",
         title: tFields("status"),
         type: "list",
@@ -162,6 +166,57 @@ export function useFields() {
     ],
     [tFields],
   );
+}
+
+export function useViews() {
+  const tView = useFixedT("shared:grid:views");
+
+  return useMemo(() => {
+    return [
+      {
+        name: "active",
+        title: tView("activeEntitlements"),
+        configuration: {
+          filters: {
+            operator: "or",
+            value: [
+              { operator: "eq", field: "status", value: "active" },
+              { operator: "eq", field: "status", value: "new" },
+            ],
+          },
+          sort: [
+            { field: "events.created.at", direction: "desc" },
+            { field: "status", direction: "asc" },
+          ],
+        },
+      },
+      {
+        name: "inactive",
+        title: tView("inactiveEntitlements"),
+        configuration: {
+          filters: {
+            operator: "or",
+            value: [
+              { operator: "eq", field: "status", value: "deleted" },
+              { operator: "eq", field: "status", value: "terminated" },
+            ],
+          },
+          sort: [
+            { field: "events.created.at", direction: "desc" },
+            { field: "status", direction: "asc" },
+          ],
+        },
+      },
+      {
+        name: "all",
+        title: tView("allEntitlements"),
+        configuration: {
+          filters: {},
+          sort: [{ field: "events.created.at", direction: "desc" }],
+        },
+      },
+    ];
+  }, [tView]);
 }
 
 export function useAsyncOptions() {
@@ -182,6 +237,7 @@ export function useGridConfig(
 ) {
   const columns = useColumns();
   const fields = useFields();
+  const views = useViews();
   const asyncOptions = useAsyncOptions();
 
   const onGridActionEvent = useCallback(
@@ -203,8 +259,9 @@ export function useGridConfig(
         id: "grid__entitlements-list",
         columns,
         fields,
-        isDefaultView: true,
-        selectedView: "default",
+        views,
+        isDefaultView: false,
+        selectedView: "active",
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,

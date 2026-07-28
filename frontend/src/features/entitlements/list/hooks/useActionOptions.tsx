@@ -15,7 +15,15 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
     (item: Entitlement): ListOption<EntitlementAction>[] => {
       const terminateEnabledStatus: Set<EntitlementStatus> = new Set(["active"]);
       const deleteEnabledStatus: Set<EntitlementStatus> = new Set(["new"]);
-      const adminActions: ListOption<EntitlementAction>[] = [
+
+      return [
+        { label: tActions("redeem"), value: "redeem", isDisabled: true },
+        {
+          label: tActions("terminate"),
+          value: "terminate",
+          isDisabled: !terminateEnabledStatus.has(item.status!),
+          props: { className: "dangerous-option" },
+        },
         { type: "divider" },
         {
           label: tActions("delete"),
@@ -23,23 +31,6 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
           isDisabled: role !== "admin" || !deleteEnabledStatus.has(item.status!),
           props: { className: "dangerous-option" },
         },
-      ];
-      const redeemAction: ListOption<EntitlementAction>[] = [
-        { label: tActions("redeem"), value: "redeem", isDisabled: true },
-      ];
-      const terminateAction: ListOption<EntitlementAction>[] = [
-        {
-          label: tActions("terminate"),
-          value: "terminate",
-          isDisabled: !terminateEnabledStatus.has(item.status!),
-          props: { className: "dangerous-option" },
-        },
-      ];
-
-      return [
-        ...(role === "admin" ? redeemAction : []),
-        ...(item.status !== "terminated" ? terminateAction : []),
-        ...(role === "admin" && item.status !== "deleted" ? adminActions : []),
       ];
     },
     [role, tActions],

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
-import { GridFieldDefinition } from "@swo/design-system/grid";
+import { GridCellActions, GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
@@ -12,13 +12,14 @@ import { StatusChip } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
 import { EmployeeRead } from "~api/ffc-api-model";
+import { Employee, EmployeeActions } from "~features/organizations/api/model";
 import { useOrganizationsApi } from "~organizations/api";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
-type Employee = EmployeeRead & { is_admin: boolean };
+import { useActionOptions } from "./hooks/useActionOptions";
 
 type Columns = Array<
   Omit<GridColumnDefinition<Employee>, "fields"> & {
@@ -28,6 +29,7 @@ type Columns = Array<
 
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
+  const getActions = useActionOptions();
 
   return useMemo(() => {
     return [
@@ -87,7 +89,7 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: () => <></>,
+        cell: (item: Employee) => <GridCellActions item={item} actions={getActions(item)} />,
         initialWidth: 100,
       },
     ];
@@ -126,11 +128,26 @@ export function useAsyncOptions(organizationId: string) {
   );
 }
 
-export function useGridConfig(organizationId: string) {
+export function useGridConfig(
+  organizationId: string,
+  onAction?: (action: EmployeeActions, item: Employee, silentRefresh: () => void) => void,
+) {
   const columns = useColumns();
   const fields = useFields();
   const asyncOptions = useAsyncOptions(organizationId);
 
+  const onGridActionEvent = useCallback(
+    (event: GridEvents) => {
+      if (event.type === "RowActionTriggered") {
+        onAction?.(
+          event.data.action as EmployeeActions,
+          event.data.item as Employee,
+          asyncOptions.silentRefresh,
+        );
+      }
+    },
+    [asyncOptions.silentRefresh, onAction],
+  );
   const config = useMemo(
     () =>
       ({
@@ -140,8 +157,9 @@ export function useGridConfig(organizationId: string) {
         isDefaultView: true,
         selectedView: "default",
         ...asyncOptions,
+        onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<EmployeeRead>,
-    [columns, fields, asyncOptions],
+    [columns, fields, asyncOptions, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
