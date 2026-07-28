@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import httpx
@@ -10,6 +11,7 @@ from app.conf import get_settings
 from app.utils import get_jwt_token_claims
 
 security = HTTPBearer(auto_error=False)
+logger = logging.getLogger(__name__)
 
 
 async def resolve_installation(account_id: str) -> str | None:
@@ -37,7 +39,6 @@ async def get_auth_context(
     token = credentials.credentials
 
     claims = get_jwt_token_claims(token)
-
     account_id = claims["https://claims.softwareone.com/accountId"]
     account_type = claims["https://claims.softwareone.com/accountType"]
     installation_id = claims.get("https://claims.softwareone.com/installationId")

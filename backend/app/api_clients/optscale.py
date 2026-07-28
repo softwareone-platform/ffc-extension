@@ -149,6 +149,11 @@ class OptscaleClient(BaseAPIClient):
         response.raise_for_status()
         return response
 
+    async def get_organization(self, organization_id: str) -> httpx.Response:
+        response = await self.httpx_client.get(f"/organizations/{organization_id}")
+        response.raise_for_status()
+        return response
+
     async def suspend_organization(
         self,
         organization_id: str,

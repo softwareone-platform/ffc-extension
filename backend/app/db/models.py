@@ -248,7 +248,7 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
     operations_external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     linked_organization_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, index=True
-    )
+    )  # OptScale Organization's id
     status: Mapped[OrganizationStatus] = mapped_column(
         Enum(OrganizationStatus, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,

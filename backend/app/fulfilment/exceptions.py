@@ -24,3 +24,7 @@ class OrderNotValidError(FulfilmentError):
 class OrderProcessingError(FulfilmentError):
     """Wrapper for unexpected errors raised once the order is in hand,
     so the order survives onto the recovery path."""
+
+
+class UnsupportedOrderTypeError(FulfilmentError):
+    """Order type is not supported"""

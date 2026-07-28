@@ -516,6 +516,7 @@ async def test_get_organization_by_id(
     org = await organization_factory(
         created_by=ffc_extension,
         updated_by=ffc_extension,
+        linked_organization_id="ee7ebfaf-a222-4209-aecc-67861694a488",
     )
     httpx_mock.add_response(
         method="GET",
