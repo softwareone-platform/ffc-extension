@@ -159,7 +159,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<EmployeeRead>,
-    [columns, fields, asyncOptions],
+    [columns, fields, asyncOptions, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);

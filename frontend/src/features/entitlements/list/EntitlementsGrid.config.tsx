@@ -129,7 +129,7 @@ export function useColumns(): Columns {
         isScalable: false,
       },
     ];
-  }, [tColumns]);
+  }, [tColumns, getActions]);
 }
 
 export function useFields() {
