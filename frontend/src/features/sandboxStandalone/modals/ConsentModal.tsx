@@ -7,9 +7,27 @@ import { RegularText } from "@swo/design-system/text";
 
 const CONSENT_STORAGE_KEY = "sandboxStandalone.consent.v1";
 
-function hasStoredConsent() {
+function readStoredConsent(): boolean {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(CONSENT_STORAGE_KEY) === "accepted";
+  try {
+    return window.localStorage.getItem(CONSENT_STORAGE_KEY) === "accepted";
+  } catch {
+    // Sandboxed iframes can block storage access; fall back to in-memory behavior.
+    return false;
+  }
+}
+
+function persistConsent(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "accepted");
+  } catch {
+    // Ignore storage failures in restricted environments.
+  }
+}
+
+function hasStoredConsent() {
+  return readStoredConsent();
 }
 
 type Props = {
@@ -21,9 +39,7 @@ export function ConsentModal({ appName }: Readonly<Props>) {
   const [isOpen, setIsOpen] = useState(() => !hasStoredConsent());
 
   const handleAccept = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(CONSENT_STORAGE_KEY, "accepted");
-    }
+    persistConsent();
     setIsOpen(false);
   };
 
