@@ -49,13 +49,10 @@ const ctx = await context({
   // `../static/<Name>.js` — the paths the MPT host and package.json reference —
   // even though the sources are grouped into standalone/ modals/ feature-views/.
   entryPoints: [
-    { in: './src/entries/feature-views/OrganizationsEntry.tsx', out: 'OrganizationsEntry' },
-    { in: './src/entries/feature-views/EntitlementsEntry.tsx', out: 'EntitlementsEntry' },
+    { in: './src/entries/single-entry/OrganizationsEntry.tsx', out: 'OrganizationsEntry' },
+    { in: './src/entries/single-entry/EntitlementsEntry.tsx', out: 'EntitlementsEntry' },
     { in: './src/entries/modals/CreateEntitlementModal.tsx', out: 'CreateEntitlementModal' },
-    { in: './src/entries/modals/CreateUserModal.tsx', out: 'CreateUserModal' },
-    { in: './src/entries/standalone/StandaloneRoot.tsx', out: 'StandaloneRoot' },
-    { in: './src/entries/standalone/AdobeRoot.tsx', out: 'AdobeRoot' },
-    { in: './src/entries/standalone/CloudIqRoot.tsx', out: 'CloudIqRoot' },
+    { in: './src/entries/standalone/SandboxStandaloneRoot.tsx', out: 'SandboxStandaloneRoot' },
   ],
   outdir: '../static',
   bundle: true,

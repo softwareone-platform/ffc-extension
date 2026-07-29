@@ -1,46 +1,25 @@
-import { useCallback, useMemo } from "react";
-
-import { AxiosRequestConfig } from "axios";
+import { useMemo } from "react";
 
 import { EmployeeRead } from "@swo/ffc-api-model";
-import { RqlQuery } from "@swo/rql-client";
-import { Entity } from "@swo/service";
-
-import { http } from "@mpt-extension/sdk";
 
 import { AddUserForm } from "~organizations/details/users/modal/AddUserForm.Schema";
+import { mockResponse } from "~shared/utils/mockResponse";
 
-export interface ListResponse<T> {
-  total: number;
-  offset?: number;
-  limit?: number;
-  data?: Array<T>;
-}
-const rootPath = "/ops/v1/organizations";
-
+// Sandbox: static implementation. `addAdmin` backs the create-user modal;
+// the users grid reads mock employees directly via useGridInMemory.
 export function useEmployeesApi() {
-  const list = useCallback(
-    async (
-      organizationId: string,
-      query?: RqlQuery<EmployeeRead>,
-      config?: AxiosRequestConfig<ListResponse<Entity<EmployeeRead>>>,
-    ) => {
-      return http({
-        method: "GET",
-        url: `${rootPath}/${organizationId}/employees${query ? `?${query.toString()}` : ""}`,
-        ...config,
-      });
-    },
+  return useMemo(
+    () => ({
+      addAdmin: (_organizationId: string, data: AddUserForm) =>
+        mockResponse<EmployeeRead>({
+          id: `emp-${Date.now()}`,
+          email: data.email,
+          display_name: data.display_name,
+          created_at: new Date().toISOString(),
+          last_login: null,
+          roles_count: 1,
+        }),
+    }),
     [],
   );
-
-  const addAdmin = useCallback(async (organizationId: string, data: AddUserForm) => {
-    return http<EmployeeRead>({
-      method: "POST",
-      url: `${rootPath}/${organizationId}/add-admin`,
-      data: { ...data, notes: "Add user as admin" },
-    });
-  }, []);
-
-  return useMemo(() => ({ list, addAdmin }), [list, addAdmin]);
 }

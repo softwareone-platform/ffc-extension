@@ -5,7 +5,11 @@ import { Card } from "@swo/design-system/card";
 import { Navigation } from "@swo/design-system/navigation";
 import { BoldText, RegularText } from "@swo/design-system/text";
 
+import { useMPTModal } from "@mpt-extension/sdk-react";
+
 import { NEWS_SECTIONS, PATHS } from "~features/adobe/paths";
+import { CreateUserStandaloneModal } from "~features/adobe/modals/CreateUserStandaloneModal";
+import { useModalToggle } from "~shared/hooks/useModalToggle";
 
 import { NewsMessage, messages } from "./news.mock";
 
@@ -64,6 +68,12 @@ export function NewsMessagesSection() {
 }
 
 export function NewsPage() {
+  // Example 1 — standalone modal: rendered in this app, toggled with useModalToggle.
+  const createUser = useModalToggle();
+  // Example 2 — entry modal: ask the MPT host to mount the create-entitlement
+  // modal bundle by id (only opens when running inside the host).
+  const { open } = useMPTModal();
+
   return (
     <Card className="adobe-news">
       <header className="adobe-news__header">
@@ -79,6 +89,16 @@ export function NewsPage() {
       <Navigation>
         <Navigation.HeaderBar items={headerBarItems}>
           <Navigation.HeaderBar.Actions>
+            <Button type="primary" onClick={() => createUser.open()}>
+              Create user (standalone modal)
+            </Button>
+            <Button
+              onClick={() =>
+                open("finops.admin.create-entitlement-modal", { context: {}, onClose: () => {} })
+              }
+            >
+              Create entitlement (entry modal)
+            </Button>
             <Button>Edit</Button>
           </Navigation.HeaderBar.Actions>
         </Navigation.HeaderBar>
@@ -86,6 +106,8 @@ export function NewsPage() {
           <Outlet />
         </Navigation.Content>
       </Navigation>
+
+      <CreateUserStandaloneModal isOpen={createUser.isOpen} onClose={createUser.close} />
     </Card>
   );
 }

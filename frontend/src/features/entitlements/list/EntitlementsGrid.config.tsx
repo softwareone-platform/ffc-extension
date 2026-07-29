@@ -4,37 +4,37 @@ import { Link } from "react-router-dom";
 
 import { EntityReference } from "@swo/design-system/entity-reference";
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
-  UseAsyncGridConfig,
-  useGridAsync,
+  GridFieldDefinition,
+  GridInMemoryConfig,
+  useGridInMemory,
 } from "@swo/design-system/grid";
 import { getStatusLabel } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
-import { useEntitlementsApi } from "~entitlements/api";
 import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
-import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
+import { mockEntitlements } from "../api/mockData";
 import { Entitlement } from "../api/model";
 
+// Sandbox: client-side grid over static entitlements.
 type Columns = Array<
-  Omit<GridColumnDefinition<Entitlement>, "fields"> & {
-    fields: Paths<Entitlement>[];
-  }
+  Omit<GridColumnDefinition<Entitlement>, "fields"> & { fields: Paths<Entitlement>[] }
 >;
 
-export function useColumns(): Columns {
-  const tColumns = useFixedT("shared:grid:columns");
+const noop = () => {};
 
-  return useMemo(() => {
-    return [
+export function useGridConfig() {
+  const tColumns = useFixedT("shared:grid:columns");
+  const tFields = useFixedT("shared:grid:fields");
+
+  const config = useMemo(() => {
+    const columns: Columns = [
       {
         name: "name",
         title: tColumns("entitlement"),
@@ -69,7 +69,6 @@ export function useColumns(): Columns {
         ),
         initialWidth: 150,
       },
-
       {
         name: "data_source",
         title: tColumns("data_source"),
@@ -110,31 +109,19 @@ export function useColumns(): Columns {
         fields: ["status"],
         cell: (item: Entitlement) => (
           <GridCellSimple>
-            <Status<Entitlement> item={item}></Status>
+            <Status<Entitlement> item={item} />
           </GridCellSimple>
         ),
         initialWidth: 100,
       },
     ];
-  }, [tColumns]);
-}
 
-export function useFields() {
-  const tFields = useFixedT("shared:grid:fields");
-
-  return useMemo(
-    (): GridFieldDefinition[] => [
-      {
-        title: tFields("entitlement:id"),
-        name: "id",
-      },
+    const fields: GridFieldDefinition[] = [
+      { title: tFields("entitlement:id"), name: "id" },
       { title: tFields("entitlement:name"), name: "name" },
       { title: tFields("affiliate:name"), name: "owner.name" },
       { title: tFields("affiliate:id"), name: "owner.id" },
-      {
-        title: tFields("affiliate_external_id"),
-        name: "affiliate_external_id",
-      },
+      { title: tFields("affiliate_external_id"), name: "affiliate_external_id" },
       {
         name: "status",
         title: tFields("status"),
@@ -146,42 +133,16 @@ export function useFields() {
           { value: "deleted", label: getStatusLabel("Deleted") },
         ],
       },
-    ],
-    [tFields],
-  );
-}
+    ];
 
-export function useAsyncOptions() {
-  const { list } = useEntitlementsApi();
-  const baseQueryKey: unknown[] = ["EntitlementsList"];
-  return useReactQueryRqlGrid<Entitlement, Awaited<ReturnType<typeof list>>>(
-    baseQueryKey,
-    (query) => ({
-      queryKey: [baseQueryKey, query.toString()],
-      queryFn: () => list(query),
-      select: mapAxiosResponseDataList<Entitlement>,
-    }),
-  );
-}
+    return {
+      id: "grid__entitlements-list",
+      columns,
+      fields,
+      isDefaultView: true,
+      selectedView: "default",
+    } as GridInMemoryConfig<Entitlement>;
+  }, [tColumns, tFields]);
 
-export function useGridConfig() {
-  const columns = useColumns();
-  const fields = useFields();
-  const asyncOptions = useAsyncOptions();
-
-  const config = useMemo(
-    () =>
-      ({
-        id: "grid__entitlements-list",
-        columns,
-        fields,
-        isDefaultView: true,
-        selectedView: "default",
-        ...asyncOptions,
-      }) as UseAsyncGridConfig<Entitlement>,
-    [columns, fields, asyncOptions],
-  );
-
-  const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, refresh: asyncOptions.refresh, ...gridProps };
+  return { refresh: noop, silentRefresh: noop, ...useGridInMemory(mockEntitlements, config) };
 }

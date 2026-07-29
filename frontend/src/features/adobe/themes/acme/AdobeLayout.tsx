@@ -15,7 +15,7 @@ export function AdobeLayout() {
 
   return (
     <>
-      <ConsentModal appName="the Adobe extension (ACME)" />
+      <ConsentModal appName="the Sandbox Standalone (ACME)" />
       <Navigation>
         <Navigation.SideNav level={2} groups={sideNavGroups} />
         <Navigation.HeaderBar title="ACME · Adobe" subtitle="ACME theme">

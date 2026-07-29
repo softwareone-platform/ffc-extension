@@ -1,37 +1,37 @@
 import { useMemo } from "react";
 
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridColumnDefinition,
-  UseAsyncGridConfig,
-  useGridAsync,
+  GridFieldDefinition,
+  GridInMemoryConfig,
+  useGridInMemory,
 } from "@swo/design-system/grid";
 import { DatasourceRead } from "@swo/ffc-api-model";
 import { Paths } from "@swo/rql-client";
 
-import { useOrganizationsApi } from "~organizations/api";
+import { mockDataSources } from "~organizations/api/mockData";
 import { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
 import DataSourceIcon from "~shared/components/custom-icons/CustomIcon";
 import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
-import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
+// Sandbox: client-side grid over static data sources.
 type Columns = Array<
-  Omit<GridColumnDefinition<DatasourceRead>, "fields"> & {
-    fields: Paths<DatasourceRead>[];
-  }
+  Omit<GridColumnDefinition<DatasourceRead>, "fields"> & { fields: Paths<DatasourceRead>[] }
 >;
 
-export function useColumns(): Columns {
+const noop = () => {};
+
+export function useGridConfig(_organizationId: string) {
   const tColumns = useFixedT("shared:grid:columns");
+  const tFields = useFixedT("shared:grid:fields");
   const tDataSourceType = useFixedT("shared:grid:dataSourceType");
   const organization = useOrganizationContext();
 
-  return useMemo(() => {
-    return [
+  const config = useMemo(() => {
+    const columns: Columns = [
       {
         name: "name",
         title: tColumns("dataSource"),
@@ -51,9 +51,7 @@ export function useColumns(): Columns {
         name: "type",
         title: tColumns("type"),
         fields: ["type"],
-        cell: (item: DatasourceRead) => (
-          <GridCellSimple>{tDataSourceType(item.type)}</GridCellSimple>
-        ),
+        cell: (item: DatasourceRead) => <GridCellSimple>{tDataSourceType(item.type)}</GridCellSimple>,
       },
       {
         name: "parent_id",
@@ -92,59 +90,21 @@ export function useColumns(): Columns {
         ),
       },
     ];
-  }, [tColumns, tDataSourceType, organization]);
-}
 
-export function useFields() {
-  const tFields = useFixedT("shared:grid:fields");
-
-  return useMemo(
-    (): GridFieldDefinition[] => [
-      {
-        title: tFields("id"),
-        name: "id",
-      },
+    const fields: GridFieldDefinition[] = [
+      { title: tFields("id"), name: "id" },
       { title: tFields("name"), name: "name" },
       { title: tFields("type"), name: "type" },
-    ],
-    [tFields],
-  );
-}
+    ];
 
-export function useAsyncOptions(organizationId: string) {
-  const { listOrganizationDataSources } = useOrganizationsApi();
-  const baseQueryKey: unknown[] = ["OrganizationDataSources"];
-  return useReactQueryRqlGrid<
-    DatasourceRead,
-    Awaited<ReturnType<typeof listOrganizationDataSources>>
-  >(baseQueryKey, (query) => ({
-    queryKey: [baseQueryKey, query.toString(), organizationId],
-    queryFn: () => listOrganizationDataSources(organizationId, query),
-    select: mapAxiosResponseDataList,
-  }));
-}
+    return {
+      id: "grid__organizations-details-data-sources",
+      columns,
+      fields,
+      isDefaultView: true,
+      selectedView: "default",
+    } as GridInMemoryConfig<DatasourceRead>;
+  }, [tColumns, tDataSourceType, tFields, organization]);
 
-export function useGridConfig(organizationId: string) {
-  const columns = useColumns();
-  const fields = useFields();
-  // const views = useViews();
-  const asyncOptions = useAsyncOptions(organizationId);
-
-  const config = useMemo(
-    () =>
-      ({
-        id: "grid__organizations-details-data-sources",
-        // memoizeId: 'gridWithRqlStory',
-        // views,
-        columns,
-        fields,
-        isDefaultView: true,
-        selectedView: "default",
-        ...asyncOptions,
-      }) as UseAsyncGridConfig<DatasourceRead>,
-    [columns, fields, asyncOptions],
-  );
-
-  const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+  return { silentRefresh: noop, ...useGridInMemory(mockDataSources, config) };
 }

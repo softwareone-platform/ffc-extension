@@ -2,8 +2,8 @@ import { ModalCloseResult } from "~shared/components/modal/modalEntry";
 import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import { useUserFormController } from "./hooks/useUserFormController";
-import { UserFormFields } from "./UserFormFields";
+import { useUserFormController } from "~organizations/details/users/modal/hooks/useUserFormController";
+import { UserFormFields } from "~organizations/details/users/modal/UserFormFields";
 
 type Props = {
   isOpen: boolean;

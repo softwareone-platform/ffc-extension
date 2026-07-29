@@ -7,46 +7,29 @@ events:
     task: true
 plugs:
   - id: "{{ settings.ui_plugs_prefix }}"
-    name: FinOps for Cloud{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
+    name: Sandbox Entry{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
     description: FinOps for Cloud
     icon: extension
     socket: portal
-  - id: adobe_{% if settings.ui_plugs_prefix != "ffc" %}_({{ settings.ui_plugs_prefix }}){% endif %}
-    name: Adobe{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
+  - id: sandbox_standalone_{% if settings.ui_plugs_prefix != "ffc" %}_({{ settings.ui_plugs_prefix }}){% endif %}
+    name: Sandbox Standalone{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
     description: This section shows all of the customers Organisations created in FinOps.
     icon: adobe.png
     socket: portal.root
-    href: "/static/AdobeRoot.js"
-  - id: cloud_iq_{% if settings.ui_plugs_prefix != "ffc" %}_({{ settings.ui_plugs_prefix }}){% endif %}
-    name: Cloud iQ{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
-    description: Cloud iQ standalone extension.
-    icon: adobe.png
-    socket: portal.root
-    href: "/static/CloudIqRoot.js"
-  - id: finops_{% if settings.ui_plugs_prefix != "ffc" %}_({{ settings.ui_plugs_prefix }}){% endif %}
-    name: FinOps for Cloud - Standalone {% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
-    description: This section shows all of the customers Organisations created in FinOps.
-    icon: adobe.png
-    socket: portal.root
-    href: "/static/StandaloneRoot.js"
+    href: "/static/SandboxStandaloneRoot.js"
   - id: organizations
-    name: Organizations
+    name: Organizations (Single entry)
     description: This section shows all of the customers Organisations created in FinOps.
     icon: adobe.png
     socket: portal.{{ settings.ui_plugs_prefix }}
     href: "/static/OrganizationsEntry.js"
   - id: entitlements
-    name: Entitlements
+    name: Entitlements (Single entry)
     description: This section provides visibility into what services and resources of
       organizations are entitled to use.
     icon: adobe.png
     socket: portal.{{ settings.ui_plugs_prefix }}
     href: "/static/EntitlementsEntry.js"
-  - id: finops.admin.create-user-modal
-    name: Create User Modal
-    description: Wizard to create a new user
-    icon: adobe.png
-    href: "/static/CreateUserModal.js"
   - id: finops.admin.create-entitlement-modal
     name: Create Entitlement Modal
     description: Wizard to create a new entitlement

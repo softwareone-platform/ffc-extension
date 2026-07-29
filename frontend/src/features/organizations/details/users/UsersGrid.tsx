@@ -4,7 +4,6 @@ import { EmployeeRead } from "@swo/ffc-api-model";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
-import { CreateUserStandaloneModal } from "~organizations/details/users/modal/CreateUserStandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
@@ -25,7 +24,7 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
     open("finops.admin.create-user-modal", {
       context: { organizationId },
       onClose: (result) => {
-        result.success && refresh();
+        if (result.success) refresh();
       },
     });
 
@@ -42,13 +41,6 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
           )}
         </Grid.Actions>
       </Grid>
-      {isStandaloneShell && (
-        <CreateUserStandaloneModal
-          isOpen={addUserModal.isOpen}
-          onClose={addUserModal.close}
-          className="add-user-modal"
-        />
-      )}
     </>
   );
 }

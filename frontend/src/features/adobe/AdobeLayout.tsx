@@ -12,10 +12,10 @@ export function AdobeLayout() {
 
   return (
     <>
-      <ConsentModal appName="the Adobe extension" />
+      <ConsentModal appName="the Sandbox Standalone" />
       <Navigation>
         <Navigation.SideNav level={2} groups={sideNavGroups} />
-        <Navigation.HeaderBar title="Adobe extension" subtitle="Version: 0.0.1">
+        <Navigation.HeaderBar title="Sandbox Standalone" subtitle="Version: 0.0.1">
           <Navigation.HeaderBar.Actions>
             <Button type="primary" onClick={() => navigate(PATHS.help)}>
               Help

@@ -1,55 +1,27 @@
-import { useCallback, useMemo } from "react";
-
-import { AxiosRequestConfig } from "axios";
+import { useMemo } from "react";
 
 import { EntitlementCreate } from "@swo/ffc-api-model";
-import { RqlQuery } from "@swo/rql-client";
 
-import { http } from "@mpt-extension/sdk";
+import { mockResponse } from "~shared/utils/mockResponse";
 
-import { ListResponse } from "~shared/utils/mapAxiosResponseDataList";
-
+import { mockEntitlements } from "./mockData";
 import { Entitlement } from "./model";
 
-const rootPath = "/ops/v1/entitlements";
-
+// Sandbox: static implementation. `get` backs the detail view and `save` the
+// create wizard; the list grid reads mock entitlements via useGridInMemory.
 export function useEntitlementsApi() {
-  const list = useCallback(
-    async (
-      query: RqlQuery<Entitlement>,
-      config?: AxiosRequestConfig<ListResponse<Entitlement>>,
-    ) => {
-      return http<ListResponse<Entitlement>>({
-        method: "GET",
-        url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
-        ...config,
-      });
-    },
+  return useMemo(
+    () => ({
+      get: (entityId: string, _query?: unknown) =>
+        mockResponse<Entitlement>(
+          mockEntitlements.find((e) => e.id === entityId) ?? mockEntitlements[0],
+        ),
+      save: (entity: EntitlementCreate) =>
+        mockResponse<EntitlementCreate & { id?: string }>({
+          ...entity,
+          id: `ent-${Date.now()}`,
+        }),
+    }),
     [],
   );
-
-  const get = useCallback(async (entityId: string, query?: RqlQuery<Entitlement>) => {
-    return http<Entitlement>({
-      method: "GET",
-      url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
-    });
-  }, []);
-
-  const save = useCallback(async (entity: EntitlementCreate) => {
-    return http<EntitlementCreate & { id?: string }>(
-      "id" in entity && entity.id
-        ? {
-            method: "PUT",
-            url: `${rootPath}/${entity.id}`,
-            data: entity,
-          }
-        : {
-            method: "POST",
-            url: rootPath,
-            data: entity,
-          },
-    );
-  }, []);
-
-  return useMemo(() => ({ list, get, save }), [list, get, save]);
 }

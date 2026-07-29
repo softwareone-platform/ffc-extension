@@ -1,5 +1,5 @@
 import { HelpContent } from "~shared/components/legal/HelpContent";
 
 export function HelpPage() {
-  return <HelpContent appName="the Adobe extension" />;
+  return <HelpContent appName="the Sandbox Standalone" />;
 }

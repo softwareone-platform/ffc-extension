@@ -1,36 +1,40 @@
 import { useMemo } from "react";
 
-import { GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
-  UseAsyncGridConfig,
-  useGridAsync,
+  GridFieldDefinition,
+  GridInMemoryConfig,
+  useGridInMemory,
 } from "@swo/design-system/grid";
 import { EmployeeRead } from "@swo/ffc-api-model";
 import { StatusChip } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
-import { useOrganizationsApi } from "~organizations/api";
+import { mockEmployees } from "~organizations/api/mockData";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
-import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
+// Sandbox: client-side grid over static employees. `is_admin` is a UI-only
+// flag not present on EmployeeRead, so we derive it here for the demo rows.
 type Employee = EmployeeRead & { is_admin: boolean };
 
-type Columns = Array<
-  Omit<GridColumnDefinition<Employee>, "fields"> & {
-    fields: Paths<Employee>[];
-  }
->;
+type Columns = Array<Omit<GridColumnDefinition<Employee>, "fields"> & { fields: Paths<Employee>[] }>;
 
-export function useColumns(): Columns {
+const noop = () => {};
+
+export function useGridConfig(_organizationId: string) {
   const tColumns = useFixedT("shared:grid:columns");
+  const tFields = useFixedT("shared:grid:fields");
 
-  return useMemo(() => {
-    return [
+  const data = useMemo<Employee[]>(
+    () => mockEmployees.map((e, i) => ({ ...e, is_admin: i === 0 })),
+    [],
+  );
+
+  const config = useMemo(() => {
+    const columns: Columns = [
       {
         name: "email",
         title: tColumns("email"),
@@ -70,10 +74,7 @@ export function useColumns(): Columns {
         name: "last_login",
         title: tColumns("lastLogin"),
         fields: ["last_login"],
-        cell: (item: Employee) => (
-          // <GridCellSimple>{item.last_login}</GridCellSimple>
-          <GridCellDate value={item.last_login} />
-        ),
+        cell: (item: Employee) => <GridCellDate value={item.last_login} />,
         initialWidth: 150,
       },
       {
@@ -83,67 +84,24 @@ export function useColumns(): Columns {
         cell: (item: Employee) => <GridCellDate value={item.created_at} />,
         initialWidth: 150,
       },
-      {
-        name: "actions",
-        title: tColumns("actions"),
-        fields: [],
-        cell: () => <></>,
-        initialWidth: 100,
-      },
     ];
-  }, [tColumns]);
-}
 
-export function useFields() {
-  const tFields = useFixedT("shared:grid:fields");
-
-  return useMemo(
-    (): GridFieldDefinition[] => [
-      {
-        title: tFields("id"),
-        name: "id",
-      },
+    const fields: GridFieldDefinition[] = [
+      { title: tFields("id"), name: "id" },
       { title: tFields("email"), name: "email" },
-      // { title: tFields("displayName"), name: "display_name" },
-      { title: tFields("displayName"), name: "name" }, // temporary until we fix filtering in the backend
+      { title: tFields("displayName"), name: "display_name" },
       { title: tFields("lastLogin"), name: "last_login" },
       { title: tFields("createdAt"), name: "created_at" },
-    ],
-    [tFields],
-  );
-}
+    ];
 
-export function useAsyncOptions(organizationId: string) {
-  const { listOrganizationEmployees } = useOrganizationsApi();
-  const baseQueryKey: unknown[] = ["OrganizationUsers", organizationId];
-  return useReactQueryRqlGrid<EmployeeRead, Awaited<ReturnType<typeof listOrganizationEmployees>>>(
-    baseQueryKey,
-    (query) => ({
-      queryKey: [baseQueryKey, query.toString(), organizationId],
-      queryFn: () => listOrganizationEmployees(organizationId, query),
-      select: mapAxiosResponseDataList,
-    }),
-  );
-}
+    return {
+      id: "grid__organizations-details-users",
+      columns,
+      fields,
+      isDefaultView: true,
+      selectedView: "default",
+    } as GridInMemoryConfig<Employee>;
+  }, [tColumns, tFields]);
 
-export function useGridConfig(organizationId: string) {
-  const columns = useColumns();
-  const fields = useFields();
-  const asyncOptions = useAsyncOptions(organizationId);
-
-  const config = useMemo(
-    () =>
-      ({
-        id: "grid__organizations-details-users",
-        columns,
-        fields,
-        isDefaultView: true,
-        selectedView: "default",
-        ...asyncOptions,
-      }) as UseAsyncGridConfig<EmployeeRead>,
-    [columns, fields, asyncOptions],
-  );
-
-  const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, refresh: asyncOptions.refresh, ...gridProps };
+  return { refresh: noop, silentRefresh: noop, ...useGridInMemory(data, config) };
 }

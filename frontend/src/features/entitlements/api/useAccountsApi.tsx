@@ -1,31 +1,16 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
-import { AxiosRequestConfig } from "axios";
+import { mockResponse } from "~shared/utils/mockResponse";
 
-import { AccountRead } from "@swo/ffc-api-model";
-import { RqlQuery } from "@swo/rql-client";
+import { mockAccounts } from "./mockData";
 
-import { http } from "@mpt-extension/sdk";
-
-import { ListResponse } from "~shared/utils/mapAxiosResponseDataList";
-
-const rootPath = "/ops/v1/accounts";
-
-// TODO refactor for shared hooks for entitlements and accounts, since they are very similar
+// Sandbox: static implementation matching the real API hook signature.
 export function useAccountsApi() {
-  const list = useCallback(
-    async (
-      query: RqlQuery<AccountRead>,
-      config?: AxiosRequestConfig<ListResponse<AccountRead>>,
-    ) => {
-      return http<ListResponse<AccountRead>>({
-        method: "GET",
-        url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
-        ...config,
-      });
-    },
+  return useMemo(
+    () => ({
+      list: (_query?: unknown) =>
+        mockResponse({ total: mockAccounts.length, items: mockAccounts }),
+    }),
     [],
   );
-
-  return useMemo(() => ({ list }), [list]);
 }
