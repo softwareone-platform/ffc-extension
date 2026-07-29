@@ -3,7 +3,6 @@ import { Outlet, useMatch } from "react-router-dom";
 import { Button } from "@swo/design-system/button";
 
 import { PATHS } from "~app/paths";
-import { CreateEntitlementStandaloneModal } from "~entitlements/modal/CreateEntitlementStandaloneModal";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
@@ -15,7 +14,7 @@ import { StandaloneShellProvider } from "~shared/providers/StandaloneShellContex
 export function MainLayout() {
   const tEntitlement = useFixedT("entitlement");
   const tNav = useFixedT("shared:nav");
-  const { isOpen, open, close } = useModalToggle();
+  const { isOpen, open } = useModalToggle();
 
   const navItems: PageShellNavItem[] = [
     { path: PATHS.organizations.root, label: tNav("organizations") },
@@ -66,7 +65,6 @@ export function MainLayout() {
           <Outlet />
         </PageShell.Content>
       </PageShell>
-      <CreateEntitlementStandaloneModal isOpen={isOpen} onClose={close} />
     </StandaloneShellProvider>
   );
 }

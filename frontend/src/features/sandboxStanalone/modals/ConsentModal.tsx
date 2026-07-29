@@ -2,11 +2,8 @@ import { useState } from "react";
 
 import { Button } from "@swo/design-system/button";
 import { Checkbox } from "@swo/design-system/checkbox";
+import { Modal } from "@swo/design-system/modal";
 import { RegularText } from "@swo/design-system/text";
-
-import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
-
-import "./ConsentModal.scss";
 
 type Props = {
   appName: string;
@@ -17,7 +14,7 @@ export function ConsentModal({ appName }: Readonly<Props>) {
   const [hasConsented, setHasConsented] = useState(false);
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
       onClose={() => undefined}
       title="Personal data processing consent (RODO)"
@@ -45,6 +42,6 @@ export function ConsentModal({ appName }: Readonly<Props>) {
           label="I consent to the processing of my personal data in accordance with the GDPR (RODO)."
         />
       </div>
-    </StandaloneModal>
+    </Modal>
   );
 }

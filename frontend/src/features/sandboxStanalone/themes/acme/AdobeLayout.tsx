@@ -5,7 +5,7 @@ import { Navigation } from "@swo/design-system/navigation";
 
 import { sideNavGroups } from "~features/sandboxStanalone/navigation";
 import { PATHS } from "~features/sandboxStanalone/paths";
-import { ConsentModal } from "~shared/components/consent/ConsentModal";
+import { ConsentModal } from "~features/sandboxStanalone/modals/ConsentModal";
 
 // Example theme override for the Adobe feature. Active when APP_THEME=acme.
 // Imports resolve to the canonical feature/shared modules (the resolver does not

@@ -1,5 +1,7 @@
+import { Button } from "@swo/design-system/button";
+import { Modal } from "@swo/design-system/modal";
+
 import { ModalCloseResult } from "~shared/components/modal/modalEntry";
-import { StandaloneModal } from "~shared/components/modal/StandaloneModal";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useUserFormController } from "~organizations/details/users/modal/hooks/useUserFormController";
@@ -11,24 +13,32 @@ type Props = {
   className?: string;
 };
 
-export function CreateUserStandaloneModal({ isOpen, onClose, className }: Readonly<Props>) {
+export function CreateUserModal({ isOpen, onClose, className }: Readonly<Props>) {
   const tUsers = useFixedT("organization:users");
+  const tSharedActions = useFixedT("shared:actions");
   const { control, error, isPending, submit, handleCancel } = useUserFormController({ onClose });
 
   return (
-    <StandaloneModal
+    <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={() => onClose()}
       title={tUsers("add_user")}
+      width={600}
       className={className}
-      onCancel={handleCancel}
-      onSubmit={() => submit()}
-      submitLabel={tUsers("save")}
-      isSubmitting={isPending}
+      actions={
+        <>
+          <Button type="text" onClick={handleCancel} isDisabled={isPending}>
+            {tSharedActions("cancel")}
+          </Button>
+          <Button type="primary" onClick={() => submit()} isBusy={isPending}>
+            {tUsers("save")}
+          </Button>
+        </>
+      }
     >
       <form onSubmit={submit}>
         <UserFormFields control={control} error={error} />
       </form>
-    </StandaloneModal>
+    </Modal>
   );
 }

@@ -1,17 +1,17 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from 'react-router-dom';
 
-import { Button } from "@swo/design-system/button";
-import { Navigation } from "@swo/design-system/navigation";
+import { Button } from '@swo/design-system/button';
+import { Navigation } from '@swo/design-system/navigation';
 
-import { useMPTModal } from "@mpt-extension/sdk-react";
+import { useMPTModal } from '@mpt-extension/sdk-react';
 
-import { CreateUserStandaloneModal } from "~features/sandboxStanalone/modals/CreateUserStandaloneModal";
-import { sideNavGroups } from "~features/sandboxStanalone/navigation";
-import { PATHS } from "~features/sandboxStanalone/paths";
-import { ConsentModal } from "~shared/components/consent/ConsentModal";
-import { useModalToggle } from "~shared/hooks/useModalToggle";
+import { CreateUserModal } from '~features/sandboxStanalone/modals/CreateUserModal';
+import { sideNavGroups } from '~features/sandboxStanalone/navigation';
+import { PATHS } from '~features/sandboxStanalone/paths';
+import { ConsentModal } from '~features/sandboxStanalone/modals/ConsentModal';
+import { useModalToggle } from '~shared/hooks/useModalToggle';
 
-import "./StandaloneLayout.scss";
+import './StandaloneLayout.scss';
 
 export function StandaloneLayout() {
   const navigate = useNavigate();
@@ -31,9 +31,10 @@ export function StandaloneLayout() {
             <span className="sandbox-standalone__header-action-label">* inside app modal</span>
 
             <Button
-              onClick={() =>
-                open("finops.admin.create-entitlement-modal", { context: {}, onClose: () => {} })
-              }
+              onClick={() => open('finops.admin.create-entitlement-modal', {
+                context: {}, onClose: () => {
+                },
+              })}
             >
               Create entitlement
             </Button>
@@ -54,7 +55,7 @@ export function StandaloneLayout() {
         </Navigation.Content>
       </Navigation>
 
-      <CreateUserStandaloneModal isOpen={createUser.isOpen} onClose={createUser.close} />
+      <CreateUserModal isOpen={createUser.isOpen} onClose={createUser.close} />
     </>
   );
 }
