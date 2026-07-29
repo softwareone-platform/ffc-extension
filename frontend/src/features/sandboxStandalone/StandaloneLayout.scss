@@ -1,3 +1,9 @@
+.sandbox-standalone__header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .sandbox-standalone__header-action-label {
   color: var(--gray-6);
   font-size: 12px;
@@ -5,6 +11,7 @@
 
 .sandbox-standalone__header-actions-spacer {
   width: 12px;
+  height: 24px;
   margin-right: 6px;
   border-right: 1px solid var(--gray-3);
 }

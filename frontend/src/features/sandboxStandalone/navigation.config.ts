@@ -1,12 +1,25 @@
 import { SideNavGroup, SideNavItem } from "@swo/design-system/navigation";
 
-import { PATHS } from "~features/sandboxStandalone/paths";
+import {
+  NavGroupId,
+  navGroupDefinitions,
+  topLevelSections,
+} from "~features/sandboxStandalone/manifest";
 
 export type NavItemConfig = SideNavItem & { enabled?: boolean };
 export type NavGroupConfig = Omit<SideNavGroup, "items"> & {
   enabled?: boolean;
   items: NavItemConfig[];
 };
+
+const navItemsByGroup = (groupId: NavGroupId): NavItemConfig[] =>
+  topLevelSections
+    .filter((section) => section.nav?.groupId === groupId)
+    .map((section) => ({
+      label: section.nav?.label ?? section.path,
+      path: section.path,
+      enabled: section.enabled !== false && section.nav?.enabled !== false,
+    }));
 
 /**
  * Full side-menu definition. Flip `enabled` to `false` on any group or item to
@@ -16,42 +29,27 @@ export type NavGroupConfig = Omit<SideNavGroup, "items"> & {
  */
 export const navGroups: NavGroupConfig[] = [
   {
-    label: "Stay current",
+    label: navGroupDefinitions.stayCurrent.label,
     icon: { name: "flag" },
-    enabled: true,
-    items: [
-      { label: "News and updates", path: PATHS.newsAndUpdates, enabled: true },
-      { label: "Spotlight", path: PATHS.spotlight, enabled: true },
-    ],
+    enabled: navGroupDefinitions.stayCurrent.enabled,
+    items: navItemsByGroup("stayCurrent"),
   },
   {
-    label: "Catalog",
+    label: navGroupDefinitions.catalog.label,
     icon: { name: "category" },
-    enabled: true,
-    items: [
-      { label: "Products", path: PATHS.products, enabled: true },
-      { label: "Price lists", path: PATHS.priceLists, enabled: true },
-    ],
+    enabled: navGroupDefinitions.catalog.enabled,
+    items: navItemsByGroup("catalog"),
   },
   {
-    label: "Marketplace",
+    label: navGroupDefinitions.marketplace.label,
     icon: { name: "storefront" },
-    enabled: true,
-    items: [
-      { label: "Agreements", path: PATHS.agreements, enabled: true },
-      { label: "Subscriptions", path: PATHS.subscriptions, enabled: true },
-      { label: "Assets", path: PATHS.assets, enabled: true },
-      { label: "Entitlements", path: PATHS.entitlements, enabled: true },
-      { label: "Orders", path: PATHS.orders, enabled: true },
-    ],
+    enabled: navGroupDefinitions.marketplace.enabled,
+    items: navItemsByGroup("marketplace"),
   },
   {
-    label: "Billing",
+    label: navGroupDefinitions.billing.label,
     icon: { name: "payments" },
-    enabled: true,
-    items: [
-      { label: "Invoices", path: PATHS.invoices, enabled: true },
-      { label: "Credit Memos", path: PATHS.creditMemos, enabled: true },
-    ],
+    enabled: navGroupDefinitions.billing.enabled,
+    items: navItemsByGroup("billing"),
   },
 ];

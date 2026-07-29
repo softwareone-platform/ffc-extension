@@ -5,13 +5,27 @@ import { Checkbox } from "@swo/design-system/checkbox";
 import { Modal } from "@swo/design-system/modal";
 import { RegularText } from "@swo/design-system/text";
 
+const CONSENT_STORAGE_KEY = "sandboxStandalone.consent.v1";
+
+function hasStoredConsent() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(CONSENT_STORAGE_KEY) === "accepted";
+}
+
 type Props = {
   appName: string;
 };
 
 export function ConsentModal({ appName }: Readonly<Props>) {
-  const [isOpen, setIsOpen] = useState(true);
-  const [hasConsented, setHasConsented] = useState(false);
+  const [hasConsented, setHasConsented] = useState(hasStoredConsent);
+  const [isOpen, setIsOpen] = useState(() => !hasStoredConsent());
+
+  const handleAccept = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(CONSENT_STORAGE_KEY, "accepted");
+    }
+    setIsOpen(false);
+  };
 
   return (
     <Modal
@@ -22,7 +36,7 @@ export function ConsentModal({ appName }: Readonly<Props>) {
       isToCloseOnClickOutside={false}
       isToShowCloseButton={false}
       actions={
-        <Button type="primary" isDisabled={!hasConsented} onClick={() => setIsOpen(false)}>
+        <Button type="primary" isDisabled={!hasConsented} onClick={handleAccept}>
           Accept and continue
         </Button>
       }

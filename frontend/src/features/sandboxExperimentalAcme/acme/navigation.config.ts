@@ -14,7 +14,7 @@ export const navGroups: NavGroupConfig[] = [
     ],
   },
   {
-    label: "Catalog123",
+    label: "Catalog",
     icon: { name: "category" },
     enabled: true,
     items: [

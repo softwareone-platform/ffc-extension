@@ -5,20 +5,13 @@ import { Card } from "@swo/design-system/card";
 import { Navigation } from "@swo/design-system/navigation";
 import { BoldText, RegularText } from "@swo/design-system/text";
 
-import { NEWS_SECTIONS, PATHS } from "~features/sandboxStandalone/paths";
+import { newsHeaderBarItems } from "~features/sandboxStandalone/manifest";
 
 import { NewsMessage, messages } from "./news.mock";
 
 import "./NewsPage.scss";
 
-const headerBarItems = [
-  { label: "Messages", path: PATHS.newsSection(NEWS_SECTIONS.messages) },
-  { label: "Attachments", path: PATHS.newsSection(NEWS_SECTIONS.attachments) },
-  { label: "Links", path: PATHS.newsSection(NEWS_SECTIONS.links) },
-  { label: "Participants", path: PATHS.newsSection(NEWS_SECTIONS.participants) },
-  { label: "Details", path: PATHS.newsSection(NEWS_SECTIONS.details) },
-  { label: "Audit trail", path: PATHS.newsSection(NEWS_SECTIONS.auditTrail) },
-];
+const headerBarItems = newsHeaderBarItems;
 
 function MessageCard({ message }: { message: NewsMessage }) {
   return (
