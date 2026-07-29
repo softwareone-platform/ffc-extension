@@ -3,9 +3,9 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@swo/design-system/button";
 import { Navigation } from "@swo/design-system/navigation";
 
-import { sideNavGroups } from "~features/sandboxStanalone/navigation";
-import { PATHS } from "~features/sandboxStanalone/paths";
-import { ConsentModal } from "~features/sandboxStanalone/modals/ConsentModal";
+import { sideNavGroups } from "~features/sandboxStandalone/navigation";
+import { PATHS } from "~features/sandboxStandalone/paths";
+import { ConsentModal } from "~features/sandboxStandalone/modals/ConsentModal";
 
 // Example theme override for the Adobe feature. Active when APP_THEME=acme.
 // Imports resolve to the canonical feature/shared modules (the resolver does not

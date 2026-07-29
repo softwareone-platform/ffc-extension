@@ -1,5 +1,5 @@
-import { NavGroupConfig } from "~features/sandboxStanalone/navigation.config";
-import { PATHS } from "~features/sandboxStanalone/paths";
+import { NavGroupConfig } from "~features/sandboxStandalone/navigation.config";
+import { PATHS } from "~features/sandboxStandalone/paths";
 
 // ACME theme side-menu toggles. Active when APP_THEME=acme.
 // Disabled groups/items are filtered out by navigation.ts.

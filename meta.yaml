@@ -25,7 +25,7 @@ plugs:
     href: "/static/OrganizationsEntry.js"
   - id: entitlements
     name: Entitlements (Single entry)
-    description:  Shows Sandbox view for Entitlements single view.
+    description: Shows Sandbox view for Entitlements single view.
     icon: adobe.png
     socket: portal.{{ settings.ui_plugs_prefix }}
     href: "/static/EntitlementsEntry.js"

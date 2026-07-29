@@ -1,14 +1,14 @@
 import type { RouteObject } from "react-router-dom";
 import { redirect } from "react-router-dom";
 
-import { StandaloneLayout } from "~features/sandboxStanalone/StandaloneLayout";
-import { AgreementsPage } from "~features/sandboxStanalone/pages/agreements/AgreementsPage";
-import { HelpPage } from "~features/sandboxStanalone/pages/help/HelpPage";
-import { NewsMessagesSection, NewsPage } from "~features/sandboxStanalone/pages/news/NewsPage";
-import { PlaceholderPage } from "~features/sandboxStanalone/pages/placeholder/PlaceholderPage";
-import { ProductsPage } from "~features/sandboxStanalone/pages/products/ProductsPage";
-import { TermsAndConditionsPage } from "~features/sandboxStanalone/pages/terms/TermsAndConditionsPage";
-import { NEWS_SECTIONS, PATHS, SEGMENTS } from "~features/sandboxStanalone/paths";
+import { StandaloneLayout } from "~features/sandboxStandalone/StandaloneLayout";
+import { AgreementsPage } from "~features/sandboxStandalone/pages/agreements/AgreementsPage";
+import { HelpPage } from "~features/sandboxStandalone/pages/help/HelpPage";
+import { NewsMessagesSection, NewsPage } from "~features/sandboxStandalone/pages/news/NewsPage";
+import { PlaceholderPage } from "~features/sandboxStandalone/pages/placeholder/PlaceholderPage";
+import { ProductsPage } from "~features/sandboxStandalone/pages/products/ProductsPage";
+import { TermsAndConditionsPage } from "~features/sandboxStandalone/pages/terms/TermsAndConditionsPage";
+import { NEWS_SECTIONS, PATHS, SEGMENTS } from "~features/sandboxStandalone/paths";
 
 export const sandboxStandaloneRoutes: RouteObject[] = [
   {

@@ -5,7 +5,7 @@ import { Card } from "@swo/design-system/card";
 import { Navigation } from "@swo/design-system/navigation";
 import { BoldText, RegularText } from "@swo/design-system/text";
 
-import { NEWS_SECTIONS, PATHS } from "~features/sandboxStanalone/paths";
+import { NEWS_SECTIONS, PATHS } from "~features/sandboxStandalone/paths";
 
 import { NewsMessage, messages } from "./news.mock";
 

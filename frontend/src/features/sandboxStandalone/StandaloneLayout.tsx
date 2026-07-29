@@ -5,10 +5,10 @@ import { Navigation } from '@swo/design-system/navigation';
 
 import { useMPTModal } from '@mpt-extension/sdk-react';
 
-import { CreateUserModal } from '~features/sandboxStanalone/modals/CreateUserModal';
-import { sideNavGroups } from '~features/sandboxStanalone/navigation';
-import { PATHS } from '~features/sandboxStanalone/paths';
-import { ConsentModal } from '~features/sandboxStanalone/modals/ConsentModal';
+import { CreateUserModal } from '~features/sandboxStandalone/modals/CreateUserModal';
+import { sideNavGroups } from '~features/sandboxStandalone/navigation';
+import { PATHS } from '~features/sandboxStandalone/paths';
+import { ConsentModal } from '~features/sandboxStandalone/modals/ConsentModal';
 import { useModalToggle } from '~shared/hooks/useModalToggle';
 
 import './StandaloneLayout.scss';

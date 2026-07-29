@@ -9,11 +9,11 @@ import {
   GridInMemoryConfig,
   useGridInMemory,
 } from "@swo/design-system/grid";
-import { AdobeIcon, SellerFlagIcon } from "~features/sandboxStanalone/icons";
+import { AdobeIcon, SellerFlagIcon } from "~features/sandboxStandalone/icons";
 
 import { Agreement, agreements } from "./agreements.mock";
 
-function TitleLink({ href, label }: { href: string; label: string }) {
+function renderTitleLink({ href, label }: { href: string; label: string }) {
   // The portal embeds this extension in a sandboxed iframe without `allow-popups`,
   // so `_blank` is popup-blocked. Navigate the top-level tab instead.
   return (
@@ -36,7 +36,7 @@ function useColumns(): GridColumnDefinition<Agreement>[] {
         title: "Name",
         cell: (item: Agreement) => (
           <GridCellTitleSubtitle
-            title={<TitleLink href="https://www.softwareone.com" label={item.name} />}
+              title={renderTitleLink({ href: "https://www.softwareone.com", label: item.name })}
             subtitle={item.agreementId}
           />
         ),
@@ -49,7 +49,7 @@ function useColumns(): GridColumnDefinition<Agreement>[] {
           <div className="adobe-agreements__product">
             <AdobeIcon className="adobe-agreements__product-icon" width={32} />
             <GridCellTitleSubtitle
-              title={<TitleLink href="https://www.softwareone.com" label={item.product} />}
+              title={renderTitleLink({ href: "https://www.softwareone.com", label: item.product })}
               subtitle={item.productId}
             />
           </div>
@@ -61,7 +61,7 @@ function useColumns(): GridColumnDefinition<Agreement>[] {
         title: "Licensee",
         cell: (item: Agreement) => (
           <GridCellTitleSubtitle
-            title={<TitleLink href="https://www.google.com" label={item.licensee} />}
+            title={renderTitleLink({ href: "https://www.google.com", label: item.licensee })}
             subtitle={item.licenseeId}
           />
         ),
@@ -83,7 +83,7 @@ function useColumns(): GridColumnDefinition<Agreement>[] {
         title: "Buyer",
         cell: (item: Agreement) => (
           <GridCellTitleSubtitle
-            title={<TitleLink href="https://www.yahoo.com" label={item.buyer} />}
+            title={renderTitleLink({ href: "https://www.yahoo.com", label: item.buyer })}
             subtitle={item.buyerId}
           />
         ),

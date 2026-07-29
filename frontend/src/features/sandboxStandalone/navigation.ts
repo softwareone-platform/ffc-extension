@@ -1,6 +1,6 @@
 import { SideNavGroup } from "@swo/design-system/navigation";
 
-import { navGroups } from "~features/sandboxStanalone/navigation.config";
+import { navGroups } from "~features/sandboxStandalone/navigation.config";
 
 const isEnabled = <T extends { enabled?: boolean }>({ enabled }: T) => enabled !== false;
 
