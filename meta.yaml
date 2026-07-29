@@ -8,30 +8,29 @@ events:
 plugs:
   - id: "{{ settings.ui_plugs_prefix }}"
     name: Sandbox Entry{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
-    description: FinOps for Cloud
+    description: Sandbox Entry.
     icon: extension
     socket: portal
   - id: sandbox_standalone_{% if settings.ui_plugs_prefix != "ffc" %}_({{ settings.ui_plugs_prefix }}){% endif %}
     name: Sandbox Standalone{% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
-    description: This section shows all of the customers Organisations created in FinOps.
+    description: Sandbox Standalone example.
     icon: adobe.png
     socket: portal.root
     href: "/static/SandboxStandaloneRoot.js"
   - id: organizations
     name: Organizations (Single entry)
-    description: This section shows all of the customers Organisations created in FinOps.
+    description: Shows Sandbox view for Organisations single view.
     icon: adobe.png
     socket: portal.{{ settings.ui_plugs_prefix }}
     href: "/static/OrganizationsEntry.js"
   - id: entitlements
     name: Entitlements (Single entry)
-    description: This section provides visibility into what services and resources of
-      organizations are entitled to use.
+    description:  Shows Sandbox view for Entitlements single view.
     icon: adobe.png
     socket: portal.{{ settings.ui_plugs_prefix }}
     href: "/static/EntitlementsEntry.js"
   - id: finops.admin.create-entitlement-modal
-    name: Create Entitlement Modal
-    description: Wizard to create a new entitlement
+    name: Sandbox Create Entitlement Modal
+    description: Sandbox Modal Wizard to create a new entitlement
     icon: adobe.png
     href: "/static/CreateEntitlementModal.js"

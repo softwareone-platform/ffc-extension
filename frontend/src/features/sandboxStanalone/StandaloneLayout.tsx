@@ -3,12 +3,20 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@swo/design-system/button";
 import { Navigation } from "@swo/design-system/navigation";
 
+import { useMPTModal } from "@mpt-extension/sdk-react";
+
+import { CreateUserStandaloneModal } from "~features/sandboxStanalone/modals/CreateUserStandaloneModal";
 import { sideNavGroups } from "~features/sandboxStanalone/navigation";
 import { PATHS } from "~features/sandboxStanalone/paths";
 import { ConsentModal } from "~shared/components/consent/ConsentModal";
+import { useModalToggle } from "~shared/hooks/useModalToggle";
+
+import "./StandaloneLayout.scss";
 
 export function StandaloneLayout() {
   const navigate = useNavigate();
+  const createUser = useModalToggle();
+  const { open } = useMPTModal();
 
   return (
     <>
@@ -17,6 +25,22 @@ export function StandaloneLayout() {
         <Navigation.SideNav level={2} groups={sideNavGroups} />
         <Navigation.HeaderBar title="Sandbox Standalone" subtitle="Version: 0.0.1">
           <Navigation.HeaderBar.Actions>
+            <Button type="primary" onClick={() => createUser.open()}>
+              Create user
+            </Button>
+            <span className="sandbox-standalone__header-action-label">* inside app modal</span>
+
+            <Button
+              onClick={() =>
+                open("finops.admin.create-entitlement-modal", { context: {}, onClose: () => {} })
+              }
+            >
+              Create entitlement
+            </Button>
+            <span className="sandbox-standalone__header-action-label">* external entry modal</span>
+
+            <div className="sandbox-standalone__header-actions-spacer" aria-hidden="true" />
+
             <Button type="primary" onClick={() => navigate(PATHS.help)}>
               Help
             </Button>
@@ -29,6 +53,8 @@ export function StandaloneLayout() {
           <Outlet />
         </Navigation.Content>
       </Navigation>
+
+      <CreateUserStandaloneModal isOpen={createUser.isOpen} onClose={createUser.close} />
     </>
   );
 }
