@@ -22,9 +22,8 @@ const navItemsByGroup = (groupId: NavGroupId): NavItemConfig[] =>
     }));
 
 /**
- * Full side-menu definition. Flip `enabled` to `false` on any group or item to
- * hide it. This file is theme-overridable: drop a copy under
- * `themes/<APP_THEME>/navigation.config.ts` to give a theme its own toggles.
+ * Side-menu definition derived from `manifest.ts`. Flip `enabled` to `false`
+ * on group/section entries in the manifest to hide them.
  * `navigation.ts` filters this into the `SideNavGroup[]` the layout renders.
  */
 export const navGroups: NavGroupConfig[] = [

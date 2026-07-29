@@ -1,8 +1,9 @@
 # Modal conventions
 
-Every "create / edit" modal in this app ships in **two** shapes that share
+Most "create / edit" modal flows in this app ship in **two** shapes that share
 their form logic. Pick the right one for the call site; if you find
-yourself writing only one of them, you're probably missing the other.
+yourself writing only one of them in a host-integrated feature, you're
+probably missing the other.
 
 ## The two shapes
 
@@ -25,13 +26,17 @@ and is wired in by `mountModalEntry(<EntryModal />)`. The host supplies the
 - The modal calls `onClose({ success: true })` on successful submit,
   `onClose()` or `close("cancel")` on cancel.
 
-### `<Entity>StandaloneModal` — in-app, React state
+### `<Entity>Modal` (in-app) — React state
 
 Used when the app itself opens the modal (in standalone-shell mode where
 the MPT host modal API isn't available). The modal is rendered conditionally
-inside a component tree based on a `useModalToggle()` boolean, and uses the
-`<StandaloneModal>` wrapper (`src/shared/components/modal/StandaloneModal.tsx`)
-which renders `@swo/design-system/modal`'s `<Modal>` with our common defaults.
+inside a component tree based on a `useModalToggle()` boolean, and usually
+renders `@swo/design-system/modal`'s `<Modal>` directly.
+
+- In broad product features we typically use our
+  `src/shared/components/modal/StandaloneModal.tsx` wrapper for shared defaults.
+- In sandbox/POC features (for example `sandboxStandalone`) a plain
+  design-system `<Modal>` is acceptable when you want minimal surface area.
 
 - Props: `{ isOpen, onClose, … }`. Same `ModalCloseResult` contract for
   `onClose`.
@@ -58,7 +63,7 @@ return (
     )}
 
     {isStandaloneShell && (
-      <CreateUserStandaloneModal
+      <CreateUserModal
         isOpen={addUserModal.isOpen}
         onClose={addUserModal.close}
       />
@@ -68,7 +73,7 @@ return (
 ```
 
 The MPT host knows about `EntryModal`s via its modal registry; the in-app
-`StandaloneModal` lives entirely in our tree.
+modal shape lives entirely in our tree.
 
 ## Shared form controller
 
@@ -101,7 +106,7 @@ features/<feature>/modal/
 ├── Add<Thing>Form.Schema.tsx       # zod schema + types
 ├── <Thing>FormFields.tsx           # the actual <input>s
 ├── Create<Thing>EntryModal.tsx     # host-mounted shape
-├── Create<Thing>StandaloneModal.tsx # in-app shape
+├── Create<Thing>Modal.tsx          # in-app shape
 └── hooks/
     ├── useAdd<Thing>Form.tsx       # react-hook-form wrapper
     └── use<Thing>FormController.ts # mutation + onClose plumbing
@@ -111,9 +116,9 @@ features/<feature>/modal/
 
 In `frontend/src/shared/`:
 
-- `shared/components/modal/StandaloneModal.tsx` — the in-app `<Modal>`
-  wrapper. Forwards all the design-system props and provides default
-  cancel/submit actions if `actions` isn't passed.
+- `shared/components/modal/StandaloneModal.tsx` — optional in-app `<Modal>`
+  wrapper. Forwards design-system props and provides default cancel/submit
+  actions if `actions` isn't passed.
 - `shared/components/modal/EntryModalWidget.tsx` + `.scss` — the host-modal
   layout primitive (title + body, no chrome).
 - `shared/components/modal/ModalCancelButton.tsx` — the cancel button
@@ -132,9 +137,9 @@ In `frontend/src/shared/`:
    `zodResolver`.
 4. Create `hooks/use<Entity>FormController.ts` — mutation + cancel + close
    plumbing. Accept `onClose?: ModalEntryProps["onClose"]`.
-5. Create `Create<Entity>StandaloneModal.tsx` (in-app shape) and
-   `Create<Entity>EntryModal.tsx` (host shape) using both. **Don't skip the
-   pair** — they always go together.
+5. Create `Create<Entity>Modal.tsx` (in-app shape) and
+   `Create<Entity>EntryModal.tsx` (host shape) using both. In host-integrated
+   features, **don't skip the pair**.
 6. Add an `entries/Create<Entity>Modal.tsx` calling
    `mountModalEntry(<Create<Entity>EntryModal />)`, then add that file to
    `frontend/esbuild.config.js`'s `entryPoints`.

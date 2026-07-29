@@ -14,10 +14,10 @@ esbuild plugin (`onResolve` + `build.resolve`) instead of a Vite `resolveId` plu
 ## Usage
 
 The active theme is chosen at build time via the `APP_THEME` env var and wired up in
-`esbuild.config.js`, currently scoped to the Adobe feature:
+`esbuild.config.js`:
 
 ```js
-themeResolver({ theme: process.env.APP_THEME, featureDir: srcDir('features/adobe') })
+themeResolver({ theme: process.env.APP_THEME, featureDir: srcDir('features/<feature>') })
 ```
 
 Run a themed build:
@@ -33,7 +33,7 @@ With `APP_THEME` unset the plugin is inactive and canonical sources are used.
 ## Directory layout
 
 ```
-src/features/adobe/
+src/features/<feature>/
 ├── AdobeLayout.tsx            # canonical
 └── themes/
     └── acme/
@@ -41,6 +41,10 @@ src/features/adobe/
 ```
 
 The override path mirrors the file's path relative to the feature root.
+
+Note: current experimental ACME assets were moved under
+`src/features/sandboxExperimentalAcme/acme/` and are intentionally kept outside
+this resolver layout.
 
 ## Behaviour
 

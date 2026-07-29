@@ -53,6 +53,16 @@ inside the standalone shell while still having a host bridge available.
 - Using `useIsStandaloneShell` to decide whether to call `emit()` from the MPT
   SDK. The SDK only works with a host bridge; gate on `useHasMPTHost` instead.
 
+## SandboxStandalone note
+
+`frontend/src/features/sandboxStandalone/` is currently manifest-driven:
+
+- `manifest.ts` is the source of truth for top-level sections and news tabs.
+- `routes.tsx` and `navigation.config.ts` are derived from that manifest.
+
+When changing sandbox shell behavior, update the manifest first to keep routes
+and side navigation in sync.
+
 ## See also
 
 - [MPT host integration](./mpt-host-integration.md) — how `__MPT__` gets
