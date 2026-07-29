@@ -9,7 +9,7 @@ import {
   GridInMemoryConfig,
   useGridInMemory,
 } from "@swo/design-system/grid";
-import { AdobeIcon, SellerFlagIcon } from "~features/adobe/icons";
+import { AdobeIcon, SellerFlagIcon } from "~features/sandboxStanalone/icons";
 
 import { Agreement, agreements } from "./agreements.mock";
 

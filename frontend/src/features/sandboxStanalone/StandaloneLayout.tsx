@@ -3,11 +3,11 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@swo/design-system/button";
 import { Navigation } from "@swo/design-system/navigation";
 
-import { sideNavGroups } from "~features/adobe/navigation";
-import { PATHS } from "~features/adobe/paths";
+import { sideNavGroups } from "~features/sandboxStanalone/navigation";
+import { PATHS } from "~features/sandboxStanalone/paths";
 import { ConsentModal } from "~shared/components/consent/ConsentModal";
 
-export function AdobeLayout() {
+export function StandaloneLayout() {
   const navigate = useNavigate();
 
   return (

@@ -3,22 +3,25 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@swo/design-system/button";
 import { Navigation } from "@swo/design-system/navigation";
 
-import { sideNavGroups } from "~features/cloud-iq/navigation";
-import { PATHS } from "~features/cloud-iq/paths";
+import { sideNavGroups } from "~features/sandboxStanalone/navigation";
+import { PATHS } from "~features/sandboxStanalone/paths";
 import { ConsentModal } from "~shared/components/consent/ConsentModal";
 
-export function CloudIqLayout() {
+// Example theme override for the Adobe feature. Active when APP_THEME=acme.
+// Imports resolve to the canonical feature/shared modules (the resolver does not
+// redirect imports made from inside a theme directory).
+export function AdobeLayout() {
   const navigate = useNavigate();
 
   return (
     <>
-      <ConsentModal appName="Cloud iQ" />
+      <ConsentModal appName="the Sandbox Standalone (ACME)" />
       <Navigation>
         <Navigation.SideNav level={2} groups={sideNavGroups} />
-        <Navigation.HeaderBar title="Cloud iQ" subtitle="Version: 0.0.1">
+        <Navigation.HeaderBar title="ACME · Adobe" subtitle="ACME theme">
           <Navigation.HeaderBar.Actions>
             <Button type="primary" onClick={() => navigate(PATHS.help)}>
-              Help
+              Help123
             </Button>
             <Button type="secondary" onClick={() => navigate(PATHS.termsAndConditions)}>
               Terms & Conditions

@@ -7,8 +7,8 @@ import { BoldText, RegularText } from "@swo/design-system/text";
 
 import { useMPTModal } from "@mpt-extension/sdk-react";
 
-import { NEWS_SECTIONS, PATHS } from "~features/adobe/paths";
-import { CreateUserStandaloneModal } from "~features/adobe/modals/CreateUserStandaloneModal";
+import { NEWS_SECTIONS, PATHS } from "~features/sandboxStanalone/paths";
+import { CreateUserStandaloneModal } from "~features/sandboxStanalone/modals/CreateUserStandaloneModal";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 
 import { NewsMessage, messages } from "./news.mock";

@@ -1,7 +1,7 @@
 import { BoldText, RegularText } from "@swo/design-system/text";
 import { Tiles } from "@swo/design-system/tiles";
 
-import { AdobeIcon } from "~features/adobe/icons";
+import { AdobeIcon } from "~features/sandboxStanalone/icons";
 
 import { products } from "./products.mock";
 

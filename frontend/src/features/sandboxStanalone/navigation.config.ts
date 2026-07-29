@@ -1,6 +1,6 @@
 import { SideNavGroup, SideNavItem } from "@swo/design-system/navigation";
 
-import { PATHS } from "~features/adobe/paths";
+import { PATHS } from "~features/sandboxStanalone/paths";
 
 export type NavItemConfig = SideNavItem & { enabled?: boolean };
 export type NavGroupConfig = Omit<SideNavGroup, "items"> & {
