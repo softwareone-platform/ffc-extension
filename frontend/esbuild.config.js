@@ -45,17 +45,19 @@ const reloadBravePlugin = {
 };
 
 const ctx = await context({
+  // `out` names are kept flat (no subfolder) so the emitted bundles stay at
+  // `../static/<Name>.js` — the paths the MPT host and package.json reference —
+  // even though the sources are grouped into standalone/ modals/ feature-views/.
   entryPoints: [
-    './src/entries/OrganizationsEntry.tsx',
-    './src/entries/EntitlementsEntry.tsx',
-    './src/entries/CreateEntitlementModal.tsx',
-    './src/entries/CreateUserModal.tsx',
-    './src/entries/StandaloneRoot.tsx',
-    './src/entries/AdobeRoot.tsx',
-    './src/entries/CloudIqRoot.tsx',
+    { in: './src/entries/feature-views/OrganizationsEntry.tsx', out: 'OrganizationsEntry' },
+    { in: './src/entries/feature-views/EntitlementsEntry.tsx', out: 'EntitlementsEntry' },
+    { in: './src/entries/modals/CreateEntitlementModal.tsx', out: 'CreateEntitlementModal' },
+    { in: './src/entries/modals/CreateUserModal.tsx', out: 'CreateUserModal' },
+    { in: './src/entries/standalone/StandaloneRoot.tsx', out: 'StandaloneRoot' },
+    { in: './src/entries/standalone/AdobeRoot.tsx', out: 'AdobeRoot' },
+    { in: './src/entries/standalone/CloudIqRoot.tsx', out: 'CloudIqRoot' },
   ],
   outdir: '../static',
-  outbase: './src/entries',
   bundle: true,
   platform: 'browser',
   mainFields: ["browser", "module", "main"],
