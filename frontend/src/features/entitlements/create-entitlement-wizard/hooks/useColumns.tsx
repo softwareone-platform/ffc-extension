@@ -23,7 +23,6 @@ const columns: Column<Account>[] = [
   },
 ];
 
-// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 export function useColumns(): Column<Account>[] {
   return columns;
 }

@@ -51,7 +51,9 @@ export function useGridConfig(_organizationId: string) {
         name: "type",
         title: tColumns("type"),
         fields: ["type"],
-        cell: (item: DatasourceRead) => <GridCellSimple>{tDataSourceType(item.type)}</GridCellSimple>,
+        cell: (item: DatasourceRead) => (
+          <GridCellSimple>{tDataSourceType(item.type)}</GridCellSimple>
+        ),
       },
       {
         name: "parent_id",

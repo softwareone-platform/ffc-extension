@@ -1,8 +1,8 @@
 import { SideNavGroup, SideNavItem } from "@swo/design-system/navigation";
 
 import {
-  NavGroupId,
   navGroupDefinitions,
+  NavGroupId,
   topLevelSections,
 } from "~features/sandboxStandalone/manifest";
 

@@ -8,8 +8,7 @@ import { mockAccounts } from "./mockData";
 export function useAccountsApi() {
   return useMemo(
     () => ({
-      list: (_query?: unknown) =>
-        mockResponse({ total: mockAccounts.length, items: mockAccounts }),
+      list: (_query?: unknown) => mockResponse({ total: mockAccounts.length, items: mockAccounts }),
     }),
     [],
   );

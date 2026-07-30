@@ -1,8 +1,8 @@
 import { Card } from "@swo/design-system/card";
 import { Grid } from "@swo/design-system/grid";
 
-import { useGridConfig } from "./AgreementsGrid.config";
 import { Agreement } from "./agreements.mock";
+import { useGridConfig } from "./AgreementsGrid.config";
 
 import "./AgreementsPage.scss";
 

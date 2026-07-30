@@ -25,4 +25,3 @@ When rendered in restricted sandboxed iframes (for example without
 `allow-same-origin`), browser storage access can throw. In that case, the modal
 falls back to in-memory behavior for the current session and does not persist
 across reloads.
-

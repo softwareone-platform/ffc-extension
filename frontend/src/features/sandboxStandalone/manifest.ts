@@ -2,7 +2,13 @@ import { NEWS_SECTIONS, PATHS, SEGMENTS } from "~features/sandboxStandalone/path
 
 export type NavGroupId = "stayCurrent" | "catalog" | "marketplace" | "billing";
 
-export type TopLevelPageKind = "news" | "products" | "agreements" | "help" | "terms" | "placeholder";
+export type TopLevelPageKind =
+  | "news"
+  | "products"
+  | "agreements"
+  | "help"
+  | "terms"
+  | "placeholder";
 
 export type TopLevelSection = {
   segment: string;
@@ -184,4 +190,3 @@ export const newsSections: NewsSection[] = [
 export const newsHeaderBarItems = newsSections
   .filter((section) => section.enabled !== false)
   .map(({ label, path }) => ({ label, path }));
-

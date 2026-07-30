@@ -59,8 +59,8 @@ export function ConsentModal({ appName }: Readonly<Props>) {
     >
       <div className="consent-modal">
         <RegularText>
-          To use {appName} we need your consent to process your personal data in accordance with
-          the General Data Protection Regulation (GDPR / RODO).
+          To use {appName} we need your consent to process your personal data in accordance with the
+          General Data Protection Regulation (GDPR / RODO).
         </RegularText>
         <RegularText>
           Your data will be processed solely to provide and improve this service. You may withdraw

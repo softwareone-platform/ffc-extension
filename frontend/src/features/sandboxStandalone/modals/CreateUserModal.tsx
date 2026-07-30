@@ -1,11 +1,10 @@
 import { Button } from "@swo/design-system/button";
 import { Modal } from "@swo/design-system/modal";
 
-import { ModalCloseResult } from "~shared/components/modal/modalEntry";
-import { useFixedT } from "~shared/hooks/useFixedT";
-
 import { useUserFormController } from "~organizations/details/users/modal/hooks/useUserFormController";
 import { UserFormFields } from "~organizations/details/users/modal/UserFormFields";
+import { ModalCloseResult } from "~shared/components/modal/modalEntry";
+import { useFixedT } from "~shared/hooks/useFixedT";
 
 type Props = {
   isOpen: boolean;

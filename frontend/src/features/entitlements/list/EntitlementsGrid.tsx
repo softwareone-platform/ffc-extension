@@ -24,7 +24,9 @@ export function EntitlementsGrid() {
               open("finops.admin.create-entitlement-modal", {
                 context: {},
                 onClose: (result) => {
-                  result.entitlementCreated && refresh();
+                  if (result.entitlementCreated) {
+                    refresh();
+                  }
                 },
               })
             }

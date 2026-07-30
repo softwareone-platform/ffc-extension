@@ -9,6 +9,7 @@ import {
   GridInMemoryConfig,
   useGridInMemory,
 } from "@swo/design-system/grid";
+
 import { AdobeIcon, SellerFlagIcon } from "~features/sandboxStandalone/icons";
 
 import { Agreement, agreements } from "./agreements.mock";
@@ -17,12 +18,7 @@ function renderTitleLink({ href, label }: { href: string; label: string }) {
   // The portal embeds this extension in a sandboxed iframe without `allow-popups`,
   // so `_blank` is popup-blocked. Navigate the top-level tab instead.
   return (
-    <a
-      className="adobe-agreements__link"
-      href={href}
-      target="_top"
-      rel="noopener noreferrer"
-    >
+    <a className="adobe-agreements__link" href={href} target="_top" rel="noopener noreferrer">
       {label}
     </a>
   );
@@ -36,7 +32,7 @@ function useColumns(): GridColumnDefinition<Agreement>[] {
         title: "Name",
         cell: (item: Agreement) => (
           <GridCellTitleSubtitle
-              title={renderTitleLink({ href: "https://www.softwareone.com", label: item.name })}
+            title={renderTitleLink({ href: "https://www.softwareone.com", label: item.name })}
             subtitle={item.agreementId}
           />
         ),
@@ -94,7 +90,12 @@ function useColumns(): GridColumnDefinition<Agreement>[] {
         title: "Seller",
         cell: (item: Agreement) => (
           <div className="adobe-agreements__seller">
-            <SellerFlagIcon className="adobe-agreements__seller-icon" rounded={true} width={24} height={24} />
+            <SellerFlagIcon
+              className="adobe-agreements__seller-icon"
+              rounded={true}
+              width={24}
+              height={24}
+            />
             <GridCellTitleSubtitle title={item.seller} subtitle={item.sellerId} />
           </div>
         ),

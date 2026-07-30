@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 
-import { useMPTModal } from "@mpt-extension/sdk-react";
 import { Button } from "@swo/design-system/button";
+
+import { useMPTModal } from "@mpt-extension/sdk-react";
 
 import { CreateUserModal } from "~features/sandboxStandalone/modals/CreateUserModal";
 import { PATHS } from "~features/sandboxStandalone/paths";
@@ -45,4 +46,3 @@ export function SandboxHeaderActions() {
     </>
   );
 }
-

@@ -7,7 +7,7 @@ import { BoldText, RegularText } from "@swo/design-system/text";
 
 import { newsHeaderBarItems } from "~features/sandboxStandalone/manifest";
 
-import { NewsMessage, messages } from "./news.mock";
+import { messages, NewsMessage } from "./news.mock";
 
 import "./NewsPage.scss";
 

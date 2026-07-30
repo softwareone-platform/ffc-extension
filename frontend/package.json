@@ -19,7 +19,6 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,scss,md}\"",
     "lint": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\"",
     "lint:fix": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\" --fix",
-    "translations:sort": "node src/i18n/sortTranslations.ts",
     "fix:all": "npm-run-all translations:sort format lint:fix",
     "check:all": "npm-run-all check build",
     "check": "npm-run-all lint format:check",

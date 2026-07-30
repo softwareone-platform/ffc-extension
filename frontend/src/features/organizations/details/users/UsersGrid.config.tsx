@@ -20,7 +20,9 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 // flag not present on EmployeeRead, so we derive it here for the demo rows.
 type Employee = EmployeeRead & { is_admin: boolean };
 
-type Columns = Array<Omit<GridColumnDefinition<Employee>, "fields"> & { fields: Paths<Employee>[] }>;
+type Columns = Array<
+  Omit<GridColumnDefinition<Employee>, "fields"> & { fields: Paths<Employee>[] }
+>;
 
 const noop = () => {};
 
