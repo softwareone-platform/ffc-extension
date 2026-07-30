@@ -202,7 +202,7 @@ Node.js 24 is preinstalled in the dev container (via `nvm`).
 | Auto-fix lint issues | `npm run lint:fix` |
 | Format with Prettier | `npm run format` |
 | Check formatting | `npm run format:check` |
-| Lint + format check | `npm run check:all` |
+| Lint + format check | `npm run check` |
 | Production build | `npm run build:prod` |
 
 ---
