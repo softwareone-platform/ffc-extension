@@ -1,4 +1,7 @@
-# Theme Resolver (esbuild)
+# Experimental Theme Resolver (esbuild)
+
+> **Experimental.** Not part of the supported build path — the plugin is inert
+> unless `APP_THEME` is set. Exported as `experimentalThemeResolver`.
 
 esbuild port of the optscale Vite theme resolver (`optscale/ngui/ui/src/utils/themeResolver`),
 scoped to a single feature. It lets you keep canonical sources in place and ship
@@ -17,7 +20,7 @@ The active theme is chosen at build time via the `APP_THEME` env var and wired u
 `esbuild.config.js`:
 
 ```js
-themeResolver({ theme: process.env.APP_THEME, featureDir: srcDir('features/<feature>') })
+experimentalThemeResolver({ theme: process.env.APP_THEME, featureDir: srcDir('features/<feature>') })
 ```
 
 Run a themed build:

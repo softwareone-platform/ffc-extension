@@ -1,10 +1,10 @@
 import { context } from 'esbuild';
 import { sassPlugin } from 'esbuild-sass-plugin';
-import { exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { themeResolver } from './theme-resolver/index.js';
+import { experimentalThemeResolver } from './build-tools/experimental-theme-resolver/index.js';
+import { reloadBravePlugin } from './build-tools/reload-brave-plugin/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
@@ -15,34 +15,9 @@ const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
 // `src/features/adobe/themes/<APP_THEME>/`. Unset -> canonical sources are used.
 const adobeTheme = process.env.APP_THEME;
 
-// Dev-only: after each successful rebuild, reload any Brave tab pointing at the
-// portal so changes show up without a manual refresh. The portal page is served
-// remotely, so esbuild's own live-reload can't inject into it — we drive the
-// browser via AppleScript instead (macOS only).
+// Dev-only Brave reload (see build-tools/reload-brave-plugin): the portal page
+// where the extension mounts is matched by this URL fragment.
 const RELOAD_URL_MATCH = 'portal.s1.show';
-const reloadBravePlugin = {
-  name: 'reload-brave',
-  setup(build) {
-    build.onEnd((result) => {
-      if (!watch || result.errors.length > 0) return;
-      const script = [
-        'tell application "Brave Browser"',
-        'repeat with w in every window',
-        'repeat with t in every tab of w',
-        `if (URL of t) contains "${RELOAD_URL_MATCH}" then reload t`,
-        'end repeat',
-        'end repeat',
-        'end tell',
-      ]
-        .map((line) => `-e '${line}'`)
-        .join(' ');
-      exec(`osascript ${script}`, (err) => {
-        if (err) console.error(`Brave reload failed: ${err.message}`);
-        else console.log(`Reloaded ${RELOAD_URL_MATCH} tab(s) in Brave`);
-      });
-    });
-  },
-};
 
 const ctx = await context({
   // `out` names are kept flat (no subfolder) so the emitted bundles stay at
@@ -87,7 +62,7 @@ const ctx = await context({
   plugins: [
     // Must run before sassPlugin so themed .scss overrides are redirected
     // before Sass compiles them.
-    themeResolver({ theme: adobeTheme, featureDir: srcDir('features/adobe') }),
+    experimentalThemeResolver({ theme: adobeTheme, featureDir: srcDir('features/adobe') }),
     // `*.module.scss` -> esbuild CSS modules: hashed, unique class names exposed
     // as a default-exported class map (`import styles from './x.module.scss'`).
     // Registered first so it wins for module files; the global instance below
@@ -101,7 +76,7 @@ const ctx = await context({
       filter: /\.scss$/,
       type: 'style',
     }),
-    reloadBravePlugin,
+    reloadBravePlugin({ watch, urlMatch: RELOAD_URL_MATCH }),
   ],
 });
 

@@ -4,7 +4,9 @@ import path from "node:path";
 import { THEME_RESOLVER_CONFIG } from "./config.js";
 
 /**
- * esbuild port of the optscale Vite theme resolver, scoped to a single feature.
+ * EXPERIMENTAL: esbuild port of the optscale Vite theme resolver, scoped to a
+ * single feature. Not part of the supported build path — enabled only when
+ * APP_THEME is set.
  *
  * Keep canonical sources under `<featureDir>/…` and drop per-theme overrides under
  * `<featureDir>/themes/<theme>/…` mirroring the same relative structure. When the
@@ -17,9 +19,9 @@ import { THEME_RESOLVER_CONFIG } from "./config.js";
  * @param {{ theme?: string, featureDir: string }} options
  * @returns {import('esbuild').Plugin}
  */
-export function themeResolver({ theme, featureDir }) {
+export function experimentalThemeResolver({ theme, featureDir }) {
   return {
-    name: "esbuild-theme-resolver",
+    name: "esbuild-experimental-theme-resolver",
     setup(build) {
       if (!theme) return;
 
