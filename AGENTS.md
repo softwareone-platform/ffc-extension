@@ -10,12 +10,14 @@ Guidance for AI coding agents working in this repository.
   [`docs/conventions/i18n.md`](docs/conventions/i18n.md).
 - **Modal conventions** (entry vs standalone shapes, shared controllers):
   [`docs/conventions/modals.md`](docs/conventions/modals.md).
-- **Entry modes** (esbuild bundles per `src/entries/*`, `mount*Entry` helpers):
-  [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md).
+- **Entry modes** (esbuild bundles under `src/entries/{standalone,single-entry,modals}/`,
+  `mount*Entry` helpers): [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md).
 - **MPT host integration** (iframe-as-extension runtime, `__MPT__` detection):
   [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md).
 - **Standalone mode flags** (`useHasMPTHost` vs `useIsRootPage` vs
   `useIsStandaloneShell`): [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md).
+- **Build tooling** (esbuild plugins, not bundled into the app):
+  [`frontend/build-tools/README.md`](frontend/build-tools/README.md).
 - **General Copilot instructions** (mirrors what GitHub Copilot loads):
   [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 

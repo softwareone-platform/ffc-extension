@@ -22,6 +22,7 @@ The FinOps for Cloud Extension enables SoftwareOne to manage the FinOps for Clou
 - [`docs/architecture/entry-mode.md`](docs/architecture/entry-mode.md) — `mountStandaloneEntry` / `mountFeatureEntry` / `mountModalEntry`.
 - [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md) — iframe-as-extension runtime.
 - [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md) — `useHasMPTHost` / `useIsRootPage` / `useIsStandaloneShell`.
+- [`frontend/build-tools/README.md`](frontend/build-tools/README.md) — build-time esbuild plugins (theme resolver, Brave reload).
 - [`docs/dev/devcontainer.md`](docs/dev/devcontainer.md) — devcontainer setup.
 
 # Create your .env file

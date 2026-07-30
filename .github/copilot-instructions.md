@@ -16,7 +16,7 @@ TL;DR:
 - **Components / providers / layouts** — `PascalCase.tsx` matching the export.
 - **Hooks** — `camelCase.ts` starting with `use`.
 - **Companion files** — share the PascalCase base with a `.` qualifier
-  (`OrganizationsGrid.config.tsx`, `DetailsLayout.scss`).
+  (`OrganizationsGrid.config.tsx`, `EntryModalWidget.scss`).
 - **Barrels** — `index.ts`, re-export from PascalCase files.
 - **Path aliases** (`~app`, `~features`, `~shared`, `~organizations`,
   `~entitlements`, `~i18n`, `~styles`) — target `kebab-case` folders.
@@ -33,8 +33,9 @@ is `:`. Top-level namespaces are `<feature>` and `shared`. Mirror API
 field names in `snake_case`; use `camelCase` for UI-only labels.
 
 For modals see [`../docs/conventions/modals.md`](../docs/conventions/modals.md).
-Every "create" modal ships as a pair: `Create<Entity>EntryModal` (host-mounted)
-+ `Create<Entity>StandaloneModal` (in-app), sharing a `use<Entity>FormController`.
+A "create" modal typically has two shapes sharing one `use<Entity>FormController`:
+`Create<Entity>EntryModal` (host-mounted, uses `EntryModalWidget`) and an in-app
+`Create<Entity>Modal` (renders `@swo/design-system/modal`'s `<Modal>`).
 
 ### Runtime context
 

@@ -3,10 +3,15 @@
 Two distinct hook shapes coexist in `frontend/src/features/*/api/`. They're
 not interchangeable — pick by purpose.
 
-## `useFooApi.tsx` — raw HTTP wrappers
+> **Sandbox note:** on this branch the `useFooApi` implementations return
+> **static mock data** (`api/mockData.ts` wrapped by `~shared/utils/mockResponse`)
+> instead of hitting the backend. The *shape/contract* below is unchanged —
+> only the transport is stubbed.
 
-Returns memoized callbacks that hit the backend. No React Query, no caching,
-no state.
+## `useFooApi.tsx` — data-source callbacks
+
+Returns memoized callbacks that resolve to an axios-shaped response. No React
+Query, no caching, no state.
 
 ```ts
 export function useOrganizationsApi() {
@@ -18,10 +23,12 @@ export function useOrganizationsApi() {
 ```
 
 **Use for:**
-- Grids and lists that drive their own fetching (`useReactQueryRqlGrid` calls
-  these inside its query function).
 - Imperative calls (e.g. inside a `useEffect`, a form `onSubmit`, or a mutation).
 - The building block for `useFooDetailsApi.ts` (see below).
+
+Grids no longer fetch through these hooks — they render static rows with
+`useGridInMemory(mockData, config)` (see any `*Grid.config.tsx`), so a `list()`
+callback is only kept where something still consumes it.
 
 **Naming:** `useFooApi.tsx` (or `.ts` if no JSX). Returns `{ list, get, ... }`
 where each member is an async function returning an axios response.
@@ -58,7 +65,6 @@ requests, and broken cache invalidation.
 
 - `["Organizations", "Details", organizationId]`
 - `["Entitlements", "Details", entitlementId]`
-- `["Organizations", "List", rqlString]` (RQL-keyed lists)
 
 Always `as const` so the key tuple stays narrow. Order matters: invalidating
 `["Organizations"]` should refresh every Organizations subtree.

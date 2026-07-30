@@ -25,9 +25,8 @@ files under `frontend/src`, follow the rules below.
 3. **Hooks: `camelCase` starting with `use…` + `.ts`/`.tsx`.**
    - Examples (from `@swo/modal/lib/hooks`): `useConfirm.d.ts`, `useConfirmModal.d.ts`,
      `useConfirmWithReason.d.ts`, `useModal.d.ts`.
-   - In `src`: `useFixedT.ts`, `useReactQueryRqlGrid.ts`, `useAsyncOptions.ts`,
-     `useColumns.tsx`, `useFields.tsx`, `useViews.tsx`,
-     `useOrganizationsApi.tsx`, `useOrganizationDetailsApi.ts`.
+   - In `src`: `useFixedT.ts`, `useModalToggle.ts`, `useNotifyParentChildModal.ts`,
+     `useFormatDate.tsx`, `useOrganizationsApi.tsx`, `useOrganizationDetailsApi.ts`.
 
 4. **Companion / sibling files use a `.` qualifier on the same PascalCase base.**
    - Examples (from `@swo`): `Modal.Header.d.ts`, `Modal.Left.d.ts`,
@@ -42,7 +41,7 @@ files under `frontend/src`, follow the rules below.
    (`Component.scss`), imported relatively (`import './Component.scss'`).
 
 6. **Tests / specs append `.spec.tsx` / `.spec.ts`** preserving the base name:
-   `useReactQueryRqlGrid.spec.tsx`.
+   `useModalToggle.spec.tsx`.
 
 7. **Barrel files stay `index.ts`** and only re-export from the renamed PascalCase files:
    ```ts

@@ -11,7 +11,7 @@ probably missing the other.
 
 Used when the MPT host opens the modal by id via the SDK
 (`useMPTModal().open("finops.admin.create-user-modal", { … })`). The modal
-lives in its own esbuild bundle under `frontend/src/entries/Create<Entity>Modal.tsx`
+lives in its own esbuild bundle under `frontend/src/entries/modals/Create<Entity>Modal.tsx`
 and is wired in by `mountModalEntry(<EntryModal />)`. The host supplies the
 `onClose` prop.
 
@@ -30,14 +30,11 @@ and is wired in by `mountModalEntry(<EntryModal />)`. The host supplies the
 
 Used when the app itself opens the modal (in standalone-shell mode where
 the MPT host modal API isn't available). The modal is rendered conditionally
-inside a component tree based on a `useModalToggle()` boolean, and usually
-renders `@swo/design-system/modal`'s `<Modal>` directly.
+inside a component tree based on a `useModalToggle()` boolean.
 
-- In broad product features we typically use our
-  `src/shared/components/modal/StandaloneModal.tsx` wrapper for shared defaults.
-- In sandbox/POC features (for example `sandboxStandalone`) a plain
-  design-system `<Modal>` is acceptable when you want minimal surface area.
-
+- Renders `@swo/design-system/modal`'s `<Modal>` directly, supplying its own
+  `actions` (a cancel + submit `<Button>` pair). Example:
+  `features/sandboxStandalone/modals/CreateUserModal.tsx`.
 - Props: `{ isOpen, onClose, … }`. Same `ModalCloseResult` contract for
   `onClose`.
 - Use `useModalToggle({ onSuccess })` (`src/shared/hooks/useModalToggle.ts`)
@@ -112,13 +109,14 @@ features/<feature>/modal/
     └── use<Thing>FormController.ts # mutation + onClose plumbing
 ```
 
+The in-app shape may instead live under the app that renders it — e.g. the
+sandbox's in-app modal is `features/sandboxStandalone/modals/CreateUserModal.tsx`,
+reusing the organizations form controller/fields.
+
 ## Shared modal pieces
 
 In `frontend/src/shared/`:
 
-- `shared/components/modal/StandaloneModal.tsx` — optional in-app `<Modal>`
-  wrapper. Forwards design-system props and provides default cancel/submit
-  actions if `actions` isn't passed.
 - `shared/components/modal/EntryModalWidget.tsx` + `.scss` — the host-modal
   layout primitive (title + body, no chrome).
 - `shared/components/modal/ModalCancelButton.tsx` — the cancel button
@@ -140,9 +138,9 @@ In `frontend/src/shared/`:
 5. Create `Create<Entity>Modal.tsx` (in-app shape) and
    `Create<Entity>EntryModal.tsx` (host shape) using both. In host-integrated
    features, **don't skip the pair**.
-6. Add an `entries/Create<Entity>Modal.tsx` calling
-   `mountModalEntry(<Create<Entity>EntryModal />)`, then add that file to
-   `frontend/esbuild.config.js`'s `entryPoints`.
+6. Add `entries/modals/Create<Entity>Modal.tsx` calling
+   `mountModalEntry(<Create<Entity>EntryModal />)`, then add an `{ in, out }`
+   pair to `frontend/esbuild.config.js`'s `entryPoints`.
 7. Register the entry id with the host's modal registry.
 
 ## See also
