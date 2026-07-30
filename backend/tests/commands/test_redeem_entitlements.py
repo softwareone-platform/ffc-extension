@@ -149,8 +149,8 @@ async def test_redeeem_entitlements_error_fetching_datasources(
     mocker_send_exception.assert_awaited_once_with(
         "Redeem Entitlements Error",
         (
-            f"Failed to fetch datasources for organization "
-            f"{apple_inc_organization.id} (ReadTimeout): timed out"
+            f"1 organizations failed to process: {apple_inc_organization.id}: Failed to fetch "
+            f"datasources for organization {apple_inc_organization.id} (ReadTimeout): timed out"
         ),
     )
 

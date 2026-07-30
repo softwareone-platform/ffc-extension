@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
-from app.db.models import Account, Entitlement, System
+from app.db.models import Account, Entitlement, System, User
 from app.enums import AccountStatus, DatasourceType, EntitlementStatus, OrganizationStatus
 from tests.types import ModelFactory
 
@@ -508,8 +508,9 @@ async def test_get_invalid_id_format(api_client: AsyncClient, gcp_jwt_token: str
 
 async def test_terminate_entitlement_success(
     entitlement_gcp: Entitlement,
-    api_client: AsyncClient,
-    gcp_jwt_token: str,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
     gcp_extension: System,
     db_session: AsyncSession,
 ):
@@ -524,9 +525,9 @@ async def test_terminate_entitlement_success(
     await db_session.refresh(entitlement_gcp)
 
     request_start_dt = datetime.now(UTC)
-    response = await api_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        headers={"Authorization": f"Bearer {admin_user_token}"},
     )
     request_end_dt = datetime.now(UTC)
 
@@ -541,26 +542,26 @@ async def test_terminate_entitlement_success(
     assert entitlement_gcp.status == EntitlementStatus.TERMINATED
     assert entitlement_gcp.terminated_at is not None
     assert request_start_dt < entitlement_gcp.terminated_at < request_end_dt
-    assert entitlement_gcp.terminated_by_id == gcp_extension.id
+    assert entitlement_gcp.terminated_by_id == admin_user.id
 
     assert (
         datetime.fromisoformat(data["events"]["terminated"]["at"]) == entitlement_gcp.terminated_at
     )
-    assert data["events"]["terminated"]["by"]["id"] == gcp_extension.id
-    assert data["events"]["terminated"]["by"]["type"] == gcp_extension.type._value_
-    assert data["events"]["terminated"]["by"]["name"] == gcp_extension.name
+    assert data["events"]["terminated"]["by"]["id"] == admin_user.id
+    assert data["events"]["terminated"]["by"]["type"] == admin_user.type._value_
+    assert data["events"]["terminated"]["by"]["name"] == admin_user.name
 
 
 async def test_terminate_new_entitlement(
     entitlement_gcp: Entitlement,
-    api_client: AsyncClient,
-    gcp_jwt_token: str,
+    admin_client: AsyncClient,
+    admin_user_token: str,
 ):
     assert entitlement_gcp.status == EntitlementStatus.NEW
 
-    response = await api_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        headers={"Authorization": f"Bearer {admin_user_token}"},
     )
 
     assert response.status_code == 400
@@ -571,8 +572,8 @@ async def test_terminate_new_entitlement(
 
 async def test_terminate_already_terminated_entitlement(
     entitlement_gcp: Entitlement,
-    api_client: AsyncClient,
-    gcp_jwt_token: str,
+    admin_client: AsyncClient,
+    admin_user_token: str,
     db_session: AsyncSession,
 ):
     entitlement_gcp.status = EntitlementStatus.TERMINATED
@@ -580,9 +581,9 @@ async def test_terminate_already_terminated_entitlement(
     db_session.add(entitlement_gcp)
     await db_session.commit()
 
-    response = await api_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_gcp.id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        headers={"Authorization": f"Bearer {admin_user_token}"},
     )
 
     assert response.status_code == 400
@@ -591,22 +592,34 @@ async def test_terminate_already_terminated_entitlement(
     assert error_msg == "Entitlement is already terminated."
 
 
-async def test_terminate_non_existant_entitlement(
-    api_client: AsyncClient,
-    gcp_jwt_token: str,
-    gcp_extension: System,
+async def test_terminate_non_existing_entitlement(
+    admin_client: AsyncClient,
+    admin_user_token: str,
     db_session: AsyncSession,
 ):
     entitlement_id = "FENT-1234-5678-9012"
-    response = await api_client.post(
+    response = await admin_client.post(
         f"/entitlements/{entitlement_id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        headers={"Authorization": f"Bearer {admin_user_token}"},
     )
 
     assert response.status_code == 404
     error_msg = response.json()["detail"]
 
     assert error_msg == f"Entitlement with ID `{entitlement_id}` wasn't found."
+
+
+async def test_terminate_entitlement_by_affiliate(
+    affiliate_client: AsyncClient,
+    entitlement_gcp: Entitlement,
+    gcp_jwt_token: str,
+):
+    response = await affiliate_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+    )
+
+    assert response.status_code == 403
 
 
 # ==================

@@ -81,7 +81,7 @@ def skip_logging_setup() -> Generator:
         yield
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_extension_ctx(mocker: MockerFixture) -> ExtensionContext:
     return ExtensionContext(
         extension_id="EXT-0000-0000",
@@ -721,7 +721,7 @@ def assert_equal_or_raises[T](
 # ---------
 
 
-@pytest.fixture()
+@pytest.fixture
 def requests_mocker():
     """
     Allow mocking of http calls made with requests.
@@ -730,7 +730,7 @@ def requests_mocker():
         yield rsps
 
 
-@pytest.fixture()
+@pytest.fixture
 def get_organizations():
     creator = Actor(
         id="FUSR-6956-9254",
@@ -755,7 +755,7 @@ def get_organizations():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def order_parameters_factory():
     def _order_parameters():
         return [
@@ -796,7 +796,7 @@ def order_parameters_factory():
     return _order_parameters
 
 
-@pytest.fixture()
+@pytest.fixture
 def fulfillment_parameters_factory():
     def _fulfillment_parameters():
         return [
@@ -845,7 +845,7 @@ def fulfillment_parameters_factory():
     return _fulfillment_parameters
 
 
-@pytest.fixture()
+@pytest.fixture
 def mpt_extension_client():
     """An `MPTClient` authenticated with the static extension token (no token refresh)."""
     from app.api_clients.mpt import MPTClient, MPTExtensionAuth
@@ -853,7 +853,7 @@ def mpt_extension_client():
     return MPTClient(MPTExtensionAuth())
 
 
-@pytest.fixture()
+@pytest.fixture
 def order_with_parameters(
     order_parameters_factory: Callable[[], list[dict]],
     fulfillment_parameters_factory: Callable[[], list[dict]],
@@ -872,7 +872,7 @@ def order_with_parameters(
     return _order
 
 
-@pytest.fixture()
+@pytest.fixture
 def items_factory():
     def _items(
         item_id=1,
@@ -892,7 +892,7 @@ def items_factory():
     return _items
 
 
-@pytest.fixture()
+@pytest.fixture
 def lines_factory(agreement):
     agreement_id = agreement["id"].split("-", 1)[1]
 
@@ -926,7 +926,7 @@ def lines_factory(agreement):
     return _items
 
 
-@pytest.fixture()
+@pytest.fixture
 def subscriptions_factory(lines_factory):
     def _subscriptions(
         subscription_id="SUB-1000-2000-3000",
@@ -955,7 +955,7 @@ def subscriptions_factory(lines_factory):
     return _subscriptions
 
 
-@pytest.fixture()
+@pytest.fixture
 def agreement_factory(buyer, order_parameters_factory, fulfillment_parameters_factory):
     def _agreement(
         licensee_name="My beautiful licensee",
@@ -1046,7 +1046,7 @@ def agreement_factory(buyer, order_parameters_factory, fulfillment_parameters_fa
     return _agreement
 
 
-@pytest.fixture()
+@pytest.fixture
 def order_factory(
     agreement,
     listing,
@@ -1166,7 +1166,7 @@ def order_factory(
     return _order
 
 
-@pytest.fixture()
+@pytest.fixture
 def purchase_order(order_factory: OrderFactory) -> dict[str, Any]:
     """A fresh Purchase order in Processing status for the FinOps product."""
     return order_factory(
@@ -1177,7 +1177,7 @@ def purchase_order(order_factory: OrderFactory) -> dict[str, Any]:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def change_order(order_factory: OrderFactory) -> dict[str, Any]:
     return order_factory(
         order_type="Change",
@@ -1187,7 +1187,7 @@ def change_order(order_factory: OrderFactory) -> dict[str, Any]:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def licensee(buyer):
     return {
         "id": "LCE-1111-2222-3333",
@@ -1203,7 +1203,7 @@ def licensee(buyer):
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def listing(buyer):
     return {
         "id": "LST-9401-9279",
@@ -1224,7 +1224,7 @@ def listing(buyer):
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def buyer():
     return {
         "id": "BUY-3731-7971",
@@ -1251,7 +1251,7 @@ def buyer():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def seller():
     return {
         "id": "SEL-9121-8944",
@@ -1278,7 +1278,7 @@ def seller():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def template():
     return {
         "id": "TPL-1234-1234-4321",
@@ -1286,7 +1286,7 @@ def template():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def agreement(buyer, licensee, listing):
     return {
         "id": "AGR-2119-4550-8674-5962",
@@ -1360,7 +1360,7 @@ def agreement(buyer, licensee, listing):
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def mpt_error_factory():
     """
     Generate an error message returned by the Marketplace platform.
@@ -1387,7 +1387,7 @@ def mpt_error_factory():
     return _mpt_error
 
 
-@pytest.fixture()
+@pytest.fixture
 def mpt_list_response():
     def _wrap_response(objects_list):
         return {
@@ -1397,17 +1397,17 @@ def mpt_list_response():
     return _wrap_response
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_env_webhook_secret():
     return '{ "webhook_secret": "WEBHOOK_SECRET" }'
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_next_step(mocker):
     return mocker.MagicMock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def ffc_organization():
     return {
         "name": "Nimbus Nexus Inc.",
@@ -1441,7 +1441,7 @@ def ffc_organization():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def fetch_terminated_entitlement():
     return {
         "name": "Test with Antonio",
@@ -1478,7 +1478,7 @@ def fetch_terminated_entitlement():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def active_entitlement():
     return {
         "name": "Test with Antonio",
@@ -1515,7 +1515,7 @@ def active_entitlement():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def expenses():
     org_id = "FORG-4801-6958-2949"
 
@@ -1738,7 +1738,7 @@ def expenses():
     return [_create_datasource_expenses(**item) for item in raw_expenses]
 
 
-@pytest.fixture()
+@pytest.fixture
 def daily_expenses():
     return {
         1: Decimal("1957.9254"),
@@ -1774,7 +1774,7 @@ def daily_expenses():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def ffc_employee():
     return {
         "email": "test@example.com",
@@ -1786,7 +1786,7 @@ def ffc_employee():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_journal_response():
     return {
         "$meta": {
@@ -1850,7 +1850,7 @@ def create_journal_response():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def existing_journal_file_response():
     return {
         "$meta": {
@@ -1908,7 +1908,7 @@ def existing_journal_file_response():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def journal_attachment_response():
     return {
         "$meta": {
@@ -2101,7 +2101,7 @@ def _build_agreement_data(include_trial: bool = True, **overrides) -> list[dict]
     return data
 
 
-@pytest.fixture()
+@pytest.fixture
 def agreement_data_with_trial():
     def _factory(**overrides):
         return _build_agreement_data(include_trial=True, **overrides)
@@ -2109,7 +2109,7 @@ def agreement_data_with_trial():
     return _factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def agreement_data_no_trial():
     def _factory(**overrides):
         return _build_agreement_data(include_trial=False, **overrides)
@@ -2117,7 +2117,7 @@ def agreement_data_no_trial():
     return _factory
 
 
-@pytest.fixture()
+@pytest.fixture
 def agreement_fulfillment():
     return [
         {
@@ -2164,7 +2164,7 @@ def agreement_fulfillment():
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def organization_data():
     return {
         "name": "SoftwareOne (Test Environment)",
@@ -2195,7 +2195,7 @@ def organization_data():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def catalog_authorizations():
     return {
         "$meta": {"pagination": {"offset": 0, "limit": 10, "total": 1}, "omitted": ["audit"]},
@@ -2234,7 +2234,7 @@ def catalog_authorizations():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def catalog_authorization():
     return {
         "id": "AUT-5305-9928",
@@ -2274,7 +2274,7 @@ def catalog_authorization():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def agreements():
     return {
         "$meta": {
@@ -2400,7 +2400,7 @@ def agreements():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def currency_conversion(exchange_rates):
     return {
         "base_currency": "USD",
@@ -2410,7 +2410,7 @@ def currency_conversion(exchange_rates):
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def exchange_rates():
     return {
         "result": "success",
@@ -2611,12 +2611,12 @@ class FakeAPIClient(BaseAPIClient):
         return response["data"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_apiclient(test_settings: Settings):
     return FakeAPIClient(settings=test_settings)
 
 
-@pytest.fixture()
+@pytest.fixture
 def process_result_success_payload():
     return [
         ProcessResultInfo(
@@ -2628,7 +2628,7 @@ def process_result_success_payload():
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def process_result_with_warning():
     return [
         ProcessResultInfo(
@@ -2640,7 +2640,7 @@ def process_result_with_warning():
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def process_result_with_error():
     return [
         ProcessResultInfo(
@@ -2652,7 +2652,7 @@ def process_result_with_error():
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def temp_charges_file():
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
         yield f.name
@@ -2661,7 +2661,7 @@ def temp_charges_file():
 MSTEAMS_FAKE_WEBHOOK_URL = "https://localhost/webhook"
 
 
-@pytest.fixture()
+@pytest.fixture
 def _no_real_http_post(mocker):
     """Replace ``httpx.AsyncClient.post`` with an ``AsyncMock`` returning a
     fake 202 response. Opt-in (not autouse): tests that do not need it must
@@ -2677,7 +2677,7 @@ def _no_real_http_post(mocker):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def configured_webhook(mocker):
     mocked_settings = mocker.MagicMock()
     mocked_settings.msteams_notifications_webhook_url = MSTEAMS_FAKE_WEBHOOK_URL
@@ -2685,7 +2685,7 @@ def configured_webhook(mocker):
     return mocked_settings
 
 
-@pytest.fixture()
+@pytest.fixture
 def send_notification_spy(mocker):
     """Observes calls to ``app.notifications.send_notification`` without
     replacing it. Pair with ``_no_real_http_post`` to keep the underlying
@@ -2696,7 +2696,7 @@ def send_notification_spy(mocker):
     return mocker.spy(notifications_module, "send_notification")
 
 
-@pytest.fixture()
+@pytest.fixture
 def msteams_post_mock(_no_real_http_post):
     """The ``AsyncMock`` that ``_no_real_http_post`` substitutes for
     ``httpx.AsyncClient.post``. Use this fixture (instead of injecting
@@ -2708,7 +2708,7 @@ def msteams_post_mock(_no_real_http_post):
     return _no_real_http_post
 
 
-@pytest.fixture()
+@pytest.fixture
 def _no_msteams_pacing(mocker):
     """Replace ``app.notifications.asyncio.sleep`` with an ``AsyncMock`` so
     chunked sends don't block on the inter-message pacing delay during tests.

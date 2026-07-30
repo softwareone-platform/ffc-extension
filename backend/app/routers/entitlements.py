@@ -124,7 +124,11 @@ async def get_entitlement_by_id(
     return convert_model_to_schema(EntitlementRead, entitlement)
 
 
-@router.post("/{id}/terminate", response_model=EntitlementRead)
+@router.post(
+    "/{id}/terminate",
+    response_model=EntitlementRead,
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+)
 async def terminate_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
     entitlement_repo: EntitlementRepository,
