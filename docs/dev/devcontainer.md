@@ -229,23 +229,9 @@ docker compose -f docker-compose.yaml -f .devcontainer/docker-compose.yml build 
 
 ## References
 
-### Dev Container specification
+- Dev Container spec & `devcontainer.json` reference: <https://containers.dev/> · <https://containers.dev/implementors/json_reference/>
+- VS Code Dev Containers: <https://code.visualstudio.com/docs/devcontainers/containers>
+- JetBrains Dev Containers: <https://www.jetbrains.com/help/idea/connect-to-devcontainer.html>
 
-- Specification site: <https://containers.dev/>
-- `devcontainer.json` reference: <https://containers.dev/implementors/json_reference/>
-- Available features: <https://containers.dev/features>
-- Template gallery (the one this project is based on): <https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose>
-
-### Microsoft / VS Code
-
-- Developing inside a container: <https://code.visualstudio.com/docs/devcontainers/containers>
-- Get started tutorial: <https://code.visualstudio.com/docs/devcontainers/tutorial>
-- Create a dev container: <https://code.visualstudio.com/docs/devcontainers/create-dev-container>
-- Dev Containers FAQ: <https://code.visualstudio.com/docs/devcontainers/faq>
-- Dev Containers CLI: <https://github.com/devcontainers/cli>
-
-### JetBrains
-
-- Dev Containers in JetBrains IDEs: <https://www.jetbrains.com/help/idea/connect-to-devcontainer.html>
-- Start a dev container from inside the IDE: <https://www.jetbrains.com/help/idea/start-dev-container-inside-ide.html>
-- Remote development overview: <https://www.jetbrains.com/help/idea/remote-development-overview.html>
+Per-section VS Code / JetBrains tutorial links are inline under their setup
+steps above.

@@ -67,5 +67,10 @@ or anything in `node_modules/`.
 
 ## Backend (`app/`)
 
-Python project managed with `uv` + Alembic. See top-level
+FastAPI + SQLAlchemy async + Alembic, managed with `uv`, also exposed as the
+`ffcops` Typer CLI. Follow
+mount on the `/ops/v1` router, data access goes through `<Model>Handler`
+repositories via `Depends`, settings use the `FFC_EXT_*` prefix through
+`get_settings()`, and new CLI commands are just a `command()` in
+`app/commands/`. Verify with `cd backend && uv run pytest`. See top-level
 [`../README.md`](../README.md) for run instructions.

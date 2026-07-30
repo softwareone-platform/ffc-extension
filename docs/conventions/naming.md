@@ -60,28 +60,10 @@ files under `frontend/src`, follow the rules below.
 
 ## Translation keys
 
-Translation keys in `frontend/src/i18n/*.json` follow their own naming
-rules. The short version:
-
-- **Path separator is `:`**, not `.` (i18next is configured with
-  `keySeparator: ":"`).
-- **Top-level grouping:** `<feature>:*` (e.g. `organization:*`,
-  `entitlement:*`) for feature-owned strings, `shared:*` for cross-feature
-  groups (`shared:nav`, `shared:grid:columns`, `shared:properties`, …).
-- **Leaf casing follows intent, not casing dogma:**
-  - `snake_case` when the key mirrors an API field name
-    (`affiliate_external_id`, `parent_id`, `data_source`, `display_name`,
-    `azure_cnr`) — so dynamic lookups like `tProperties(field)` work
-    without conversion.
-  - `camelCase` for UI-only labels (`lastLogin`, `createdAt`,
-    `billingCurrency`, `forecastThisMonth`).
-  - `snake_case` for compound action verbs (`add_user`, `add_entitlement`,
-    `create_failed`).
-
-Don't translate snake_case API fields into camelCase keys — that breaks
-dynamic-lookup sites. Full conventions, dynamic-key patterns, and the
-"add a locale" recipe live in
-[`./i18n.md`](./i18n.md).
+Translation keys in `frontend/src/i18n/*.json` have their own naming rules
+(path separator `:`, `<feature>:*` / `shared:*` grouping, and casing that
+mirrors API fields). Those live in [`./i18n.md`](./i18n.md) — the single
+source, so they don't drift from a copy here.
 
 ## Applying the convention
 
