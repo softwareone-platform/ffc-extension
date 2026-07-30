@@ -11,9 +11,10 @@ const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
-// Active theme for the Adobe feature (build-time only). Overrides live under
-// `src/features/adobe/themes/<APP_THEME>/`. Unset -> canonical sources are used.
-const adobeTheme = process.env.APP_THEME;
+// Active theme for the sandboxStandalone feature (build-time only). Overrides
+// live under `src/features/sandboxStandalone/themeExperimental/<APP_THEME>/`.
+// Unset -> canonical sources are used.
+const sandboxStandaloneTheme = process.env.APP_THEME;
 
 // Dev-only Brave reload (see build-tools/reload-brave-plugin): the portal page
 // where the extension mounts is matched by this URL fragment.
@@ -62,7 +63,7 @@ const ctx = await context({
   plugins: [
     // Must run before sassPlugin so themed .scss overrides are redirected
     // before Sass compiles them.
-    experimentalThemeResolver({ theme: adobeTheme, featureDir: srcDir('features/adobe') }),
+    experimentalThemeResolver({ theme: sandboxStandaloneTheme, featureDir: srcDir('features/sandboxStandalone') }),
     // `*.module.scss` -> esbuild CSS modules: hashed, unique class names exposed
     // as a default-exported class map (`import styles from './x.module.scss'`).
     // Registered first so it wins for module files; the global instance below

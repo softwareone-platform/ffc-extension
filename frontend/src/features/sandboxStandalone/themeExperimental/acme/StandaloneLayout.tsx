@@ -14,7 +14,7 @@ export function StandaloneLayout() {
       <ConsentModal appName="the Sandbox Standalone" />
       <Navigation>
         <Navigation.SideNav level={2} groups={sideNavGroups} />
-        <Navigation.HeaderBar title="Sandbox Standalone" subtitle="Version: 0.5.3">
+        <Navigation.HeaderBar title="Acme theme" subtitle="Version: 0.0.1">
           <Navigation.HeaderBar.Actions>
             <SandboxHeaderActions />
           </Navigation.HeaderBar.Actions>

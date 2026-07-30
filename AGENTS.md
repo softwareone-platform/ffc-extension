@@ -33,7 +33,7 @@ Guidance for AI coding agents working in this repository.
 1. Match the existing style and naming of the surrounding folder.
 2. For frontend changes, read `docs/conventions/naming.md` first.
 3. After edits, run the relevant verification:
-   - Frontend: `cd frontend && npx tsc --noEmit`
+   - Frontend: `cd frontend && npm run check` (or `cd frontend && npm run check:all` for full build verification)
    - Backend: `cd backend && uv run pytest`.
 
 ## Do not touch

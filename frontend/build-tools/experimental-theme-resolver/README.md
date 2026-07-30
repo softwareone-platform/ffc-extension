@@ -8,7 +8,7 @@ scoped to a single feature. It lets you keep canonical sources in place and ship
 per-theme overrides in a parallel directory, without touching import sites.
 
 > TL;DR: keep sources under `<feature>/…`, drop overrides under
-> `<feature>/themes/<theme>/…`. When the active theme has a matching file, the
+> `<feature>/themeExperimental/<theme>/…`. When the active theme has a matching file, the
 > import resolves to it; otherwise it falls back to the canonical file.
 
 This project builds with **esbuild**, not Vite, so the resolver is implemented as an
@@ -36,25 +36,25 @@ With `APP_THEME` unset the plugin is inactive and canonical sources are used.
 ## Directory layout
 
 ```
-src/features/<feature>/
-├── AdobeLayout.tsx            # canonical
-└── themes/
+src/features/sandboxStandalone/
+├── StandaloneLayout.tsx                        # canonical
+├── StandaloneLayout.scss                       # canonical
+└── themeExperimental/
     └── acme/
-        └── AdobeLayout.tsx    # override, used when APP_THEME=acme
+        ├── StandaloneLayout.tsx               # override, used when APP_THEME=acme
+        └── StandaloneLayout.scss              # optional themed file (or passthrough)
 ```
 
 The override path mirrors the file's path relative to the feature root.
-
-Note: current experimental ACME assets were moved under
-`src/features/sandboxExperimentalAcme/acme/` and are intentionally kept outside
-this resolver layout.
 
 ## Behaviour
 
 - Only files inside the themed feature are redirected.
 - Files already inside the active theme dir are left alone.
-- Imports made **from** a theme file are not redirected, so an override can import
-  the canonical/shared modules (use the `~features` / `~shared` aliases for those).
+- Relative imports made **from** a theme file first resolve themed siblings; when a
+  sibling override is missing, they transparently fall back to canonical files.
+- Alias imports (for example `~features/...` or `~shared/...`) keep normal resolver
+  behavior, and feature files can still be redirected to themed overrides.
 
 ## Limitations (same as upstream)
 

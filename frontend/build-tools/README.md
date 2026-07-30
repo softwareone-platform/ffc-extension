@@ -8,7 +8,8 @@ building, so they live outside `src/` (and outside `tsc`).
 
 - [`experimental-theme-resolver/`](./experimental-theme-resolver/README.md) —
   **experimental** esbuild plugin that redirects imports to per-theme overrides
-  based on `APP_THEME`. Inert unless `APP_THEME` is set.
+  based on `APP_THEME` (currently under `<feature>/themeExperimental/<theme>/`).
+  Inert unless `APP_THEME` is set.
 - [`reload-brave-plugin/`](./reload-brave-plugin/README.md) — dev-only plugin
   that reloads the portal tab in Brave after each rebuild (macOS).
 

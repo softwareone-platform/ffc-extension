@@ -23,5 +23,5 @@ export const THEME_RESOLVER_CONFIG = {
     "/index.scss"
   ],
   // Sub-directory (inside the themed feature) that holds per-theme overrides.
-  themesDir: "themes"
+  themesDir: "themeExperimental"
 };

@@ -197,13 +197,16 @@ Node.js 24 is preinstalled in the dev container (via `nvm`).
 | Install dependencies | `npm ci` |
 | Build (types + bundle) into `static/` | `npm run build` |
 | Watch and rebuild on change | `npm run start` |
-| Run the Vite dev server | `npm run dev` |
+| Build bundle only (no type step) | `npm run build:code` |
+| Build ACME themed bundle | `npm run build:code:acme` |
+| Watch ACME themed bundle | `npm run watch:code:acme` |
+| Watch types + ACME bundle | `npm run start:acme` |
 | Lint | `npm run lint` |
 | Auto-fix lint issues | `npm run lint:fix` |
 | Format with Prettier | `npm run format` |
 | Check formatting | `npm run format:check` |
 | Lint + format check | `npm run check` |
-| Production build | `npm run build:prod` |
+| Lint + format check + build | `npm run check:all` |
 
 ---
 
