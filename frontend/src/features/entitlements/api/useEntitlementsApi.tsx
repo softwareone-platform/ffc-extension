@@ -8,6 +8,7 @@ import { http } from "@mpt-extension/sdk";
 
 import { EntitlementCreate } from "~api/ffc-api-model";
 import { ListResponse } from "~shared/utils/mapAxiosResponseDataList";
+import { getCustomQueryString } from "~shared/utils/rqlHelper";
 
 import { Entitlement } from "./model";
 
@@ -21,7 +22,7 @@ export function useEntitlementsApi() {
     ) => {
       return http<ListResponse<Entitlement>>({
         method: "GET",
-        url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
+        url: `${rootPath}${query ? `?${getCustomQueryString<Entitlement>(query)}` : ""}`,
         ...config,
       });
     },
@@ -31,7 +32,7 @@ export function useEntitlementsApi() {
   const get = useCallback(async (entityId: string, query?: RqlQuery<Entitlement>) => {
     return http<Entitlement>({
       method: "GET",
-      url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
+      url: `${rootPath}/${entityId}${query ? `?${getCustomQueryString<Entitlement>(query)}` : ""}`,
     });
   }, []);
 

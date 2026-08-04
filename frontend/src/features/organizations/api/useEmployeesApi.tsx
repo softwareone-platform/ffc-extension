@@ -9,6 +9,7 @@ import { http } from "@mpt-extension/sdk";
 
 import { EmployeeRead } from "~api/ffc-api-model";
 import { AddUserForm } from "~organizations/details/users/modal/AddUserForm.Schema";
+import { getCustomQueryString } from "~shared/utils/rqlHelper";
 
 export interface ListResponse<T> {
   total: number;
@@ -27,7 +28,7 @@ export function useEmployeesApi() {
     ) => {
       return http({
         method: "GET",
-        url: `${rootPath}/${organizationId}/employees${query ? `?${query.toString()}` : ""}`,
+        url: `${rootPath}/${organizationId}/employees${query ? `?${getCustomQueryString<EmployeeRead>(query)}` : ""}`,
         ...config,
       });
     },
