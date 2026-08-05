@@ -28,7 +28,7 @@ export function useOrganizationsApi() {
     ) => {
       return http<ListResponse<Entity<OrganizationRead>>>({
         method: "GET",
-        url: `${rootPath}${query ? `?${getCustomQueryString<Entity<OrganizationRead>>(query)}` : ""}`,
+        url: rootPath + getCustomQueryString<Entity<OrganizationRead>>(query),
         ...config,
       });
     },
@@ -38,7 +38,7 @@ export function useOrganizationsApi() {
   const get = useCallback(async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
     return http<OrganizationRead>({
       method: "GET",
-      url: `${rootPath}/${entityId}${query ? `?${getCustomQueryString<OrganizationRead>(query)}` : ""}`,
+      url: `${rootPath}/${entityId}` + getCustomQueryString<OrganizationRead>(query),
     });
   }, []);
 
@@ -54,7 +54,7 @@ export function useOrganizationsApi() {
     async (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
       return http({
         method: "GET",
-        url: `${rootPath}/${organizationId}/employees${query ? `?${getCustomQueryString<EmployeeRead>(query)}` : ""}`,
+        url: `${rootPath}/${organizationId}/employees` + getCustomQueryString<EmployeeRead>(query),
       });
     },
     [],
@@ -63,7 +63,8 @@ export function useOrganizationsApi() {
     async (organizationId: string, query?: RqlQuery<DatasourceRead>) => {
       return http({
         method: "GET",
-        url: `${rootPath}/${organizationId}/datasources${query ? `?${getCustomQueryString<DatasourceRead>(query)}` : ""}`,
+        url:
+          `${rootPath}/${organizationId}/datasources` + getCustomQueryString<DatasourceRead>(query),
       });
     },
     [],

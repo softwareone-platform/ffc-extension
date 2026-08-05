@@ -28,7 +28,7 @@ export function useEmployeesApi() {
     ) => {
       return http({
         method: "GET",
-        url: `${rootPath}/${organizationId}/employees${query ? `?${getCustomQueryString<EmployeeRead>(query)}` : ""}`,
+        url: `${rootPath}/${organizationId}/employees` + getCustomQueryString<EmployeeRead>(query),
         ...config,
       });
     },

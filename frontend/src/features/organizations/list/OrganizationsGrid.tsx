@@ -37,7 +37,6 @@ export function OrganizationsGrid() {
         organization={editOrganizationModal.data}
         isOpen={editOrganizationModal.isOpen}
         onClose={editOrganizationModal.close}
-        onSuccess={refresh}
       />
     </>
   );

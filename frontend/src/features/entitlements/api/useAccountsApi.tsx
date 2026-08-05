@@ -21,7 +21,7 @@ export function useAccountsApi() {
     ) => {
       return http<ListResponse<AccountRead>>({
         method: "GET",
-        url: `${rootPath}${query ? `?${getCustomQueryString<AccountRead>(query)}` : ""}`,
+        url: rootPath + getCustomQueryString<AccountRead>(query),
         ...config,
       });
     },

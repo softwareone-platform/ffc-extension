@@ -1,6 +1,10 @@
 import { RqlQuery } from "@swo/rql-client";
 
-export function getCustomQueryString<T extends object>(query: RqlQuery<T>): string {
+export function getCustomQueryString<T extends object>(query?: RqlQuery<T>): string {
+  if (!query) {
+    return "";
+  }
+
   const queryString = query
     .toString()
     .split("&")
@@ -17,7 +21,7 @@ export function getCustomQueryString<T extends object>(query: RqlQuery<T>): stri
     })
     .join("&");
 
-  return queryString;
+  return "?" + queryString;
 }
 
 export function serializeOrderBy<T extends object>(order: RqlQuery<T>["order"]): string {

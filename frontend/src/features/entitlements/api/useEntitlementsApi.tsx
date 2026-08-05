@@ -22,7 +22,7 @@ export function useEntitlementsApi() {
     ) => {
       return http<ListResponse<Entitlement>>({
         method: "GET",
-        url: `${rootPath}${query ? `?${getCustomQueryString<Entitlement>(query)}` : ""}`,
+        url: rootPath + getCustomQueryString<Entitlement>(query),
         ...config,
       });
     },
@@ -32,7 +32,7 @@ export function useEntitlementsApi() {
   const get = useCallback(async (entityId: string, query?: RqlQuery<Entitlement>) => {
     return http<Entitlement>({
       method: "GET",
-      url: `${rootPath}/${entityId}${query ? `?${getCustomQueryString<Entitlement>(query)}` : ""}`,
+      url: `${rootPath}/${entityId}` + getCustomQueryString<Entitlement>(query),
     });
   }, []);
 

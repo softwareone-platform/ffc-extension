@@ -15,7 +15,6 @@ type Props = {
 export const EditOrganizationFormFields = ({ control, error }: Props) => {
   const tProperties = useFixedT("shared:properties");
   const tPlaceholders = useFixedT("shared:placeholders");
-  const tEdit = useFixedT("organizations:edit");
 
   return (
     <div className="modal__content modal__container">

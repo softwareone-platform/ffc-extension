@@ -1,5 +1,3 @@
-import { InlineNotification } from "@swo/notification";
-
 import { OrganizationRead } from "~api/ffc-api-model/types.gen";
 import { Modal } from "~shared/components/modal/Modal";
 import { ModalCloseResult } from "~shared/components/modal/types";
@@ -15,7 +13,6 @@ type Props = {
   onClose: (result?: ModalCloseResult) => void;
   className?: string;
   organization: OrganizationRead | null;
-  onSuccess?: () => void;
 };
 
 export function EditOrganizationModal({
@@ -23,7 +20,6 @@ export function EditOrganizationModal({
   onClose,
   className,
   organization,
-  onSuccess,
 }: Readonly<Props>) {
   const tOrganization = useFixedT("organizations:edit");
   const { handleCancel, submit, isPending, error, control } = useOrganizationsController({
