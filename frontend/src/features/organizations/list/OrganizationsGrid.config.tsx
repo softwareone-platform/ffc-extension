@@ -1,20 +1,36 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
-import { UseAsyncGridConfig, useGridAsync } from "@swo/design-system/grid";
+import { GridEvents, UseAsyncGridConfig, useGridAsync } from "@swo/design-system/grid";
 import { Entity } from "@swo/service";
 
 import { OrganizationRead } from "~api/ffc-api-model";
 
-import { useAsyncOptions } from "./useAsyncOptions";
-import { useColumns } from "./useColumns";
-import { useFields } from "./useFields";
-import { useViews } from "./useViews";
+import { Organization, OrganizationAction } from "../api/model";
+import { useAsyncOptions } from "./hooks/useAsyncOptions";
+import { useColumns } from "./hooks/useColumns";
+import { useFields } from "./hooks/useFields";
+import { useViews } from "./hooks/useViews";
 
-export function useGridConfig() {
+export function useGridConfig(
+  onAction?: (action: OrganizationAction, item: Organization, silentRefresh: () => void) => void,
+) {
   const columns = useColumns();
   const fields = useFields();
   const views = useViews();
   const asyncOptions = useAsyncOptions();
+
+  const onGridActionEvent = useCallback(
+    (event: GridEvents) => {
+      if (event.type === "RowActionTriggered") {
+        onAction?.(
+          event.data.action as OrganizationAction,
+          event.data.item as Organization,
+          asyncOptions.silentRefresh,
+        );
+      }
+    },
+    [asyncOptions.silentRefresh, onAction],
+  );
 
   const config = useMemo(
     () =>
@@ -26,10 +42,11 @@ export function useGridConfig() {
         isDefaultView: false,
         selectedView: "active",
         ...asyncOptions,
+        onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entity<OrganizationRead>>,
-    [columns, views, fields, asyncOptions],
+    [columns, views, fields, asyncOptions, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+  return { refresh: asyncOptions.refresh, silentRefresh: asyncOptions.silentRefresh, ...gridProps };
 }

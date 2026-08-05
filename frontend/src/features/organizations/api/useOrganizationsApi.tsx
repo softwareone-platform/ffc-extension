@@ -8,6 +8,9 @@ import { Entity } from "@swo/service";
 import { http } from "@mpt-extension/sdk";
 
 import { DatasourceRead, EmployeeRead, OrganizationRead } from "~api/ffc-api-model";
+import { getCustomQueryString } from "~shared/utils/rqlHelper";
+
+import { EditOrganizationForm } from "../list/edit-organization-modal/EditOrganization.Schema";
 
 export interface ListResponse<T> {
   total: number;
@@ -25,7 +28,7 @@ export function useOrganizationsApi() {
     ) => {
       return http<ListResponse<Entity<OrganizationRead>>>({
         method: "GET",
-        url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
+        url: rootPath + getCustomQueryString<Entity<OrganizationRead>>(query),
         ...config,
       });
     },
@@ -35,7 +38,15 @@ export function useOrganizationsApi() {
   const get = useCallback(async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
     return http<OrganizationRead>({
       method: "GET",
-      url: `${rootPath}/${entityId}${query ? `?${query.toString()}` : ""}`,
+      url: `${rootPath}/${entityId}` + getCustomQueryString<OrganizationRead>(query),
+    });
+  }, []);
+
+  const editOrganization = useCallback(async (entityId: string, data: EditOrganizationForm) => {
+    return http<OrganizationRead>({
+      method: "PUT",
+      url: `${rootPath}/${entityId}`,
+      data: { name: data.name },
     });
   }, []);
 
@@ -43,7 +54,7 @@ export function useOrganizationsApi() {
     async (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
       return http({
         method: "GET",
-        url: `${rootPath}/${organizationId}/employees${query ? `?${query.toString()}` : ""}`,
+        url: `${rootPath}/${organizationId}/employees` + getCustomQueryString<EmployeeRead>(query),
       });
     },
     [],
@@ -52,14 +63,15 @@ export function useOrganizationsApi() {
     async (organizationId: string, query?: RqlQuery<DatasourceRead>) => {
       return http({
         method: "GET",
-        url: `${rootPath}/${organizationId}/datasources${query ? `?${query.toString()}` : ""}`,
+        url:
+          `${rootPath}/${organizationId}/datasources` + getCustomQueryString<DatasourceRead>(query),
       });
     },
     [],
   );
 
   return useMemo(
-    () => ({ list, get, listOrganizationEmployees, listOrganizationDataSources }),
-    [list, get, listOrganizationEmployees, listOrganizationDataSources],
+    () => ({ list, get, editOrganization, listOrganizationEmployees, listOrganizationDataSources }),
+    [list, get, editOrganization, listOrganizationEmployees, listOrganizationDataSources],
   );
 }

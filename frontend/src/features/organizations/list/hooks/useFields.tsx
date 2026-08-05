@@ -24,8 +24,7 @@ export function useFields() {
         type: "list",
         options: [
           { value: "active", label: getStatusLabel("Active") },
-          { value: "new", label: getStatusLabel("New") },
-          { value: "terminated", label: getStatusLabel("Terminated") },
+          { value: "cancelled", label: getStatusLabel("Terminated") },
           { value: "deleted", label: getStatusLabel("Deleted") },
         ],
       },

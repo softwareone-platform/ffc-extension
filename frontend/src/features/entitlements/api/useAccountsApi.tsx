@@ -8,6 +8,7 @@ import { http } from "@mpt-extension/sdk";
 
 import { AccountRead } from "~api/ffc-api-model";
 import { ListResponse } from "~shared/utils/mapAxiosResponseDataList";
+import { getCustomQueryString } from "~shared/utils/rqlHelper";
 
 const rootPath = "/ops/v1/accounts";
 
@@ -20,7 +21,7 @@ export function useAccountsApi() {
     ) => {
       return http<ListResponse<AccountRead>>({
         method: "GET",
-        url: `${rootPath}${query ? `?${query.toString()}` : ""}`,
+        url: rootPath + getCustomQueryString<AccountRead>(query),
         ...config,
       });
     },

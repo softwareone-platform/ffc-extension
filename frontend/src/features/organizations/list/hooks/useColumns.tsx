@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import {
+  GridCellActions,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -14,6 +15,8 @@ import { OrganizationRead } from "~api/ffc-api-model";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { useActionOptions } from "./useActionOptions";
+
 type Columns = Array<
   Omit<GridColumnDefinition<OrganizationRead>, "fields"> & {
     fields: Paths<OrganizationRead>[];
@@ -22,6 +25,7 @@ type Columns = Array<
 
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
+  const getActions = useActionOptions();
 
   return useMemo(() => {
     return [
@@ -78,8 +82,12 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: (_item: OrganizationRead) => <></>,
+        cell: (item: OrganizationRead) => (
+          <GridCellActions item={item} actions={getActions(item)} />
+        ),
         initialWidth: 100,
+        type: "Actions",
+        isScalable: false,
       },
     ];
   }, [tColumns]);

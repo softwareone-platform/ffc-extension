@@ -42,6 +42,18 @@
       "promote_to_admin": "Promote to admin",
       "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
       "make_admin_warning_line2": "This action cannot be undone."
+    },
+    "edit": {
+      "title": "Edit organization",
+      "edit_organization_info": "Update the details for the organization",
+      "save": "Save",
+      "errors": {
+        "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
+        "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
+        "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
+        "organization_edit_failed_with_code_403": "Failed to edit organization: Forbidden. You don't have permission to perform this action.",
+        "organization_edit_failed_with_code_404": "Failed to edit organization: Not found. The specified organization does not exist."
+      }
     }
   },
   "entitlements": {
@@ -137,8 +149,10 @@
       "entitlements": "Entitlements"
     },
     "actions": {
+      "activate": "Activate",
       "add": "Add",
       "cancel": "Cancel",
+      "edit": "Edit",
       "redeem": "Redeem",
       "terminate": "Terminate",
       "delete": "Delete",
@@ -200,7 +214,8 @@
           "id": "Affiliate ID"
         },
         "lastLogin": "Last Login",
-        "createdAt": "Created At"
+        "createdAt": "Created At",
+        "created_at": "Created At"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
@@ -223,9 +238,17 @@
       "currency": "Currency",
       "billingCurrency": "Billing currency",
       "email": "Email",
-      "display_name": "Full name"
+      "display_name": "Full name",
+      "name": "Name",
+      "operations_external_id": "Operations external ID"
     },
-    "placeholders": { "email": "Enter an email", "display_name": "Enter the user's full name" }
+    "placeholders": {
+      "email": "Enter an email",
+      "display_name": "Enter the user's full name",
+      "name": "Please enter the name",
+      "currency": "Please enter the currency",
+      "operations_external_id": "Please enter the operations external ID"
+    }
   },
   "entitlement": {
     "details": {

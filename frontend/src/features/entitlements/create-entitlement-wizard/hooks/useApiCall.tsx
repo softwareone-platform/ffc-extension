@@ -15,14 +15,16 @@ export function useApiCall(columns: Column<Account>[]) {
   return useCallback(
     async (filter: string, page: number, limit: number) => {
       if (role === "affiliate") {
-        const currentAffiliate = {
-          ...user?.account,
-        } as Account;
-
-        return {
-          data: [currentAffiliate],
-          total: 1,
-        };
+        // If the user is an affiliate, we only want to return their own account, so we create a promise that resolves with their account data.
+        // This is temporary solution.
+        return new Promise<{ data: Account[]; total: number }>((resolve) => {
+          setTimeout(() => {
+            resolve({
+              data: [user?.account as Account],
+              total: 1,
+            });
+          }, 0);
+        });
       }
 
       const { eq } = getExpressionBuilder<Account>();

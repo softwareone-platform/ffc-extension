@@ -186,7 +186,7 @@ export function useViews() {
           },
           sort: [
             { field: "events.created.at", direction: "desc" },
-            { field: "status", direction: "asc" },
+            { field: "status", direction: "desc" },
           ],
         },
       },
