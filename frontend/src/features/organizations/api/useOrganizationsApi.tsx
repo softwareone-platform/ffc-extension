@@ -10,6 +10,8 @@ import { http } from "@mpt-extension/sdk";
 import { DatasourceRead, EmployeeRead, OrganizationRead } from "~api/ffc-api-model";
 import { getCustomQueryString } from "~shared/utils/rqlHelper";
 
+import { EditOrganizationForm } from "../list/edit-organization-modal/EditOrganization.Schema";
+
 export interface ListResponse<T> {
   total: number;
   offset?: number;
@@ -40,6 +42,14 @@ export function useOrganizationsApi() {
     });
   }, []);
 
+  const editOrganization = useCallback(async (entityId: string, data: EditOrganizationForm) => {
+    return http<OrganizationRead>({
+      method: "PUT",
+      url: `${rootPath}/${entityId}`,
+      data: { name: data.name },
+    });
+  }, []);
+
   const listOrganizationEmployees = useCallback(
     async (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
       return http({
@@ -60,7 +70,7 @@ export function useOrganizationsApi() {
   );
 
   return useMemo(
-    () => ({ list, get, listOrganizationEmployees, listOrganizationDataSources }),
-    [list, get, listOrganizationEmployees, listOrganizationDataSources],
+    () => ({ list, get, editOrganization, listOrganizationEmployees, listOrganizationDataSources }),
+    [list, get, editOrganization, listOrganizationEmployees, listOrganizationDataSources],
   );
 }
