@@ -31,9 +31,15 @@ export function useOrganizationsController({
 
   useEffect(() => {
     if (organization) {
-      setValue("name", organization.name);
-      setValue("operations_external_id", organization.operations_external_id);
-      setValue("currency", organization.currency);
+      setValue("name", organization.name, {
+        shouldValidate: true,
+      });
+      setValue("operations_external_id", organization.operations_external_id, {
+        shouldValidate: true,
+      });
+      setValue("currency", organization.currency, {
+        shouldValidate: true,
+      });
     }
   }, [organization, setValue]);
 

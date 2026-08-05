@@ -214,7 +214,8 @@
           "id": "Affiliate ID"
         },
         "lastLogin": "Last Login",
-        "createdAt": "Created At"
+        "createdAt": "Created At",
+        "created_at": "Created At"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
@@ -241,7 +242,13 @@
       "name": "Name",
       "operations_external_id": "Operations external ID"
     },
-    "placeholders": { "email": "Enter an email", "display_name": "Enter the user's full name" }
+    "placeholders": {
+      "email": "Enter an email",
+      "display_name": "Enter the user's full name",
+      "name": "Please enter the name",
+      "currency": "Please enter the currency",
+      "operations_external_id": "Please enter the operations external ID"
+    }
   },
   "entitlement": {
     "details": {
