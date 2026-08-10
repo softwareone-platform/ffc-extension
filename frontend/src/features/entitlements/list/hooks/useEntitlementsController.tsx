@@ -15,6 +15,7 @@ export function useEntitlementController({ onClose }: ModalControllerProps = {})
 
   const cancel = useCallback((): void => {
     if (onClose) {
+      setError(null);
       onClose();
     }
   }, [onClose]);
@@ -28,6 +29,7 @@ export function useEntitlementController({ onClose }: ModalControllerProps = {})
 
   const onSuccess = useCallback((): void => {
     if (onClose) {
+      setError(null);
       onClose({ success: true });
     }
   }, [onClose]);
