@@ -42,6 +42,13 @@ export function useOrganizationsApi() {
     });
   }, []);
 
+  const deleteOrganization = useCallback(async (entityId: string) => {
+    return http<OrganizationRead>({
+      method: "DELETE",
+      url: `${rootPath}/${entityId}`,
+    });
+  }, []);
+
   const editOrganization = useCallback(async (entityId: string, data: EditOrganizationForm) => {
     return http<OrganizationRead>({
       method: "PUT",
@@ -71,7 +78,21 @@ export function useOrganizationsApi() {
   );
 
   return useMemo(
-    () => ({ list, get, editOrganization, listOrganizationEmployees, listOrganizationDataSources }),
-    [list, get, editOrganization, listOrganizationEmployees, listOrganizationDataSources],
+    () => ({
+      list,
+      get,
+      editOrganization,
+      deleteOrganization,
+      listOrganizationEmployees,
+      listOrganizationDataSources,
+    }),
+    [
+      list,
+      get,
+      editOrganization,
+      deleteOrganization,
+      listOrganizationEmployees,
+      listOrganizationDataSources,
+    ],
   );
 }

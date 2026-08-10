@@ -49,11 +49,13 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   const closeWizard = useCallback(() => {
     reset();
     setError("");
+    setActiveStepIndex(0);
     onClose({ success: entitlementCreated });
   }, [reset, onClose, entitlementCreated]);
 
   const finish = useCallback(() => {
     onClose({ success: entitlementCreated });
+    setActiveStepIndex(0);
   }, [onClose, entitlementCreated]);
 
   const onSubmit = useCallback(
