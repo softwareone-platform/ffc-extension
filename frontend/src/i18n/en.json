@@ -54,6 +54,13 @@
         "organization_edit_failed_with_code_403": "Failed to edit organization: Forbidden. You don't have permission to perform this action.",
         "organization_edit_failed_with_code_404": "Failed to edit organization: Not found. The specified organization does not exist."
       }
+    },
+    "delete_organization": {
+      "title": "Delete organization",
+      "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
+      "delete_organization_warning_line2": "This action cannot be undone.",
+      "delete": "Delete",
+      "cancel": "Cancel"
     }
   },
   "entitlements": {

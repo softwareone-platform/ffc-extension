@@ -20,12 +20,13 @@ export function useUserFormController({
   const { data } = useMPTContext();
   const { addAdmin } = useEmployeesApi();
   const [error, setError] = useState<string | null>(null);
-  const { handleSubmit, control } = useAddUserForm({ email: "", display_name: "" });
+  const { handleSubmit, control, reset } = useAddUserForm({ email: "", display_name: "" });
   const tErrors = useFixedT("organization:users:errors");
 
   const handleCancel = useCallback((): void => {
+    reset();
     onClose();
-  }, [onClose]);
+  }, [onClose, reset]);
 
   const onError = useCallback(
     (err: AxiosError): void => {
@@ -35,8 +36,9 @@ export function useUserFormController({
   );
 
   const onSuccess = useCallback((): void => {
+    reset();
     onClose({ success: true });
-  }, [onClose]);
+  }, [onClose, reset]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (formData: AddUserForm) => addAdmin(data.organizationId, formData),
