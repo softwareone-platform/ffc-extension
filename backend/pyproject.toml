@@ -175,9 +175,18 @@ omit = [
 
 [tool.ty.environment]
 python-version = "3.12"
-
+python="/opt/venv"
 [tool.ty.rules]
 # was mypy ignore_missing_imports = true
 unresolved-import = "ignore"
 # was mypy warn_no_return = false
 invalid-return-type = "ignore"
+
+[[tool.ty.overrides]]
+# Processor collaborators are declared as their real client types but injected as
+# `mocker.AsyncMock()` by the `make_processor` fixture, so `.return_value` and
+# `.assert_awaited_*` are invisible to ty in tests.
+include = ["tests/**"]
+
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"

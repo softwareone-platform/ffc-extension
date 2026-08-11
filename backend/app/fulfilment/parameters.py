@@ -21,6 +21,38 @@ from app.parameters import (
 logger = logging.getLogger(__name__)
 
 
+def get_due_date_update(order: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    due_date = get_due_date(order)
+    today = datetime.now(UTC).date()
+    if due_date:
+        logger.info(
+            f"Due date parameter was setup before {due_date.strftime('%Y-%m-%d')}: skip",
+        )
+        return {}
+    due_date = today + timedelta(days=int(settings.due_date_days))
+    return {PARAM_DUE_DATE: due_date.strftime("%Y-%m-%d")}
+
+
+def get_billing_defaults_updates(order: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    updates = {}
+    today = datetime.now(UTC).date()
+    if not get_fulfillment_parameter(order, PARAM_BILLED_PERCENTAGE).get("value"):
+        updates[PARAM_BILLED_PERCENTAGE] = str(settings.default_billed_percentage)
+
+    trial_start_date = get_fulfillment_parameter(order, PARAM_TRIAL_START_DATE).get("value")
+    if not trial_start_date:
+        trial_start_date = today.strftime("%Y-%m-%d")
+        updates[PARAM_TRIAL_START_DATE] = trial_start_date
+
+    if not get_fulfillment_parameter(order, PARAM_TRIAL_END_DATE).get("value"):
+        trial_end_date = datetime.strptime(trial_start_date, "%Y-%m-%d").date() + timedelta(
+            days=int(settings.default_trial_period_duration_days)
+        )
+        updates[PARAM_TRIAL_END_DATE] = trial_end_date.strftime("%Y-%m-%d")
+
+    return updates
+
+
 def get_parameter_updates(order: dict[str, Any], settings: Settings) -> dict[str, Any]:
     """Build default fulfillment parameter values when they are missing in the order."""
     updates = {}

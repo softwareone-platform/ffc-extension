@@ -53,6 +53,9 @@ from app.enums import (
 from app.fastapi import setup_app
 from app.fulfilment.constants import (
     COMPLETED_TEMPLATE_TYPE,
+    ORDER_TYPE_CHANGE,
+    ORDER_TYPE_PURCHASE,
+    ORDER_TYPE_TERMINATE,
     PROCESSING_TEMPLATE_TYPE,
     PURCHASE_EXISTING_TEMPLATE_NAME,
     PURCHASE_TEMPLATE_NAME,
@@ -1170,7 +1173,18 @@ def order_factory(
 def purchase_order(order_factory: OrderFactory) -> dict[str, Any]:
     """A fresh Purchase order in Processing status for the FinOps product."""
     return order_factory(
-        order_type="Purchase",
+        order_type=ORDER_TYPE_PURCHASE,
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+
+
+@pytest.fixture()
+def terminate_order(order_factory: OrderFactory) -> dict[str, Any]:
+    """A Terminate order in Processing status for the FinOps product."""
+    return order_factory(
+        order_type=ORDER_TYPE_TERMINATE,
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",
@@ -1180,7 +1194,7 @@ def purchase_order(order_factory: OrderFactory) -> dict[str, Any]:
 @pytest.fixture()
 def change_order(order_factory: OrderFactory) -> dict[str, Any]:
     return order_factory(
-        order_type="Change",
+        order_type=ORDER_TYPE_CHANGE,
         status="Processing",
         product_id="PRD-4141-4379",
         product_name="SoftwareOne FinOps for Cloud",

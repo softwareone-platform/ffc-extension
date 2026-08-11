@@ -4,7 +4,7 @@ import logging
 import secrets
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from app.api_clients.mpt import MPTClient
@@ -23,10 +23,12 @@ from app.fulfilment.constants import (
     MPT_ORDER_STATUS_PROCESSING,
     ORDER_TYPE_CHANGE,
     ORDER_TYPE_PURCHASE,
+    ORDER_TYPE_TERMINATE,
     PROCESSING_TEMPLATE_TYPE,
     PURCHASE_EXISTING_TEMPLATE_NAME,
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
+    TERMINATE_TEMPLATE_NAME,
 )
 from app.fulfilment.error import (
     ERR_DUE_DATE_IS_REACHED,
@@ -36,12 +38,18 @@ from app.fulfilment.error import (
 from app.fulfilment.exceptions import (
     OrderMovedToQuery,
     OrderNotValidError,
+    UnsupportedOrderTypeError,
 )
-from app.fulfilment.parameters import check_order_parameters, get_parameter_updates
+from app.fulfilment.parameters import (
+    check_order_parameters,
+    get_billing_defaults_updates,
+    get_due_date_update,
+)
 from app.fulfilment.subscriptions import get_subscription_by_line_and_item_id
 from app.parameters import (
     PARAM_ADMIN_CONTACT,
     PARAM_CURRENCY,
+    PARAM_DUE_DATE,
     PARAM_IS_NEW_USER,
     PARAM_ORGANIZATION_NAME,
     get_due_date,
@@ -107,28 +115,21 @@ class OrderProcessor(ABC):
             )
             raise KeyError(f"Order is malformed: missing key {exc}") from exc
 
-    async def get_complete_template(self, is_new: bool) -> str | None:
-        if is_new:
-            template_name = PURCHASE_TEMPLATE_NAME
-        else:
-            template_name = PURCHASE_EXISTING_TEMPLATE_NAME
-
-        template_id = await self.get_product_template_id(COMPLETED_TEMPLATE_TYPE, template_name)
-        return template_id
-
     async def get_product_template_id(
         self, template_type: str, template_name: str | None
-    ) -> str | None:
+    ) -> Any | None:
         product_id = self.settings.mpt_product_id
         if not self.template_cache:
             logger.info("Initializing template cache for product %s", product_id)
             await self.fetch_product_templates(product_id)
             logger.info("Template cache initialized with %d entries", len(self.template_cache))
         logger.info("Fetching template %s", template_name)
-        return (
-            self.template_cache.get((template_type, template_name))
-            or self.template_cache[(template_type, None)]
-        )
+        template_id = self.template_cache.get(
+            (template_type, template_name)
+        ) or self.template_cache.get((template_type, None))
+        if template_id is None:
+            raise OrderNotValidError(f"Product {product_id} has no template type {template_type}.")
+        return template_id
 
     async def fetch_product_templates(self, product_id: str) -> None:
         async for template in self.ext_client.get_templates_by_product_id(product_id=product_id):
@@ -137,30 +138,6 @@ class OrderProcessor(ABC):
             template_name = template["name"] if not template["default"] else None
             self.template_cache[(template_type, template_name)] = template_id
             logger.debug("Cached template %s (%s, %s)", template_id, template_type, template_name)
-
-    async def set_processing_order_template(self) -> dict:
-        """Ensure the order uses the processing template expected for purchase flow."""
-        template_id = await self.get_product_template_id(
-            PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME
-        )
-        logger.info("Processing order template: %s", template_id)
-        current_template_id = self.order.get("template", {}).get("id")
-        if template_id != current_template_id:
-            order = self.set_template(order=self.order, template_id=template_id)
-            order = await self.ext_client.update_order(
-                order_id=order["id"],
-                template={"id": template_id},
-            )
-            self.order = order
-            logger.info(
-                "%s: processing template set to %s (%s)",
-                order["id"],
-                PURCHASE_TEMPLATE_NAME,
-                template_id,
-            )
-
-        logger.info("%s: processing template is ok, continue", self.order["id"])
-        return self.order
 
     async def validate_and_move_to_querying_if_needed(self) -> bool:
         """
@@ -186,26 +163,52 @@ class OrderProcessor(ABC):
             return False
         return True
 
-    async def validate_order(self):
+    async def validate_order_status(self) -> None:
         if self.order["status"] != MPT_ORDER_STATUS_PROCESSING:
             raise OrderNotValidError(f"Order {self.order['id']} is not in Processing status")
 
+    async def validate_order(self) -> None:
+        await self.validate_order_status()
         is_valid = await self.validate_and_move_to_querying_if_needed()
         if not is_valid:
             raise OrderMovedToQuery(f"Order {self.order['id']} is not valid")
 
-    async def apply_fulfillment_defaults(self) -> dict[str, Any]:
-        updated_parameters = get_parameter_updates(self.order, self.settings)
-        order = copy.deepcopy(self.order)
-        if updated_parameters:
+    async def _store_order_parameters_updates(
+        self, updated_parameters: dict[str, Any]
+    ) -> dict[str, Any]:
+        if not updated_parameters:
+            return self.order
+        else:
+            order = copy.deepcopy(self.order)
             for param_name, param_value in updated_parameters.items():
-                get_fulfillment_parameter(order, param_name)["value"] = param_value
-            order = await self.ext_client.update_order(
+                param = get_fulfillment_parameter(order, param_name)
+                if not param:
+                    raise OrderNotValidError(
+                        f"Order {self.order['id']} has not fulfillment parameter {param_name}"
+                    )
+                param["value"] = param_value
+            self.order = await self.ext_client.update_order(
                 order_id=order["id"], parameters=order["parameters"]
             )
             logger.info("%s: updating fulfillment parameters", self.order["id"])
-        self.order = order
-        return self.order
+            return self.order
+
+    async def apply_fulfillment_defaults(self) -> dict[str, Any]:
+        """
+        Fill in the fulfillment parameters and persist them.
+        Computes defaults for `dueDate` (today + `due_date_days`),
+        `billedPercentage`,`trialStartDate` and `trialEndDate`,
+        skipping any parameter that already carries a value.
+
+        :return:
+        the updated order as returned by the marketplace, or the current
+        order unchanged when every parameter was already set.
+        """
+        updates_parameters = {
+            **get_due_date_update(self.order, self.settings),
+            **get_billing_defaults_updates(self.order, self.settings),
+        }
+        return await self._store_order_parameters_updates(updates_parameters)
 
     async def get_or_create_organization(
         self,
@@ -232,23 +235,24 @@ class OrderProcessor(ABC):
             organization_on_optscale = await self.api_modifier_client.create_organization(
                 org_name=org_name, user_id=employee_id, currency=org_currency
             )
-            optscale_org = organization_on_optscale.json()
-            logger.info("Organization on OptScale created with id %s ", optscale_org["id"])
+            optscale_organization = organization_on_optscale.json()
+            logger.info("Organization on OptScale created with id %s ", optscale_organization["id"])
+            await self.organization_repo.update(
+                organization.id,
+                {
+                    "linked_organization_id": optscale_organization["id"],
+                },
+            )
             await self.ext_client.update_agreement(
                 agreement_id,
                 externalIds={"vendor": organization.id},
             )
-            await self.organization_repo.update(
-                organization.id,
-                {
-                    "linked_organization_id": optscale_org["id"],
-                },
-            )
+
             logger.info(
                 "%s: Updating organization %s with external id to %s ",
                 self.order["id"],
                 organization.id,
-                optscale_org["id"],
+                optscale_organization["id"],
             )
             logger.info("Organization created with id %s ", organization.id)
         else:
@@ -285,7 +289,7 @@ class OrderProcessor(ABC):
         logger.debug("Updated orders %s %s ", updated_order["parameters"], self.order["parameters"])
         return employee_id, email
 
-    async def create_order_subscription(self, organization: Organization):
+    async def create_order_subscription(self, organization: Organization) -> None:
         """Create missing subscriptions for each order line and bind them to the organization."""
         for line in self.order["lines"]:
             order_subscription = get_subscription_by_line_and_item_id(
@@ -315,6 +319,39 @@ class OrderProcessor(ABC):
                     subscription["id"],
                 )
 
+    async def handle_processing_failure(self, exc: Exception) -> ProcessingResult:
+        due_date: date | None = get_due_date(self.order)
+        if due_date is None:
+            # No due date to retry against: fail the order and cancel.
+            await self.ext_client.fail_order(
+                order_id=self.order["id"],
+                payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
+            )
+            return ProcessingResult(
+                status=ProcessingStatus.CANCEL,
+                severity="Error",
+                message=ERR_DUE_DATE_NOT_SET.message,
+            )
+        now = datetime.now(UTC).date()
+        if now < due_date:
+            # Still within the due date window: retry later.
+            return ProcessingResult(
+                status=ProcessingStatus.RESCHEDULE,
+                severity="Warning",
+                message=f"An error occurred while processing the order: {exc}",
+            )
+        # Due date reached: fail the order and let the task complete.
+        status_notes = ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d"))
+        await self.ext_client.fail_order(
+            order_id=self.order["id"],
+            payload={"statusNotes": status_notes},
+        )
+        return ProcessingResult(
+            status=ProcessingStatus.COMPLETE,
+            severity="Error",
+            message=status_notes["message"],
+        )
+
     @abstractmethod
     async def process(self) -> ProcessingResult:
         raise NotImplementedError()
@@ -332,6 +369,39 @@ class PurchaseOrderProcessor(OrderProcessor):
         else:
             logger.info("No need to send reset password for %s", employee_email)
 
+    async def get_complete_template(self, is_new: bool) -> str | None:
+        if is_new:
+            template_name = PURCHASE_TEMPLATE_NAME
+        else:
+            template_name = PURCHASE_EXISTING_TEMPLATE_NAME
+
+        template_id = await self.get_product_template_id(COMPLETED_TEMPLATE_TYPE, template_name)
+        return template_id
+
+    async def set_processing_order_template(self) -> dict:
+        """Ensure the order uses the processing template expected for purchase flow."""
+        template_id = await self.get_product_template_id(
+            PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME
+        )
+        logger.info("Processing order template: %s", template_id)
+        current_template_id = self.order.get("template", {}).get("id")
+        if template_id != current_template_id:
+            order = self.set_template(order=self.order, template_id=template_id)
+            order = await self.ext_client.update_order(
+                order_id=order["id"],
+                template={"id": template_id},
+            )
+            self.order = order
+            logger.info(
+                "%s: processing template set to %s (%s)",
+                order["id"],
+                PURCHASE_TEMPLATE_NAME,
+                template_id,
+            )
+
+        logger.info("%s: processing template is ok, continue", self.order["id"])
+        return self.order
+
     async def process(self) -> ProcessingResult:
         try:
             await self.validate_order()
@@ -344,78 +414,120 @@ class PurchaseOrderProcessor(OrderProcessor):
             is_new_user_param = get_fulfillment_parameter(self.order, PARAM_IS_NEW_USER)
             is_new = is_new_user_param.get("value") == ["Yes"]
             template_id = await self.get_complete_template(is_new)
-
             await self.ext_client.complete_order(
-                order_id=self.order["id"], payload={"template": {"id": template_id}}
+                order_id=self.order["id"],
+                payload={
+                    "template": {"id": template_id},
+                    "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+                },
             )
 
             await self.send_reset_password(employee_email, is_new)
             logger.info("Order %s has been completed", self.order["id"])
             return ProcessingResult(status=ProcessingStatus.COMPLETE)
         except Exception as exc:
+            logger.exception("%s: Purchase Order processing failed.", self.order["id"])
             if isinstance(exc, OrderMovedToQuery | OrderNotValidError):
                 return ProcessingResult(
                     status=ProcessingStatus.SKIP,
                     severity="Info",
-                    message=(
-                        "Order parameters are missing or invalid. Order switched to 'Querying.'"
-                    ),
+                    message="Order parameters are missing or invalid. Order Skipped.",
                 )
 
-            due_date: date | None = get_due_date(self.order) if self.order else None
-            if due_date is None:
-                # No due date to retry against: fail the order and cancel.
-                await self.ext_client.fail_order(
-                    order_id=self.order["id"],
-                    payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
-                )
-                return ProcessingResult(
-                    status=ProcessingStatus.CANCEL,
-                    severity="Error",
-                    message="No due date fulfillment parameter found.",
-                )
-            now = date.today()
-            if now < due_date:
-                # Still within the due date window: retry later.
-                return ProcessingResult(
-                    status=ProcessingStatus.RESCHEDULE,
-                    severity="Warning",
-                    message=f"An error occurred while processing the order: {exc}",
-                )
-            # Due date reached: fail the order and let the task complete.
+            return await self.handle_processing_failure(exc)
+
+
+class ChangeOrderProcessor(OrderProcessor):
+    async def process(self) -> ProcessingResult:
+        try:
             await self.ext_client.fail_order(
                 order_id=self.order["id"],
                 payload={
-                    "statusNotes": ERR_DUE_DATE_IS_REACHED.to_dict(
-                        due_date=due_date.strftime("%Y-%m-%d")
+                    "statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(
+                        order_type=self.order["type"]
                     )
+                },
+            )
+
+            return ProcessingResult(
+                status=ProcessingStatus.COMPLETE,
+                severity="Warning",
+                message="Change orders are not supported.",
+            )
+        except Exception as exc:
+            logger.exception("%s: Change Order processing failed.", self.order["id"])
+            return await self.handle_processing_failure(exc)
+
+
+class TerminateOrderProcessor(OrderProcessor):
+    async def process(self) -> ProcessingResult:
+        try:
+            await self.validate_order_status()
+            await self._store_order_parameters_updates(
+                get_due_date_update(self.order, self.settings)
+            )
+
+            agreement_id = self.order["agreement"]["id"]
+            agreement = await self.ext_client.get_agreement(agreement_id)
+            organization_id = agreement.get("externalIds", {}).get("vendor")
+            organization = await self.organization_repo.first(
+                where_clauses=[
+                    Organization.id == organization_id,
+                ]
+            )
+            if organization is None or organization is None:
+                return ProcessingResult(
+                    status=ProcessingStatus.CANCEL,
+                    severity="Error",
+                    message=f"The organization {organization_id} linked to agreement {agreement_id}"
+                    f" was not found.",
+                )
+            if not organization.linked_organization_id:
+                return ProcessingResult(
+                    status=ProcessingStatus.CANCEL,
+                    severity="Error",
+                    message=f"The organization {organization_id} is not linked to a FinOps "
+                    f"for Cloud Organization.",
+                )
+            optscale_org_id = organization.linked_organization_id
+
+            response = await self.optscale_client.get_organization(optscale_org_id)
+            optscale_organization = response.json()
+            is_disabled = optscale_organization["disabled"]
+            template_id = await self.get_product_template_id(
+                COMPLETED_TEMPLATE_TYPE, TERMINATE_TEMPLATE_NAME
+            )
+            if is_disabled:
+                severity = "Warning"
+                message = f"The Organization {organization_id} was already terminated."
+
+            else:
+                await self.optscale_client.suspend_organization(optscale_org_id)
+                # todo: update status = Terminated and terminated_at = now()
+                severity = "Info"
+                message = f"The Organization {organization_id} was successfully suspended."
+
+            await self.ext_client.complete_order(
+                order_id=self.order["id"],
+                payload={
+                    "template": {"id": template_id},
+                    "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
                 },
             )
             return ProcessingResult(
                 status=ProcessingStatus.COMPLETE,
-                severity="Error",
-                message=ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d")),
+                severity=severity,
+                message=message,
             )
-
-
-class ChangeOrderProcessor(OrderProcessor):
-    async def process(self):
-        await self.ext_client.fail_order(
-            order_id=self.order["id"],
-            payload={
-                "statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=self.order["type"])
-            },
-        )
-        return ProcessingResult(
-            status=ProcessingStatus.COMPLETE,
-            severity="Warning",
-            message="Change orders are not supported.",
-        )
+        except Exception as exc:
+            logger.exception("%s: Terminate processing failed.", self.order["id"])
+            return await self.handle_processing_failure(exc)
 
 
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
     ORDER_TYPE_PURCHASE: PurchaseOrderProcessor,
     ORDER_TYPE_CHANGE: ChangeOrderProcessor,
+    ORDER_TYPE_TERMINATE: TerminateOrderProcessor,
 }
 
 
@@ -441,7 +553,11 @@ class OrderProcessorFactory:
     async def get_order_type_processor(self, order_id: str) -> OrderProcessor:
         order = await self.client.get_order(order_id)
         order_type = order["type"]
-        processor_cls = PROCESSOR_BY_TYPE[order_type]
+        logger.info("ORDER TYPE: %s", order_type)
+        processor_cls = PROCESSOR_BY_TYPE.get(order_type)
+        if processor_cls is None:
+            logger.warning("%s The order type %s is not supported.", order_type, order_type)
+            raise UnsupportedOrderTypeError(order_type)
         return processor_cls(
             api_modifier_client=self.api_modifier_client,
             client=self.client,

@@ -5,6 +5,7 @@ from datetime import date
 from typing import Any
 
 import pytest
+from freezegun import freeze_time
 from pytest_mock import MockerFixture
 
 from app.api_clients.optscale import UserDoesNotExist
@@ -22,11 +23,16 @@ from app.fulfilment.error import (
     ERR_DUE_DATE_NOT_SET,
     ERR_ORDER_TYPE_NOT_SUPPORTED,
 )
-from app.fulfilment.exceptions import OrderMovedToQuery, OrderNotValidError
+from app.fulfilment.exceptions import (
+    OrderMovedToQuery,
+    OrderNotValidError,
+    UnsupportedOrderTypeError,
+)
 from app.fulfilment.processing import (
     ProcessingStatus,
     PurchaseOrderProcessor,
 )
+from app.parameters import PARAM_DUE_DATE, set_due_date
 from tests.types import FactoryBuilder, ProcessorBuilder, TemplatesMocker
 
 PRODUCT_ID = "PRD-4141-4379"
@@ -44,6 +50,64 @@ async def test_get_order_type_processor(
     assert processor.order == purchase_order
     assert isinstance(processor, PurchaseOrderProcessor)
     factory.client.get_order.assert_awaited_once_with(purchase_order["id"])
+
+
+async def test_process_order_without_due_date(
+    make_processor: ProcessorBuilder,
+    purchase_order: dict[str, Any],
+    caplog,
+    mocker: MockerFixture,
+) -> None:
+    """A fail_order error is logged and swallowed when the order has no due date"""
+    purchase_order = set_due_date(purchase_order, None)
+    processor = make_processor(purchase_order)
+    mocker.patch.object(processor, "validate_order", side_effect=RuntimeError("big error"))
+    processor.ext_client.fail_order.side_effect = RuntimeError("order is already Failed")
+    with pytest.raises(RuntimeError, match="order is already Failed"):
+        await processor.process()
+
+
+@freeze_time("2026-08-11")
+async def test_change_order_process_handles_a_malformed_order(
+    make_processor: ProcessorBuilder,
+    change_order: dict[str, Any],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An order missing its `type` key is rescheduled with a traceback, not propagated."""
+    change_order = set_due_date(change_order, date(2026, 12, 1))
+    order_id = change_order["id"]
+    processor = make_processor(change_order)
+    processor.order = {key: value for key, value in change_order.items() if key != "type"}
+
+    with caplog.at_level(logging.ERROR):
+        result = await processor.process()
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert result.severity == "Warning"
+    assert result.message == "An error occurred while processing the order: 'type'"
+    assert f"{order_id}: Change Order processing failed." in caplog.text
+    assert "KeyError" in caplog.text
+    processor.ext_client.fail_order.assert_not_awaited()
+
+
+async def test_get_order_type_processor_rejects_unsupported_type(
+    order_factory: Callable[..., dict[str, Any]],
+    make_order_processor_factory: FactoryBuilder,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """`get_order_type_processor` raises and warns for an order type with no processor."""
+    order = order_factory(
+        order_type="Configuration",
+        status="Processing",
+        product_id="PRD-4141-4379",
+        product_name="SoftwareOne FinOps for Cloud",
+    )
+    factory = make_order_processor_factory(order)
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(UnsupportedOrderTypeError, match="Configuration"):
+            await factory.get_order_type_processor(order_id=order["id"])
+
+    assert "The order type Configuration is not supported." in caplog.text
+    factory.client.get_order.assert_awaited_once_with(order["id"])
 
 
 # -- OrderProcessor.set_template --
@@ -136,6 +200,18 @@ async def test_get_product_template_uses_cache_without_http_call(
     )
     assert template_id == "TPL-CACHED"
     processor.ext_client.get_templates_by_product_id.assert_not_called()
+
+
+async def test_get_product_template_raises_exception(
+    purchase_order: dict[str, Any],
+    make_processor: ProcessorBuilder,
+    mock_product_templates: TemplatesMocker,
+) -> None:
+    processor = make_processor(purchase_order)
+    mock_product_templates(processor)
+    processor.template_cache[(PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME)] = None
+    with pytest.raises(OrderNotValidError, match="has no template type"):
+        await processor.get_product_template_id(PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME)
 
 
 async def test_fetch_product_template_builds_cache(
@@ -323,7 +399,12 @@ async def test_apply_fulfillment_defaults_fills_missing_parameters(
     """`apply_fulfillment_defaults` persists the order once defaults are applied."""
     processor = make_processor(purchase_order)
     for param in purchase_order["parameters"]["fulfillment"]:
-        if param["externalId"] in {"dueDate", "billedPercentage", "trialStartDate", "trialEndDate"}:
+        if param["externalId"] in {
+            PARAM_DUE_DATE,
+            "billedPercentage",
+            "trialStartDate",
+            "trialEndDate",
+        }:
             param["value"] = None
     expected_order = copy.deepcopy(purchase_order)
     processor.ext_client.update_order.return_value = expected_order
@@ -692,7 +773,11 @@ async def test_purchase_order_process_completes_order(
     # isNewUser has no value in the factory order -> existing user (is_new is False).
     mocked_get_complete_template.assert_awaited_once_with(False)
     processor.ext_client.complete_order.assert_awaited_once_with(
-        order_id=purchase_order["id"], payload={"template": {"id": "TPL-0006"}}
+        order_id=purchase_order["id"],
+        payload={
+            "template": {"id": "TPL-0006"},
+            "parameters": {"fulfillment": [{"externalId": "dueDate", "value": None}]},
+        },
     )
     mocked_send_reset_password.assert_awaited_once_with("pl@example.com", False)
     assert f"Order {purchase_order['id']} has been completed" in caplog.text
@@ -725,7 +810,11 @@ async def test_purchase_order_process_new_user_branch(
 
     mocked_get_complete_template.assert_awaited_once_with(True)
     processor.ext_client.complete_order.assert_awaited_once_with(
-        order_id=purchase_order["id"], payload={"template": {"id": "TPL-0005"}}
+        order_id=purchase_order["id"],
+        payload={
+            "template": {"id": "TPL-0005"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
     )
     mocked_send_reset_password.assert_awaited_once_with("new@example.com", True)
 
@@ -754,7 +843,7 @@ async def test_purchase_order_process_cancels_when_no_due_date(
 ) -> None:
     """`process` fails the order and returns CANCEL when an error occurs and no due date is set."""
     for param in purchase_order["parameters"]["fulfillment"]:
-        if param["externalId"] == "dueDate":
+        if param["externalId"] == PARAM_DUE_DATE:
             param["value"] = None
     processor = make_processor(purchase_order)
     mocker.patch.object(processor, "validate_order", side_effect=RuntimeError("boom"))
@@ -768,6 +857,7 @@ async def test_purchase_order_process_cancels_when_no_due_date(
     processor.ext_client.complete_order.assert_not_awaited()
 
 
+@freeze_time("2024-12-01")
 async def test_purchase_order_process_reschedules_before_due_date(
     make_processor: ProcessorBuilder, purchase_order: dict[str, Any], mocker: MockerFixture
 ) -> None:
@@ -775,11 +865,11 @@ async def test_purchase_order_process_reschedules_before_due_date(
     # The factory order carries a due date of 2025-01-01.
     processor = make_processor(purchase_order)
     mocker.patch.object(processor, "validate_order", side_effect=RuntimeError("boom"))
-    mocker.patch("app.fulfilment.processing.date").today.return_value = date(2024, 12, 1)
 
     result = await processor.process()
 
     assert result.status is ProcessingStatus.RESCHEDULE
+    assert result.message is not None
     assert "boom" in result.message
     processor.ext_client.fail_order.assert_not_awaited()
 
@@ -812,3 +902,239 @@ async def test_change_order_process_fail(
         order_id=change_order["id"],
         payload={"statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type="Change")},
     )
+
+
+# TerminateOrderProcessor
+async def test_terminated_order_process_completes_order(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+    mocker: MockerFixture,
+) -> None:
+    """`process` runs every step in order and completes an existing-user purchase order."""
+    processor = make_processor(terminate_order)
+    mocker.patch.object(processor, "get_product_template_id", return_value="TPL-1234-5678-0001")
+    organization = mocker.Mock(id="FORG-8077-2461-7285", linked_organization_id="OPT-ORG-001")
+    processor.ext_client.get_agreement.return_value = {
+        "externalIds": {"client": "", "vendor": "FORG-8077-2461-7285"},
+    }
+    processor.organization_repo.first.return_value = organization
+    processor.optscale_client.get_organization.return_value = mocker.Mock(
+        json=mocker.Mock(
+            return_value={
+                "deleted_at": 0,
+                "created_at": 1784036037,
+                "id": "9939c1a3-fd82-4cd4-b749-5e85cf69b606",
+                "name": "SPIDERMAN3232",
+                "pool_id": "7a496040-46e2-4011-9c76-66a9830c595b",
+                "is_demo": False,
+                "currency": "USD",
+                "cleaned_at": 0,
+                "disabled": False,
+            }
+        )
+    )
+    result = await processor.process()
+    assert result.status is ProcessingStatus.COMPLETE
+    assert result.severity == "Info"
+    assert result.message is not None
+    assert "The Organization FORG-8077-2461-7285 was successfully suspended." in result.message
+    processor.ext_client.complete_order.assert_awaited_once_with(
+        order_id=terminate_order["id"],
+        payload={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor.ext_client.get_agreement.assert_awaited_once_with(
+        terminate_order["agreement"]["id"],
+    )
+    processor.optscale_client.get_organization.assert_awaited_once_with("OPT-ORG-001")
+    processor.optscale_client.suspend_organization.assert_awaited_once_with("OPT-ORG-001")
+
+
+async def test_terminate_cancels_when_order_has_no_due_date_parameter(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+) -> None:
+    pass
+    """The terminate flow cancels when the order declares no 'dueDate` parameter."""
+    terminate_order["parameters"]["fulfillment"] = [
+        param
+        for param in terminate_order["parameters"]["fulfillment"]
+        if param["externalId"] != PARAM_DUE_DATE
+    ]
+    processor = make_processor(terminate_order)
+    result = await processor.process()
+    assert result.status is ProcessingStatus.CANCEL
+    assert result.message is not None
+    assert result.message == ERR_DUE_DATE_NOT_SET.message
+    processor.ext_client.update_order.assert_not_awaited()
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+
+
+async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+    mocker: MockerFixture,
+) -> None:
+    """`process` runs every step in order and completes an existing-user purchase order."""
+    processor = make_processor(terminate_order)
+    mocker.patch.object(processor, "get_product_template_id", return_value="TPL-1234-5678-0001")
+    organization = mocker.Mock(id="FORG-8077-2461-7285", linked_organization_id="OPT-ORG-001")
+    processor.ext_client.get_agreement.return_value = {
+        "externalIds": {"client": "", "vendor": "FORG-8077-2461-7285"},
+    }
+    processor.organization_repo.first.return_value = organization
+    processor.optscale_client.get_organization.return_value = mocker.Mock(
+        json=mocker.Mock(
+            return_value={
+                "deleted_at": 0,
+                "created_at": 1784036037,
+                "id": "9939c1a3-fd82-4cd4-b749-5e85cf69b606",
+                "name": "SPIDERMAN3232",
+                "pool_id": "7a496040-46e2-4011-9c76-66a9830c595b",
+                "is_demo": False,
+                "currency": "USD",
+                "cleaned_at": 0,
+                "disabled": True,
+            }
+        )
+    )
+    result = await processor.process()
+    assert result.status is ProcessingStatus.COMPLETE
+    assert result.severity == "Warning"
+    assert result.message is not None
+    assert "The Organization FORG-8077-2461-7285 was already terminated." in result.message
+    processor.ext_client.complete_order.assert_awaited_once_with(
+        order_id=terminate_order["id"],
+        payload={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor.ext_client.get_agreement.assert_awaited_once_with(
+        terminate_order["agreement"]["id"],
+    )
+    processor.optscale_client.get_organization.assert_awaited_once_with("OPT-ORG-001")
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+
+
+async def test_terminated_order_cancel_when_organization_not_found(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+) -> None:
+    processor = make_processor(terminate_order)
+
+    processor.ext_client.get_agreement.return_value = {
+        "externalIds": {"client": "", "vendor": "FORG-8077-2461-7285"},
+    }
+    processor.organization_repo.first.return_value = None
+
+    result = await processor.process()
+    assert result.status is ProcessingStatus.CANCEL
+    assert result.severity == "Error"
+    assert result.message is not None
+    assert (
+        "The organization FORG-8077-2461-7285 linked to agreement AGR-2119-4550-8674-5962 "
+        "was not found." in result.message
+    )
+
+    processor.optscale_client.get_organization.assert_not_awaited()
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+    processor.ext_client.complete_order.assert_not_awaited()
+
+
+async def test_terminated_order_cancel_when_organization_not_linked(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+    mocker: MockerFixture,
+) -> None:
+    processor = make_processor(terminate_order)
+
+    processor.ext_client.get_agreement.return_value = {
+        "externalIds": {"client": "", "vendor": "FORG-8077-2461-7285"},
+    }
+    processor.organization_repo.first.return_value = mocker.Mock(
+        id="FORG-8077-2461-7285", linked_organization_id=None
+    )
+
+    result = await processor.process()
+    assert result.status is ProcessingStatus.CANCEL
+    assert result.severity == "Error"
+    assert result.message is not None
+    assert (
+        "The organization FORG-8077-2461-7285 is not linked to a FinOps for Cloud Organization."
+        in result.message
+    )
+
+    processor.optscale_client.get_organization.assert_not_awaited()
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+    processor.ext_client.complete_order.assert_not_awaited()
+
+
+@freeze_time("2026-08-06")
+async def test_terminated_order_reschedule_before_due_date_is_reached(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+) -> None:
+    """process's returns RESCHEDULE when an error occurs and the due date has
+    not been reached"""
+    terminate_order = set_due_date(terminate_order, date(2026, 12, 12))
+    processor = make_processor(terminate_order)
+    processor.ext_client.get_agreement.side_effect = Exception("big error")
+
+    result = await processor.process()
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert result.severity == "Warning"
+    assert result.message is not None
+    assert "An error occurred while processing the order: big error" in result.message
+    processor.ext_client.fail_order.assert_not_awaited()
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+    processor.ext_client.complete_order.assert_not_awaited()
+
+
+@freeze_time("2026-08-06")
+async def test_terminated_order_fails_when_before_due_date_is_reached(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+) -> None:
+    """process fails the order and return COMPLETE when an error occurs and the
+    due is in the past"""
+    terminate_order = set_due_date(terminate_order, date(2026, 7, 12))
+    processor = make_processor(terminate_order)
+    processor.ext_client.get_agreement.side_effect = Exception("big error")
+
+    result = await processor.process()
+    assert result.status is ProcessingStatus.COMPLETE
+    assert result.severity == "Error"
+    assert result.message is not None
+    processor.ext_client.fail_order.assert_awaited_once_with(
+        order_id=terminate_order["id"],
+        payload={"statusNotes": ERR_DUE_DATE_IS_REACHED.to_dict(due_date="2026-07-12")},
+    )
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+    processor.ext_client.complete_order.assert_not_awaited()
+
+
+@freeze_time("2026-08-06")
+async def test_terminated_order_cancel_when_no_due_date_is_set(
+    make_processor: ProcessorBuilder,
+    terminate_order: dict[str, Any],
+) -> None:
+    """process fails the order and return CANCEL when an error occurs and no due is set"""
+    terminate_order = set_due_date(terminate_order, None)
+    processor = make_processor(terminate_order)
+    processor.ext_client.update_order.side_effect = Exception("big error")
+
+    result = await processor.process()
+    assert result.status is ProcessingStatus.CANCEL
+    assert result.severity == "Error"
+    assert result.message is not None
+    assert "No due date fulfillment parameter found." in result.message
+    processor.ext_client.fail_order.assert_awaited_once_with(
+        order_id=terminate_order["id"],
+        payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
+    )
+    processor.ext_client.get_agreement.assert_not_awaited()
+    processor.optscale_client.suspend_organization.assert_not_awaited()
+    processor.ext_client.complete_order.assert_not_awaited()

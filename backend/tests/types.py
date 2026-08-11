@@ -25,3 +25,4 @@ class JWTTokenFactory(Protocol):
 ProcessorBuilder = Callable[[dict[str, Any]], OrderProcessor]
 FactoryBuilder = Callable[[dict[str, Any]], OrderProcessorFactory]
 TemplatesMocker = Callable[..., None]
+OptscaleOrganizationMocker: Callable[..., None]

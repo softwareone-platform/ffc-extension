@@ -88,7 +88,6 @@ async def create_organization(
     organization_repo: OrganizationRepository,
     api_modifier_client: APIModifierClient,
 ):
-    db_organization: Organization | None = None
     defaults = data.model_dump(exclude_unset=True, exclude={"user_id"})
     db_organization, created = await organization_repo.get_or_create(
         defaults=defaults,
@@ -129,7 +128,7 @@ async def create_organization(
         return convert_model_to_schema(OrganizationRead, db_organization)
 
 
-def validate_linked_organization_id(organization: Organization):
+def validate_linked_organization_id(organization: Organization) -> str:
     if organization.linked_organization_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -137,6 +136,7 @@ def validate_linked_organization_id(organization: Organization):
                 f"Organization {organization.name} has no associated FinOps for Cloud organization."
             ),
         )
+    return organization.linked_organization_id
 
 
 async def fetch_organization_or_404(
@@ -170,9 +170,10 @@ async def get_organization_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     ffc_api_client: FFCAPIClient,
 ):
+    linked_organization_id = validate_linked_organization_id(organization)
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
         response = await ffc_api_client.fetch_expenses_for_organization(
-            organization_id=organization.linked_organization_id,  # type: ignore[arg-type]
+            organization_id=linked_organization_id,
         )
 
     expenses = response.json()
@@ -190,11 +191,11 @@ async def get_datasources_by_organization_id(
     params: Annotated[LimitOffsetParams, Depends()],
     rql: Annotated[str | None, Depends(RQLPassthrough())],
 ):
-    validate_linked_organization_id(organization)
+    linked_organization_id = validate_linked_organization_id(organization)
 
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
         response = await ffc_api_client.fetch_datasources_for_organization(
-            organization_id=organization.linked_organization_id,  # type: ignore[arg-type]
+            organization_id=linked_organization_id,
             limit=params.limit,
             offset=params.offset,
             rql=rql,
@@ -284,10 +285,10 @@ async def get_employees_by_organization_id(
     params: Annotated[LimitOffsetParams, Depends()],
     rql: Annotated[str | None, Depends(RQLPassthrough())],
 ):
-    validate_linked_organization_id(organization)
+    linked_organization_id = validate_linked_organization_id(organization)
     with wrap_http_error_in_502(f"Error fetching employees for organization {organization.name}"):
         response = await ffc_api_client.fetch_users_for_organization(
-            organization.linked_organization_id,  # type: ignore[arg-type]
+            linked_organization_id,
             limit=params.limit,
             offset=params.offset,
             rql=rql,
@@ -385,20 +386,17 @@ async def update_organization(
                 {"operations_external_id": data.operations_external_id},
             )
 
-    if not name_changed:
+    if not name_changed or data.name is None:
         return convert_model_to_schema(OrganizationRead, db_organization)
 
     # If the name has changed, we need to first change it in Optscale as this API call can fail
     # and change it in the DB only if the API call is successful
 
     try:
-        # mypy isn't smart enough to unrderstand that by this point both
-        # data.name and db_organization.linked_organization_id are not None
-        # due to the checks above, so we're ignoring the type checks here
-
+        linked_organization_id = validate_linked_organization_id(db_organization)
         await optscale_client.update_organization_name(
-            db_organization.linked_organization_id,  # type: ignore[arg-type]
-            data.name,  # type: ignore[arg-type]
+            linked_organization_id,
+            data.name,
         )
     except httpx.HTTPStatusError as e:
         if external_id_changed:
