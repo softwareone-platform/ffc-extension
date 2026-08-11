@@ -11,7 +11,7 @@ requires-python = ">=3.12,<4"
 dependencies = [
     "alembic>=1.14.1,<2",
     "asyncpg>=0.30.0,<1",
-    "fastapi-pagination>=0.12.34,<0.15.16",
+    "fastapi-pagination>=0.15.16,<0.15.17",
     "fastapi[standard]>=0.138.2,<1",
     "pydantic-extra-types>=2.10.3,<3",
     "pydantic-settings>=2.6.1,<3",
