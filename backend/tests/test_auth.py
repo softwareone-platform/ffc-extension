@@ -17,6 +17,7 @@ from app.dependencies.auth import (
     AuthorizedAccountTypes,
     authentication_required,
     get_authentication_context,
+    get_authentication_context_for_account,
     get_authentication_context_for_account_user,
     get_authentication_context_for_system,
 )
@@ -237,6 +238,34 @@ async def test_system_context_returns_existing_system(
 
 
 # ---------------------------------------------------------------------------
+# app.dependencies.auth.get_authentication_context_for_account
+# ---------------------------------------------------------------------------
+
+
+async def test_account_context_raises_when_account_missing(
+    db_session: AsyncSession, mocker: MockerFixture
+) -> None:
+    """`get_authentication_context_for_account` raises 401 for an unknown account."""
+    with pytest.raises(HTTPException) as exc_info:
+        await get_authentication_context_for_account(
+            db_session,
+            "ACC-MISSING",
+        )
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_account_context_ok(
+    db_session: AsyncSession,
+    account_factory: ModelFactory[Account],
+) -> None:
+    """A known active account is returned."""
+    account = await account_factory(status=AccountStatus.ACTIVE, external_id="ACC-EXIST")
+    ctx = await get_authentication_context_for_account(db_session, "ACC-EXIST")
+
+    assert ctx.account == account
+
+
+# ---------------------------------------------------------------------------
 # app.dependencies.auth.get_authentication_context (async generator)
 # ---------------------------------------------------------------------------
 
@@ -372,12 +401,14 @@ def test_authorized_account_types_rejects_missing_context() -> None:
 
 async def test_authorized_account_types_forbids_disallowed_type(
     account_factory: ModelFactory[Account],
+    user_factory: ModelFactory,
 ) -> None:
     """`AuthorizedAccountTypes` raises 403 when the account type is not allowed."""
     account = await account_factory(type=AccountType.AFFILIATE)
+    user = await user_factory(external_id="USR-EXIST", account=account)
     checker = AuthorizedAccountTypes(AccountType.OPERATIONS)
     with pytest.raises(HTTPException, match="you don't have the key") as exc_info:
-        checker(AuthenticationContext(account=account))
+        checker(AuthenticationContext(account=account, user=user))
     assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -386,6 +417,17 @@ async def test_authorized_account_types_allows_permitted_type(
 ) -> None:
     """`AuthorizedAccountTypes` permits a request whose account type is allowed."""
     account = await account_factory(type=AccountType.OPERATIONS)
-    checker = AuthorizedAccountTypes(AccountType.OPERATIONS)
+    checker = AuthorizedAccountTypes(AccountType.OPERATIONS, actor_required=False)
     # Returns control (no HTTPException) for an allowed account type.
     checker(AuthenticationContext(account=account))
+
+
+async def test_authorized_account_types_missing_actor(
+    account_factory: ModelFactory[Account],
+) -> None:
+    """`AuthorizedAccountTypes` raises 401 when no required actor is present."""
+    account = await account_factory(type=AccountType.OPERATIONS)
+    checker = AuthorizedAccountTypes(AccountType.OPERATIONS)
+    with pytest.raises(HTTPException) as exc_info:
+        checker(AuthenticationContext(account=account))
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED

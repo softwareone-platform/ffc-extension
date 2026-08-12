@@ -38,11 +38,14 @@ async def get_authentication_context(
     if mpt_auth_context:
         account_id = mpt_auth_context.account_id
         actor_id = mpt_auth_context.user_id or mpt_auth_context.token_id
-        if not actor_id:
-            raise UNAUTHORIZED_EXCEPTION
+
         try:
-            if actor_id.startswith(models.System.MPT_PREFIX):
-                pass
+            if not actor_id:
+                context = await get_authentication_context_for_account(
+                    db_session=db_session,
+                    account_id=account_id,
+                )
+            elif actor_id.startswith(models.System.MPT_PREFIX):
                 context = await get_authentication_context_for_system(
                     mpt_installation_client=mpt_installation_client,
                     db_session=db_session,
@@ -176,6 +179,30 @@ async def get_authentication_context_for_system(
     return context
 
 
+async def get_authentication_context_for_account(
+    db_session: AsyncSession,
+    account_id: str,
+) -> AuthenticationContext:
+    """
+    This functions retrieves the authentication context from a specific account
+    identified by a JWT bearer token.
+
+    This functions retrieves the authentication context for an account without an actor.
+    Used for calls where only the account is authenticated (e.g. events and webhooks)
+    and no user or system actor is present.
+    """
+    account_handler = handlers.AccountHandler(db_session)
+    account = await account_handler.first(
+        where_clauses=[
+            models.Account.external_id == account_id,
+            models.Account.status == models.AccountStatus.ACTIVE,
+        ],
+    )
+    if not account:
+        raise UNAUTHORIZED_EXCEPTION
+    return AuthenticationContext(account=account)
+
+
 async def authentication_required(
     settings: AppSettings,
     db_session: DBSession,
@@ -191,14 +218,18 @@ async def authentication_required(
 
 
 class AuthorizedAccountTypes:
-    def __init__(self, *allowed_types: models.AccountType):
+    def __init__(self, *allowed_types: models.AccountType, actor_required: bool = True):
         self.allowed_types = allowed_types
+        self.actor_required = actor_required
 
     def __call__(
         self,
         context: Annotated[AuthenticationContext | None, Depends(get_authentication_context)],
     ) -> None:
         if not context:
+            raise UNAUTHORIZED_EXCEPTION
+
+        if self.actor_required and context.get_actor() is None:
             raise UNAUTHORIZED_EXCEPTION
 
         if context.account.type not in self.allowed_types:
