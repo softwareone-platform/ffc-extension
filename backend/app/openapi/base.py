@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 
 from fastapi import FastAPI
-from fastapi.dependencies.utils import get_flat_dependant
+from fastapi.dependencies.models import Dependant
 from fastapi.openapi.utils import get_openapi
 from fastapi.routing import APIRoute
 from snippettoni.injector import inject_code_samples
@@ -10,6 +10,12 @@ from starlette.routing import BaseRoute
 
 from app.conf import Settings
 from app.rql import RQLQuery
+
+
+def iter_flat_dependencies(dependant: Dependant) -> Iterator[Dependant]:
+    for sub_dependant in dependant.dependencies:
+        yield sub_dependant
+        yield from iter_flat_dependencies(sub_dependant)
 
 
 def iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
@@ -30,8 +36,7 @@ def generate_openapi_spec(app: FastAPI, settings: Settings):
         return app.openapi_schema
 
     for api_route in iter_api_routes(app.routes):
-        flat_dependant = get_flat_dependant(api_route.dependant, skip_repeats=True)
-        for dependency in flat_dependant.dependencies:
+        for dependency in iter_flat_dependencies(api_route.dependant):
             call = dependency.call
             if call is not None and isinstance(call, RQLQuery):
                 api_route.description = (
