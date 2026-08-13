@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { noop } from "@swo/design-system/utils";
 import { StepProps } from "@swo/design-system/wizard";
 
-// import { noop } from '@/Modules/Shared/FunctionUtils';
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 export function useSteps(isSaving: boolean): StepProps[] {

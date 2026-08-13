@@ -17,7 +17,9 @@ export const AddWizardFormSchema = z.object({
   ),
   dataSource: z.object({
     id: z.string({ error: () => tValidation("dataSource:id:required") }),
-    affiliate_external_id: z.string().nullish(),
+    affiliate_external_id: z.string({
+      error: () => tValidation("dataSource:affiliate_external_id:required"),
+    }),
   }),
 });
 

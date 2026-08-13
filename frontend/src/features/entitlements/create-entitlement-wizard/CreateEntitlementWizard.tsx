@@ -19,6 +19,8 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { useSteps } from "./useSteps";
 
+import "./CreateEntitlementWizard.scss";
+
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;
@@ -51,11 +53,13 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
     setError("");
     setActiveStepIndex(0);
     onClose({ success: entitlementCreated });
+    setEntitlementCreated(false);
   }, [reset, onClose, entitlementCreated]);
 
   const finish = useCallback(() => {
     onClose({ success: entitlementCreated });
     setActiveStepIndex(0);
+    setEntitlementCreated(false);
   }, [onClose, entitlementCreated]);
 
   const onSubmit = useCallback(

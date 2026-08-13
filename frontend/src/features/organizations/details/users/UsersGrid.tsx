@@ -13,7 +13,7 @@ import { useGridConfig } from "./UsersGrid.config";
 export function UsersGrid({ organizationId }: { organizationId: string }) {
   const { refresh, ...gridProps } = useGridConfig(organizationId, onAction);
   const addUserModal = useModalToggle({ onSuccess: refresh });
-  const makeUsedAdminModal = useModalToggle<{ employee: Employee; organizationId: string }>({
+  const makeAdminModal = useModalToggle<{ employee: Employee; organizationId: string }>({
     onSuccess: refresh,
   });
 
@@ -21,7 +21,7 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
 
   function onAction(action: EmployeeActions, item: Employee) {
     if (action === "make_admin") {
-      makeUsedAdminModal.open({
+      makeAdminModal.open({
         employee: item,
         organizationId,
       });
@@ -40,14 +40,15 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
       <CreateUserModal
         isOpen={addUserModal.isOpen}
         onClose={addUserModal.close}
+        organizationId={organizationId}
         className="add-user-modal"
       />
       <UserMakeAdminModal
-        isOpen={makeUsedAdminModal.isOpen}
-        onClose={makeUsedAdminModal.close}
+        isOpen={makeAdminModal.isOpen}
+        onClose={makeAdminModal.close}
         className="make-admin-modal"
-        employee={makeUsedAdminModal.data?.employee ?? null}
-        organizationId={makeUsedAdminModal.data?.organizationId ?? null}
+        employee={makeAdminModal.data?.employee ?? null}
+        organizationId={makeAdminModal.data?.organizationId ?? null}
       />
     </>
   );
