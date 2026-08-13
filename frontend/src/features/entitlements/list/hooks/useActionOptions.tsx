@@ -17,7 +17,6 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
       const deleteEnabledStatus: Set<EntitlementStatus> = new Set(["new"]);
 
       return [
-        { label: tActions("redeem"), value: "redeem", isDisabled: true },
         {
           label: tActions("terminate"),
           value: "terminate",
@@ -28,7 +27,7 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
         {
           label: tActions("delete"),
           value: "delete",
-          isDisabled: role !== "admin" || !deleteEnabledStatus.has(item.status!),
+          isDisabled: !deleteEnabledStatus.has(item.status!),
           props: { className: "dangerous-option" },
         },
       ];

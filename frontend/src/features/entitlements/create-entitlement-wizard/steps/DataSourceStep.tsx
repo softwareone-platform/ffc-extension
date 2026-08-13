@@ -60,7 +60,6 @@ export function DataSourceStep() {
           isPreventAutocomplete={true}
           label={tProperties("affiliateExternalId")}
           placeholder={tPlaceholders("affiliateExternalId")}
-          labelType="optional"
         />
         <RegularText size={1}>{tStep("field:affiliate_external_id:description")}</RegularText>
       </div>

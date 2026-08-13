@@ -7,17 +7,12 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import "./General.scss";
 
+import { useFormatMoney } from "~shared/utils/NumberUtils";
+
 export function OrganizationGeneralDetails() {
   const { organizationId } = useParams();
   const { data: entity } = useOrganizationDetailsApi(organizationId);
-
-  const mockedExpensesInfo = {
-    limit: 123,
-    expenses_last_month: 123123.12,
-    expenses_so_far_this_month: 123123.12,
-    expenses_forecast_this_month: 123123.12,
-    possible_savings: 123123.12,
-  };
+  const format = useFormatMoney(entity?.currency, false);
 
   const tProperties = useFixedT("organization:details:general:properties");
 
@@ -27,25 +22,39 @@ export function OrganizationGeneralDetails() {
         <dl className={"properties-section"}>
           <dt>{tProperties("limit")}</dt>
           <dd>
-            <DisplayValue value={mockedExpensesInfo.limit} /> {entity?.currency}
-          </dd>
-          <dt>{tProperties("expensesLastMonth")}</dt>
-          <dd>
-            <DisplayValue value={mockedExpensesInfo.expenses_last_month} /> {entity?.currency}
+            <DisplayValue
+              value={Number.parseFloat(entity?.expenses_info?.limit || "0")}
+              transform={format}
+              context="financial"
+            />{" "}
+            {entity?.currency}
           </dd>
           <dt>{tProperties("expensesThisMonth")}</dt>
           <dd>
-            <DisplayValue value={mockedExpensesInfo.expenses_so_far_this_month} />{" "}
+            <DisplayValue
+              value={Number.parseFloat(entity?.expenses_info?.expenses_this_month || "0")}
+              transform={format}
+              context="financial"
+            />{" "}
             {entity?.currency}
           </dd>
           <dt>{tProperties("forecastThisMonth")}</dt>
           <dd>
-            <DisplayValue value={mockedExpensesInfo.expenses_forecast_this_month} />{" "}
+            <DisplayValue
+              value={Number.parseFloat(entity?.expenses_info?.expenses_this_month_forecast || "0")}
+              transform={format}
+              context="financial"
+            />{" "}
             {entity?.currency}
           </dd>
           <dt>{tProperties("possibleSavings")}</dt>
           <dd>
-            <DisplayValue value={mockedExpensesInfo.possible_savings} /> {entity?.currency}
+            <DisplayValue
+              value={Number.parseFloat(entity?.expenses_info?.possible_monthly_saving || "0")}
+              transform={format}
+              context="financial"
+            />{" "}
+            {entity?.currency}
           </dd>
         </dl>
       </div>

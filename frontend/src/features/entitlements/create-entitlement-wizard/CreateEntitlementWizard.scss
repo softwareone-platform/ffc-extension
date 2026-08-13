@@ -1,0 +1,7 @@
+.step {
+  &.summary-step {
+    .step__notification {
+      margin-bottom: var(--spacing-3);
+    }
+  }
+}

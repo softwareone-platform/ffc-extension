@@ -727,6 +727,30 @@ export type DatasourceRead = {
 export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
 
 /**
+ * Details
+ */
+export type Details = {
+    /**
+     * Eventtype
+     *
+     * The type of the event. Maps to the “routing.event” property of the EventMessage.
+     */
+    eventType: string;
+    /**
+     * Enqueuetime
+     *
+     * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
+     */
+    enqueueTime: string;
+    /**
+     * Deliverytime
+     *
+     * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
+     */
+    deliveryTime: string;
+};
+
+/**
  * EmployeeRead
  */
 export type EmployeeRead = {
@@ -1174,6 +1198,91 @@ export type EntitlementsEventsSchema = {
             name: string;
         } | null;
     } | null;
+};
+
+/**
+ * Event
+ */
+export type Event = {
+    /**
+     * Id
+     *
+     * Unique message ID, can be used to correlate with platform logs.
+     */
+    id: string;
+    /**
+     * Object
+     */
+    object: {
+        /**
+         * Id
+         *
+         * Unique object ID, maps to the platform object ID property.
+         */
+        id: string;
+        /**
+         * Name
+         *
+         * Object name, maps to the platform object name property.
+         */
+        name: string;
+        /**
+         * Objecttype
+         *
+         * The object's type, maps to the “routing.entity” property of the EventMessage.
+         */
+        objectType: string;
+    };
+    /**
+     * Details
+     */
+    details: {
+        /**
+         * Eventtype
+         *
+         * The type of the event. Maps to the “routing.event” property of the EventMessage.
+         */
+        eventType: string;
+        /**
+         * Enqueuetime
+         *
+         * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
+         */
+        enqueueTime: string;
+        /**
+         * Deliverytime
+         *
+         * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
+         */
+        deliveryTime: string;
+    };
+    /**
+     * Information about the event's related task. Maps to the task created by Task Orchestrator.
+     */
+    task?: {
+        /**
+         * Id
+         *
+         * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
+         */
+        id: string;
+    } | null;
+};
+
+/**
+ * EventResponse
+ */
+export type EventResponse = {
+    /**
+     * Response
+     */
+    response: 'OK' | 'Delay' | 'Cancel';
+    /**
+     * Delay
+     *
+     * The minimum delay the Extensions Service must wait before sending the event again.
+     */
+    delay?: number | null;
 };
 
 /**
@@ -2223,6 +2332,30 @@ export type Me = {
 };
 
 /**
+ * Object
+ */
+export type Object = {
+    /**
+     * Id
+     *
+     * Unique object ID, maps to the platform object ID property.
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Object name, maps to the platform object name property.
+     */
+    name: string;
+    /**
+     * Objecttype
+     *
+     * The object's type, maps to the “routing.entity” property of the EventMessage.
+     */
+    objectType: string;
+};
+
+/**
  * OrganizationCreate
  */
 export type OrganizationCreate = {
@@ -2446,6 +2579,18 @@ export type SystemReference = {
      * External Id
      */
     external_id: string;
+};
+
+/**
+ * Task
+ */
+export type Task = {
+    /**
+     * Id
+     *
+     * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
+     */
+    id: string;
 };
 
 /**
@@ -6661,3 +6806,138 @@ export type MeOpsV1MeGetResponses = {
 };
 
 export type MeOpsV1MeGetResponse = MeOpsV1MeGetResponses[keyof MeOpsV1MeGetResponses];
+
+export type ProcessOrderEventsCommerceOrdersPostData = {
+    /**
+     * Event
+     */
+    body: {
+        /**
+         * Id
+         *
+         * Unique message ID, can be used to correlate with platform logs.
+         */
+        id: string;
+        /**
+         * Object
+         */
+        object: {
+            /**
+             * Id
+             *
+             * Unique object ID, maps to the platform object ID property.
+             */
+            id: string;
+            /**
+             * Name
+             *
+             * Object name, maps to the platform object name property.
+             */
+            name: string;
+            /**
+             * Objecttype
+             *
+             * The object's type, maps to the “routing.entity” property of the EventMessage.
+             */
+            objectType: string;
+        };
+        /**
+         * Details
+         */
+        details: {
+            /**
+             * Eventtype
+             *
+             * The type of the event. Maps to the “routing.event” property of the EventMessage.
+             */
+            eventType: string;
+            /**
+             * Enqueuetime
+             *
+             * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
+             */
+            enqueueTime: string;
+            /**
+             * Deliverytime
+             *
+             * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
+             */
+            deliveryTime: string;
+        };
+        /**
+         * Information about the event's related task. Maps to the task created by Task Orchestrator.
+         */
+        task?: {
+            /**
+             * Id
+             *
+             * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
+             */
+            id: string;
+        } | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/events/commerce/orders';
+};
+
+export type ProcessOrderEventsCommerceOrdersPostErrors = {
+    /**
+     * HTTPValidationError
+     *
+     * Validation Error
+     */
+    422: {
+        /**
+         * Detail
+         */
+        detail?: Array<{
+            /**
+             * Location
+             */
+            loc: Array<string | number>;
+            /**
+             * Message
+             */
+            msg: string;
+            /**
+             * Error Type
+             */
+            type: string;
+            /**
+             * Input
+             */
+            input?: unknown;
+            /**
+             * Context
+             */
+            ctx?: {
+                [key: string]: unknown;
+            };
+        }>;
+    };
+};
+
+export type ProcessOrderEventsCommerceOrdersPostError = ProcessOrderEventsCommerceOrdersPostErrors[keyof ProcessOrderEventsCommerceOrdersPostErrors];
+
+export type ProcessOrderEventsCommerceOrdersPostResponses = {
+    /**
+     * EventResponse
+     *
+     * Successful Response
+     */
+    200: {
+        /**
+         * Response
+         */
+        response: 'OK' | 'Delay' | 'Cancel';
+        /**
+         * Delay
+         *
+         * The minimum delay the Extensions Service must wait before sending the event again.
+         */
+        delay?: number | null;
+    };
+};
+
+export type ProcessOrderEventsCommerceOrdersPostResponse = ProcessOrderEventsCommerceOrdersPostResponses[keyof ProcessOrderEventsCommerceOrdersPostResponses];

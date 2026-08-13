@@ -10,12 +10,16 @@ import "./CreateUserModal.scss";
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;
+  organizationId: string;
   className?: string;
 };
 
-export function CreateUserModal({ isOpen, onClose, className }: Readonly<Props>) {
+export function CreateUserModal({ isOpen, onClose, organizationId, className }: Readonly<Props>) {
   const tUsers = useFixedT("organization:users");
-  const { control, error, isPending, submit, handleCancel } = useUserFormController({ onClose });
+  const { control, error, isPending, submit, handleCancel } = useUserFormController({
+    onClose,
+    organizationId,
+  });
 
   return (
     <Modal
