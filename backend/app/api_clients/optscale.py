@@ -165,6 +165,14 @@ class OptscaleClient(BaseAPIClient):
         response.raise_for_status()
         return response
 
+    async def delete_organization(
+        self,
+        organization_id: str,
+    ) -> httpx.Response:
+        response = await self.httpx_client.delete(f"/organizations/{organization_id}")
+        response.raise_for_status()
+        return response
+
     async def force_reimport_datasource(self, datasource_id: UUID | str):
         response = await self.httpx_client.post(
             "/schedule_imports",

@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
+from app.db.handlers import OrganizationHandler
 from app.db.models import Organization, System
 from app.enums import OrganizationStatus
 from tests.types import ModelFactory
@@ -628,8 +629,8 @@ async def test_update_organization_external_id(
     ("org_to_update_status", "existing_org_status", "expected_status_code"),
     [
         pytest.param(OrganizationStatus.ACTIVE, OrganizationStatus.ACTIVE, 400),
-        pytest.param(OrganizationStatus.ACTIVE, OrganizationStatus.CANCELLED, 400),
-        pytest.param(OrganizationStatus.CANCELLED, OrganizationStatus.CANCELLED, 400),
+        pytest.param(OrganizationStatus.ACTIVE, OrganizationStatus.TERMINATED, 400),
+        pytest.param(OrganizationStatus.TERMINATED, OrganizationStatus.TERMINATED, 400),
         pytest.param(OrganizationStatus.ACTIVE, OrganizationStatus.DELETED, 200),
         pytest.param(OrganizationStatus.DELETED, OrganizationStatus.ACTIVE, 200),
         pytest.param(OrganizationStatus.DELETED, OrganizationStatus.DELETED, 200),
@@ -860,22 +861,25 @@ async def test_delete_organization(
     db_session: AsyncSession,
 ):
     db_org = await organization_factory(
+        status=OrganizationStatus.ACTIVE,
         name="Test organization",
         linked_organization_id="UUID-1234-5678-9098-7654",
     )
+
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Only terminated organization can be deleted."
+
+    await OrganizationHandler(db_session).terminate(db_org)
+    await db_session.refresh(db_org)
+    assert db_org.status == OrganizationStatus.TERMINATED
+
     httpx_mock.add_response(
-        method="PATCH",
+        method="DELETE",
         headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{db_org.linked_organization_id}",
-        status_code=200,
-        json={
-            "id": db_org.linked_organization_id,
-            "disabled": True,
-        },
+        status_code=204,
     )
-
-    assert db_org.status == OrganizationStatus.ACTIVE
-    assert db_org.deleted_at is None
 
     response = await admin_client.delete(f"/organizations/{db_org.id}")
     assert response.status_code == 204
@@ -900,23 +904,20 @@ async def test_delete_organization_optscale_issue(
     db_org = await organization_factory(
         name="Test organization",
         linked_organization_id="UUID-1234-5678-9098-7654",
+        status=OrganizationStatus.TERMINATED,
     )
     httpx_mock.add_response(
-        method="PATCH",
+        method="DELETE",
         headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"{test_settings.optscale_rest_api_base_url}/organizations/{db_org.linked_organization_id}",
         status_code=500,
         text="Internal Server Error",
     )
 
-    assert db_org.status == OrganizationStatus.ACTIVE
-    assert db_org.deleted_at is None
-
     response = await admin_client.delete(f"/organizations/{db_org.id}")
 
     await db_session.refresh(db_org)
-
-    assert db_org.status == OrganizationStatus.ACTIVE
+    assert db_org.status == OrganizationStatus.TERMINATED
     assert db_org.deleted_at is None
 
     assert response.status_code == 502

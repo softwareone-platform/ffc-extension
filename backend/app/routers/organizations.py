@@ -18,7 +18,10 @@ from app.dependencies.api_clients import (
     OptscaleClient,
 )
 from app.dependencies.auth import AuthorizedAccountTypes
-from app.dependencies.db import AdditionalAdminRequestRepository, OrganizationRepository
+from app.dependencies.db import (
+    AdditionalAdminRequestRepository,
+    OrganizationRepository,
+)
 from app.dependencies.path import OrganizationId
 from app.enums import AccountType, DatasourceType, OrganizationStatus
 from app.openapi import examples
@@ -435,10 +438,16 @@ async def delete_organization_by_id(
             detail=f"Organization {db_organization.name} is already deleted.",
         )
 
+    if db_organization.status != OrganizationStatus.TERMINATED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only terminated organization can be deleted.",
+        )
+
     with wrap_http_error_in_502(
         f"Error deleting organization {db_organization.linked_organization_id} in FinOps for Cloud."
     ):
-        await optscale_client.suspend_organization(
+        await optscale_client.delete_organization(
             organization_id=db_organization.linked_organization_id,  # type: ignore
         )
 

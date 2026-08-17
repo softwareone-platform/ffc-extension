@@ -17,7 +17,7 @@ from app.dependencies.api_clients import (
     OptscaleClient,
 )
 from app.dependencies.core import AppSettings
-from app.dependencies.db import OrganizationRepository
+from app.dependencies.db import EntitlementRepository, OrganizationRepository
 from app.fulfilment.constants import (
     COMPLETED_TEMPLATE_TYPE,
     MPT_ORDER_STATUS_PROCESSING,
@@ -84,6 +84,7 @@ class OrderProcessor(ABC):
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
+        entitlement_repo: EntitlementRepository,
         settings: AppSettings,
         order: dict[str, Any],
     ):
@@ -93,6 +94,7 @@ class OrderProcessor(ABC):
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
+        self.entitlement_repo = entitlement_repo
         self.settings = settings
         self.order = order
         self.template_cache = {}
@@ -475,7 +477,7 @@ class TerminateOrderProcessor(OrderProcessor):
                     Organization.id == organization_id,
                 ]
             )
-            if organization is None or organization is None:
+            if organization is None:
                 return ProcessingResult(
                     status=ProcessingStatus.CANCEL,
                     severity="Error",
@@ -503,7 +505,10 @@ class TerminateOrderProcessor(OrderProcessor):
 
             else:
                 await self.optscale_client.suspend_organization(optscale_org_id)
-                # todo: update status = Terminated and terminated_at = now()
+
+                await self.organization_repo.terminate(organization)
+                await self.entitlement_repo.terminate_active_for_organization(organization)
+
                 severity = "Info"
                 message = f"The Organization {organization_id} was successfully suspended."
 
@@ -540,6 +545,7 @@ class OrderProcessorFactory:
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
+        entitlement_repo: EntitlementRepository,
         settings: AppSettings,
     ):
         self.api_modifier_client = api_modifier_client
@@ -548,6 +554,7 @@ class OrderProcessorFactory:
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
+        self.entitlement_repo = entitlement_repo
         self.settings = settings
 
     async def get_order_type_processor(self, order_id: str) -> OrderProcessor:
@@ -565,6 +572,7 @@ class OrderProcessorFactory:
             optscale_auth_client=self.optscale_auth_client,
             optscale_client=self.optscale_client,
             organization_repo=self.organization_repo,
+            entitlement_repo=self.entitlement_repo,
             order=order,
             settings=self.settings,
         )

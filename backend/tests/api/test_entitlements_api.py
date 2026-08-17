@@ -818,7 +818,7 @@ async def test_redeem_entitlement_inactive_organization(
         name="Test Organization",
         currency="USD",
         operations_external_id="ORG-123456",
-        status=OrganizationStatus.CANCELLED,
+        status=OrganizationStatus.TERMINATED,
     )
 
     response = await admin_client.post(
@@ -835,7 +835,7 @@ async def test_redeem_entitlement_inactive_organization(
 
     assert response.status_code == 400
     assert response.json()["detail"] == (
-        "Only active organizations can redeem entitlements, current status is cancelled."
+        "Only active organizations can redeem entitlements, current status is terminated."
     )
 
 
