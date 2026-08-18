@@ -9,12 +9,12 @@ events:
     condition: "and(in(type,(Purchase,Change, Termination)),eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
     path: "/events/commerce/orders"
     task: true
-# webhooks:
-#   - type: ValidateChangeOrderDraft
-#     description: Validate draft change orders.
-#     path: "/events/commerce/orders/validate"
-#     criteria:
-#       product.id: {{ settings.mpt_product_id }}
+webhooks:
+  - type: ValidateChangeOrderDraft
+    description: Validate draft change orders.
+    path: "/events/commerce/orders/validate"
+    criteria:
+      product.id: {{ settings.mpt_product_id }}
 plugs:
 - id: finops{% if settings.ui_plugs_prefix != "ffc" %}_{{ settings.ui_plugs_prefix }}{% endif %}
   name: FinOps for Cloud {% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
