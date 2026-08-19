@@ -2809,6 +2809,7 @@ def make_processor(
             optscale_auth_client=mocker.AsyncMock(),
             optscale_client=mocker.AsyncMock(),
             organization_repo=mocker.AsyncMock(),
+            entitlement_repo=mocker.AsyncMock(),
             order=order,
             settings=test_settings,
         )
@@ -2832,6 +2833,7 @@ def make_order_processor_factory(
             optscale_auth_client=mocker.AsyncMock(),
             optscale_client=mocker.AsyncMock(),
             organization_repo=mocker.AsyncMock(),
+            entitlement_repo=mocker.AsyncMock(),
             settings=test_settings,
         )
 

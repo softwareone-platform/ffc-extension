@@ -248,13 +248,17 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
     operations_external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     linked_organization_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, index=True
-    )  # OptScale Organization's id
+    )
     status: Mapped[OrganizationStatus] = mapped_column(
         Enum(OrganizationStatus, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
         default=OrganizationStatus.ACTIVE,
         server_default=OrganizationStatus.ACTIVE.value,
     )
+
+    terminated_at: Mapped[datetime.datetime | None] = mapped_column(sa.DateTime(timezone=True))
+    terminated_by_id: Mapped[str | None] = mapped_column(ForeignKey(FKEY_ACTOR))
+    terminated_by: Mapped[Actor | None] = relationship(foreign_keys=[terminated_by_id])
 
     __table_args__ = (
         Index(

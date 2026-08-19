@@ -28,7 +28,7 @@ from tests.types import ModelFactory
     "organization_status",
     [
         OrganizationStatus.ACTIVE,
-        OrganizationStatus.CANCELLED,
+        OrganizationStatus.TERMINATED,
     ],
 )
 async def test_create_new_datasource_expenses_single_organization(

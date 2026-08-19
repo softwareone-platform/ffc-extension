@@ -30,6 +30,7 @@ from app.db.models import Base as BaseModel
 from app.enums import (
     AccountUserStatus,
     EntitlementStatus,
+    OrganizationStatus,
 )
 
 
@@ -381,15 +382,60 @@ class EntitlementHandler(ModelHandler[Entitlement]):
             joinedload(Entitlement.redeemed_by),
         ]
 
-    async def terminate(self, entitlement: Entitlement) -> Entitlement:
+    async def terminate(
+        self,
+        entitlement: Entitlement,
+        terminate_at: datetime | None = None,
+    ) -> Entitlement:
+        data = {
+            "status": EntitlementStatus.TERMINATED,
+            "terminated_at": terminate_at or datetime.now(UTC),
+        }
+        with suppress(LookupError):
+            data["terminated_by"] = auth_context.get().get_actor()
+
         return await self.update(
             entitlement,
-            data={
-                "status": EntitlementStatus.TERMINATED,
-                "terminated_at": datetime.now(UTC),
-                "terminated_by": auth_context.get().get_actor(),
-            },
+            data=data,
         )
+
+    async def terminate_active_for_organization(
+        self,
+        organization: Organization,
+        terminate_at: datetime | None = None,
+    ) -> list[Entitlement]:
+        """
+        Terminates every ACTIVE entitlement redeemed by the given organization and
+        re-issues a fresh (unredeemed) copy of each.
+
+        :param organization: target Organization.
+        :param terminate_at: when the termination takes effect; defaults to now() (see `terminate`).
+        :return: the newly created replacement entitlements.
+        """
+        entitlements = await self.query_db(
+            where_clauses=[
+                Entitlement.status == EntitlementStatus.ACTIVE,
+                Entitlement.redeemed_by == organization,
+            ],
+        )
+
+        new_entitlements: list[Entitlement] = []
+        for entitlement in entitlements:
+            terminated = await self.terminate(
+                entitlement,
+                terminate_at=terminate_at,
+            )
+            new_entitlements.append(
+                await self.create(
+                    Entitlement(
+                        name=terminated.name,
+                        affiliate_external_id=terminated.affiliate_external_id,
+                        datasource_id=terminated.datasource_id,
+                        owner=terminated.owner,
+                    )
+                )
+            )
+        return new_entitlements
 
     async def get_stats_by_account(self, account_id: str) -> dict[str, Any]:
         """
@@ -466,6 +512,18 @@ class OrganizationHandler(ModelHandler[Organization]):
             extra_conditions=[Organization.billing_currency == billing_currency],
         ):
             yield organization
+
+    async def terminate(
+        self,
+        organization: Organization,
+    ) -> Organization:
+        return await self.update(
+            organization,
+            data={
+                "status": OrganizationStatus.TERMINATED,
+                "terminated_at": datetime.now(UTC),
+            },
+        )
 
 
 class SystemHandler(ModelHandler[System]):

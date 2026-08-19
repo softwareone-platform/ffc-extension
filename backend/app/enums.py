@@ -76,7 +76,7 @@ class DatasourceType(enum.StrEnum):
 @enum.unique
 class OrganizationStatus(enum.StrEnum):
     ACTIVE = "active"
-    CANCELLED = "cancelled"
+    TERMINATED = "terminated"
     DELETED = "deleted"
 
 

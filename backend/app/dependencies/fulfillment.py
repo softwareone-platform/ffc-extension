@@ -10,7 +10,7 @@ from app.dependencies.api_clients import (
     OptscaleClient,
 )
 from app.dependencies.core import AppSettings
-from app.dependencies.db import OrganizationRepository
+from app.dependencies.db import EntitlementRepository, OrganizationRepository
 from app.fulfilment.processing import OrderProcessorFactory as _OrderProcessorFactory
 
 
@@ -21,6 +21,7 @@ def get_order_processor_factory(
     optscale_auth_client: OptscaleAuthClient,
     optscale_client: OptscaleClient,
     organization_repo: OrganizationRepository,
+    entitlement_repo: EntitlementRepository,
     settings: AppSettings,
 ) -> _OrderProcessorFactory:
     return _OrderProcessorFactory(
@@ -30,6 +31,7 @@ def get_order_processor_factory(
         optscale_auth_client=optscale_auth_client,
         optscale_client=optscale_client,
         organization_repo=organization_repo,
+        entitlement_repo=entitlement_repo,
         settings=settings,
     )
 

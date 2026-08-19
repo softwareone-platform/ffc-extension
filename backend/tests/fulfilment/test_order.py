@@ -7,10 +7,13 @@ from typing import Any
 import pytest
 from freezegun import freeze_time
 from pytest_mock import MockerFixture
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api_clients.optscale import UserDoesNotExist
-from app.db.handlers import OrganizationHandler
-from app.db.models import Organization
+from app.db.handlers import EntitlementHandler, OrganizationHandler
+from app.db.models import Account, Entitlement, Organization
+from app.enums import EntitlementStatus, OrganizationStatus
 from app.fulfilment.constants import (
     COMPLETED_TEMPLATE_TYPE,
     PROCESSING_TEMPLATE_TYPE,
@@ -33,7 +36,7 @@ from app.fulfilment.processing import (
     PurchaseOrderProcessor,
 )
 from app.parameters import PARAM_DUE_DATE, set_due_date
-from tests.types import FactoryBuilder, ProcessorBuilder, TemplatesMocker
+from tests.types import FactoryBuilder, ModelFactory, ProcessorBuilder, TemplatesMocker
 
 PRODUCT_ID = "PRD-4141-4379"
 
@@ -910,16 +913,42 @@ async def test_change_order_process_fail(
 async def test_terminated_order_process_completes_order(
     make_processor: ProcessorBuilder,
     terminate_order: dict[str, Any],
+    organization_factory: ModelFactory[Organization],
+    entitlement_factory: ModelFactory[Entitlement],
+    account_factory: ModelFactory[Account],
+    db_session: AsyncSession,
     mocker: MockerFixture,
 ) -> None:
     """`process` runs every step in order and completes an existing-user purchase order."""
     processor = make_processor(terminate_order)
+    processor.organization_repo = OrganizationHandler(db_session)
+    processor.entitlement_repo = EntitlementHandler(db_session)
+
+    organization = await organization_factory(
+        linked_organization_id="OPT-ORG-001",
+        status=OrganizationStatus.ACTIVE,
+    )
+    owner = await account_factory()
+    ent_1 = await entitlement_factory(
+        affiliate_external_id="EXTERNAL_ID_1",
+        datasource_id="ds_1",
+        owner=owner,
+        status=EntitlementStatus.ACTIVE,
+        redeemed_by=organization,
+    )
+    ent_2 = await entitlement_factory(
+        affiliate_external_id="EXTERNAL_ID_2",
+        datasource_id="ds_2",
+        owner=owner,
+        status=EntitlementStatus.ACTIVE,
+        redeemed_by=organization,
+    )
+
     mocker.patch.object(processor, "get_product_template_id", return_value="TPL-1234-5678-0001")
-    organization = mocker.Mock(id="FORG-8077-2461-7285", linked_organization_id="OPT-ORG-001")
     processor.ext_client.get_agreement.return_value = {
-        "externalIds": {"client": "", "vendor": "FORG-8077-2461-7285"},
+        "externalIds": {"client": "", "vendor": organization.id},
     }
-    processor.organization_repo.first.return_value = organization
+
     processor.optscale_client.get_organization.return_value = mocker.Mock(
         json=mocker.Mock(
             return_value={
@@ -935,11 +964,37 @@ async def test_terminated_order_process_completes_order(
             }
         )
     )
+
     result = await processor.process()
+
     assert result.status is ProcessingStatus.COMPLETE
     assert result.severity == "Info"
     assert result.message is not None
-    assert "The Organization FORG-8077-2461-7285 was successfully suspended." in result.message
+    assert f"The Organization {organization.id} was successfully suspended." in result.message
+
+    await db_session.refresh(organization)
+    assert organization.status == OrganizationStatus.TERMINATED
+    assert organization.terminated_at is not None
+
+    for entitlement in (ent_1, ent_2):
+        await db_session.refresh(entitlement)
+        assert entitlement.status == EntitlementStatus.TERMINATED
+        assert entitlement.terminated_at is not None
+        assert entitlement.terminated_by_id is None
+
+    replacements = (
+        await db_session.scalars(
+            select(Entitlement).where(
+                Entitlement.status == EntitlementStatus.NEW,
+                Entitlement.redeemed_by_id.is_(None),
+                Entitlement.owner_id == owner.id,
+                Entitlement.datasource_id.in_(["ds_1", "ds_2"]),
+            )
+        )
+    ).all()
+    assert len(replacements) == 2
+    assert {r.affiliate_external_id for r in replacements} == {"EXTERNAL_ID_1", "EXTERNAL_ID_2"}
+
     processor.ext_client.complete_order.assert_awaited_once_with(
         order_id=terminate_order["id"],
         payload={
