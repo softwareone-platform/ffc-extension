@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import {
-  GridCellActions,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -13,7 +12,9 @@ import { Paths } from "@swo/rql-client";
 
 import { OrganizationRead } from "~api/ffc-api-model";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
+import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useUserRole } from "~shared/hooks/useUserRole";
 
 import { useActionOptions } from "./useActionOptions";
 
@@ -26,6 +27,7 @@ type Columns = Array<
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
   const getActions = useActionOptions();
+  const { role } = useUserRole();
 
   return useMemo(() => {
     return [
@@ -83,12 +85,13 @@ export function useColumns(): Columns {
         title: tColumns("actions"),
         fields: [],
         cell: (item: OrganizationRead) => (
-          <GridCellActions item={item} actions={getActions(item)} />
+          <GridCellDynamicActions<OrganizationRead> item={item} actions={getActions(item)} />
         ),
         initialWidth: 100,
         type: "Actions",
         isScalable: false,
+        isHidden: role !== "admin",
       },
     ];
-  }, [tColumns]);
+  }, [tColumns, getActions, role]);
 }

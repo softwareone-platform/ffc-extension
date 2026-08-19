@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 
-import { GridCellActions, GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
+import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
@@ -15,8 +15,10 @@ import { EmployeeRead } from "~api/ffc-api-model";
 import { Employee, EmployeeActions } from "~features/organizations/api/model";
 import { useOrganizationsApi } from "~organizations/api";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";
+import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
+import { useUserRole } from "~shared/hooks/useUserRole";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
 import { useActionOptions } from "./hooks/useActionOptions";
@@ -30,6 +32,7 @@ type Columns = Array<
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
   const getActions = useActionOptions();
+  const { role } = useUserRole();
 
   return useMemo(() => {
     return [
@@ -89,8 +92,11 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: (item: Employee) => <GridCellActions item={item} actions={getActions(item)} />,
+        cell: (item: Employee) => (
+          <GridCellDynamicActions<Employee> item={item} actions={getActions(item)} />
+        ),
         initialWidth: 100,
+        isHidden: role !== "admin",
       },
     ];
   }, [tColumns]);
