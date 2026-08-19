@@ -49,7 +49,9 @@ async def test_get_order_type_processor(
     processor = await factory.get_order_type_processor(order_id=purchase_order["id"])
     assert processor.order == purchase_order
     assert isinstance(processor, PurchaseOrderProcessor)
-    factory.client.get_order.assert_awaited_once_with(purchase_order["id"])
+    factory.client.get_order.assert_awaited_once_with(
+        purchase_order["id"], select=["subscriptions.lines"]
+    )
 
 
 async def test_process_order_without_due_date(
@@ -107,7 +109,7 @@ async def test_get_order_type_processor_rejects_unsupported_type(
             await factory.get_order_type_processor(order_id=order["id"])
 
     assert "The order type Configuration is not supported." in caplog.text
-    factory.client.get_order.assert_awaited_once_with(order["id"])
+    factory.client.get_order.assert_awaited_once_with(order["id"], select=["subscriptions.lines"])
 
 
 # -- OrderProcessor.set_template --

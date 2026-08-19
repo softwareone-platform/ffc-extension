@@ -144,12 +144,8 @@ class MPTClient:
             json=payload,
         )
         try:
-            if response.status_code == 409:
-                return None
             response.raise_for_status()
             return response.json()
-        except Exception as task_error:
-            logger.warning("Failed to run action %s on object %s: %s", action, id, task_error)
         finally:
             await response.aclose()
 
@@ -327,12 +323,10 @@ class MPTClient:
         return await self.run_object_action("commerce/orders", order_id, "fail", payload=payload)
 
     async def create_subscription(self, order_id, subscription):
-        response = await self.httpx_client.post(
+        return await self.create(
             f"/commerce/orders/{order_id}/subscriptions",
-            json=subscription,
+            payload=subscription,
         )
-        response.raise_for_status()
-        return response.json()
 
     # Account methods
 

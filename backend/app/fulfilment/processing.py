@@ -551,7 +551,7 @@ class OrderProcessorFactory:
         self.settings = settings
 
     async def get_order_type_processor(self, order_id: str) -> OrderProcessor:
-        order = await self.client.get_order(order_id)
+        order = await self.client.get_order(order_id, select=["subscriptions.lines"])
         order_type = order["type"]
         logger.info("ORDER TYPE: %s", order_type)
         processor_cls = PROCESSOR_BY_TYPE.get(order_type)
