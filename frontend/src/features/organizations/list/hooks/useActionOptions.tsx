@@ -4,7 +4,7 @@ import { ListOption } from "@swo/dropdown";
 
 import { OrganizationRead, OrganizationStatus } from "~api/ffc-api-model";
 import { OrganizationAction } from "~features/organizations/api/model";
-import { useActionsByRole } from "~shared/hooks/useActionsByRole";
+import { RoleAwareAction, useActionsByRole } from "~shared/hooks/useActionsByRole";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 export function useActionOptions(): (entity: OrganizationRead) => ListOption<OrganizationAction>[] {
@@ -16,7 +16,7 @@ export function useActionOptions(): (entity: OrganizationRead) => ListOption<Org
       const editEnabledStatus: Set<OrganizationStatus> = new Set(["active", "cancelled"]);
       const deleteEnabledStatus: Set<OrganizationStatus> = new Set(["cancelled"]);
 
-      const actions: (ListOption<OrganizationAction> & { requiredRoles?: string[] })[] = [
+      const actions: RoleAwareAction<OrganizationAction>[] = [
         {
           label: tActions("edit"),
           value: "edit",

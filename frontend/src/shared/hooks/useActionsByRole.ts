@@ -4,15 +4,19 @@ import type { ListOption } from "@swo/dropdown";
 
 import { useUserRole } from "~shared/hooks/useUserRole";
 
-export function useActionsByRole<T extends string>(): (
-  actions: (ListOption<T> & { requiredRoles?: string[] })[],
-) => (ListOption<T> & { requiredRoles?: string[] })[] {
+export type RoleAwareAction<T> = ListOption<T> & {
+  requiredRoles?: string[];
+};
+
+export type ActionsByRole<T extends string> = (
+  actions: RoleAwareAction<T>[],
+) => RoleAwareAction<T>[];
+
+export function useActionsByRole<T extends string>(): ActionsByRole<T> {
   const { role } = useUserRole();
 
   return useCallback(
-    (
-      actions: (ListOption<T> & { requiredRoles?: string[] })[],
-    ): (ListOption<T> & { requiredRoles?: string[] })[] => {
+    (actions: RoleAwareAction<T>[]): RoleAwareAction<T>[] => {
       return role
         ? actions.filter((action) => !action.requiredRoles || action.requiredRoles.includes(role))
         : [];
