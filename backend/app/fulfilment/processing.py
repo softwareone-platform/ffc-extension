@@ -2,6 +2,7 @@ import copy
 import enum
 import logging
 import secrets
+import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -340,7 +341,8 @@ class OrderProcessor(ABC):
             return ProcessingResult(
                 status=ProcessingStatus.RESCHEDULE,
                 severity="Warning",
-                message=f"An error occurred while processing the order: {exc}",
+                message=f"An error occurred while processing the order {self.order['id']}: "
+                f"{traceback.format_exc()}",
             )
         # Due date reached: fail the order and let the task complete.
         status_notes = ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d"))
@@ -426,7 +428,10 @@ class PurchaseOrderProcessor(OrderProcessor):
 
             await self.send_reset_password(employee_email, is_new)
             logger.info("Order %s has been completed", self.order["id"])
-            return ProcessingResult(status=ProcessingStatus.COMPLETE)
+            return ProcessingResult(
+                status=ProcessingStatus.COMPLETE,
+                message=f"Order {self.order['id']} has been successfully processed",
+            )
         except Exception as exc:
             logger.exception("%s: Purchase Order processing failed.", self.order["id"])
             if isinstance(exc, OrderMovedToQuery | OrderNotValidError):

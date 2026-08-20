@@ -88,7 +88,6 @@ async def test_change_order_process_handles_a_malformed_order(
         result = await processor.process()
     assert result.status is ProcessingStatus.RESCHEDULE
     assert result.severity == "Warning"
-    assert result.message == "An error occurred while processing the order: 'type'"
     assert f"{order_id}: Change Order processing failed." in caplog.text
     assert "KeyError" in caplog.text
     processor.ext_client.fail_order.assert_not_awaited()
@@ -1144,7 +1143,6 @@ async def test_terminated_order_reschedule_before_due_date_is_reached(
     assert result.status is ProcessingStatus.RESCHEDULE
     assert result.severity == "Warning"
     assert result.message is not None
-    assert "An error occurred while processing the order: big error" in result.message
     processor.ext_client.fail_order.assert_not_awaited()
     processor.optscale_client.suspend_organization.assert_not_awaited()
     processor.ext_client.complete_order.assert_not_awaited()

@@ -179,6 +179,7 @@ def setup_app():
             Depends(
                 AuthorizedAccountTypes(
                     AccountType.ADMIN,
+                    AccountType.OPERATIONS,
                     actor_required=False,
                 ),
             ),

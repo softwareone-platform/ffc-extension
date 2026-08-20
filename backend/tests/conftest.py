@@ -2752,6 +2752,24 @@ def mock_cli_settings(mocker: MockerFixture, test_settings: Settings) -> None:
 
 
 @pytest.fixture
+def mock_owned_task(mocker: MockerFixture, mocked_extension_ctx) -> Callable[..., None]:
+    """Return a helper that makes `get_task` report a given account as the task owner."""
+
+    def _mock(account_id: str | None = None) -> None:
+        from app.api_clients.mpt import MPTClient
+
+        mocker.patch.object(
+            MPTClient,
+            "get_task",
+            return_value={
+                "parameters": {"accountId": account_id or mocked_extension_ctx.account_id}
+            },
+        )
+
+    return _mock
+
+
+@pytest.fixture
 def event_factory() -> Callable[..., Event]:
     """Return a builder for an order `status_changed` marketplace event."""
 
