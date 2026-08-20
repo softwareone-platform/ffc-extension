@@ -6,7 +6,13 @@ import pycountry
 from pydantic import Field, field_validator
 
 from app.enums import DatasourceType, OrganizationStatus
-from app.schemas.core import BaseSchema, CommonEventsSchema, IdSchema
+from app.schemas.core import (
+    AuditEventsSchema,
+    AuditFieldSchema,
+    BaseSchema,
+    CommonEventsSchema,
+    IdSchema,
+)
 
 EXCLUDED_CURRENCIES = [
     "XAU",  # gold
@@ -57,11 +63,16 @@ class OrganizationCreate(OrganizationBase):
     ]
 
 
-class OrganizationRead(IdSchema, CommonEventsSchema, OrganizationBase):
+class OrganizationEventsSchema(AuditEventsSchema):
+    terminated: AuditFieldSchema | None = None
+
+
+class OrganizationRead(IdSchema, OrganizationBase):
     linked_organization_id: Annotated[
         str | None, Field(max_length=255, examples=["ee7ebfaf-a222-4209-aecc-67861694a488"])
     ] = None
     status: OrganizationStatus
+    events: OrganizationEventsSchema
     expenses_info: OrganizationExpensesInfo | None = None
 
 

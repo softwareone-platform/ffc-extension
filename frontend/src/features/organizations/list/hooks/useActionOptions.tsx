@@ -13,8 +13,8 @@ export function useActionOptions(): (entity: OrganizationRead) => ListOption<Org
 
   return useCallback(
     (item: OrganizationRead): ListOption<OrganizationAction>[] => {
-      const editEnabledStatus: Set<OrganizationStatus> = new Set(["active", "cancelled"]);
-      const deleteEnabledStatus: Set<OrganizationStatus> = new Set(["cancelled"]);
+      const editEnabledStatus: Set<OrganizationStatus> = new Set(["active", "terminated"]);
+      const deleteEnabledStatus: Set<OrganizationStatus> = new Set(["terminated"]);
 
       return [
         {

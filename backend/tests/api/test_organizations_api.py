@@ -1,4 +1,8 @@
+from datetime import UTC, datetime
+
 import pytest
+import time_machine
+from dateutil.relativedelta import relativedelta
 from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
@@ -6,7 +10,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
-from app.db.handlers import OrganizationHandler
 from app.db.models import Organization, System
 from app.enums import OrganizationStatus
 from tests.types import ModelFactory
@@ -552,6 +555,43 @@ async def test_get_organization_by_id(
     assert data["expenses_info"]["expenses_this_month_forecast"] == "3690.91"
 
 
+async def test_get_terminated_organization_by_id(
+    organization_factory: ModelFactory[Organization],
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+    ffc_extension: System,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    org = await organization_factory(
+        created_by=ffc_extension,
+        updated_by=ffc_extension,
+        linked_organization_id="ee7ebfaf-a222-4209-aecc-67861694a488",
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime.now(UTC),
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/expenses",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "limit": "57",
+            "expenses_this_month": "1724.6654545809972",
+            "expenses_this_month_forecast": "3690.91",
+            "possible_monthly_saving": "64.55278421228572",
+        },
+    )
+    response = await api_client.get(
+        f"/organizations/{org.id}", headers={"Authorization": f"Bearer {ffc_jwt_token}"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["events"]["terminated"]["at"] is not None
+    assert data["status"] == "terminated"
+
+
 async def test_get_non_existant_organization(api_client: AsyncClient, ffc_jwt_token: str):
     not_found_id = "FORG-1234-5678-9012"
     response = await api_client.get(
@@ -853,6 +893,7 @@ async def test_try_update_name_for_organization_without_linked_organization_id(
 # ====================
 
 
+@time_machine.travel("2026-08-1", tick=False)
 async def test_delete_organization(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
@@ -861,18 +902,11 @@ async def test_delete_organization(
     db_session: AsyncSession,
 ):
     db_org = await organization_factory(
-        status=OrganizationStatus.ACTIVE,
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime(2026, 6, 30, tzinfo=UTC),
         name="Test organization",
         linked_organization_id="UUID-1234-5678-9098-7654",
     )
-
-    response = await admin_client.delete(f"/organizations/{db_org.id}")
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Only terminated organization can be deleted."
-
-    await OrganizationHandler(db_session).terminate(db_org)
-    await db_session.refresh(db_org)
-    assert db_org.status == OrganizationStatus.TERMINATED
 
     httpx_mock.add_response(
         method="DELETE",
@@ -894,6 +928,40 @@ async def test_delete_organization(
     assert response.json()["detail"] == f"Organization {db_org.name} is already deleted."
 
 
+@time_machine.travel("2026-08-1", tick=False)
+async def test_delete_organization_to_early(
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+):
+    db_org = await organization_factory(
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime(2026, 7, 1, tzinfo=UTC),
+        name="Test organization",
+        linked_organization_id="UUID-1234-5678-9098-7654",
+    )
+
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        f"The organization {db_org.name}cannot be deleted before September 1, 2026."
+    )
+
+
+async def test_delete_organization_active(
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+):
+    db_org = await organization_factory(
+        status=OrganizationStatus.ACTIVE,
+        name="Test organization",
+        linked_organization_id="UUID-1234-5678-9098-7654",
+    )
+
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Only terminated organization can be deleted."
+
+
 async def test_delete_organization_optscale_issue(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],
@@ -905,6 +973,7 @@ async def test_delete_organization_optscale_issue(
         name="Test organization",
         linked_organization_id="UUID-1234-5678-9098-7654",
         status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime.now(UTC) - relativedelta(months=3),
     )
     httpx_mock.add_response(
         method="DELETE",
