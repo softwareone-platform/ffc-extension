@@ -7019,6 +7019,64 @@ export type MeOpsV1MeGetResponses = {
 
 export type MeOpsV1MeGetResponse = MeOpsV1MeGetResponses[keyof MeOpsV1MeGetResponses];
 
+export type ValidateOrderEventsCommerceOrdersValidatePostData = {
+    /**
+     * Order
+     */
+    body: {
+        [key: string]: unknown;
+    };
+    path?: never;
+    query?: never;
+    url: '/events/commerce/orders/validate';
+};
+
+export type ValidateOrderEventsCommerceOrdersValidatePostErrors = {
+    /**
+     * HTTPValidationError
+     *
+     * Validation Error
+     */
+    422: {
+        /**
+         * Detail
+         */
+        detail?: Array<{
+            /**
+             * Location
+             */
+            loc: Array<string | number>;
+            /**
+             * Message
+             */
+            msg: string;
+            /**
+             * Error Type
+             */
+            type: string;
+            /**
+             * Input
+             */
+            input?: unknown;
+            /**
+             * Context
+             */
+            ctx?: {
+                [key: string]: unknown;
+            };
+        }>;
+    };
+};
+
+export type ValidateOrderEventsCommerceOrdersValidatePostError = ValidateOrderEventsCommerceOrdersValidatePostErrors[keyof ValidateOrderEventsCommerceOrdersValidatePostErrors];
+
+export type ValidateOrderEventsCommerceOrdersValidatePostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type ProcessOrderEventsCommerceOrdersPostData = {
     /**
      * Event

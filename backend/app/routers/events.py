@@ -8,6 +8,7 @@ from app.dependencies.api_clients import (
 )
 from app.dependencies.core import ExtensionContext
 from app.dependencies.fulfillment import OrderProcessorFactory
+from app.fulfilment.error import ERR_ORDER_TYPE_NOT_SUPPORTED
 from app.fulfilment.exceptions import UnsupportedOrderTypeError
 from app.fulfilment.processing import ProcessingStatus
 from app.schemas.core import Event, EventResponse
@@ -15,13 +16,12 @@ from app.schemas.core import Event, EventResponse
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-#
-# @router.post("/orders/validate")
-# async def validate_order(order: dict):
-#     # Webhook of Change Order
-#     order["error"] = ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=order["type"])
-#     return order
-#
+
+@router.post("/orders/validate")
+async def validate_order(order: dict):
+    # Webhook of Change Order
+    order["error"] = ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=order["type"])
+    return order
 
 
 @router.post("/orders")
@@ -35,6 +35,26 @@ async def process_order(
     order_id = event.object.id
     task_id = event.task.id  # type: ignore
     logger.info("Changing task %s status to Processing", task_id)
+    task = await ext_client.get_task(task_id)
+    task_account_id = task["parameters"]["accountId"]
+    ext_account_id = ext_ctx.account_id
+    if task_account_id != ext_account_id:
+        logger.info(
+            "The task %s does not match the ext account id %s", task_account_id, ext_account_id
+        )
+        await ext_client.start_task(task_id, ext_ctx.instance_id)
+        await ext_client.complete_task(task_id)
+        await ext_client.log_task(
+            task_id,
+            severity="Info",
+            error_message=(
+                f"The task was ignored for the account {task_account_id} which is not the "
+                f"fulfillment owner. The Fulfillment of the order {order_id} is a vendor activity "
+                f"and is it processed under the vendor account {ext_account_id}"
+            ),
+        )
+        return EventResponse.ok()
+
     await ext_client.start_task(task_id, ext_ctx.instance_id)
     try:
         processor = await factory.get_order_type_processor(order_id)
