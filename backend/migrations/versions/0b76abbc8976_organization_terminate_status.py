@@ -24,7 +24,13 @@ def upgrade() -> None:
     op.add_column('organizations', sa.Column('terminated_by_id', sa.String(), nullable=True))
     op.create_foreign_key(op.f('fk_organizations_terminated_by_id_actors'), 'organizations', 'actors', ['terminated_by_id'], ['id'])
     op.execute("ALTER TYPE organizationstatus RENAME VALUE 'cancelled' TO 'terminated'")
-    op.execute("UPDATE organizations SET status = 'terminated' WHERE status = 'deleted'")
+    op.execute(
+        "UPDATE organizations "
+        "SET status = 'terminated', "
+        "terminated_at = deleted_at, "
+        "deleted_at = NULL "
+        "WHERE status = 'deleted'"
+    )
 
 def downgrade() -> None:
     op.execute("ALTER TYPE organizationstatus RENAME VALUE 'terminated' TO 'cancelled'")
