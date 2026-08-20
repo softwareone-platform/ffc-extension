@@ -313,6 +313,7 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
         linked_organization_id: str | None = None,
         created_by: Actor | None = None,
         updated_by: Actor | None = None,
+        terminated_at: datetime | None = None,
         status: OrganizationStatus = OrganizationStatus.ACTIVE,
     ) -> Organization:
         organization = Organization(
@@ -324,6 +325,7 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
             created_by=created_by,
             updated_by=updated_by,
             status=status,
+            terminated_at=terminated_at,
         )
         db_session.add(organization)
         await db_session.commit()

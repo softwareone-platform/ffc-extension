@@ -1998,7 +1998,19 @@ export type LimitOffsetPageOrganizationRead = {
          */
         operations_external_id: string;
         /**
-         * AuditEventsSchema
+         * Id
+         */
+        id: string;
+        /**
+         * Linked Organization Id
+         */
+        linked_organization_id?: string | null;
+        /**
+         * OrganizationStatus
+         */
+        status: 'active' | 'terminated' | 'deleted';
+        /**
+         * OrganizationEventsSchema
          */
         events: {
             /**
@@ -2067,19 +2079,27 @@ export type LimitOffsetPageOrganizationRead = {
                     name: string;
                 } | null;
             } | null;
+            terminated?: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            } | null;
         };
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Organization Id
-         */
-        linked_organization_id?: string | null;
-        /**
-         * OrganizationStatus
-         */
-        status: 'active' | 'cancelled' | 'deleted';
         expenses_info?: {
             /**
              * Limit
@@ -2382,6 +2402,98 @@ export type OrganizationCreate = {
 };
 
 /**
+ * OrganizationEventsSchema
+ */
+export type OrganizationEventsSchema = {
+    /**
+     * AuditFieldSchema
+     */
+    created: {
+        /**
+         * At
+         */
+        at: string;
+        by: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system';
+            /**
+             * Name
+             */
+            name: string;
+        } | null;
+    };
+    /**
+     * AuditFieldSchema
+     */
+    updated: {
+        /**
+         * At
+         */
+        at: string;
+        by: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system';
+            /**
+             * Name
+             */
+            name: string;
+        } | null;
+    };
+    deleted?: {
+        /**
+         * At
+         */
+        at: string;
+        by: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system';
+            /**
+             * Name
+             */
+            name: string;
+        } | null;
+    } | null;
+    terminated?: {
+        /**
+         * At
+         */
+        at: string;
+        by: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system';
+            /**
+             * Name
+             */
+            name: string;
+        } | null;
+    } | null;
+};
+
+/**
  * OrganizationExpensesInfo
  */
 export type OrganizationExpensesInfo = {
@@ -2424,7 +2536,19 @@ export type OrganizationRead = {
      */
     operations_external_id: string;
     /**
-     * AuditEventsSchema
+     * Id
+     */
+    id: string;
+    /**
+     * Linked Organization Id
+     */
+    linked_organization_id?: string | null;
+    /**
+     * OrganizationStatus
+     */
+    status: 'active' | 'terminated' | 'deleted';
+    /**
+     * OrganizationEventsSchema
      */
     events: {
         /**
@@ -2493,19 +2617,27 @@ export type OrganizationRead = {
                 name: string;
             } | null;
         } | null;
+        terminated?: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system';
+                /**
+                 * Name
+                 */
+                name: string;
+            } | null;
+        } | null;
     };
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Linked Organization Id
-     */
-    linked_organization_id?: string | null;
-    /**
-     * OrganizationStatus
-     */
-    status: 'active' | 'cancelled' | 'deleted';
     expenses_info?: {
         /**
          * Limit
@@ -2547,7 +2679,7 @@ export type OrganizationReference = {
 /**
  * OrganizationStatus
  */
-export type OrganizationStatus = 'active' | 'cancelled' | 'deleted';
+export type OrganizationStatus = 'active' | 'terminated' | 'deleted';
 
 /**
  * OrganizationUpdate
@@ -4317,7 +4449,19 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
              */
             operations_external_id: string;
             /**
-             * AuditEventsSchema
+             * Id
+             */
+            id: string;
+            /**
+             * Linked Organization Id
+             */
+            linked_organization_id?: string | null;
+            /**
+             * OrganizationStatus
+             */
+            status: 'active' | 'terminated' | 'deleted';
+            /**
+             * OrganizationEventsSchema
              */
             events: {
                 /**
@@ -4386,19 +4530,27 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                         name: string;
                     } | null;
                 } | null;
+                terminated?: {
+                    /**
+                     * At
+                     */
+                    at: string;
+                    by: {
+                        /**
+                         * Id
+                         */
+                        id: string;
+                        /**
+                         * ActorType
+                         */
+                        type: 'user' | 'system';
+                        /**
+                         * Name
+                         */
+                        name: string;
+                    } | null;
+                } | null;
             };
-            /**
-             * Id
-             */
-            id: string;
-            /**
-             * Linked Organization Id
-             */
-            linked_organization_id?: string | null;
-            /**
-             * OrganizationStatus
-             */
-            status: 'active' | 'cancelled' | 'deleted';
             expenses_info?: {
                 /**
                  * Limit
@@ -4529,7 +4681,19 @@ export type CreateOrganizationOpsV1OrganizationsPostResponses = {
          */
         operations_external_id: string;
         /**
-         * AuditEventsSchema
+         * Id
+         */
+        id: string;
+        /**
+         * Linked Organization Id
+         */
+        linked_organization_id?: string | null;
+        /**
+         * OrganizationStatus
+         */
+        status: 'active' | 'terminated' | 'deleted';
+        /**
+         * OrganizationEventsSchema
          */
         events: {
             /**
@@ -4598,19 +4762,27 @@ export type CreateOrganizationOpsV1OrganizationsPostResponses = {
                     name: string;
                 } | null;
             } | null;
+            terminated?: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            } | null;
         };
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Organization Id
-         */
-        linked_organization_id?: string | null;
-        /**
-         * OrganizationStatus
-         */
-        status: 'active' | 'cancelled' | 'deleted';
         expenses_info?: {
             /**
              * Limit
@@ -4769,7 +4941,19 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
          */
         operations_external_id: string;
         /**
-         * AuditEventsSchema
+         * Id
+         */
+        id: string;
+        /**
+         * Linked Organization Id
+         */
+        linked_organization_id?: string | null;
+        /**
+         * OrganizationStatus
+         */
+        status: 'active' | 'terminated' | 'deleted';
+        /**
+         * OrganizationEventsSchema
          */
         events: {
             /**
@@ -4838,19 +5022,27 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                     name: string;
                 } | null;
             } | null;
+            terminated?: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            } | null;
         };
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Organization Id
-         */
-        linked_organization_id?: string | null;
-        /**
-         * OrganizationStatus
-         */
-        status: 'active' | 'cancelled' | 'deleted';
         expenses_info?: {
             /**
              * Limit
@@ -4961,7 +5153,19 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
          */
         operations_external_id: string;
         /**
-         * AuditEventsSchema
+         * Id
+         */
+        id: string;
+        /**
+         * Linked Organization Id
+         */
+        linked_organization_id?: string | null;
+        /**
+         * OrganizationStatus
+         */
+        status: 'active' | 'terminated' | 'deleted';
+        /**
+         * OrganizationEventsSchema
          */
         events: {
             /**
@@ -5030,19 +5234,27 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                     name: string;
                 } | null;
             } | null;
+            terminated?: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            } | null;
         };
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Organization Id
-         */
-        linked_organization_id?: string | null;
-        /**
-         * OrganizationStatus
-         */
-        status: 'active' | 'cancelled' | 'deleted';
         expenses_info?: {
             /**
              * Limit

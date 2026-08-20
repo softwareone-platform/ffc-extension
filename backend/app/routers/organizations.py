@@ -1,9 +1,11 @@
 import logging
 import secrets
+from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
 import httpx
+from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import create_page
 from sqlalchemy import Select
@@ -442,6 +444,17 @@ async def delete_organization_by_id(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only terminated organization can be deleted.",
+        )
+
+    delete_available_at = db_organization.terminated_at.date() + relativedelta(months=2, day=1)  # type: ignore
+
+    if datetime.now(UTC).date() < delete_available_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"The organization {db_organization.name}cannot be deleted "
+                f"before {delete_available_at.strftime('%B %-d, %Y')}."
+            ),
         )
 
     with wrap_http_error_in_502(

@@ -8,6 +8,7 @@
   "workspaceFolder": "/app",
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind",
+    "source=${localEnv:HOME}/.npmrc,target=/root/.npmrc,type=bind",
     "source=${localEnv:HOME}/.config/starship.toml,target=/root/.config/starship.toml,type=bind",
     "source=claude-code-config-${devcontainerId},target=/root/.claude,type=volume",
     "source=prek-cache-${devcontainerId},target=/root/.cache/prek,type=volume",
