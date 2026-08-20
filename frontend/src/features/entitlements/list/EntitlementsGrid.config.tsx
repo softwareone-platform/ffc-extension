@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import { EntityReference } from "@swo/design-system/entity-reference";
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
-  GridCellActions,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -20,6 +19,8 @@ import { Paths } from "@swo/rql-client";
 import { useEntitlementsApi } from "~entitlements/api";
 import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
+import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
+import { useDefaultView } from "~shared/hooks/useDefaultView";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
@@ -123,7 +124,9 @@ export function useColumns(): Columns {
         name: "actions",
         title: tColumns("actions"),
         fields: [],
-        cell: (item: Entitlement) => <GridCellActions item={item} actions={getActions(item)} />,
+        cell: (item: Entitlement) => (
+          <GridCellDynamicActions<Entitlement> item={item} actions={getActions(item)} />
+        ),
         initialWidth: 100,
         type: "Actions",
         isScalable: false,
@@ -239,6 +242,7 @@ export function useGridConfig(
   const fields = useFields();
   const views = useViews();
   const asyncOptions = useAsyncOptions();
+  const defaultView = useDefaultView();
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -260,8 +264,7 @@ export function useGridConfig(
         columns,
         fields,
         views,
-        isDefaultView: false,
-        selectedView: "active",
+        ...defaultView,
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
