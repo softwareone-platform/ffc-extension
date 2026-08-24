@@ -19,12 +19,27 @@ export function useFields() {
       { title: tFields("billingCurrency"), name: "billing_currency" },
       { title: tFields("operationsAdditionalId"), name: "operations_external_id" },
       {
+        title: tFields("created_at"),
+        name: "events.created.at",
+        type: "date",
+      },
+      {
+        title: tFields("terminated_at"),
+        name: "events.terminated.at",
+        type: "date",
+      },
+      {
+        title: tFields("updated_at"),
+        name: "events.updated.at",
+        type: "date",
+      },
+      {
         name: "status",
         title: tFields("status"),
         type: "list",
         options: [
           { value: "active", label: getStatusLabel("Active") },
-          { value: "cancelled", label: getStatusLabel("Terminated") },
+          { value: "terminated", label: getStatusLabel("Terminated") },
           { value: "deleted", label: getStatusLabel("Deleted") },
         ],
       },

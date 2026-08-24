@@ -4,7 +4,6 @@ import { GridEvents, UseAsyncGridConfig, useGridAsync } from "@swo/design-system
 import { Entity } from "@swo/service";
 
 import { OrganizationRead } from "~api/ffc-api-model";
-import { useDefaultView } from "~shared/hooks/useDefaultView";
 
 import { Organization, OrganizationAction } from "../api/model";
 import { useAsyncOptions } from "./hooks/useAsyncOptions";
@@ -19,7 +18,6 @@ export function useGridConfig(
   const fields = useFields();
   const views = useViews();
   const asyncOptions = useAsyncOptions();
-  const defaultView = useDefaultView();
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -41,7 +39,8 @@ export function useGridConfig(
         views,
         columns,
         fields,
-        ...defaultView,
+        isDefaultView: false,
+        selectedView: "main",
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entity<OrganizationRead>>,

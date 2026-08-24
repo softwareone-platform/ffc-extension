@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { EntityReference } from "@swo/design-system/entity-reference";
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
+  GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -20,7 +21,6 @@ import { useEntitlementsApi } from "~entitlements/api";
 import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
-import { useDefaultView } from "~shared/hooks/useDefaultView";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
@@ -74,7 +74,6 @@ export function useColumns(): Columns {
         ),
         initialWidth: 150,
       },
-
       {
         name: "data_source",
         title: tColumns("data_source"),
@@ -108,6 +107,30 @@ export function useColumns(): Columns {
           </>
         ),
         initialWidth: 150,
+      },
+      {
+        name: "created_at",
+        title: tColumns("created_at"),
+        fields: ["events.created.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.created?.at} />,
+        initialWidth: 150,
+        isHidden: true,
+      },
+      {
+        name: "updated_at",
+        title: tColumns("updated_at"),
+        fields: ["events.updated.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.updated?.at} />,
+        initialWidth: 150,
+        isHidden: true,
+      },
+      {
+        name: "terminated_at",
+        title: tColumns("terminated_at"),
+        fields: ["events.terminated.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.terminated?.at} />,
+        initialWidth: 150,
+        isHidden: true,
       },
       {
         name: "status",
@@ -154,6 +177,17 @@ export function useFields() {
       {
         title: tFields("created_at"),
         name: "events.created.at",
+        type: "date",
+      },
+      {
+        title: tFields("terminated_at"),
+        name: "events.terminated.at",
+        type: "date",
+      },
+      {
+        title: tFields("updated_at"),
+        name: "events.updated.at",
+        type: "date",
       },
       {
         name: "status",
@@ -176,6 +210,17 @@ export function useViews() {
 
   return useMemo(() => {
     return [
+      {
+        name: "main",
+        title: tView("mainEntitlements"),
+        configuration: {
+          filters: {
+            operator: "or",
+            value: [{ operator: "neq", field: "status", value: "deleted" }],
+          },
+          sort: [{ field: "events.updated.at", direction: "desc" }],
+        },
+      },
       {
         name: "active",
         title: tView("activeEntitlements"),
@@ -242,7 +287,6 @@ export function useGridConfig(
   const fields = useFields();
   const views = useViews();
   const asyncOptions = useAsyncOptions();
-  const defaultView = useDefaultView();
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -264,7 +308,8 @@ export function useGridConfig(
         columns,
         fields,
         views,
-        ...defaultView,
+        isDefaultView: false,
+        selectedView: "main",
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,

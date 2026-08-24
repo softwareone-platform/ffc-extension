@@ -19,6 +19,7 @@ export function OrganizationDetailsContent() {
     { label: tDetails("general:title"), path: SEGMENTS.general },
     { label: tDetails("dataSources:title"), path: SEGMENTS.dataSources },
     { label: tDetails("users:title"), path: SEGMENTS.users },
+    { label: tDetails("events:title"), path: SEGMENTS.events },
   ];
 
   return (

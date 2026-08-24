@@ -4,19 +4,23 @@ import { Grid } from "@swo/design-system/grid";
 import { EmployeeRead } from "~api/ffc-api-model";
 import { Employee, EmployeeActions } from "~features/organizations/api/model";
 import { CreateUserModal } from "~organizations/details/users/modal/CreateUserModal";
+import { useFixedT } from "~shared/hooks/useFixedT";
 import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useNotifyParentChildModal } from "~shared/hooks/useNotifyParentChildModal";
 
+import { useIsUserAddAllowed } from "./hooks/useIsAddUserAllowed";
 import { UserMakeAdminModal } from "./make-admin-modal/UserMakeAdminModal";
 import { useGridConfig } from "./UsersGrid.config";
 
 export function UsersGrid({ organizationId }: { organizationId: string }) {
   const { refresh, ...gridProps } = useGridConfig(organizationId, onAction);
+
   const addUserModal = useModalToggle({ onSuccess: refresh });
   const makeAdminModal = useModalToggle<{ employee: Employee; organizationId: string }>({
     onSuccess: refresh,
   });
-
+  const { isAddUserAllowed } = useIsUserAddAllowed(organizationId);
+  const tUsers = useFixedT("organization:users");
   useNotifyParentChildModal(addUserModal.isOpen);
 
   function onAction(action: EmployeeActions, item: Employee) {
@@ -31,11 +35,13 @@ export function UsersGrid({ organizationId }: { organizationId: string }) {
   return (
     <>
       <Grid<EmployeeRead> {...gridProps}>
-        <Grid.Actions>
-          <Button type="primary" onClick={addUserModal.open} testId="add-user-button">
-            Add user
-          </Button>
-        </Grid.Actions>
+        {isAddUserAllowed && (
+          <Grid.Actions>
+            <Button type="primary" onClick={addUserModal.open} testId="add-user-button">
+              {tUsers("add_user")}
+            </Button>
+          </Grid.Actions>
+        )}
       </Grid>
       <CreateUserModal
         isOpen={addUserModal.isOpen}

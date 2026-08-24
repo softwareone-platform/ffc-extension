@@ -16,6 +16,9 @@
       },
       "users": {
         "title": "Users"
+      },
+      "events": {
+        "title": "Events"
       }
     },
     "users": {
@@ -174,7 +177,9 @@
         "deletedOrganizations": "Deleted Organizations",
         "activeEntitlements": "Active Entitlements",
         "inactiveEntitlements": "Inactive Entitlements",
-        "allEntitlements": "All Entitlements"
+        "allEntitlements": "All Entitlements",
+        "mainEntitlements": "Default",
+        "mainOrganizations": "Default"
       },
       "columns": {
         "actions": "Actions",
@@ -201,7 +206,12 @@
         "affiliate_external_id": "Affiliate",
         "data_source": "Data Source",
         "status": "Status",
-        "userType": "User Type"
+        "userType": "User Type",
+        "created_at": "Created",
+        "terminated_at": "Terminated",
+        "updated_at": "Updated",
+        "operations_additional_id": "Operations Additional ID",
+        "billing_currency": "Billing Currency"
       },
       "fields": {
         "id": "ID",
@@ -225,7 +235,9 @@
         },
         "lastLogin": "Last Login",
         "createdAt": "Created At",
-        "created_at": "Created At"
+        "created_at": "Created",
+        "terminated_at": "Terminated",
+        "updated_at": "Updated"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
@@ -236,7 +248,12 @@
         "add": "Add"
       }
     },
-    "details": { "additionalIds": "Additional IDs", "references": "References" },
+    "details": {
+      "additionalIds": "Additional IDs",
+      "references": "References",
+      "system": "System",
+      "events": "Events"
+    },
     "properties": {
       "linkedDataSource": "Linked data source",
       "affiliate_external_id": "Affiliate external ID",

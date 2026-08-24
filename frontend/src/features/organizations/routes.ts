@@ -42,6 +42,13 @@ export const organizationsRoutes: RouteObject = {
             "OrganizationUsers",
           ),
         },
+        {
+          path: SEGMENTS.events,
+          lazy: lazyComponent(
+            () => import("~features/organizations/details/events/Events"),
+            "OrganizationEventsDetails",
+          ),
+        },
       ],
     },
   ],
