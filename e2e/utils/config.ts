@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { env, getEnvironment } from './env';
+import { env } from './env';
 
 /** For reports, exports and other large-data screens. */
 export const LARGE_DATA_TIMEOUT = 30_000;
@@ -15,10 +15,12 @@ export const TIMEOUTS = {
 
 const CACHE_DIR = path.resolve(__dirname, '..', '.cache');
 
+const originSlug = (url: string): string => new URL(url).host.replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+
 export const paths = {
   cacheDir: CACHE_DIR,
-  /** Scoped per user and deployment so a session is never reused across clusters. */
-  sessionFile: (safeUserName: string): string => path.join(CACHE_DIR, `${safeUserName}_${getEnvironment()}_SESSION.json`),
+  /** Keyed by origin, so portal.s1.show and portal.s1.today never share a session. */
+  sessionFile: (safeUserName: string): string => path.join(CACHE_DIR, `${safeUserName}_${originSlug(env.baseUrl)}_SESSION.json`),
 } as const;
 
 export const config = {

@@ -12,9 +12,8 @@ setup('authenticate admin', async ({ browser }) => {
 
   const user = TestUsers.Admin;
 
-  const reusable = await setup.step('Check cached session', () => user.hasValidSession(browser));
-  if (reusable) {
-    debugLog(`Reusing cached session for ${user.email} (${env.testEnv})`);
+  if (user.hasValidSession()) {
+    debugLog(`Reusing cached session for ${user.email} (${env.baseUrl})`);
     return;
   }
 

@@ -3,10 +3,12 @@ import { Browser, expect } from '@playwright/test';
 import { TIMEOUTS, paths } from './config';
 import { debugLog } from './debug-logging';
 import { env } from './env';
-import { ensureDir, fileAgeMs, safeReadJsonFile } from './file';
+import { ensureDir, safeReadJsonFile } from './file';
 
-/** Past this we re-login instead of probing. */
-const MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Cookies must outlive the run, so require headroom rather than just "not expired yet". */
+const EXPIRY_MARGIN_MS = 5 * 60 * 1000;
+
+type StoredCookie = { name: string; domain: string; expires: number };
 
 export default class User {
   public readonly email: string;
@@ -31,40 +33,21 @@ export default class User {
     return paths.sessionFile(this.safeName);
   }
 
-  /** Cheap pre-check before paying for a browser probe. */
-  public hasUsableSessionFile(): boolean {
-    const state = safeReadJsonFile<{ cookies?: unknown[] }>(this.sessionStoragePath);
-    if (!state?.cookies?.length) return false;
+  /**
+   * True when every persistent cookie is still comfortably in date. The file is
+   * already origin-scoped, so a cached session can't belong to another cluster.
+   */
+  public hasValidSession(): boolean {
+    const cookies = safeReadJsonFile<{ cookies?: StoredCookie[] }>(this.sessionStoragePath)?.cookies ?? [];
+    if (cookies.length === 0) return false;
 
-    const age = fileAgeMs(this.sessionStoragePath);
-    return age !== undefined && age < MAX_SESSION_AGE_MS;
-  }
+    // expires === -1 marks a session cookie, which carries no expiry to check;
+    // with nothing verifiable we re-login rather than assume the session holds.
+    const persistent = cookies.filter(cookie => cookie.expires > 0);
+    if (persistent.length === 0) return false;
 
-  /** Proves the session still authenticates; a stale cookie otherwise fails inside a test. */
-  public async hasValidSession(browser: Browser): Promise<boolean> {
-    if (!this.hasUsableSessionFile()) return false;
-
-    const context = await browser.newContext({
-      storageState: this.sessionStoragePath,
-      ignoreHTTPSErrors: env.ignoreHttpsErrors,
-    });
-
-    try {
-      const page = await context.newPage();
-      await page.goto(env.baseUrl, { waitUntil: 'domcontentloaded', timeout: TIMEOUTS.login });
-
-      const landedOnLogin = await page
-        .locator('input[name="username"]')
-        .waitFor({ state: 'visible', timeout: 5_000 })
-        .then(() => true)
-        .catch(() => false);
-
-      return !landedOnLogin;
-    } catch {
-      return false;
-    } finally {
-      await context.close();
-    }
+    const deadline = Date.now() + EXPIRY_MARGIN_MS;
+    return persistent.every(cookie => cookie.expires * 1000 > deadline);
   }
 
   /** Throws on failure. */

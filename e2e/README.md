@@ -88,10 +88,16 @@ npx playwright test --list
 ## Authentication
 
 The `setup` project logs in once and writes a session to
-`.cache/<USER>_<ENVIRONMENT>_SESSION.json`; specs opt in with
-`test.use({ storageState: ... })`. A cached session is reused only after it's proven to
-still authenticate, and it's scoped per environment so it is never reused across
-deployments. Delete the file to force a fresh login.
+`.cache/<USER>_<HOST>_SESSION.json` (e.g. `..._portal_s1_show_SESSION.json`); specs opt
+in with `test.use({ storageState: ... })`.
+
+The cache is reused only when every persistent cookie still has at least 5 minutes left,
+so a session can't expire mid-run. Because the filename is keyed by **origin**,
+`portal.s1.show` and `portal.s1.today` keep separate caches and a session is never
+reused across deployments. Delete the file to force a fresh login.
+
+Note this checks expiry only — it can't detect a session revoked server-side, which
+would surface as a redirect to the login page inside a test.
 
 ## Notes
 

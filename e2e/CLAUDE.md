@@ -24,9 +24,9 @@ the API (`api-request/`) and clean it up in teardown.
 - Login happens once, in the `setup` project (`setup/auth.setup.ts`), which writes a
   `storageState` file. Specs opt in with `test.use({ storageState: ... })`.
 - Never launch a browser outside the runner — you lose traces, retries and reporting.
-- A cached session must be **proven** (`User.hasValidSession`) rather than assumed from
-  the file's existence. Session files are scoped per user _and_ environment, so a
-  session is never reused across clusters.
+- A cached session is reused only when every persistent cookie is still in date
+  (`User.hasValidSession`), never on the file's mere existence. Session files are keyed
+  by user _and_ origin, so `portal.s1.show` and `portal.s1.today` never share one.
 - Login failures must throw. Swallowing them makes every later test fail for an
   unrelated-looking reason.
 

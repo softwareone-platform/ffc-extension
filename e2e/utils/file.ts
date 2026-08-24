@@ -25,11 +25,3 @@ export function safeWriteJsonFile(filePath: string, data: unknown): void {
     throw new Error(`Failed to write file: ${filePath}`);
   }
 }
-
-export function fileAgeMs(filePath: string): number | undefined {
-  try {
-    return Date.now() - fs.statSync(filePath).mtimeMs;
-  } catch {
-    return undefined;
-  }
-}
