@@ -22,7 +22,7 @@ test.describe('Organization users', () => {
 
     await test.step('Find organization via filters and open details page', async () => {
       await organizationsPage.filterOrgByName(orgName);
-      await (await organizationsPage.getFirstActiveOrgLinkFromGrid()).click();
+      await organizationsPage.organizationLink(orgName).click();
       await expect(organizationDetailsPage.navigationHeaderBarSubtitle).toHaveText(`Organization ${orgName}`);
     });
 

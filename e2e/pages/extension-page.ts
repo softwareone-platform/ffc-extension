@@ -2,6 +2,7 @@ import { FrameLocator, Locator, Page } from '@playwright/test';
 
 import { LARGE_DATA_TIMEOUT } from '../utils/config';
 import { debugLog, errorLog } from '../utils/debug-logging';
+import { getCurrentEnv } from '../utils/env';
 import { PlatformPage } from './platform-page';
 
 export abstract class ExtensionPage extends PlatformPage {
@@ -35,12 +36,17 @@ export abstract class ExtensionPage extends PlatformPage {
   protected constructor(page: Page, url: string) {
     super(page, '');
     this.url = url;
-    this.extensionFrame = this.main.frameLocator('(//iframe)[1]');
+    // The host serves every plug from https://<extension-id>.<extensions-domain>/bootstrap/,
+    // so matching the src pins us to this extension rather than whichever iframe renders first.
+    // Case-insensitive because the id becomes a hostname, which the browser may lower-case.
+    this.extensionFrame = this.main.locator(`iframe[src*="${getCurrentEnv().extensionId}" i]`).contentFrame();
     this.dataRefreshSpinner = this.extensionFrame.getByTestId('grid__info-dialog__refresh');
 
     this.navigationHeaderBar = this.extensionFrame.getByTestId('navigation__header-bar');
     this.navigationHeaderBarSubtitle = this.navigationHeaderBar.getByTestId('navigation__header-bar__subtitle');
-    this.navHeaderBarList = this.page.getByTestId('navigation__header-bar__list');
+    // The extension renders its own nav inside the iframe, so these must be
+    // frame-scoped: page.getByTestId() does not pierce iframes.
+    this.navHeaderBarList = this.extensionFrame.getByTestId('navigation__header-bar__list');
     this.activeNavLink = this.navHeaderBarList.locator('a[aria-current="page"]');
 
     this.tabsNavItems = this.extensionFrame.getByTestId('tabs-nav__items');

@@ -1,35 +1,64 @@
 import { Locator, Page } from '@playwright/test';
 
-import { debugLog } from '../utils/debug-logging';
 import { ExtensionPage } from './extension-page';
 
-/**
- * Represents the Organizations page under FinOps for Cloud.
- */
 export class OrganizationsPage extends ExtensionPage {
-  readonly activeOrgButton: Locator;
-  readonly deletedOrgButton: Locator;
+  /** App-owned root for this screen; everything below is scoped to it. */
+  readonly grid: Locator;
+  readonly rows: Locator;
+  readonly viewSelectorButton: Locator;
+
+  readonly pageInput: Locator;
+  readonly pageCount: Locator;
+  readonly nextPageButton: Locator;
+  readonly previousPageButton: Locator;
+  readonly pageSizeButton: Locator;
 
   constructor(page: Page) {
     super(page, '/');
 
-    this.activeOrgButton = this.extensionFrame
-      .getByTestId('grid__toolbar__view-selector__selector-button')
-      .filter({ hasText: 'Active Organizations' });
-    this.deletedOrgButton = this.extensionFrame
-      .getByTestId('grid__toolbar__view-selector__selector-button')
-      .filter({ hasText: 'Deleted Organizations' });
+    this.grid = this.extensionFrame.getByTestId('ffc-extension__organizations-grid');
+    this.rows = this.grid.locator('tbody tr');
+    this.viewSelectorButton = this.grid.getByTestId('grid__toolbar__view-selector__selector-button');
+
+    const pagination = this.grid.getByTestId('pagination');
+    this.pageInput = pagination.getByTestId('pagination__page-input');
+    this.pageCount = pagination.getByTestId('pagination__page-count');
+    this.nextPageButton = pagination.getByTestId('pagination__navigation__next__button');
+    this.previousPageButton = pagination.getByTestId('pagination__navigation__previous__button');
+    this.pageSizeButton = pagination.getByTestId('pagination__page-size-selector__button');
+  }
+
+  /** Organization names render as links to `/organizations/<id>/general`. */
+  organizationLink(name: string): Locator {
+    return this.grid.getByRole('link', { name, exact: true });
+  }
+
+  rowByOrganization(name: string): Locator {
+    return this.rows.filter({ has: this.organizationLink(name) });
+  }
+
+  statusChip(name: string): Locator {
+    return this.rowByOrganization(name).getByTestId('status-chip');
+  }
+
+  rowActionsButton(name: string): Locator {
+    return this.rowByOrganization(name).getByTestId('dropdown__popover__target');
+  }
+
+  firstRowWithStatus(status: string): Locator {
+    return this.rows.filter({ has: this.grid.getByTestId('status-chip').filter({ hasText: status }) }).first();
   }
 
   /**
-   * Applies a grid filter so only organizations with the provided name are shown.
-   *
-   * The method resets existing filters, opens the filter popover, configures the
-   * condition as `Name` `Equal` `<orgName>`, and waits for the popover to close.
-   *
-   * @param {string} orgName - The exact organization name to filter by.
-   * @returns {Promise<void>} Resolves when the filter configuration is applied.
+   * `<thead>` holds a duplicate sticky copy of every header (`grid-fixed-row`),
+   * so column locators must exclude it or they match twice and fail strict mode.
    */
+  columnHeaderMenu(field: string): Locator {
+    return this.grid.locator('thead tr:not([data-is-pinned="true"])').getByTestId(`${field}__Action-Dropdown__popover`);
+  }
+
+  /** Resets any existing filter, then filters on Name = orgName. */
   async filterOrgByName(orgName: string): Promise<void> {
     await this.resetFiltersIfFiltered();
     await this.filteredByButton.click();
@@ -40,19 +69,5 @@ export class OrganizationsPage extends ExtensionPage {
     await this.filterPopover.getByRole('option', { name: 'Equal', exact: true }).click();
     await this.valueInput.fill(orgName);
     await this.filterPopover.waitFor({ state: 'hidden' });
-  }
-
-  /**
-   * Retrieves the locator for the first active organization's link in the grid.
-   *
-   * This method finds the first row containing a status cell with text "Active",
-   * then targets the link in the first cell of that row.
-   *
-   * @returns {Promise<Locator>} Resolves to a locator for the first active organization link.
-   */
-  async getFirstActiveOrgLinkFromGrid(): Promise<Locator> {
-    const firstActiveLink = this.extensionFrame.locator('xpath=(//td[normalize-space()="Active"])[1]/ancestor::tr/td[1]//a');
-    debugLog(`First active organization link name: ${await firstActiveLink.textContent()}`);
-    return firstActiveLink;
   }
 }
