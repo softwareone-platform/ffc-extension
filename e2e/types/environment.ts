@@ -8,6 +8,7 @@ type Deployment = {
 type EnvironmentFixtures = {
   extensionId: string;
   softwareOneOrgId: string;
+  softwareOneOrgName: string;
   vendorAccountId: string;
   clientApiEmail: string;
   clientApiUserId: string;

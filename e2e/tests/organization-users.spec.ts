@@ -1,11 +1,12 @@
 import { expect } from '@playwright/test';
 
 import test from '../fixtures/fixture';
+import { getCurrentEnv } from '../utils/env';
 import { generateRandomEmail } from '../utils/random-email-utils';
 
 test.describe('Organization users', () => {
   test('Adds a user to an organization', async ({ organizationsPage, organizationDetailsPage }) => {
-    const orgName = 'SoftwareOne (Test Environment)';
+    const orgName = getCurrentEnv().softwareOneOrgName;
     const email = generateRandomEmail();
     const userName = 'Test User';
 

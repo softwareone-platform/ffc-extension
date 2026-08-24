@@ -12,7 +12,7 @@
     "playwright:codegen-dev": "npx playwright codegen https://portal-qa.s1.today/",
     "test": "cross-env ENVIRONMENT=TEST npx playwright test",
     "test:dev": "cross-env ENVIRONMENT=DEV npx playwright test",
-    "test:ui": "cross-env ENVIRONMENT=TEST npx playwright test --debug",
+    "test:ui": "cross-env ENVIRONMENT=TEST npx playwright test --ui",
     "test:headed": "cross-env ENVIRONMENT=TEST npx playwright test --headed --workers=1",
     "test:debug": "cross-env ENVIRONMENT=TEST npx playwright test --debug --workers=1",
     "report": "npx playwright show-report",

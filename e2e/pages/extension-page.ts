@@ -24,6 +24,7 @@ export abstract class ExtensionPage extends PlatformPage {
   readonly filterPopoverCloseButton: Locator;
   readonly resetFilters: Locator;
   readonly addAnotherCondition: Locator;
+  readonly conditionRemoveButtons: Locator;
   readonly fieldSelectInput: Locator;
   readonly conditionalOperatorSelectInput: Locator;
   readonly valueInput: Locator;
@@ -61,9 +62,12 @@ export abstract class ExtensionPage extends PlatformPage {
     this.filterPopoverCloseButton = this.extensionFrame.getByTestId('filter-selector__popover__close-button');
     this.resetFilters = this.extensionFrame.getByTestId('filter-selector__popover__reset-filters');
     this.addAnotherCondition = this.extensionFrame.getByTestId('filter-selector__popover__add-another-condition');
+    this.conditionRemoveButtons = this.filterPopover.getByTestId(/^expression-row--\d+__remove-condition$/);
     // A view can arrive with conditions already applied, and every row repeats the same
     // test ids, so the fields must be scoped to the row `addAnotherCondition` appended.
-    const newestCondition = this.extensionFrame.locator('[data-testid^="expression-row--"]').last();
+    // Anchored: `expression-row--0001__remove-condition` and the logical-operator select
+    // share the row's prefix, and a loose match makes `last()` the trash button.
+    const newestCondition = this.filterPopover.getByTestId(/^expression-row--\d+$/).last();
     this.fieldSelectInput = newestCondition.getByTestId('expression-row__field-select__input__input-text');
     this.conditionalOperatorSelectInput = newestCondition.getByTestId('expression-row__conditional-operator-select__input__input-text');
     this.valueInput = newestCondition.getByTestId('expression-row__value-input__input-text');
@@ -155,6 +159,28 @@ export abstract class ExtensionPage extends PlatformPage {
     await this.filterPopoverCloseButton.click();
     await this.filterPopover.waitFor({ state: 'hidden' });
     await this.waitForDataRefreshingMessageToDetach();
+  }
+
+  /**
+   * Empties the open popover of conditions. `resetFilters` is not a substitute: it
+   * restores the view's own defaults, which is where the stray Status condition comes
+   * from. Rows re-index on every delete, so the first button is clicked repeatedly.
+   */
+  async removeAllConditions(): Promise<void> {
+    const conditions = await this.conditionRemoveButtons.count();
+
+    for (let removed = 0; removed < conditions; removed++) {
+      await this.conditionRemoveButtons.first().click();
+    }
+  }
+
+  /**
+   * The value input commits on a 500 ms debounce inside the grid, so closing the popover
+   * straight after filling it throws the condition away. The toolbar label lists only
+   * committed fields, which makes it the signal that the filter actually took.
+   */
+  async waitForFilterCommitted(field: string): Promise<void> {
+    await this.filteredByButton.filter({ hasText: field }).waitFor();
   }
 
   /** No-op when the grid is unfiltered, so specs can call it as a precondition. */

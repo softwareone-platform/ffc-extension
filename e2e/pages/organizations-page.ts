@@ -59,16 +59,18 @@ export class OrganizationsPage extends ExtensionPage {
     return this.grid.locator('thead tr:not([data-is-pinned="true"])').getByTestId(`${field}__Action-Dropdown__popover`);
   }
 
-  /** Resets any existing filter, then filters on Name = orgName. */
+  /** Leaves the grid filtered on exactly one condition: Name contains orgName. */
   async filterOrgByName(orgName: string): Promise<void> {
-    await this.resetFiltersIfFiltered();
     await this.filteredByButton.click();
+    await this.filterPopover.waitFor();
+    await this.removeAllConditions();
     await this.addAnotherCondition.click();
     await this.fieldSelectInput.click();
     await this.filterPopover.getByRole('option', { name: 'Name' }).click();
     await this.conditionalOperatorSelectInput.click();
-    await this.filterPopover.getByRole('option', { name: 'Equal', exact: true }).click();
+    await this.filterPopover.getByRole('option', { name: 'Contains', exact: true }).click();
     await this.valueInput.fill(orgName);
+    await this.waitForFilterCommitted('Name');
     await this.closeFilterPopover();
   }
 }

@@ -59,25 +59,19 @@ export class OrganizationDetailsPage extends ExtensionPage {
     await this.wizardModalHeaderTitle.filter({ hasText: 'Add user' }).waitFor({ state: 'detached' });
   }
 
-  /**
-   * Applies a grid filter so only users with the provided email address are shown.
-   *
-   * Resets any existing filters, opens the filter popover, configures the condition
-   * as `Email` `Equal` `<email>`, and waits for the popover to close.
-   *
-   * @param {string} email - The exact email address to filter by.
-   * @returns {Promise<void>} Resolves when the filter has been applied and the popover is hidden.
-   */
+  /** Leaves the users grid filtered on exactly one condition: Email contains the address. */
   async filterUsersByEmail(email: string): Promise<void> {
-    await this.resetFiltersIfFiltered();
     await this.filteredByButton.click();
+    await this.filterPopover.waitFor();
+    await this.removeAllConditions();
     await this.addAnotherCondition.click();
     await this.fieldSelectInput.click();
     await this.filterPopover.getByRole('option', { name: 'Email' }).click();
     await this.conditionalOperatorSelectInput.click();
-    await this.filterPopover.getByRole('option', { name: 'Equal', exact: true }).click();
+    await this.filterPopover.getByRole('option', { name: 'Contains', exact: true }).click();
     await this.valueInput.fill(email);
-    await this.filterPopover.waitFor({ state: 'hidden' });
+    await this.waitForFilterCommitted('Email');
+    await this.closeFilterPopover();
   }
 
   /**

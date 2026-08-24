@@ -35,7 +35,7 @@ export abstract class PlatformPage {
   }
 
   /** Non-throwing poll: a caught `waitFor` still paints a failed step in the trace. */
-  protected async probeVisible(locator: Locator, timeout: number = 1_000): Promise<boolean> {
+  protected async probeVisible(locator: Locator, timeout: number = 1_500): Promise<boolean> {
     const deadline = Date.now() + timeout;
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
