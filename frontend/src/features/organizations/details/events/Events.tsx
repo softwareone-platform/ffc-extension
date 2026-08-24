@@ -35,7 +35,7 @@ export function OrganizationEventsDetails() {
       <MediumText size={4}>{tSharedDetails("events")}</MediumText>
       <InPageHighlight style="block">
         {events?.map((event, i) => (
-          <InPageHighlight.Item key={i} title={event.name}>
+          <InPageHighlight.Item key={event.name} title={event.name}>
             {event.at ? (
               <EntityReference
                 primaryContent={event.by?.name}

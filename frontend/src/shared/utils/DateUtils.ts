@@ -12,7 +12,7 @@ export function getAllowedDeletionDate(terminatedAt?: string | null): Date | nul
   }
 
   const terminated = new Date(terminatedAt);
-  if (isNaN(terminated.getTime())) {
+  if (Number.isNaN(terminated.getTime())) {
     return null;
   }
 

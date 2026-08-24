@@ -7,13 +7,12 @@ import { useUserRole } from "~shared/hooks/useUserRole";
 export function useIsUserAddAllowed(organizationId: string) {
   const { role } = useUserRole();
   const { data: organization } = useOrganizationDetailsApi(organizationId);
-  const addUserAllowedRoles: AccountType[] = ["admin", "operations"];
-  const addUserAllowedStatuses: OrganizationStatus[] = ["active"];
+  const addUserAllowedRoles: Set<AccountType> = new Set(["admin", "operations"]);
+  const addUserAllowedStatuses: Set<OrganizationStatus> = new Set(["active"]);
 
   const isAddUserAllowed = useMemo(() => {
-    const isAddUserAllowedRole = role && addUserAllowedRoles.includes(role);
-    const isAddUserAllowedStatus =
-      organization && addUserAllowedStatuses.includes(organization?.status);
+    const isAddUserAllowedRole = role && addUserAllowedRoles.has(role);
+    const isAddUserAllowedStatus = organization && addUserAllowedStatuses.has(organization?.status);
     return isAddUserAllowedRole && isAddUserAllowedStatus;
   }, [role, organization]);
 
