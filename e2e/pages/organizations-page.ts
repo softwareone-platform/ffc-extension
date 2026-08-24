@@ -1,5 +1,6 @@
 import { Locator, Page } from '@playwright/test';
 
+import { extensionRoute } from '../utils/extension-root';
 import { ExtensionPage } from './extension-page';
 
 export class OrganizationsPage extends ExtensionPage {
@@ -15,7 +16,7 @@ export class OrganizationsPage extends ExtensionPage {
   readonly pageSizeButton: Locator;
 
   constructor(page: Page) {
-    super(page, '/');
+    super(page, extensionRoute('organizations'));
 
     this.grid = this.extensionFrame.getByTestId('ffc-extension__organizations-grid');
     this.rows = this.grid.locator('tbody tr');

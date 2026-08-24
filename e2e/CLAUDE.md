@@ -29,6 +29,11 @@ the API (`api-request/`) and clean it up in teardown.
   by user _and_ origin, so `portal.s1.show` and `portal.s1.today` never share one.
 - Login failures must throw. Swallowing them makes every later test fail for an
   unrelated-looking reason.
+- The extension root URL is captured by the run's single navigation-menu click, in the
+  same setup file, and stored in that user's session file (`User.extensionRootUrl`).
+  Build routes with `extensionRoute('organizations')` — reconstructing
+  `/extensions/<id>/<plug>/-/...` by hand drops the `?account=` param the shell adds and
+  hardcodes a plug id that `meta.yaml` templates.
 
 ## Page objects
 

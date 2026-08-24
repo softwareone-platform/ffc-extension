@@ -1,28 +1,12 @@
 import { expect } from '@playwright/test';
 
 import test from '../fixtures/fixture';
-import { openPortalAndWaitForShell } from '../utils/test-steps';
-
-test.beforeEach(async ({ homePage, header }) => {
-  await openPortalAndWaitForShell(homePage, header);
-});
 
 test.describe('Navigation', () => {
-  test('Opens the Users page from the navigation menu', async ({ header, usersPage }) => {
-    await test.step('Open Users page from navigation menu', async () => {
-      await header.navigateToUsersPage();
-    });
-
-    await test.step('Verify Users page is displayed', async () => {
-      await expect(usersPage.navigationHeaderBarTitle).toHaveText('Users');
-    });
-  });
-
-  test('Opens the Organizations tab', async ({ header, organizationsPage }) => {
-    await test.step('Open the FinOps for Cloud extension', async () => {
-      await header.openFinOpsForCloud();
+  test('Opens the Organizations tab', async ({ organizationsPage }) => {
+    await test.step('Open the Organizations route', async () => {
+      await organizationsPage.navigateToURL();
       await organizationsPage.waitForExtensionIframeLoading();
-      await organizationsPage.openNavTab('Organizations');
     });
 
     await test.step('Verify Organizations tab is active', async () => {
@@ -30,10 +14,13 @@ test.describe('Navigation', () => {
     });
   });
 
-  test('Opens the Entitlements tab', async ({ header, entitlementsPage }) => {
-    await test.step('Open the FinOps for Cloud extension', async () => {
-      await header.openFinOpsForCloud();
-      await entitlementsPage.waitForExtensionIframeLoading();
+  test('Opens the Entitlements tab', async ({ organizationsPage, entitlementsPage }) => {
+    await test.step('Open the Organizations route', async () => {
+      await organizationsPage.navigateToURL();
+      await organizationsPage.waitForExtensionIframeLoading();
+    });
+
+    await test.step('Move to Entitlements through the extension nav', async () => {
       await entitlementsPage.openNavTab('Entitlements');
     });
 

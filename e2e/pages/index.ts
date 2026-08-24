@@ -5,4 +5,3 @@ export { HomePage } from './home-page';
 export { OrganizationDetailsPage } from './organization-details-page';
 export { OrganizationsPage } from './organizations-page';
 export { PlatformPage } from './platform-page';
-export { PlatformUsersPage } from './platform-users-page';

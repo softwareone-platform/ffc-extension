@@ -10,7 +10,6 @@ export const test = base.extend<{
   _browserConsoleErrorLogging: void;
   homePage: Pages.HomePage;
   header: Pages.Header;
-  usersPage: Pages.PlatformUsersPage;
   organizationsPage: Pages.OrganizationsPage;
   organizationDetailsPage: Pages.OrganizationDetailsPage;
   entitlementsPage: Pages.EntitlementsPage;
@@ -27,9 +26,6 @@ export const test = base.extend<{
   },
   header: async ({ page }, use) => {
     await use(new Pages.Header(page));
-  },
-  usersPage: async ({ page }, use) => {
-    await use(new Pages.PlatformUsersPage(page));
   },
   organizationsPage: async ({ page }, use) => {
     await use(new Pages.OrganizationsPage(page));

@@ -2,20 +2,15 @@ import { expect } from '@playwright/test';
 
 import test from '../fixtures/fixture';
 import { generateRandomEmail } from '../utils/random-email-utils';
-import { openPortalAndWaitForShell } from '../utils/test-steps';
-
-test.beforeEach(async ({ homePage, header }) => {
-  await openPortalAndWaitForShell(homePage, header);
-});
 
 test.describe('Organization users', () => {
-  test('Adds a user to an organization', async ({ header, organizationsPage, organizationDetailsPage }) => {
+  test('Adds a user to an organization', async ({ organizationsPage, organizationDetailsPage }) => {
     const orgName = 'SoftwareOne (Test Environment)';
     const email = generateRandomEmail();
     const userName = 'Test User';
 
-    await test.step('Open Organizations page from navigation menu', async () => {
-      await header.openFinOpsForCloud();
+    await test.step('Open Organizations page directly', async () => {
+      await organizationsPage.navigateToURL();
       await organizationsPage.waitForExtensionIframeLoading();
       await organizationsPage.waitForDataRefreshingMessageToDetach();
     });
