@@ -1,6 +1,7 @@
 import { test as base } from '@playwright/test';
 
 import * as Pages from '../pages';
+import { logBrowserConsoleErrors } from '../utils/debug-logging';
 
 /**
  * Extends the base test with custom fixtures for page objects.
@@ -16,13 +17,7 @@ export const test = base.extend<{
 }>({
   _browserConsoleErrorLogging: [
     async ({ page }, use) => {
-      if (process.env.BROWSER_ERROR_LOGGING === 'true') {
-        page.on('console', msg => {
-          if (msg.type() === 'error') {
-            console.error(`[Browser Console Error] ${msg.text()}`);
-          }
-        });
-      }
+      logBrowserConsoleErrors(page);
       await use();
     },
     { auto: true },

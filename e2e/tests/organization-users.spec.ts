@@ -2,13 +2,10 @@ import { expect } from '@playwright/test';
 
 import test from '../fixtures/fixture';
 import { generateRandomEmail } from '../utils/random-email-utils';
+import { openPortalAndWaitForShell } from '../utils/test-steps';
 
 test.beforeEach(async ({ homePage, header }) => {
-  await test.step('Navigate to home page', async () => {
-    await homePage.navigateToURL();
-    await homePage.waitForIframeLoading();
-    await header.tenantName.waitFor();
-  });
+  await openPortalAndWaitForShell(homePage, header);
 });
 
 test.describe('Organization users', () => {
