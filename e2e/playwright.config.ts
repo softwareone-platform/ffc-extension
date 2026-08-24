@@ -37,7 +37,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], viewport: VIEWPORT },
     },
     {
-      name: 'chromium',
+      name: 'FFC Admin Panel',
       use: { ...devices['Desktop Chrome'], viewport: VIEWPORT },
       dependencies: ['setup'],
     },
