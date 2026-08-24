@@ -1,6 +1,7 @@
 import { Locator, Page } from '@playwright/test';
-import { ExtensionPage } from './extension-page';
+
 import { debugLog } from '../utils/debug-logging';
+import { ExtensionPage } from './extension-page';
 
 export class OrganizationDetailsPage extends ExtensionPage {
   readonly orgDetailsTitle: Locator;

@@ -100,4 +100,3 @@ npm run playwright:show-report
 - `DEFAULT_USER_PASSWORD` is required for login and teardown API token generation.
 - `CLEAN_UP=true` enables global teardown cleanup. Set `false` to keep created test data for debugging.
 - If `LOCAL_TEST_ENV` points to a missing file (for example `.env.STAGING`), test startup fails.
-

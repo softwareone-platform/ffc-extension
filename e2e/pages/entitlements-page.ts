@@ -1,4 +1,5 @@
 import { Locator, Page } from '@playwright/test';
+
 import { ExtensionPage } from './extension-page';
 
 /**

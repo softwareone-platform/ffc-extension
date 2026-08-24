@@ -5,8 +5,6 @@ export const devEnvironmentData: TestData = {
   name: EEnvironment.DEV,
   baseUrl: 'https://portal.s1.today',
   ffcClientBaseUrl: 'https://portal.finops.s1.today',
-  admin_email: 'mpt.qlt+ffc-admin@gmail.com',
-  default_userPassword: process.env.DEFAULT_USER_PASSWORD,
   extensionId: 'EXT-3055-0972',
   softwareOneOrgID: 'FORG-1317-5652-8045',
   vendorAccountId: 'ACC-2780-0539',

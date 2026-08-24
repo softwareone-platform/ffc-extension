@@ -1,10 +1,11 @@
 import { test as base } from '@playwright/test';
-import { HomePage } from '../pages/home-page';
-import { Header } from '../pages/header';
-import { PlatformUsersPage } from '../pages/platform-users-page';
-import { OrganizationsPage } from '../pages/organizations-page';
+
 import { EntitlementsPage } from '../pages/entitlements-page';
+import { Header } from '../pages/header';
+import { HomePage } from '../pages/home-page';
 import { OrganizationDetailsPage } from '../pages/organization-details-page';
+import { OrganizationsPage } from '../pages/organizations-page';
+import { PlatformUsersPage } from '../pages/platform-users-page';
 
 /**
  * Extends the base test with custom fixtures for page objects.

@@ -1,6 +1,7 @@
 import { FrameLocator, Locator, Page } from '@playwright/test';
+
+import { LARGE_DATA_TIMEOUT } from '../utils/config';
 import { debugLog, errorLog } from '../utils/debug-logging';
-import { LARGE_DATA_TIMEOUT } from '../playwright.config';
 
 /**
  * Abstract class representing the base structure for all pages.
@@ -13,7 +14,6 @@ export abstract class PlatformPage {
   readonly wizardFrame: FrameLocator;
   readonly navigationHeaderBarTitle: Locator;
   readonly loadingPageImg: Locator;
-
 
   /**
    * Initializes a new instance of the BasePage class.
@@ -28,7 +28,6 @@ export abstract class PlatformPage {
     this.wizardFrame = this.main.frameLocator('(//iframe)[2]');
     this.navigationHeaderBarTitle = this.main.getByTestId('navigation__header-bar__title');
     this.loadingPageImg = this.page.locator('#Vector_5');
-
   }
 
   /**
@@ -37,7 +36,7 @@ export abstract class PlatformPage {
    * This method navigates to either a custom URL or the default page URL and waits
    * for the loading page image to disappear before continuing.
    *
-   * @param {string | null} [customUrl=null] - Optional custom URL to navigate to. If not provided, uses the page's default URL.
+   * @param {string} [customUrl] - Optional custom URL to navigate to. If not provided, uses the page's default URL.
    * @returns {Promise<void>} A promise that resolves when navigation is complete and the page has loaded.
    *
    * @example
@@ -52,9 +51,10 @@ export abstract class PlatformPage {
    * This method waits for the 'load' event and also ensures the loading spinner/image
    * has disappeared, providing a more reliable indication that the page is ready for interaction.
    */
-  async navigateToURL(customUrl: string = null): Promise<void> {
-    debugLog(`Navigating to URL: ${customUrl ? customUrl : this.url}`);
-    await this.page.goto(customUrl ? customUrl : this.url, { waitUntil: 'load' });
+  async navigateToURL(customUrl?: string): Promise<void> {
+    const target = customUrl ?? this.url;
+    debugLog(`Navigating to URL: ${target}`);
+    await this.page.goto(target, { waitUntil: 'load' });
     await this.waitForLoadingPageImgToDisappear();
     await this.waitForPageLoad(LARGE_DATA_TIMEOUT);
   }
@@ -324,6 +324,24 @@ export abstract class PlatformPage {
   }
 
   /**
+   * Non-throwing "did it appear?" poll for optional elements.
+   *
+   * A caught `waitFor` timeout still paints a failed step in the trace, so every
+   * run where an optional spinner never showed up looked like an error.
+   */
+  protected async probeVisible(locator: Locator, timeout: number = 1_000): Promise<boolean> {
+    const deadline = Date.now() + timeout;
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    do {
+      if (await locator.first().isVisible()) return true;
+      await sleep(100);
+    } while (Date.now() < deadline);
+
+    return false;
+  }
+
+  /**
    * Waits for the loading page image to disappear.
    * This method checks if the loading image is present and waits for it to become hidden.
    * It logs the waiting process and handles cases where the image does not disappear within the timeout.
@@ -332,20 +350,15 @@ export abstract class PlatformPage {
    * @returns {Promise<void>} A promise that resolves when the loading image is no longer visible or exits early if the image is not present.
    */
   async waitForLoadingPageImgToDisappear(timeout: number = LARGE_DATA_TIMEOUT): Promise<void> {
-    try {
-      await this.loadingPageImg.first().waitFor({ timeout: 1000 });
-    } catch (_error) {
-      return; // Exit the method if the loading image is not present.
-    }
+    if (!(await this.probeVisible(this.loadingPageImg))) return;
+
     try {
       debugLog('Waiting for loading page image to disappear...');
       await this.loadingPageImg.waitFor({ state: 'hidden', timeout: timeout });
     } catch (_error) {
-      errorLog('[ERROR] Loading page image did not disappear within the timeout.'); // Log a warning if the image remains visible after the timeout.
+      errorLog('Loading page image did not disappear within the timeout.');
     }
   }
-
-
 
   /**
    * Introduces a delay for a specified duration.

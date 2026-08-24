@@ -1,8 +1,8 @@
 import { FfcClientRequest } from '../api-request/ffc-client-request';
-import { debugLog } from './debug-logging';
-import { ERequestMethod } from '../types/enums';
-import { getCurrentEnv } from './utils';
 import { EmployeesResponse } from '../types/employees-response';
+import { ERequestMethod } from '../types/enums';
+import { debugLog } from './debug-logging';
+import { getCurrentEnv } from './env';
 
 /**
  * Generates a headers object with a Bearer token for authorization.

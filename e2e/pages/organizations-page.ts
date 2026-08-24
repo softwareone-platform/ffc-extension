@@ -1,4 +1,5 @@
 import { Locator, Page } from '@playwright/test';
+
 import { debugLog } from '../utils/debug-logging';
 import { ExtensionPage } from './extension-page';
 

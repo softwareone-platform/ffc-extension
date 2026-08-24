@@ -1,7 +1,8 @@
 import { FrameLocator, Locator, Page } from '@playwright/test';
-import { PlatformPage } from './platform-page';
+
+import { LARGE_DATA_TIMEOUT } from '../utils/config';
 import { debugLog, errorLog } from '../utils/debug-logging';
-import { LARGE_DATA_TIMEOUT } from '../playwright.config';
+import { PlatformPage } from './platform-page';
 
 export abstract class ExtensionPage extends PlatformPage {
   readonly url: string;
@@ -116,16 +117,14 @@ export abstract class ExtensionPage extends PlatformPage {
    */
   async waitForDataRefreshingMessageToDetach(timeout: number = LARGE_DATA_TIMEOUT): Promise<void> {
     await this.gridTable.waitFor();
-    try {
-      await this.dataRefreshSpinner.first().waitFor({ timeout: 1000 });
-    } catch (_error) {
-      return; // Exit the method if the loading image is not present.
-    }
+
+    if (!(await this.probeVisible(this.dataRefreshSpinner))) return;
+
     try {
       debugLog('Waiting for data refreshing dialog to disappear...');
       await this.dataRefreshSpinner.waitFor({ state: 'hidden', timeout: timeout });
     } catch (_error) {
-      errorLog('[ERROR] Loading data refreshing did not disappear within the timeout.'); // Log a warning if the image remains visible after the timeout.
+      errorLog('Data refresh spinner did not disappear within the timeout.');
     }
   }
 

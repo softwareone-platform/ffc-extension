@@ -1,5 +1,6 @@
-import { PlatformPage } from './platform-page';
 import { Locator, Page } from '@playwright/test';
+
+import { PlatformPage } from './platform-page';
 
 /**
  * Represents the Header component of the page.

@@ -1,6 +1,7 @@
-import { PlatformPage } from './platform-page';
 import { Page } from '@playwright/test';
+
 import { debugLog } from '../utils/debug-logging';
+import { PlatformPage } from './platform-page';
 
 export class HomePage extends PlatformPage {
   constructor(page: Page) {

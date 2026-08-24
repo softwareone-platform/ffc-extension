@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
-import TestUsers from '../test-data/test-users';
+
 import test from '../fixtures/fixture';
+import TestUsers from '../test-data/test-users';
 import { generateRandomEmail } from '../utils/random-email-utils';
 
 test.describe('Example test suite', () => {

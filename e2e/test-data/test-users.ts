@@ -1,5 +1,4 @@
 import User from '../utils/user';
-import {getCurrentEnv} from "../utils/utils";
 
 /**
  * Returns the value of a required environment variable.
