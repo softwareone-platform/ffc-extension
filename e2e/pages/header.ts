@@ -14,8 +14,6 @@ export class Header extends PlatformPage {
   readonly navigationMenuFinOpsForCloud: Locator;
   readonly menuContent: Locator;
   readonly usersMenuItem: Locator;
-  readonly organizationsMenuItem: Locator;
-  readonly entitlementsMenuItem: Locator;
 
   readonly tenantName: Locator;
   readonly profileUserName: Locator;
@@ -34,8 +32,6 @@ export class Header extends PlatformPage {
     this.navigationMenuFinOpsForCloud = this.navigationMenu.getByText('FinOps for Cloud', { exact: true });
     this.menuContent = this.navigationMenu.getByTestId('menu-content');
     this.usersMenuItem = this.menuContent.getByText('Users', { exact: true });
-    this.organizationsMenuItem = this.menuContent.getByText('Organizations', { exact: true });
-    this.entitlementsMenuItem = this.menuContent.getByText('Entitlements', { exact: true });
 
     this.tenantName = this.header.getByTestId('tenant-name');
     this.profileUserName = this.header.getByTestId('user-full-name');
@@ -64,23 +60,9 @@ export class Header extends PlatformPage {
     await this.usersMenuItem.click();
   }
 
-  /**
-   * Navigates to the FinOps for Cloud > Organizations page via the navigation menu.
-   * @returns {Promise<void>}
-   */
-  async navigateToOrganizationsPage(): Promise<void> {
+  /** Single `portal.root` plug; Organizations/Entitlements live inside it (see ExtensionPage.openNavTab). */
+  async openFinOpsForCloud(): Promise<void> {
     await this.navigationMenuBtn.click();
     await this.navigationMenuFinOpsForCloud.click();
-    await this.organizationsMenuItem.click();
-  }
-
-  /**
-   * Navigates to the FinOps for Cloud > Entitlements page via the navigation menu.
-   * @returns {Promise<void>}
-   */
-  async navigateToEntitlementsPage(): Promise<void> {
-    await this.navigationMenuBtn.click();
-    await this.navigationMenuFinOpsForCloud.click();
-    await this.entitlementsMenuItem.click();
   }
 }

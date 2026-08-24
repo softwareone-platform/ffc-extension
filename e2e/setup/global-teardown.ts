@@ -6,7 +6,7 @@ import { deleteTestUsers } from '../utils/teardown-utils';
 
 async function globalTeardown() {
   if (env.cleanUp) {
-    // Fail with the variable name rather than sending an empty password to the API.
+    // Fail naming the var rather than sending an empty password.
     requireEnv('defaultUserPassword');
 
     const testData = getCurrentEnv();

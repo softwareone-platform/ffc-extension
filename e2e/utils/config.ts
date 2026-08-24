@@ -2,10 +2,7 @@ import * as path from 'path';
 
 import { env, getEnvironment } from './env';
 
-/**
- * Extended timeout (ms) for operations that load large amounts of data,
- * such as reports, exports, or pages with many resources.
- */
+/** For reports, exports and other large-data screens. */
 export const LARGE_DATA_TIMEOUT = 30_000;
 
 export const TIMEOUTS = {
@@ -20,7 +17,7 @@ const CACHE_DIR = path.resolve(__dirname, '..', '.cache');
 
 export const paths = {
   cacheDir: CACHE_DIR,
-  /** Session state is scoped per user *and* deployment so a cached login is never reused across clusters. */
+  /** Scoped per user and deployment so a session is never reused across clusters. */
   sessionFile: (safeUserName: string): string => path.join(CACHE_DIR, `${safeUserName}_${getEnvironment()}_SESSION.json`),
 } as const;
 

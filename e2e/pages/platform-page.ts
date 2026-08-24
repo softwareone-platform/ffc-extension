@@ -323,12 +323,7 @@ export abstract class PlatformPage {
     await element.waitFor({ state: 'detached' });
   }
 
-  /**
-   * Non-throwing "did it appear?" poll for optional elements.
-   *
-   * A caught `waitFor` timeout still paints a failed step in the trace, so every
-   * run where an optional spinner never showed up looked like an error.
-   */
+  /** Non-throwing poll: a caught `waitFor` still paints a failed step in the trace. */
   protected async probeVisible(locator: Locator, timeout: number = 1_000): Promise<boolean> {
     const deadline = Date.now() + timeout;
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

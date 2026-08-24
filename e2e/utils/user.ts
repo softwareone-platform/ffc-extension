@@ -5,7 +5,7 @@ import { debugLog } from './debug-logging';
 import { env } from './env';
 import { ensureDir, fileAgeMs, safeReadJsonFile } from './file';
 
-/** Beyond this the cached session is re-created rather than probed. */
+/** Past this we re-login instead of probing. */
 const MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default class User {
@@ -26,12 +26,12 @@ export default class User {
       .toUpperCase();
   }
 
-  /** Pure path lookup — creating the file is the setup project's job. */
+  /** Path only; the setup project creates the file. */
   public get sessionStoragePath(): string {
     return paths.sessionFile(this.safeName);
   }
 
-  /** Cheap pre-check so we only pay for a browser probe on a plausible session. */
+  /** Cheap pre-check before paying for a browser probe. */
   public hasUsableSessionFile(): boolean {
     const state = safeReadJsonFile<{ cookies?: unknown[] }>(this.sessionStoragePath);
     if (!state?.cookies?.length) return false;
@@ -40,10 +40,7 @@ export default class User {
     return age !== undefined && age < MAX_SESSION_AGE_MS;
   }
 
-  /**
-   * Proves the cached session still authenticates instead of trusting the file's
-   * existence — a stale cookie otherwise fails much later, inside a test.
-   */
+  /** Proves the session still authenticates; a stale cookie otherwise fails inside a test. */
   public async hasValidSession(browser: Browser): Promise<boolean> {
     if (!this.hasUsableSessionFile()) return false;
 
@@ -70,7 +67,7 @@ export default class User {
     }
   }
 
-  /** Logs in through the identity provider and persists the session. Throws on failure. */
+  /** Throws on failure. */
   public async login(browser: Browser): Promise<string> {
     const context = await browser.newContext({
       storageState: undefined,

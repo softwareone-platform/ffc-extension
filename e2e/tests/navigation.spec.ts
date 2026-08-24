@@ -25,8 +25,10 @@ test.describe('Navigation', () => {
   });
 
   test('Opens the Organizations tab', async ({ header, organizationsPage }) => {
-    await test.step('Open Organizations page from navigation menu', async () => {
-      await header.navigateToOrganizationsPage();
+    await test.step('Open the FinOps for Cloud extension', async () => {
+      await header.openFinOpsForCloud();
+      await organizationsPage.waitForExtensionIframeLoading();
+      await organizationsPage.openNavTab('Organizations');
     });
 
     await test.step('Verify Organizations tab is active', async () => {
@@ -36,8 +38,10 @@ test.describe('Navigation', () => {
   });
 
   test('Opens the Entitlements tab', async ({ header, entitlementsPage }) => {
-    await test.step('Open Entitlements page from navigation menu', async () => {
-      await header.navigateToEntitlementsPage();
+    await test.step('Open the FinOps for Cloud extension', async () => {
+      await header.openFinOpsForCloud();
+      await entitlementsPage.waitForExtensionIframeLoading();
+      await entitlementsPage.openNavTab('Entitlements');
     });
 
     await test.step('Verify Entitlements tab is active', async () => {

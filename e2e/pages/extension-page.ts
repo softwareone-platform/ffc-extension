@@ -91,6 +91,13 @@ export abstract class ExtensionPage extends PlatformPage {
     await this.extensionFrame.locator('body').waitFor({ timeout: timeout });
   }
 
+  /** Extension-internal routes — not portal menu entries. */
+  async openNavTab(name: string): Promise<void> {
+    debugLog(`Opening extension nav tab: ${name}`);
+    await this.navHeaderBarList.getByRole('link', { name, exact: true }).click();
+    await this.waitForExtensionIframeLoading();
+  }
+
   /**
    * Waits for the data-refreshing spinner/dialog to disappear from the grid.
    *

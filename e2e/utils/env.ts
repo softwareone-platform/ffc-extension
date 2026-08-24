@@ -5,8 +5,7 @@ import * as path from 'path';
 import { ENVIRONMENTS, ENVIRONMENT_KEYS, EnvironmentKey } from '../env.config';
 import { TestData } from '../types/TestData';
 
-// Loaded here rather than in playwright.config.ts so that every module reading
-// `env` below sees the files, regardless of import order.
+// Loaded here so every importer sees the files, whatever the import order.
 dotenv.config({ path: path.resolve(__dirname, '..', '.env.local') });
 
 const localTestEnv = process.env.LOCAL_TEST_ENV;
@@ -36,8 +35,7 @@ const asEnum = <T extends string>(name: string, value: string | undefined, allow
   );
 };
 
-// Both inputs are explicit user choices, so there is no invented default: an
-// unset/typo'd value fails loudly instead of silently running against TEST.
+// No invented default: an unset or typo'd value fails loudly instead of hitting TEST.
 const testEnv = asEnum('ENVIRONMENT', process.env.ENVIRONMENT ?? localTestEnv, ENVIRONMENT_KEYS);
 
 export const env = {
@@ -55,7 +53,7 @@ export const env = {
 
 type Env = typeof env;
 
-// Spelled out rather than derived, because of irregulars like `isCI` -> `CI`.
+// Spelled out, not derived: irregulars like isCI -> CI.
 const ENV_VAR_NAMES: Record<keyof Env, string> = {
   testEnv: 'ENVIRONMENT',
   baseUrl: 'ENVIRONMENT',
@@ -69,7 +67,7 @@ const ENV_VAR_NAMES: Record<keyof Env, string> = {
   cleanUp: 'CLEAN_UP',
 };
 
-/** Call at the point of use so a missing var fails with the name to set. */
+/** Call where the value is used, so a missing var names itself. */
 export function requireEnv(...keys: Array<keyof Env>): void {
   const missing = keys.filter(key => !env[key]);
   if (missing.length === 0) return;
@@ -78,12 +76,10 @@ export function requireEnv(...keys: Array<keyof Env>): void {
   throw new Error(`Missing required env var${missing.length > 1 ? 's' : ''}: ${names}`);
 }
 
-/** Environment-specific test data for the selected deployment. */
 export function getCurrentEnv(): TestData {
   return ENVIRONMENTS[testEnv];
 }
 
-/** The selected deployment key, used to scope caches and session files. */
 export function getEnvironment(): EnvironmentKey {
   return testEnv;
 }

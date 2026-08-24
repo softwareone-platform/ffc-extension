@@ -21,7 +21,7 @@ test.describe('Organization users', () => {
     const userName = 'Test User';
 
     await test.step('Open Organizations page from navigation menu', async () => {
-      await header.navigateToOrganizationsPage();
+      await header.openFinOpsForCloud();
       await organizationsPage.waitForExtensionIframeLoading();
       await organizationsPage.waitForDataRefreshingMessageToDetach();
     });
