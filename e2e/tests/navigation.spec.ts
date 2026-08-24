@@ -1,9 +1,6 @@
 import { expect } from '@playwright/test';
 
 import test from '../fixtures/fixture';
-import TestUsers from '../test-data/test-users';
-
-test.use({ storageState: TestUsers.Admin.sessionStoragePath });
 
 test.beforeEach(async ({ homePage, header }) => {
   await test.step('Navigate to home page', async () => {
@@ -32,7 +29,6 @@ test.describe('Navigation', () => {
     });
 
     await test.step('Verify Organizations tab is active', async () => {
-      await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.activeNavLink).toHaveText('Organizations');
     });
   });
@@ -45,7 +41,6 @@ test.describe('Navigation', () => {
     });
 
     await test.step('Verify Entitlements tab is active', async () => {
-      await entitlementsPage.waitForExtensionIframeLoading();
       await expect(entitlementsPage.activeNavLink).toHaveText('Entitlements');
     });
   });

@@ -22,21 +22,6 @@ export class OrganizationsPage extends ExtensionPage {
   }
 
   /**
-   * Switches the organizations grid to the "Active Organizations" view.
-   *
-   * If the current view is "Deleted Organizations", it opens the view selector
-   * dropdown and selects "Active Organizations".
-   *
-   * @returns {Promise<void>} Resolves when the active view is selected or already active.
-   */
-  async setActiveOrganizations(): Promise<void> {
-    if (await this.deletedOrgButton.isVisible()) {
-      await this.deletedOrgButton.click();
-      await this.toolbarDropdown.getByText('Active Organizations').click();
-    }
-  }
-
-  /**
    * Applies a grid filter so only organizations with the provided name are shown.
    *
    * The method resets existing filters, opens the filter popover, configures the

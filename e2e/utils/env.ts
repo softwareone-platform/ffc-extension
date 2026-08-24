@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ENVIRONMENTS, ENVIRONMENT_KEYS, EnvironmentKey } from '../env.config';
+import { ENVIRONMENTS, ENVIRONMENT_KEYS } from '../env.config';
 import { EnvironmentConfig } from '../types/environment';
 
 // Loaded here so every importer sees the files, whatever the import order.
@@ -78,8 +78,4 @@ export function requireEnv(...keys: Array<keyof Env>): void {
 
 export function getCurrentEnv(): EnvironmentConfig {
   return ENVIRONMENTS[testEnv];
-}
-
-export function getEnvironment(): EnvironmentKey {
-  return testEnv;
 }

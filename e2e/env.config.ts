@@ -29,7 +29,7 @@ export const ENVIRONMENT_KEYS = Object.keys(ENVIRONMENTS) as EnvironmentKey[];
 
 const BARE_ORIGIN_PATTERN = /^https:\/\/[a-z0-9]([a-z0-9.-]*[a-z0-9])?(?::\d{1,5})?$/i;
 
-export const isBareOrigin = (value: string): boolean => BARE_ORIGIN_PATTERN.test(value);
+const isBareOrigin = (value: string): boolean => BARE_ORIGIN_PATTERN.test(value);
 
 // Import-time: a bad definition fails before the first test.
 function assertEnvironmentsAreValid(): void {

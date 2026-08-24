@@ -1,10 +1,7 @@
 import { expect } from '@playwright/test';
 
 import test from '../fixtures/fixture';
-import TestUsers from '../test-data/test-users';
 import { generateRandomEmail } from '../utils/random-email-utils';
-
-test.use({ storageState: TestUsers.Admin.sessionStoragePath });
 
 test.beforeEach(async ({ homePage, header }) => {
   await test.step('Navigate to home page', async () => {

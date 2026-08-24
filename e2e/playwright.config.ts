@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import TestUsers from './test-data/test-users';
 // Importing env first loads the .env files before anything reads process.env.
 import { TIMEOUTS } from './utils/config';
 import { env } from './utils/env';
@@ -38,7 +39,7 @@ export default defineConfig({
     },
     {
       name: 'FFC Admin Panel',
-      use: { ...devices['Desktop Chrome'], viewport: VIEWPORT },
+      use: { ...devices['Desktop Chrome'], viewport: VIEWPORT, storageState: TestUsers.Admin.sessionStoragePath },
       dependencies: ['setup'],
     },
   ],
