@@ -49,8 +49,8 @@ export async function deleteTestUsers(request: FfcClientRequest, token: string):
   }
   const env = getCurrentEnv();
   const ffcClientBaseUrl = env.ffcClientBaseUrl;
-  const reassignToUserId = env.clientAPI_userId;
-  const organisationId = env.clientAPI_orgId;
+  const reassignToUserId = env.clientApiUserId;
+  const organisationId = env.clientApiOrgId;
   const usersEndpoint = `${ffcClientBaseUrl}/restapi/v2/organizations/${organisationId}/employees?exclude_myself=false&roles=true`;
 
   debugLog(`Fetching employees from endpoint: ${usersEndpoint}`);

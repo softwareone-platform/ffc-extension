@@ -17,7 +17,7 @@ async function globalTeardown() {
     });
 
     const ffcRequest = new FfcClientRequest(apiRequestContext);
-    const token = await ffcRequest.getAuthorizationToken(testData.clientAPI_email, env.defaultUserPassword);
+    const token = await ffcRequest.getAuthorizationToken(testData.clientApiEmail, env.defaultUserPassword);
 
     await deleteTestUsers(ffcRequest, token);
 

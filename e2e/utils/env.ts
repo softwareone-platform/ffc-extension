@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { ENVIRONMENTS, ENVIRONMENT_KEYS, EnvironmentKey } from '../env.config';
-import { TestData } from '../types/TestData';
+import { EnvironmentConfig } from '../types/environment';
 
 // Loaded here so every importer sees the files, whatever the import order.
 dotenv.config({ path: path.resolve(__dirname, '..', '.env.local') });
@@ -76,7 +76,7 @@ export function requireEnv(...keys: Array<keyof Env>): void {
   throw new Error(`Missing required env var${missing.length > 1 ? 's' : ''}: ${names}`);
 }
 
-export function getCurrentEnv(): TestData {
+export function getCurrentEnv(): EnvironmentConfig {
   return ENVIRONMENTS[testEnv];
 }
 
