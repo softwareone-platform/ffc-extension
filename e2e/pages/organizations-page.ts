@@ -68,6 +68,6 @@ export class OrganizationsPage extends ExtensionPage {
     await this.conditionalOperatorSelectInput.click();
     await this.filterPopover.getByRole('option', { name: 'Equal', exact: true }).click();
     await this.valueInput.fill(orgName);
-    await this.filterPopover.waitFor({ state: 'hidden' });
+    await this.closeFilterPopover();
   }
 }

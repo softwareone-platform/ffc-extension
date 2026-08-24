@@ -21,6 +21,7 @@ export abstract class ExtensionPage extends PlatformPage {
 
   readonly filteredByButton: Locator;
   readonly filterPopover: Locator;
+  readonly filterPopoverCloseButton: Locator;
   readonly resetFilters: Locator;
   readonly addAnotherCondition: Locator;
   readonly fieldSelectInput: Locator;
@@ -56,11 +57,16 @@ export abstract class ExtensionPage extends PlatformPage {
     //Filters
     this.filteredByButton = this.extensionFrame.getByTestId('filter-selector__selector-button');
     this.filterPopover = this.extensionFrame.getByTestId('filter-selector__popover__content');
+    // Lives in the popover header, outside __content.
+    this.filterPopoverCloseButton = this.extensionFrame.getByTestId('filter-selector__popover__close-button');
     this.resetFilters = this.extensionFrame.getByTestId('filter-selector__popover__reset-filters');
     this.addAnotherCondition = this.extensionFrame.getByTestId('filter-selector__popover__add-another-condition');
-    this.fieldSelectInput = this.extensionFrame.getByTestId('expression-row__field-select__input__input-text');
-    this.conditionalOperatorSelectInput = this.extensionFrame.getByTestId('expression-row__conditional-operator-select__input__input-text');
-    this.valueInput = this.extensionFrame.getByTestId('expression-row__value-input__input-text');
+    // A view can arrive with conditions already applied, and every row repeats the same
+    // test ids, so the fields must be scoped to the row `addAnotherCondition` appended.
+    const newestCondition = this.extensionFrame.locator('[data-testid^="expression-row--"]').last();
+    this.fieldSelectInput = newestCondition.getByTestId('expression-row__field-select__input__input-text');
+    this.conditionalOperatorSelectInput = newestCondition.getByTestId('expression-row__conditional-operator-select__input__input-text');
+    this.valueInput = newestCondition.getByTestId('expression-row__value-input__input-text');
 
     this.gridTable = this.extensionFrame.getByTestId('grid__table');
     this.toolbarDropdown = this.extensionFrame.getByTestId('grid__toolbar__view-selector__dropdown');
@@ -142,23 +148,24 @@ export abstract class ExtensionPage extends PlatformPage {
   }
 
   /**
-   * Resets grid filters when a filtered state is currently applied.
-   *
-   * The method checks for the "Filtered by:" indicator, opens the filter popover,
-   * clicks reset, waits for the popover to close, and waits for any data refresh
-   * message to disappear.
-   *
-   * @returns {Promise<void>} Resolves when filters are reset or no reset is needed.
+   * The popover has no apply button: conditions take effect as you edit it, and it
+   * stays open until explicitly dismissed. Every filter interaction must end here.
    */
+  async closeFilterPopover(): Promise<void> {
+    await this.filterPopoverCloseButton.click();
+    await this.filterPopover.waitFor({ state: 'hidden' });
+    await this.waitForDataRefreshingMessageToDetach();
+  }
+
+  /** No-op when the grid is unfiltered, so specs can call it as a precondition. */
   async resetFiltersIfFiltered(): Promise<void> {
     await this.filteredByButton.waitFor();
-    if (await this.filteredByButton.filter({ hasText: 'Filtered by:' }).isVisible()) {
-      await this.filteredByButton.click();
-      await this.filterPopover.waitFor();
-      await this.resetFilters.click();
-      await this.filterPopover.waitFor({ state: 'hidden' });
-      await this.waitForDataRefreshingMessageToDetach();
-    }
+    if (!(await this.filteredByButton.filter({ hasText: 'Filtered by:' }).isVisible())) return;
+
+    await this.filteredByButton.click();
+    await this.filterPopover.waitFor();
+    await this.resetFilters.click();
+    await this.closeFilterPopover();
   }
 
   /**
