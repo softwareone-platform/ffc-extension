@@ -4,6 +4,16 @@
       "general": {
         "title": "General",
         "properties": {
+          "name": "Name",
+          "operations_external_id": "Operations external ID",
+          "linked_organization_id": "Linked additional ID",
+          "currency": "Currency",
+          "billing_currency": "Billing currency"
+        }
+      },
+      "expenses": {
+        "title": "Expenses",
+        "properties": {
           "limit": "Limit",
           "forecastThisMonth": "Expenses this month forecast",
           "expensesThisMonth": "Expenses this month",
@@ -281,6 +291,9 @@
     "details": {
       "general": {
         "title": "General"
+      },
+      "events": {
+        "title": "Events"
       }
     },
     "create_info": "Provide the details for the new entitlement.",

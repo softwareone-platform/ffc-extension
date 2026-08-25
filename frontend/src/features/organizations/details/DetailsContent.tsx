@@ -7,6 +7,7 @@ import { SEGMENTS } from "~features/organizations/paths";
 import { useOrganizationDetailsApi } from "~organizations/api";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { OrganizationHighlights } from "../components/OrganizationHighlights";
 import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 
 // Inner content for organization details. Outer chrome comes from MainLayout.
@@ -24,6 +25,7 @@ export function OrganizationDetailsContent() {
 
   return (
     <>
+      {organizationId && <OrganizationHighlights organizationId={organizationId} />}
       <Navigation.TopBar items={topBarItems} />
       <OrganizationsProvider organization={entity!}>
         <Card>

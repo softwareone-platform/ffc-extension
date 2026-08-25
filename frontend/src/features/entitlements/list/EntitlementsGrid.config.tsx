@@ -109,18 +109,17 @@ export function useColumns(): Columns {
         initialWidth: 150,
       },
       {
-        name: "created_at",
-        title: tColumns("created_at"),
-        fields: ["events.created.at"],
-        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.created?.at} />,
-        initialWidth: 150,
-        isHidden: true,
-      },
-      {
         name: "updated_at",
         title: tColumns("updated_at"),
         fields: ["events.updated.at"],
         cell: (item: Entitlement) => <GridCellDateTime date={item.events?.updated?.at} />,
+        initialWidth: 150,
+      },
+      {
+        name: "created_at",
+        title: tColumns("created_at"),
+        fields: ["events.created.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.created?.at} />,
         initialWidth: 150,
         isHidden: true,
       },
@@ -227,10 +226,7 @@ export function useViews() {
         configuration: {
           filters: {
             operator: "or",
-            value: [
-              { operator: "eq", field: "status", value: "active" },
-              { operator: "eq", field: "status", value: "new" },
-            ],
+            value: [{ operator: "eq", field: "status", value: "active" }],
           },
           sort: [
             { field: "events.created.at", direction: "desc" },
@@ -313,7 +309,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
-    [columns, fields, asyncOptions, onGridActionEvent],
+    [columns, fields, views, asyncOptions, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
