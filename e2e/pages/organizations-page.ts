@@ -1,4 +1,4 @@
-import { Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 import { extensionRoute } from '../utils/extension-root';
 import { ExtensionPage } from './extension-page';
@@ -59,18 +59,22 @@ export class OrganizationsPage extends ExtensionPage {
     return this.grid.locator('thead tr:not([data-is-pinned="true"])').getByTestId(`${field}__Action-Dropdown__popover`);
   }
 
-  /** Leaves the grid filtered on exactly one condition: Name contains orgName. */
-  async filterOrgByName(orgName: string): Promise<void> {
+  /** Replaces whatever the view brought with Status = Active and Name containing orgName. */
+  async filterActiveOrgByName(orgName: string): Promise<void> {
     await this.filteredByButton.click();
     await this.filterPopover.waitFor();
     await this.removeAllConditions();
-    await this.addAnotherCondition.click();
-    await this.fieldSelectInput.click();
-    await this.filterPopover.getByRole('option', { name: 'Name' }).click();
-    await this.conditionalOperatorSelectInput.click();
-    await this.filterPopover.getByRole('option', { name: 'Contains', exact: true }).click();
+
+    await this.addCondition('Status', 'Equal');
+    await this.selectConditionValue('Active');
+
+    await this.addCondition('Name', 'Contains');
     await this.valueInput.fill(orgName);
-    await this.waitForFilterCommitted('Name');
+
+    // Values commit on a 500 ms debounce and closing the popover unmounts the inputs,
+    // cancelling it. The toolbar label keeps showing the view's own filter, so the rows
+    // are the only evidence the query picked the condition up.
+    await expect(this.rows.first()).toContainText(orgName);
     await this.closeFilterPopover();
   }
 }

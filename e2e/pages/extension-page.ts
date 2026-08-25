@@ -28,6 +28,7 @@ export abstract class ExtensionPage extends PlatformPage {
   readonly fieldSelectInput: Locator;
   readonly conditionalOperatorSelectInput: Locator;
   readonly valueInput: Locator;
+  readonly valueSelectInput: Locator;
 
   readonly gridTable: Locator;
   readonly toolbarDropdown: Locator;
@@ -51,8 +52,9 @@ export abstract class ExtensionPage extends PlatformPage {
     this.navHeaderBarList = this.extensionFrame.getByTestId('navigation__header-bar__list');
     this.activeNavLink = this.navHeaderBarList.locator('a[aria-current="page"]');
 
-    this.tabsNavItems = this.extensionFrame.getByTestId('tabs-nav__items');
-    this.generalTab = this.tabsNavItems.getByTestId('tab-general');
+    // Per-entity tabs are router links in the top bar, marked with aria-current.
+    this.tabsNavItems = this.extensionFrame.getByTestId('navigation__top-bar__list');
+    this.generalTab = this.tabsNavItems.getByRole('link', { name: 'General', exact: true });
     this.addBtn = this.extensionFrame.getByRole('button', { name: 'Add' });
 
     //Filters
@@ -71,6 +73,8 @@ export abstract class ExtensionPage extends PlatformPage {
     this.fieldSelectInput = newestCondition.getByTestId('expression-row__field-select__input__input-text');
     this.conditionalOperatorSelectInput = newestCondition.getByTestId('expression-row__conditional-operator-select__input__input-text');
     this.valueInput = newestCondition.getByTestId('expression-row__value-input__input-text');
+    // `list` fields render a select here, which nests one testid level deeper than a text box.
+    this.valueSelectInput = newestCondition.getByTestId('expression-row__value-input__input__input-text');
 
     this.gridTable = this.extensionFrame.getByTestId('grid__table');
     this.toolbarDropdown = this.extensionFrame.getByTestId('grid__toolbar__view-selector__dropdown');
@@ -174,13 +178,19 @@ export abstract class ExtensionPage extends PlatformPage {
     }
   }
 
-  /**
-   * The value input commits on a 500 ms debounce inside the grid, so closing the popover
-   * straight after filling it throws the condition away. The toolbar label lists only
-   * committed fields, which makes it the signal that the filter actually took.
-   */
-  async waitForFilterCommitted(field: string): Promise<void> {
-    await this.filteredByButton.filter({ hasText: field }).waitFor();
+  /** Appends a condition and points it at a field and operator; the caller sets the value. */
+  async addCondition(field: string, operator: string): Promise<void> {
+    await this.addAnotherCondition.click();
+    await this.fieldSelectInput.click();
+    await this.filterPopover.getByRole('option', { name: field, exact: true }).click();
+    await this.conditionalOperatorSelectInput.click();
+    await this.filterPopover.getByRole('option', { name: operator, exact: true }).click();
+  }
+
+  /** For `list` fields, whose value is picked from a dropdown rather than typed. */
+  async selectConditionValue(value: string): Promise<void> {
+    await this.valueSelectInput.click();
+    await this.filterPopover.getByRole('option', { name: value, exact: true }).click();
   }
 
   /** No-op when the grid is unfiltered, so specs can call it as a precondition. */
@@ -192,26 +202,5 @@ export abstract class ExtensionPage extends PlatformPage {
     await this.filterPopover.waitFor();
     await this.resetFilters.click();
     await this.closeFilterPopover();
-  }
-
-  /**
-   * Evaluates whether a tab element is currently active.
-   *
-   * Inspects the tab's CSS class list in the browser context and returns `true`
-   * if any class name starts with `_tab__active`, which is the convention used
-   * in this codebase to mark the selected tab.
-   *
-   * @param {Locator} tab - The locator for the tab element to evaluate.
-   * @returns {Promise<boolean>} Resolves to `true` if the tab has the active class, `false` otherwise.
-   *
-   * @remarks
-   * - The check relies on the CSS class prefix `_tab__active`. If the component
-   *   library or CSS modules naming changes, this detection logic may need updating.
-   * - This method evaluates in the browser context via `element.evaluate`.
-   */
-  async evaluateActiveTab(tab: Locator): Promise<boolean> {
-    return await tab.evaluate(el => {
-      return Array.from(el.classList).some(className => className.startsWith('_tab__active'));
-    });
   }
 }

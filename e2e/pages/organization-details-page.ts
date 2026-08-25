@@ -1,13 +1,17 @@
-import { Locator, Page } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 import { debugLog } from '../utils/debug-logging';
+import { extensionRoute } from '../utils/extension-root';
 import { ExtensionPage } from './extension-page';
 
 export class OrganizationDetailsPage extends ExtensionPage {
   readonly orgDetailsTitle: Locator;
+  readonly rows: Locator;
 
   readonly dataSourcesTab: Locator;
   readonly usersTab: Locator;
+
+  readonly pageSizeButton: Locator;
 
   readonly addUserEmailInput: Locator;
   readonly addUserNameInput: Locator;
@@ -16,27 +20,39 @@ export class OrganizationDetailsPage extends ExtensionPage {
     super(page, '/');
 
     this.orgDetailsTitle = this.extensionFrame.locator('//span[@class="organization-details-title"]');
-    this.dataSourcesTab = this.tabsNavItems.getByTestId('tab-data-sources');
+    this.rows = this.gridTable.locator('tbody tr');
+    this.dataSourcesTab = this.tabsNavItems.getByRole('link', { name: 'Data Sources', exact: true });
+    this.usersTab = this.tabsNavItems.getByRole('link', { name: 'Users', exact: true });
 
-    //UsersTab
-    this.usersTab = this.tabsNavItems.getByTestId('tab-users');
+    this.pageSizeButton = this.extensionFrame.getByTestId('pagination__page-size-selector__button');
+
     this.addUserEmailInput = this.wizardFrame.locator('input#email');
     this.addUserNameInput = this.wizardFrame.locator('input#display_name');
   }
-  /**
-   * Clicks a tab if it is not already the active tab.
-   *
-   * Evaluates the tab's active state and performs a click only when it is not
-   * currently selected, preventing unnecessary navigation or re-renders.
-   *
-   * @param {Locator} tab - The locator for the tab element to activate.
-   * @returns {Promise<void>} Resolves when the tab is active.
-   */
+
+  /** Tabs are routes, so opening one by URL beats clicking through the grid. */
+  async openUsersTab(organizationId: string): Promise<void> {
+    await this.navigateToURL(extensionRoute(`organizations/${organizationId}/users`));
+    await this.waitForExtensionIframeLoading();
+    await this.waitForDataRefreshingMessageToDetach();
+  }
+
+  /** Clicks a tab only when it is not the current route, so no needless refetch. */
   async selectTabIfNotActive(tab: Locator): Promise<void> {
-    const isActive = await this.evaluateActiveTab(tab);
-    if (!isActive) {
-      await tab.click();
-    }
+    if ((await tab.getAttribute('aria-current')) === 'page') return;
+
+    await tab.click();
+    await this.waitForDataRefreshingMessageToDetach();
+  }
+
+  /**
+   * Grid filters are discarded whenever the grid config recomputes, so a row is found by
+   * showing every record instead of filtering down to it.
+   */
+  async showAllRows(): Promise<void> {
+    await this.pageSizeButton.click();
+    await this.extensionFrame.getByRole('option', { name: '100', exact: true }).click();
+    await this.waitForDataRefreshingMessageToDetach();
   }
 
   /**
@@ -64,26 +80,18 @@ export class OrganizationDetailsPage extends ExtensionPage {
     await this.filteredByButton.click();
     await this.filterPopover.waitFor();
     await this.removeAllConditions();
-    await this.addAnotherCondition.click();
-    await this.fieldSelectInput.click();
-    await this.filterPopover.getByRole('option', { name: 'Email' }).click();
-    await this.conditionalOperatorSelectInput.click();
-    await this.filterPopover.getByRole('option', { name: 'Contains', exact: true }).click();
+
+    await this.addCondition('Email', 'Contains');
     await this.valueInput.fill(email);
-    await this.waitForFilterCommitted('Email');
+
+    // See OrganizationsPage.filterActiveOrgByName: the value commits on a debounce that
+    // closing the popover cancels, and only the rows show whether it landed.
+    await expect(this.rows.first()).toContainText(email);
     await this.closeFilterPopover();
   }
 
-  /**
-   * Returns a locator for the table row that contains the given email address.
-   *
-   * Traverses up from a `<span>` with the exact email text to find its ancestor
-   * `<tr>` element, allowing further interactions or assertions on the whole row.
-   *
-   * @param {string} email - The exact email address to locate in the table.
-   * @returns {Promise<Locator>} Resolves to a locator for the matching row.
-   */
-  async getTableRowByEmail(email: string): Promise<Locator> {
+  /** XPath because the row is only identifiable by climbing from the email cell. */
+  tableRowByEmail(email: string): Locator {
     return this.extensionFrame.locator(`//span[.="${email}"]/ancestor::tr`);
   }
 }

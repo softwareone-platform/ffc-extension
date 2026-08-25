@@ -13,12 +13,9 @@ const user = TestUsers.Admin;
 setup.describe.configure({ mode: 'serial', retries: 1 });
 
 setup('authenticate admin', async ({ browser }) => {
+  // Reported as skipped rather than passed, so a run makes it obvious whether it logged in.
+  setup.skip(user.hasValidSession(), `Cached session for ${user.email} on ${env.baseUrl} is still in date`);
   requireEnv('defaultUserPassword');
-
-  if (user.hasValidSession()) {
-    debugLog(`Reusing cached session for ${user.email} (${env.baseUrl})`);
-    return;
-  }
 
   await setup.step(`Log in ${user.email}`, async () => {
     // Fatal on purpose: a swallowed login failure made every test fail obscurely.
