@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import {
+  GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -51,7 +52,7 @@ export function useColumns(): Columns {
       },
       {
         name: "billing_currency",
-        title: "Billing Currency",
+        title: tColumns("billing_currency"),
         fields: ["billing_currency"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>
@@ -62,7 +63,7 @@ export function useColumns(): Columns {
       },
       {
         name: "operations_additional_id",
-        title: "Operations additional ID",
+        title: tColumns("operations_additional_id"),
         fields: ["operations_external_id"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>{item.operations_external_id}</GridCellSimple>
@@ -70,8 +71,31 @@ export function useColumns(): Columns {
         initialWidth: 350,
       },
       {
+        name: "updated_at",
+        title: tColumns("updated_at"),
+        fields: ["events.updated.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.updated?.at} />,
+        initialWidth: 150,
+      },
+      {
+        name: "created_at",
+        title: tColumns("created_at"),
+        fields: ["events.created.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.created?.at} />,
+        initialWidth: 150,
+        isHidden: true,
+      },
+      {
+        name: "terminated_at",
+        title: tColumns("terminated_at"),
+        fields: ["events.terminated.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.terminated?.at} />,
+        initialWidth: 150,
+        isHidden: true,
+      },
+      {
         name: "status",
-        title: "Status",
+        title: tColumns("status"),
         fields: ["status"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>
@@ -88,7 +112,6 @@ export function useColumns(): Columns {
           <GridCellDynamicActions<OrganizationRead> item={item} actions={getActions(item)} />
         ),
         initialWidth: 100,
-        type: "Actions",
         isScalable: false,
         isHidden: role !== "admin",
       },

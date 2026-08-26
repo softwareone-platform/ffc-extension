@@ -1,4 +1,5 @@
 import { GridCellActions } from "@swo/design-system/grid";
+import { NO_VALUE } from "@swo/design-system/utils";
 import { ListOption } from "@swo/dropdown";
 
 export interface GridCellDynamicActionsProps<TItem extends object, TAction extends string> {
@@ -10,5 +11,5 @@ export function GridCellDynamicActions<
   TItem extends object = object,
   TAction extends string = string,
 >({ item, actions }: GridCellDynamicActionsProps<TItem, TAction>) {
-  return actions.length > 0 ? <GridCellActions actions={actions} item={item} /> : <></>;
+  return actions.length > 0 ? <GridCellActions actions={actions} item={item} /> : <>{NO_VALUE}</>;
 }

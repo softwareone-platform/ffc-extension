@@ -15,6 +15,11 @@ const EntitlementsGeneralDetails = lazy(() =>
     default: m.EntitlementsGeneralDetails,
   })),
 );
+const EntitlementEventsDetails = lazy(() =>
+  import("~features/entitlements/details/events/Events").then((m) => ({
+    default: m.EntitlementEventsDetails,
+  })),
+);
 const EntitlementDetailsContent = lazy(() =>
   import("~features/entitlements/details/DetailsContent").then((m) => ({
     default: m.EntitlementDetailsContent,
@@ -31,6 +36,7 @@ export function Entitlements() {
         <Route path={SEGMENTS.idParam} element={<EntitlementDetailsContent />}>
           <Route index element={<Navigate to={SEGMENTS.general} replace />} />
           <Route path={SEGMENTS.general} element={<EntitlementsGeneralDetails />} />
+          <Route path={SEGMENTS.events} element={<EntitlementEventsDetails />} />
         </Route>
       </Routes>
     </RouteGuard>

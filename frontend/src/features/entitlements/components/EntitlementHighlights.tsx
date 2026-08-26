@@ -1,5 +1,7 @@
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import { Navigation } from "@swo/design-system/navigation";
+import { Skeleton } from "@swo/design-system/skeleton";
+import { NO_VALUE } from "@swo/design-system/utils";
 import { InPageHighlight } from "@swo/in-page-highlight";
 
 import CustomIcon from "~shared/components/custom-icons/CustomIcon";
@@ -13,7 +15,7 @@ export function EntitlementHighlights({ entitlementId }: { readonly entitlementI
 
   return (
     <Navigation.Highlights>
-      {entity?.id && (
+      {entity?.id ? (
         <InPageHighlight style="inline">
           <InPageHighlight.Item title={tProperties("affiliate_external_id")}>
             <EntityReferenceCell
@@ -23,24 +25,30 @@ export function EntitlementHighlights({ entitlementId }: { readonly entitlementI
             />
           </InPageHighlight.Item>
           <InPageHighlight.Item title={tProperties("data_source")}>
-            {entity.linked_datasource_id && (
+            {entity.linked_datasource_id ? (
               <EntityReferenceCell
                 primaryContent={entity.linked_datasource_name as string}
                 secondaryContent={entity.linked_datasource_id as string}
                 secondaryContentMaxHeight={50}
                 icon={<CustomIcon name={entity.linked_datasource_type as string} size={48} />}
               />
+            ) : (
+              <>{NO_VALUE}</>
             )}
           </InPageHighlight.Item>
           <InPageHighlight.Item title={tProperties("organization")}>
-            {entity.events.redeemed && (
+            {entity.events.redeemed ? (
               <EntityReferenceCell
                 primaryContent={entity.events.redeemed?.by.name}
                 secondaryContent={entity.events.redeemed?.by.id}
               />
+            ) : (
+              <>{NO_VALUE}</>
             )}
           </InPageHighlight.Item>
         </InPageHighlight>
+      ) : (
+        <Skeleton rows={1} cols={1} />
       )}
     </Navigation.Highlights>
   );
