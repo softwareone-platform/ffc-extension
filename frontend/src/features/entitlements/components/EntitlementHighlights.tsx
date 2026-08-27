@@ -8,6 +8,7 @@ import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useEntitlementsDetailsApi } from "../api";
+import { DataSourceEntityReference } from "./DataSourceEntityReference";
 
 export function EntitlementHighlights({ entitlementId }: { readonly entitlementId: string }) {
   const { data: entity } = useEntitlementsDetailsApi(entitlementId);
@@ -25,16 +26,7 @@ export function EntitlementHighlights({ entitlementId }: { readonly entitlementI
             />
           </InPageHighlight.Item>
           <InPageHighlight.Item title={tProperties("data_source")}>
-            {entity.linked_datasource_id ? (
-              <EntityReferenceCell
-                primaryContent={entity.linked_datasource_name as string}
-                secondaryContent={entity.linked_datasource_id as string}
-                secondaryContentMaxHeight={50}
-                icon={<CustomIcon name={entity.linked_datasource_type as string} size={48} />}
-              />
-            ) : (
-              <>{NO_VALUE}</>
-            )}
+            <DataSourceEntityReference entity={entity} />
           </InPageHighlight.Item>
           <InPageHighlight.Item title={tProperties("organization")}>
             {entity.events.redeemed ? (

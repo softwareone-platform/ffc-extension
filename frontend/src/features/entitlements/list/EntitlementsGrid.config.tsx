@@ -3,7 +3,6 @@ import { useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { EntityReference } from "@swo/design-system/entity-reference";
-import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
   GridCellDateTime,
   GridCellSimple,
@@ -14,6 +13,7 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { NO_VALUE } from "@swo/design-system/utils";
 import { getStatusLabel } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
@@ -26,6 +26,7 @@ import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
 import { Entitlement, EntitlementAction } from "../api/model";
+import { DataSourceEntityReference } from "../components/DataSourceEntityReference";
 import { useActionOptions } from "./hooks/useActionOptions";
 
 type Columns = Array<
@@ -50,18 +51,12 @@ export function useColumns(): Columns {
             subtitle={item.id}
           />
         ),
-        initialWidth: 350,
+        initialWidth: 250,
       },
       {
         name: "affiliate",
         title: tColumns("affiliate"),
-        fields: [
-          "owner.id",
-          "owner.name",
-          "owner.external_id",
-          "owner.integration",
-          "affiliate_external_id",
-        ],
+        fields: ["owner.id", "owner.name", "owner.external_id", "owner.integration"],
         cell: (item: Entitlement) => (
           <GridCellSimple>
             <EntityReference
@@ -72,22 +67,16 @@ export function useColumns(): Columns {
             />
           </GridCellSimple>
         ),
-        initialWidth: 150,
+        initialWidth: 250,
       },
+
       {
         name: "data_source",
         title: tColumns("data_source"),
-        fields: ["linked_datasource_name", "linked_datasource_id", "linked_datasource_type"],
+        fields: ["linked_datasource_name", "linked_datasource_type", "datasource_id"],
         cell: (item: Entitlement) => (
           <GridCellSimple>
-            {item.linked_datasource_id && (
-              <EntityReferenceCell
-                primaryContent={item.linked_datasource_name as string}
-                secondaryContent={item.linked_datasource_id as string}
-                secondaryContentMaxHeight={50}
-                icon={<CustomIcon name={item.linked_datasource_type as string} size={44} />}
-              />
-            )}
+            <DataSourceEntityReference entity={item} />
           </GridCellSimple>
         ),
         initialWidth: 250,
@@ -98,14 +87,36 @@ export function useColumns(): Columns {
         fields: [],
         cell: (item: Entitlement) => (
           <>
-            {item.events.redeemed && (
+            {item.events.redeemed ? (
               <GridCellTitleSubtitle
                 title={item.events.redeemed?.by.name}
                 subtitle={item.events.redeemed?.by.id}
               />
+            ) : (
+              <GridCellSimple>{NO_VALUE}</GridCellSimple>
             )}
           </>
         ),
+        initialWidth: 250,
+      },
+      {
+        name: "linked_datasource_id",
+        title: tColumns("linked_datasource_id"),
+        fields: ["linked_datasource_id"],
+        cell: (item: Entitlement) => (
+          <GridCellSimple>{item.linked_datasource_id || NO_VALUE}</GridCellSimple>
+        ),
+        isHidden: true,
+        initialWidth: 150,
+      },
+      {
+        name: "affiliate_external_id",
+        title: tColumns("affiliate_external_id"),
+        fields: ["affiliate_external_id"],
+        cell: (item: Entitlement) => (
+          <GridCellSimple>{item.affiliate_external_id || NO_VALUE}</GridCellSimple>
+        ),
+        isHidden: true,
         initialWidth: 150,
       },
       {
@@ -113,14 +124,14 @@ export function useColumns(): Columns {
         title: tColumns("updated_at"),
         fields: ["events.updated.at"],
         cell: (item: Entitlement) => <GridCellDateTime date={item.events?.updated?.at} />,
-        initialWidth: 150,
+        initialWidth: 100,
       },
       {
         name: "created_at",
         title: tColumns("created_at"),
         fields: ["events.created.at"],
         cell: (item: Entitlement) => <GridCellDateTime date={item.events?.created?.at} />,
-        initialWidth: 150,
+        initialWidth: 100,
         isHidden: true,
       },
       {
@@ -128,7 +139,7 @@ export function useColumns(): Columns {
         title: tColumns("terminated_at"),
         fields: ["events.terminated.at"],
         cell: (item: Entitlement) => <GridCellDateTime date={item.events?.terminated?.at} />,
-        initialWidth: 150,
+        initialWidth: 100,
         isHidden: true,
       },
       {

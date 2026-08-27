@@ -213,7 +213,8 @@
         "expenses_forecast_this_month": "Expenses forecast (this month)",
         "lastLogin": "Last login",
         "createdAt": "Created",
-        "affiliate_external_id": "Affiliate",
+        "affiliate_external_id": "Affiliate External ID",
+        "linked_datasource_id": "Linked Data Source ID",
         "data_source": "Data Source",
         "status": "Status",
         "userType": "User Type",
@@ -266,6 +267,7 @@
     },
     "properties": {
       "linkedDataSource": "Linked data source",
+      "dataSource": "Data source",
       "affiliate_external_id": "Affiliate external ID",
       "created": "Created",
       "updated": "Updated",
