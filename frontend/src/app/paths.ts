@@ -1,3 +1,4 @@
+import { PATHS as dashboard } from "~features/dashboard/paths";
 import { PATHS as entitlements } from "~features/entitlements/paths";
 import { PATHS as organizations } from "~features/organizations/paths";
 
@@ -6,6 +7,7 @@ import { PATHS as organizations } from "~features/organizations/paths";
 // their own SEGMENTS / PARAMS / PATHS — import those directly when scoped.
 export const PATHS = {
   root: "/",
+  dashboard,
   entitlements,
   organizations,
 } as const;

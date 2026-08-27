@@ -1,6 +1,7 @@
 import { Outlet, useMatch } from "react-router-dom";
 
 import { AccountType } from "~api/ffc-api-model/types.gen";
+import { FEATURE_FLAGS } from "~app/featureFlags";
 import { PATHS } from "~app/paths";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
@@ -13,6 +14,15 @@ export function MainLayout() {
   const { role } = useUserRole();
 
   const navItems: PageShellNavItem[] = [
+    ...(FEATURE_FLAGS.dashboard
+      ? [
+          {
+            path: PATHS.dashboard.root,
+            label: tNav("dashboard"),
+            role: ["admin", "operations", "affiliate"] as AccountType[],
+          },
+        ]
+      : []),
     {
       path: PATHS.organizations.root,
       label: tNav("organizations"),
