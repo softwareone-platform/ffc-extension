@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 
 import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { BoldText, MediumText } from "@swo/design-system/text";
-import { DisplayValue } from "@swo/design-system/utils";
+import { DisplayValue, NO_VALUE } from "@swo/design-system/utils";
 
 import { useEntitlementsDetailsApi } from "~entitlements/api";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -17,14 +17,19 @@ export function EntitlementsGeneralDetails() {
     <div>
       <MediumText size={4}>{tSharedDetails("additionalIds")}</MediumText>
       <InPageHighlight direction="horizontal" style="block">
+        <InPageHighlight.Item title={tProperties("dataSource")}>
+          <BoldText color="grey-5">
+            <DisplayValue value={entity?.datasource_id || NO_VALUE} />
+          </BoldText>
+        </InPageHighlight.Item>
         <InPageHighlight.Item title={tProperties("linkedDataSource")}>
           <BoldText color="grey-5">
-            <DisplayValue value={entity?.datasource_id} />
+            <DisplayValue value={entity?.linked_datasource_id || NO_VALUE} />
           </BoldText>
         </InPageHighlight.Item>
         <InPageHighlight.Item title={tProperties("affiliate_external_id")}>
           <BoldText color="grey-5">
-            <DisplayValue value={entity?.affiliate_external_id} />
+            <DisplayValue value={entity?.affiliate_external_id || NO_VALUE} />
           </BoldText>
         </InPageHighlight.Item>
       </InPageHighlight>
