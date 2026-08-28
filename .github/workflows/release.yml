@@ -66,6 +66,8 @@ jobs:
         file: prod.Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
+        build-args: |
+          APP_VERSION=${{ steps.get_version.outputs.VERSION }}
     - name: Docker image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
 
