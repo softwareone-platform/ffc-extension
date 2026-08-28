@@ -306,15 +306,11 @@
     "filters": {
       "title": "Global Filters",
       "timeLabel": "Time",
+      "from": "From",
+      "to": "To",
       "organisationStatus": "Organisation Status",
       "cloudProvider": "Cloud Provider",
       "apply": "Apply Filters",
-      "time": {
-        "last3Months": "Last 3 Months",
-        "last6Months": "Last 6 Months",
-        "last12Months": "Last 12 Months",
-        "yearToDate": "Year to Date"
-      },
       "status": {
         "active": "Active",
         "paid": "Paid",

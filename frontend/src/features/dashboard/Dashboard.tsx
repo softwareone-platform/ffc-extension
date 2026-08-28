@@ -21,11 +21,12 @@ export function Dashboard() {
   return (
     <div className={"ffc-workspace"}>
       <FilterSidebar />
-      <div className={"ffc-workspace__main ffc-tabbar"}>
-        <div className={"ffc-tabbar__actions"}>
-          <OrganisationFilter />
-        </div>
-        <Navigation.TopBar items={topBarItems} />
+      <div className={"ffc-workspace__main"}>
+        <Navigation.TopBar items={topBarItems}>
+          <Navigation.TopBar.Actions>
+            <OrganisationFilter />
+          </Navigation.TopBar.Actions>
+        </Navigation.TopBar>
         <Outlet />
       </div>
     </div>

@@ -16,64 +16,18 @@
   }
 }
 
-// Filter rail.
-.ffc-filter-panel {
-  flex: 0 0 230px;
-  display: flex;
-  flex-direction: column;
-  gap: $space-md;
-  padding: $space-md;
-  background: $surface;
-  border-radius: $radius-card;
+// Filter rail: fix the width so the ConfigurationPanel doesn't flex against the main
+// content column. The panel supplies its own chrome (title, sections, divider spacing).
+.ffc-filter-sidebar {
+  flex: 0 0 260px;
 
-  &__title {
-    @extend %bold2;
-
-    margin: 0;
+  // ConfigurationPanel's inner scroll container ships with `overflow: auto`, which clips the
+  // DatePicker popover when it opens downward. This sidebar's content is short and doesn't
+  // need to scroll, so let popovers escape. The attribute selector survives CSS-module hash
+  // rotations across design-system upgrades.
+  [class*="_configuration-panel__content_"] {
+    overflow: visible;
   }
-
-  &__group {
-    display: flex;
-    flex-direction: column;
-    gap: $space-xs;
-  }
-
-  &__label {
-    @extend %bold1;
-
-    color: $text-strong;
-  }
-}
-
-// Hosts an action control in the empty right-hand side of a tab nav bar. The design
-// system's Tabs renders its own nav, and its Tab.Actions slot filters children down to
-// Button elements, so anything else has to be overlaid on top of the bar.
-.ffc-tabbar {
-  position: relative;
-
-  &__actions {
-    position: absolute;
-    top: $space-sm;
-    right: $space-md;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: $space-sm;
-  }
-
-  &__label {
-    @extend %bold1;
-
-    color: $text-strong;
-  }
-}
-
-// Organization picker popover: pad the surface, keep the list scrollable when the mock set
-// grows past ~80 entries. Targets the class the design system spreads onto the popover
-// wrapper via the Dropdown `className` prop.
-.ffc-org-dropdown {
-  padding: $space-sm;
-  overflow-y: auto;
 }
 
 // Responsive grid of equal-width panels.
@@ -93,7 +47,7 @@
   }
 
   &__title {
-    @extend %bold2;
+    @extend %medium4;
 
     margin: 0 0 $space-sm;
   }
