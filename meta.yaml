@@ -1,4 +1,4 @@
-version: 6.0.0
+version: {{ settings.extension_version }}
 openapi: /bypass/openapi.json
 events:
   - event: platform.commerce.order.created
