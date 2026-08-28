@@ -1,0 +1,209 @@
+@use "../../../node_modules/@swo/design-tokens/src/index" as *;
+@use "tokens" as *;
+
+// Shared analytics/dashboard building blocks. Typography comes from the design-token
+// placeholders (%regular1, %bold2, …) so sizes stay on the SWO type scale.
+
+// Sidebar + content workspace shell.
+.ffc-workspace {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-md;
+
+  &__main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+// Filter rail.
+.ffc-filter-panel {
+  flex: 0 0 230px;
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+  padding: $space-md;
+  background: $surface;
+  border-radius: $radius-card;
+
+  &__title {
+    @extend %bold2;
+
+    margin: 0;
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+  }
+
+  &__label {
+    @extend %bold1;
+
+    color: $text-strong;
+  }
+}
+
+// Hosts an action control in the empty right-hand side of a tab nav bar. The design
+// system's Tabs renders its own nav, and its Tab.Actions slot filters children down to
+// Button elements, so anything else has to be overlaid on top of the bar.
+.ffc-tabbar {
+  position: relative;
+
+  &__actions {
+    position: absolute;
+    top: $space-sm;
+    right: $space-md;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+  }
+}
+
+// Responsive grid of equal-width panels.
+.ffc-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-md;
+  padding-top: $space-md;
+}
+
+.ffc-panel {
+  padding: $space-md;
+  min-width: 0;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  &__title {
+    @extend %bold2;
+
+    margin: 0 0 $space-sm;
+  }
+}
+
+// Stat tiles.
+.ffc-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-sm;
+}
+
+.ffc-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+  padding: $space-sm;
+  border: 1px solid $border-subtle;
+  border-radius: 6px;
+
+  &__label {
+    @extend %regular1;
+
+    color: $text-muted;
+  }
+
+  &__value {
+    @extend %bold5;
+
+    &--up {
+      color: $positive;
+    }
+
+    &--down {
+      color: $negative;
+    }
+  }
+
+  &__caption {
+    @extend %regular1;
+
+    color: $text-muted;
+  }
+}
+
+// A main chart beside a smaller companion chart, as in Spend Trend / Usage Coverage.
+.ffc-chart-split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: $space-sm;
+  align-items: center;
+
+  // Legend + donut + bar chart in one row.
+  &--triple {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.3fr);
+  }
+
+  &__aside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-xs;
+  }
+
+  &__aside-label {
+    @extend %regular1;
+
+    color: $text-muted;
+    text-align: center;
+  }
+}
+
+.ffc-legend {
+  @extend %regular1;
+
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+
+  &--horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: $space-md;
+  }
+
+  &__heading {
+    @extend %bold1;
+
+    color: $text-strong;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: $space-xs;
+  }
+
+  &__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex: 0 0 auto;
+  }
+}
+
+.ffc-empty-panel {
+  @extend %regular2;
+
+  padding: $space-xl $space-md;
+  margin-top: $space-md;
+  text-align: center;
+  color: $text-muted;
+  background: $surface;
+  border-radius: $radius-card;
+}
+
+@media (max-width: $panel-grid-breakpoint) {
+  .ffc-panel-grid,
+  .ffc-chart-split,
+  .ffc-chart-split--triple {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

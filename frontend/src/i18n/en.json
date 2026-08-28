@@ -293,6 +293,108 @@
     }
   },
   "dashboard": {
-    "title": "Dashboard"
+    "title": "Dashboard",
+    "tabs": {
+      "adoption": "FFC Adoption",
+      "consumption": "Cloud Consumption & Metrics",
+      "health": "Customer Health",
+      "maturity": "FinOps Maturity"
+    },
+    "comingSoon": {
+      "description": "This view is not built yet."
+    },
+    "filters": {
+      "title": "Global Filters",
+      "timeLabel": "Time",
+      "organisationStatus": "Organisation Status",
+      "cloudProvider": "Cloud Provider",
+      "organisation": "Organisation",
+      "organisationAll": "All organisations",
+      "organisationSelected": "{{count}} organisation selected",
+      "organisationSelected_plural": "{{count}} organisations selected",
+      "apply": "Apply Filters",
+      "time": {
+        "last3Months": "Last 3 Months",
+        "last6Months": "Last 6 Months",
+        "last12Months": "Last 12 Months",
+        "yearToDate": "Year to Date"
+      },
+      "status": {
+        "active": "Active",
+        "paid": "Paid",
+        "trial": "Trial",
+        "terminated": "Terminated",
+        "deleted": "Deleted"
+      },
+      "provider": {
+        "azure": "Azure",
+        "aws": "AWS",
+        "gcp": "GCP"
+      }
+    },
+    "consumption": {
+      "monthlySpend": {
+        "title": "Monthly Cloud Spend",
+        "currentMonth": "Current Month Spend",
+        "previousMonth": "Previous Month Spend",
+        "change": "Month-over-Month Change",
+        "changeCaption": "Change"
+      },
+      "coverage": {
+        "title": "Consumption Coverage",
+        "consumption": "Consumption Coverage",
+        "consumptionCaption": "Coverage",
+        "coverage": "Datasource Coverage",
+        "coverageCaption": "Coverage",
+        "usage": "Usage Coverage",
+        "usageCaption": "Coverage"
+      },
+      "spendTrend": {
+        "title": "Spend Trend",
+        "distribution": "Coverage distribution"
+      },
+      "usageCoverage": {
+        "title": "Usage Coverage",
+        "distribution": "Coverage distribution"
+      },
+      "providerDistribution": {
+        "title": "Cloud Provider Distribution"
+      },
+      "topOrganizations": {
+        "title": "Top Consuming Organizations"
+      }
+    },
+    "maturity": {
+      "dashboard": {
+        "title": "Maturity Dashboard",
+        "level": "Level"
+      },
+      "progression": {
+        "title": "Maturity Progression"
+      },
+      "table": {
+        "title": "Organization Maturity Table"
+      },
+      "levels": {
+        "registered": "Registered",
+        "connected": "Connected",
+        "visible": "Visible",
+        "optimizing": "Optimizing",
+        "operationalized": "Operationalized"
+      },
+      "flags": {
+        "yes": "Yes",
+        "no": "No"
+      },
+      "columns": {
+        "organizationName": "Organization Name",
+        "level": "Maturity Level",
+        "dataSources": "Datasources",
+        "consumptionStatus": "Consumption Status",
+        "usageStatus": "Usage Status",
+        "recommendationStatus": "Recommendation Status",
+        "lastActivity": "Last Activity"
+      }
+    }
   }
 }

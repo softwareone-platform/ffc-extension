@@ -1,6 +1,7 @@
 import { context } from 'esbuild';
 import { sassPlugin } from 'esbuild-sass-plugin';
 import { fileURLToPath } from 'node:url';
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { reloadBrowsersPlugin } from './devtools/reloadBrowsersPlugin.js';
 
@@ -11,6 +12,11 @@ const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
 
 const RELOAD_URL_MATCH = 'portal.s1.show';
+
+// Chunk filenames are content-hashed, so a rebuild leaves the previous set behind. Clear
+// the directory rather than letting it grow (only `chunks/` — `../static` also holds other
+// extensions' bundles).
+await rm(path.resolve(__dirname, '../static/chunks'), { recursive: true, force: true });
 
 const ctx = await context({
   entryPoints: [
@@ -24,6 +30,12 @@ const ctx = await context({
   format: 'esm',
   sourcemap: true,
   allowOverwrite: true,
+  minify: true,
+  // Splitting is what makes the `lazy()` imports in App.tsx actually pay off: without it
+  // every feature (amCharts, the grids) lands in the entry bundle. Chunks are namespaced
+  // into `chunks/` because `../static` is shared with other extensions' bundles.
+  splitting: true,
+  chunkNames: 'chunks/[name]-[hash]',
   // Keep these in sync with `compilerOptions.paths` in tsconfig.json.
   alias: {
     '~api': srcDir('api'),

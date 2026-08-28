@@ -1,0 +1,24 @@
+// Intent-named aliases over the @swo/design-tokens CSS custom properties, so component
+// styles say what a value is for rather than which token number it happens to be.
+
+$surface: var(--brand-white);
+$surface-muted: var(--gray-1);
+$border-subtle: var(--gray-2);
+$text-muted: var(--gray-4);
+$text-strong: var(--gray-6);
+$positive: var(--brand-success);
+$negative: var(--brand-danger);
+
+// The token scale starts at 8px and steps in 8s. $space-xs is the one half-step we need
+// for tight stacks (KPI label over value, legend rows) — derived rather than hardcoded.
+$space-xs: calc(var(--spacing-1) / 2);
+$space-sm: var(--spacing-1);
+$space-md: var(--spacing-2);
+$space-lg: var(--spacing-3);
+$space-xl: var(--spacing-4);
+
+// @swo/design-tokens ships no border-radius token; this matches the design system's cards.
+$radius-card: 8px;
+
+// Breakpoint at which the two-column panel grid collapses to one.
+$panel-grid-breakpoint: 1100px;

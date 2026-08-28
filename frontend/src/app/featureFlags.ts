@@ -13,5 +13,5 @@ function isEnabled(name: string, fallback: boolean): boolean {
 }
 
 export const FEATURE_FLAGS = {
-  dashboard: isEnabled("dashboard", false),
+  dashboard: isEnabled("dashboard", true),
 } as const;

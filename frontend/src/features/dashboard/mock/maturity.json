@@ -1,0 +1,155 @@
+{
+  "distribution": [
+    { "category": "Level 0", "value": 18 },
+    { "category": "Level 1", "value": 34 },
+    { "category": "Level 2", "value": 22 },
+    { "category": "Level 3", "value": 15 },
+    { "category": "Level 4", "value": 11 }
+  ],
+  "byLevel": [
+    {
+      "bucket": "Level 1",
+      "registered": 8,
+      "connected": 14,
+      "visible": 6,
+      "optimizing": 3,
+      "operationalized": 1
+    },
+    {
+      "bucket": "Level 2",
+      "registered": 5,
+      "connected": 11,
+      "visible": 9,
+      "optimizing": 5,
+      "operationalized": 2
+    },
+    {
+      "bucket": "Level 3",
+      "registered": 3,
+      "connected": 6,
+      "visible": 7,
+      "optimizing": 6,
+      "operationalized": 4
+    },
+    {
+      "bucket": "Level 4",
+      "registered": 2,
+      "connected": 3,
+      "visible": 4,
+      "optimizing": 5,
+      "operationalized": 6
+    }
+  ],
+  "progression": [
+    {
+      "month": "Jan",
+      "registered": 30,
+      "connected": 22,
+      "visible": 12,
+      "optimizing": 6,
+      "operationalized": 2
+    },
+    {
+      "month": "Feb",
+      "registered": 28,
+      "connected": 25,
+      "visible": 15,
+      "optimizing": 8,
+      "operationalized": 3
+    },
+    {
+      "month": "Mar",
+      "registered": 25,
+      "connected": 28,
+      "visible": 18,
+      "optimizing": 10,
+      "operationalized": 5
+    },
+    {
+      "month": "Apr",
+      "registered": 22,
+      "connected": 30,
+      "visible": 21,
+      "optimizing": 13,
+      "operationalized": 7
+    },
+    {
+      "month": "May",
+      "registered": 19,
+      "connected": 31,
+      "visible": 24,
+      "optimizing": 16,
+      "operationalized": 9
+    },
+    {
+      "month": "Jun",
+      "registered": 18,
+      "connected": 34,
+      "visible": 22,
+      "optimizing": 15,
+      "operationalized": 11
+    }
+  ],
+  "rows": [
+    {
+      "id": "org-1",
+      "organizationName": "Northwind Trading",
+      "level": 0,
+      "dataSources": 1,
+      "hasConsumption": false,
+      "hasUsage": false,
+      "hasRecommendations": false,
+      "lastActivity": "13 Apr 2021"
+    },
+    {
+      "id": "org-2",
+      "organizationName": "Contoso Industries",
+      "level": 1,
+      "dataSources": 1,
+      "hasConsumption": false,
+      "hasUsage": true,
+      "hasRecommendations": false,
+      "lastActivity": "13 Apr 2021"
+    },
+    {
+      "id": "org-3",
+      "organizationName": "Fabrikam Group",
+      "level": 1,
+      "dataSources": 2,
+      "hasConsumption": false,
+      "hasUsage": true,
+      "hasRecommendations": false,
+      "lastActivity": "13 Apr 2021"
+    },
+    {
+      "id": "org-4",
+      "organizationName": "Adventure Works",
+      "level": 2,
+      "dataSources": 3,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": false,
+      "lastActivity": "16 Apr 2023"
+    },
+    {
+      "id": "org-5",
+      "organizationName": "Tailspin Toys",
+      "level": 3,
+      "dataSources": 6,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": true,
+      "lastActivity": "12 Apr 2023"
+    },
+    {
+      "id": "org-6",
+      "organizationName": "Wide World Imports",
+      "level": 4,
+      "dataSources": 9,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": true,
+      "lastActivity": "12 Apr 2023"
+    }
+  ]
+}

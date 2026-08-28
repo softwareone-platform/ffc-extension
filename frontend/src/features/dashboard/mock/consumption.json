@@ -1,0 +1,70 @@
+{
+  "monthlySpend": {
+    "currentMonth": "$1,250",
+    "previousMonth": "$1,538",
+    "monthOverMonthChange": "-1.2%"
+  },
+  "coverage": {
+    "consumption": "98%",
+    "coverage": "73%",
+    "usage": "62%"
+  },
+  "spendTrend": [
+    { "month": "Jan", "spend": 12400 },
+    { "month": "Feb", "spend": 13100 },
+    { "month": "Mar", "spend": 12700 },
+    { "month": "Apr", "spend": 14200 },
+    { "month": "May", "spend": 15600 },
+    { "month": "Jun", "spend": 15100 },
+    { "month": "Jul", "spend": 17300 },
+    { "month": "Aug", "spend": 18900 },
+    { "month": "Sep", "spend": 18200 },
+    { "month": "Oct", "spend": 20400 },
+    { "month": "Nov", "spend": 22100 },
+    { "month": "Dec", "spend": 24800 }
+  ],
+  "usageCoverageTrend": [
+    { "month": "Jan", "coverage": 38 },
+    { "month": "Feb", "coverage": 44 },
+    { "month": "Mar", "coverage": 51 },
+    { "month": "Apr", "coverage": 55 },
+    { "month": "May", "coverage": 58 },
+    { "month": "Jun", "coverage": 61 },
+    { "month": "Jul", "coverage": 66 },
+    { "month": "Aug", "coverage": 71 },
+    { "month": "Sep", "coverage": 74 },
+    { "month": "Oct", "coverage": 79 },
+    { "month": "Nov", "coverage": 83 },
+    { "month": "Dec", "coverage": 88 }
+  ],
+  "coverageDistribution": [
+    { "category": "Covered", "value": 73 },
+    { "category": "Not covered", "value": 27 }
+  ],
+  "usageDistribution": [
+    { "category": "Covered", "value": 62 },
+    { "category": "Not covered", "value": 38 }
+  ],
+  "providerDistribution": [
+    { "category": "Azure", "value": 46 },
+    { "category": "AWS", "value": 33 },
+    { "category": "GCP", "value": 21 }
+  ],
+  "providerTrend": [
+    { "month": "Jan", "azure": 5200, "aws": 3800, "gcp": 2100 },
+    { "month": "Mar", "azure": 5800, "aws": 4100, "gcp": 2400 },
+    { "month": "May", "azure": 6400, "aws": 4600, "gcp": 2900 },
+    { "month": "Jul", "azure": 7100, "aws": 5200, "gcp": 3300 },
+    { "month": "Sep", "azure": 7900, "aws": 5600, "gcp": 3800 },
+    { "month": "Nov", "azure": 8800, "aws": 6300, "gcp": 4200 }
+  ],
+  "topOrganizations": [
+    { "organization": "Northwind Trading", "spend": 92000000 },
+    { "organization": "Contoso Industries", "spend": 71000000 },
+    { "organization": "Fabrikam Group", "spend": 58000000 },
+    { "organization": "Adventure Works", "spend": 44000000 },
+    { "organization": "Tailspin Toys", "spend": 31000000 },
+    { "organization": "Wide World Imports", "spend": 22000000 },
+    { "organization": "Proseware Inc", "spend": 14000000 }
+  ]
+}

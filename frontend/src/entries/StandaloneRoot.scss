@@ -1,5 +1,6 @@
 @use "../../node_modules/@swo/design-tokens/src/index" as *;
 @use "../../node_modules/@swo/design-tokens/src/style" as *;
+@use "../shared/styles" as *;
 
 // --- resets --------------------------------------------------------------
 // Platform assumes box-sizing: border-box globally. Without it, design system
