@@ -308,10 +308,6 @@
       "timeLabel": "Time",
       "organisationStatus": "Organisation Status",
       "cloudProvider": "Cloud Provider",
-      "organisation": "Organisation",
-      "organisationAll": "All organisations",
-      "organisationSelected": "{{count}} organisation selected",
-      "organisationSelected_plural": "{{count}} organisations selected",
       "apply": "Apply Filters",
       "time": {
         "last3Months": "Last 3 Months",

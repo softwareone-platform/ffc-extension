@@ -47,7 +47,6 @@ export const SERVE_HINT = "listening on the ziti service (no local port)";
 // Bracketed first letter so pgrep can't match the shell that is running it — same trick used
 // to be needed inside the container for ffcops, and it applies just as well on the host.
 export const WATCH_MATCH = "[n]pm-run-all --parallel watch:types watch:code";
-export const WATCH_LOG = "/tmp/ffc-frontend-watch.log";
 
 export function docker(args, { quiet = false } = {}) {
   return spawnSync("docker", args, {

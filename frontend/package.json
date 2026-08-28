@@ -34,15 +34,7 @@
     "stop": "node devtools/dev-stack/dev.mjs stop",
     "rebuild": "node devtools/dev-stack/dev.mjs rebuild",
     "serve": "node devtools/dev-stack/dev.mjs serve",
-    "serve:start": "node devtools/dev-stack/dev.mjs serve:start",
-    "serve:stop": "node devtools/dev-stack/dev.mjs serve:stop",
-    "serve:status": "node devtools/dev-stack/dev.mjs serve:status",
-    "serve:logs": "node devtools/dev-stack/dev.mjs serve:logs",
     "shell": "node devtools/dev-stack/dev.mjs shell",
-    "watch:start": "node devtools/dev-stack/dev.mjs watch:start",
-    "watch:stop": "node devtools/dev-stack/dev.mjs watch:stop",
-    "watch:status": "node devtools/dev-stack/dev.mjs watch:status",
-    "watch:logs": "node devtools/dev-stack/dev.mjs watch:logs",
     "prune": "node devtools/dev-stack/dev.mjs prune"
   },
   "files": [

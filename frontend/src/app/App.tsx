@@ -11,6 +11,18 @@ const MainLayout = lazy(() => import("~app/layouts").then((m) => ({ default: m.M
 const Dashboard = lazy(() =>
   import("~features/dashboard/Dashboard").then((m) => ({ default: m.Dashboard })),
 );
+const AdoptionTab = lazy(() =>
+  import("~features/dashboard/tabs/AdoptionTab").then((m) => ({ default: m.AdoptionTab })),
+);
+const ConsumptionTab = lazy(() =>
+  import("~features/dashboard/tabs/ConsumptionTab").then((m) => ({ default: m.ConsumptionTab })),
+);
+const HealthTab = lazy(() =>
+  import("~features/dashboard/tabs/HealthTab").then((m) => ({ default: m.HealthTab })),
+);
+const MaturityTab = lazy(() =>
+  import("~features/dashboard/tabs/MaturityTab").then((m) => ({ default: m.MaturityTab })),
+);
 const Organizations = lazy(() =>
   import("~features/organizations/Organizations").then((m) => ({ default: m.Organizations })),
 );
@@ -41,7 +53,13 @@ export function App() {
         }
       >
         {FEATURE_FLAGS.dashboard && (
-          <Route path={DASHBOARD_SEGMENTS.root} element={<Dashboard />} />
+          <Route path={DASHBOARD_SEGMENTS.root} element={<Dashboard />}>
+            <Route index element={<Navigate to={DASHBOARD_SEGMENTS.consumption} replace />} />
+            <Route path={DASHBOARD_SEGMENTS.adoption} element={<AdoptionTab />} />
+            <Route path={DASHBOARD_SEGMENTS.consumption} element={<ConsumptionTab />} />
+            <Route path={DASHBOARD_SEGMENTS.health} element={<HealthTab />} />
+            <Route path={DASHBOARD_SEGMENTS.maturity} element={<MaturityTab />} />
+          </Route>
         )}
         <Route path={"organizations/*"} element={<Organizations />} />
         <Route path={"entitlements/*"} element={<Entitlements />} />

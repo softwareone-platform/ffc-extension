@@ -8,7 +8,7 @@
 .ffc-workspace {
   display: flex;
   align-items: flex-start;
-  gap: $space-md;
+  gap: $space-lg;
 
   &__main {
     flex: 1 1 auto;
@@ -60,14 +60,28 @@
     align-items: center;
     gap: $space-sm;
   }
+
+  &__label {
+    @extend %bold1;
+
+    color: $text-strong;
+  }
+}
+
+// Organization picker popover: pad the surface, keep the list scrollable when the mock set
+// grows past ~80 entries. Targets the class the design system spreads onto the popover
+// wrapper via the Dropdown `className` prop.
+.ffc-org-dropdown {
+  padding: $space-sm;
+  overflow-y: auto;
 }
 
 // Responsive grid of equal-width panels.
 .ffc-panel-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-md;
-  padding-top: $space-md;
+  gap: $space-lg;
+  padding-top: $space-sm;
 }
 
 .ffc-panel {

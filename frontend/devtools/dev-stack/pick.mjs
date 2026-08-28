@@ -7,6 +7,7 @@ import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import {
+  SERVE_CONTAINER,
   SERVE_HINT,
   WORKERS,
   appIsRunning,
@@ -19,47 +20,31 @@ import { ask, choose, pad } from "./prompt.mjs";
 // Resolved from this file's URL rather than repoRoot + a hard-coded path, so this keeps
 // working if the dev-stack folder moves as a unit.
 const DEV_SCRIPT = resolve(dirname(fileURLToPath(import.meta.url)), "dev.mjs");
+// frontend/devtools/dev-stack/ -> frontend/, where package.json's start script lives.
+const FRONTEND_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-const SERVE_TASKS = new Set(["serve", "serve:start"]);
+// Foreground tasks that hand the terminal to something long-lived. Ctrl-C out of them reaches
+// this process too, so redrawing the menu afterwards would be unreliable — exit instead.
+const TAKES_OVER_TERMINAL = new Set(["serve", "shell"]);
 
-// These hand the terminal to something long-lived (a server in the foreground, `tail -f`, a
-// shell). Ctrl-C out of them reaches this process too, so redrawing the menu afterwards would
-// be unreliable — exit instead of looping.
-const TAKES_OVER_TERMINAL = new Set(["serve", "serve:logs", "shell", "watch:logs"]);
-
-/**
- * Only offer what the current state allows, so no choice leads to a "not running" error. The
- * serve tasks are listed regardless of the stack: `compose run` brings up `db` via depends_on,
- * so serving does not require `up` first.
- */
-function tasksFor({ stackUp, serverUp, watchUp }) {
-  return [
-    ...(serverUp
-      ? [
-          { task: "serve:logs", summary: "follow the serve container's log" },
-          { task: "serve:stop", summary: "stop and remove the serve container" },
-          { task: "serve:status", summary: "show the serve container" },
-        ]
-      : [
-          { task: "serve", summary: "ffcops in a one-off container, Ctrl-C stops" },
-          { task: "serve:start", summary: "the same, detached" },
-        ]),
-    ...(watchUp
-      ? [
-          { task: "watch:logs", summary: "follow the frontend watcher's log" },
-          { task: "watch:stop", summary: "stop the frontend watcher" },
-        ]
-      : [{ task: "watch:start", summary: "run `npm start` in the background" }]),
-    ...(stackUp
-      ? [
-          { task: "shell", summary: "bash in the app container" },
-          { task: "stop", summary: "stop the stack (containers kept)" },
-        ]
-      : [{ task: "up", summary: "start app, db and test_db" }]),
+/** Only offer what the current state allows, so no choice leads to a "not running" error. */
+function menuFor({ stackUp, serverUp }) {
+  const items = [];
+  if (stackUp) {
+    if (!serverUp) items.push({ task: "serve", summary: "start ffcops (Ctrl-C stops)" });
+    items.push(
+      { task: "shell", summary: "bash in the app container" },
+      { task: "stop", summary: "stop the stack (containers kept)" },
+    );
+  } else {
+    items.push({ task: "up", summary: "start app, db and test_db" });
+  }
+  items.push(
     { task: "rebuild", summary: "rebuild the app image and recreate" },
     { task: "rebuild:clean", summary: "rebuild with --no-cache and recreate" },
     { task: "prune", summary: "reclaim disk: dangling images + build cache" },
-  ];
+  );
+  return items;
 }
 
 /** Runs dev.mjs directly: package.json maps each task to exactly this, and going through npm
@@ -83,6 +68,59 @@ async function askWorkers() {
   return answer;
 }
 
+/**
+ * macOS: open Terminal.app in a fresh window running `npm start` in frontend/. Logs stay
+ * visible in that window rather than tucked away in a file, which is why we prefer this over
+ * a detached background process.
+ */
+function openWatcherInNewTerminal() {
+  const script =
+    `tell application "Terminal"\n` +
+    `  activate\n` +
+    `  do script "cd ${FRONTEND_DIR.replace(/"/g, '\\"')} && npm start"\n` +
+    `end tell`;
+  const result = spawnSync("osascript", ["-e", script], { stdio: "inherit" });
+  if (result.status !== 0) {
+    console.error(
+      "\n!  Could not open a new Terminal window. Run `npm start` in frontend/ manually.",
+    );
+  }
+}
+
+/**
+ * Serving without the host watcher means ../static is a snapshot. Offer to launch it in a new
+ * Terminal window so its logs stay visible while this shell runs the foreground serve.
+ */
+async function ensureWatcherOrAsk() {
+  if (watchIsRunning()) return;
+  console.log(
+    "\n!  `npm start` is not running — the app container will serve the last built bundle\n" +
+      "   in ../static, so frontend changes will not appear.",
+  );
+  if (!/^n/i.test(await ask("Open `npm start` in a new Terminal window? [Y/n]: "))) {
+    openWatcherInNewTerminal();
+  }
+}
+
+async function runServe() {
+  if (serveIsRunning()) {
+    console.error(
+      `\n!  A serve container already exists. Remove it with \`docker rm -f ${SERVE_CONTAINER}\`.`,
+    );
+    return "done";
+  }
+  await ensureWatcherOrAsk();
+  const workers = await askWorkers();
+  const env = workers === WORKERS ? {} : { FFC_SERVE_WORKERS: workers };
+  const prefix = Object.entries(env).map(([key, value]) => `${key}=${value}`);
+  console.log(`\n$ ${[...prefix, "npm", "run", "serve"].join(" ")}\n`);
+  if (/^n/i.test(await ask("Run it? [Y/n]: "))) return "done";
+
+  const status = runTask("serve", [], env);
+  if (status !== 0) process.exit(status);
+  return "done";
+}
+
 async function runOnce() {
   const stackUp = appIsRunning();
   // Asked of the container rather than assumed, because the server is a process inside it that
@@ -95,7 +133,7 @@ async function runOnce() {
   console.log(`Watcher: ${watchUp ? "running" : "not running"}`);
 
   const options = [
-    ...tasksFor({ stackUp, serverUp, watchUp }).map(({ task, summary }) => ({
+    ...menuFor({ stackUp, serverUp }).map(({ task, summary }) => ({
       label: `${pad(task, 14)} ${summary}`,
       value: task,
     })),
@@ -104,33 +142,26 @@ async function runOnce() {
 
   const choice = await choose("What should this do?", options);
   if (choice === "quit") return "done";
+  if (choice === "serve") return runServe();
 
   // rebuild:clean isn't an npm script — it's `rebuild` plus a docker flag, kept out of
   // package.json so there's one rebuild task rather than two that can drift.
   const [task, extraArgs] = choice === "rebuild:clean" ? ["rebuild", ["--no-cache"]] : [choice, []];
 
-  // Serving without the watcher means ../static is a snapshot. Offering to start it here
-  // matches the flow the user actually wants: pick serve, watchers come along for the ride.
-  if (SERVE_TASKS.has(task) && !watchUp) {
-    console.log(
-      "\n!  `npm start` is not running — the app container will serve the last built bundle\n" +
-        "   in ../static, so frontend changes will not appear.",
-    );
-    if (!/^n/i.test(await ask("Start it in the background first? [Y/n]: "))) {
-      const status = runTask("watch:start", [], {});
-      if (status !== 0) process.exit(status);
+  console.log(`\n$ ${["npm", "run", task, ...extraArgs].join(" ")}\n`);
+  if (/^n/i.test(await ask("Run it? [Y/n]: "))) return "done";
+
+  const status = runTask(task, extraArgs, {});
+  if (status !== 0) process.exit(status);
+
+  // After `up`, offer serve inline — the caller almost always wants ffcops next, and this
+  // spares them a menu redraw to pick it.
+  if (task === "up" && appIsRunning() && !serveIsRunning()) {
+    if (!/^n/i.test(await ask("\nStart ffcops now? [Y/n]: "))) {
+      return runServe();
     }
   }
 
-  const workers = SERVE_TASKS.has(task) ? await askWorkers() : WORKERS;
-  const env = workers === WORKERS ? {} : { FFC_SERVE_WORKERS: workers };
-  const prefix = Object.entries(env).map(([key, value]) => `${key}=${value}`);
-  console.log(`\n$ ${[...prefix, "npm", "run", task, ...extraArgs].join(" ")}\n`);
-
-  if (/^n/i.test(await ask("Run it? [Y/n]: "))) return "done";
-
-  const status = runTask(task, extraArgs, env);
-  if (status !== 0) process.exit(status);
   // Anything that held the terminal has already had its say; only state-changing tasks are
   // worth redrawing the menu for.
   return TAKES_OVER_TERMINAL.has(task) ? "done" : "again";
