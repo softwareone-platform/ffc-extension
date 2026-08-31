@@ -21,4 +21,4 @@ plugs:
   description: This section shows all of the customers Organisations created in FinOps.
   icon: adobe.png
   socket: portal.root
-  href: "/static/StandaloneRoot.js"
+  href: "/static/StandaloneRoot-{{ settings.extension_version }}.js"
