@@ -33,7 +33,10 @@
     "up": "node devtools/dev-stack/dev.mjs up",
     "stop": "node devtools/dev-stack/dev.mjs stop",
     "rebuild": "node devtools/dev-stack/dev.mjs rebuild",
-    "serve": "node devtools/dev-stack/dev.mjs serve",
+    "workers:start": "node devtools/dev-stack/dev.mjs workers:start",
+    "workers:stop": "node devtools/dev-stack/dev.mjs workers:stop",
+    "workers:logs": "node devtools/dev-stack/dev.mjs workers:logs",
+    "docker:logs": "node devtools/dev-stack/dev.mjs docker:logs",
     "shell": "node devtools/dev-stack/dev.mjs shell",
     "prune": "node devtools/dev-stack/dev.mjs prune"
   },

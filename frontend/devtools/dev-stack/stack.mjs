@@ -12,7 +12,8 @@ export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../
 
 // Stack lifecycle uses the devcontainer pair, matching docs/dev/devcontainer.md: the overlay
 // replaces the app command with `sleep infinity` so the container is a place to work in rather
-// than a running server, and publishes 8001->8000.
+// than a running server, and publishes 8001->8000. Workers run *inside* this container via
+// `docker compose exec`, so the base file's one-off `docker compose run` model is not used.
 export const COMPOSE_DEV = [
   "compose",
   "-f",
@@ -21,24 +22,14 @@ export const COMPOSE_DEV = [
   ".devcontainer/docker-compose.yml",
 ];
 
-// Serving uses the base file alone, which is the form README documents:
-//   docker compose run --rm --service-ports app uv run ffcops serve --server-workers 4
-// Keeping the overlay out matters: it publishes 8001, and --service-ports would then collide
-// with the already-running app container over that host port.
-export const COMPOSE_BASE = ["compose", "-f", "docker-compose.yaml"];
-
 // Mirrors `runServices` in .devcontainer/devcontainer.json.
 export const SERVICES = ["app", "db", "test_db"];
 
 export const WORKERS = process.env.FFC_SERVE_WORKERS ?? "4";
 
-// docker-compose.yaml's own app command passes this, so serve keeps parity with
+// docker-compose.yaml's own app command passes this, so workers keep parity with
 // `docker compose up app`. Override by passing the flag again — the last one wins.
 export const DEFAULT_SERVE_ARGS = ["--ziti-load-timeout-ms", "20000"];
-
-// A fixed name is what makes a one-off `compose run` container addressable afterwards, so
-// stop/status/logs are plain docker operations instead of hunting processes inside a container.
-export const SERVE_CONTAINER = "ffc-extension-serve";
 
 // `ffcops serve` registers on a ziti service (mrok.proxy / ziticorn) instead of binding a TCP
 // port, so there is no localhost URL to hit — reach it through the platform.
@@ -47,6 +38,14 @@ export const SERVE_HINT = "listening on the ziti service (no local port)";
 // Bracketed first letter so pgrep can't match the shell that is running it — same trick used
 // to be needed inside the container for ffcops, and it applies just as well on the host.
 export const WATCH_MATCH = "[n]pm-run-all --parallel watch:types watch:code";
+
+// Pattern for finding the ffcops workers inside the app container.
+export const WORKERS_MATCH = "ffcops serve";
+
+// Where ffcops's stdout/stderr goes when workers:start detaches. `docker exec -d` discards
+// its child's output by default, so we redirect inside the container to give `workers:logs`
+// something to tail.
+export const WORKERS_LOG = "/tmp/ffcops-workers.log";
 
 export function docker(args, { quiet = false } = {}) {
   return spawnSync("docker", args, {
@@ -70,13 +69,15 @@ export function appIsRunning() {
   return (result.stdout ?? "").split("\n").includes("app");
 }
 
-/** True when the one-off serve container exists, running or still shutting down. */
-export function serveIsRunning() {
-  const result = docker(
-    ["ps", "-a", "--filter", `name=^${SERVE_CONTAINER}$`, "--format", "{{.Names}}"],
-    { quiet: true },
-  );
-  return (result.stdout ?? "").trim() === SERVE_CONTAINER;
+/**
+ * True when `ffcops serve` is executing inside the running app container. Short-circuits when
+ * the container itself is down, since `docker compose exec` would fail loudly there instead of
+ * reporting "no workers".
+ */
+export function workersAreRunning() {
+  if (!appIsRunning()) return false;
+  const result = composeDev(["exec", "-T", "app", "pgrep", "-f", WORKERS_MATCH], { quiet: true });
+  return result.status === 0;
 }
 
 /**
@@ -98,11 +99,14 @@ export function requireApp() {
 }
 
 /**
- * `ffcops` isn't on PATH in the container's login shell — it only resolves through `uv run`,
- * which is also the form README documents.
+ * The `ffcops serve …` invocation that runs inside the app container. `ffcops` isn't on PATH
+ * in the container's login shell — it only resolves through `uv run`, which is also the form
+ * README documents. Wrapped in `bash -c` so we can redirect stdout/stderr to WORKERS_LOG;
+ * `docker exec -d` discards its child's fds otherwise, and `workers:logs` would have nothing
+ * to tail.
  */
-export function serveArgs(extraArgs) {
-  return [
+export function workersExecArgs(extraArgs, { detach = true } = {}) {
+  const cmd = [
     "uv",
     "run",
     "ffcops",
@@ -111,19 +115,13 @@ export function serveArgs(extraArgs) {
     WORKERS,
     ...DEFAULT_SERVE_ARGS,
     ...extraArgs,
-  ];
-}
-
-/** The documented `run` invocation, shared by the foreground and detached variants. */
-export function serveRunArgs(extraArgs, { detach = false } = {}) {
+  ].join(" ");
   return [
-    "run",
+    "exec",
     ...(detach ? ["-d"] : []),
-    "--rm",
-    "--service-ports",
-    "--name",
-    SERVE_CONTAINER,
     "app",
-    ...serveArgs(extraArgs),
+    "bash",
+    "-c",
+    `${cmd} > ${WORKERS_LOG} 2>&1`,
   ];
 }
