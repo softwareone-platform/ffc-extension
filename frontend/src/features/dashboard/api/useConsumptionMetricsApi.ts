@@ -7,6 +7,6 @@ export function useConsumptionMetricsApi() {
 
   return useQuery({
     queryKey: ["Dashboard", "ConsumptionMetrics"] as const,
-    queryFn: getConsumptionMetrics,
+    queryFn: async () => (await getConsumptionMetrics()).data,
   });
 }

@@ -7,6 +7,6 @@ export function useMaturityMetricsApi() {
 
   return useQuery({
     queryKey: ["Dashboard", "MaturityMetrics"] as const,
-    queryFn: getMaturityMetrics,
+    queryFn: async () => (await getMaturityMetrics()).data,
   });
 }
