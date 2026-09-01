@@ -53,37 +53,6 @@ def get_billing_defaults_updates(order: dict[str, Any], settings: Settings) -> d
     return updates
 
 
-def get_parameter_updates(order: dict[str, Any], settings: Settings) -> dict[str, Any]:
-    """Build default fulfillment parameter values when they are missing in the order."""
-    updates = {}
-    today = datetime.now(UTC).date()
-    due_date = get_due_date(order)
-
-    if due_date:
-        logger.info(
-            f"Due date parameter was setup before {due_date.strftime('%Y-%m-%d')}: skip",
-        )
-    else:
-        due_date = today + timedelta(days=int(settings.due_date_days))
-        updates[PARAM_DUE_DATE] = due_date.strftime("%Y-%m-%d")
-
-    if not get_fulfillment_parameter(order, PARAM_BILLED_PERCENTAGE).get("value"):
-        updates[PARAM_BILLED_PERCENTAGE] = str(settings.default_billed_percentage)
-
-    trial_start_date = get_fulfillment_parameter(order, PARAM_TRIAL_START_DATE).get("value")
-    if not trial_start_date:
-        trial_start_date = today.strftime("%Y-%m-%d")
-        updates[PARAM_TRIAL_START_DATE] = trial_start_date
-
-    if not get_fulfillment_parameter(order, PARAM_TRIAL_END_DATE).get("value"):
-        trial_end_date = datetime.strptime(trial_start_date, "%Y-%m-%d").date() + timedelta(
-            days=int(settings.default_trial_period_duration_days)
-        )
-        updates[PARAM_TRIAL_END_DATE] = trial_end_date.strftime("%Y-%m-%d")
-
-    return updates
-
-
 def check_order_parameters(order: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     """
     Check that all required ordering parameters have a value.
@@ -105,6 +74,6 @@ def check_order_parameters(order: dict[str, Any]) -> tuple[dict[str, Any], bool]
     for external_id in required:
         parameter = get_ordering_parameter(order, external_id)
         if not parameter.get("value"):
-            order = set_ordering_parameter_error(order, external_id, errors[external_id])
+            order = set_ordering_parameter_error(order, external_id, errors[external_id].to_dict())
             validation_succeeded = False
     return order, validation_succeeded
