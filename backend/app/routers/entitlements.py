@@ -1,11 +1,12 @@
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import ColumnExpressionArgument, Select
 
 from app.db.handlers import NotFoundError
 from app.db.models import Account, Entitlement
-from app.dependencies.api_clients import OptscaleClient
+from app.dependencies.api_clients import FFCAPIClient, OptscaleClient
 from app.dependencies.auth import AuthorizedAccountTypes, CurrentAuthContext
 from app.dependencies.db import (
     AccountRepository,
@@ -132,6 +133,7 @@ async def get_entitlement_by_id(
 async def terminate_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
     entitlement_repo: EntitlementRepository,
+    ffcapi_client: FFCAPIClient,
 ):
     if entitlement.status == EntitlementStatus.TERMINATED:
         raise HTTPException(
@@ -148,6 +150,20 @@ async def terminate_entitlement(
         )
 
     entitlement = await entitlement_repo.terminate(entitlement)
+    with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
+        tag_data = None
+        try:
+            response = await ffcapi_client.get_tag_by_datasource_name(
+                entitlement.datasource_id,
+                "entitlement",
+            )
+            tag_data = response.json()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != 404:
+                raise e
+
+        if tag_data:
+            await ffcapi_client.delete_tag(tag_data["id"])
 
     return convert_model_to_schema(EntitlementRead, entitlement)
 

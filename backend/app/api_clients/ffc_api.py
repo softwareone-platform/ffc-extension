@@ -118,3 +118,21 @@ class FFCAPIClient(BaseAPIClient):
         )
         response.raise_for_status()
         return response
+
+    async def get_tag_by_datasource_name(
+        self,
+        datasource_id: UUID | str,
+        name: str,
+    ) -> httpx.Response:
+        response = await self.httpx_client.get(
+            f"/admin/datasources/{datasource_id}/tags/{name}",
+        )
+        response.raise_for_status()
+        return response
+
+    async def delete_tag(self, id: str) -> httpx.Response:
+        response = await self.httpx_client.delete(
+            f"/admin/tags/{id}",
+        )
+        response.raise_for_status()
+        return response
