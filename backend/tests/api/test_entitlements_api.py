@@ -511,7 +511,6 @@ async def test_terminate_entitlement_success(
     admin_client: AsyncClient,
     admin_user_token: str,
     admin_user: User,
-    gcp_extension: System,
     db_session: AsyncSession,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
@@ -571,6 +570,70 @@ async def test_terminate_entitlement_success(
     assert data["events"]["terminated"]["by"]["name"] == admin_user.name
 
 
+async def test_terminate_entitlement_by_affiliate_success(
+    entitlement_gcp: Entitlement,
+    affiliate_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    request_start_dt = datetime.now(UTC)
+    response = await affiliate_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+    )
+    request_end_dt = datetime.now(UTC)
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["id"] == str(entitlement_gcp.id)
+    assert data["status"] == "terminated"
+
+    await db_session.refresh(entitlement_gcp)
+
+    assert entitlement_gcp.status == EntitlementStatus.TERMINATED
+    assert entitlement_gcp.terminated_at is not None
+    assert request_start_dt < entitlement_gcp.terminated_at < request_end_dt
+    assert entitlement_gcp.terminated_by_id == gcp_extension.id
+
+    assert (
+        datetime.fromisoformat(data["events"]["terminated"]["at"]) == entitlement_gcp.terminated_at
+    )
+    assert data["events"]["terminated"]["by"]["id"] == gcp_extension.id
+    assert data["events"]["terminated"]["by"]["type"] == gcp_extension.type._value_
+    assert data["events"]["terminated"]["by"]["name"] == gcp_extension.name
+
+
 async def test_terminate_new_entitlement(
     entitlement_gcp: Entitlement,
     admin_client: AsyncClient,
@@ -626,19 +689,6 @@ async def test_terminate_non_existing_entitlement(
     error_msg = response.json()["detail"]
 
     assert error_msg == f"Entitlement with ID `{entitlement_id}` wasn't found."
-
-
-async def test_terminate_entitlement_by_affiliate(
-    affiliate_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    gcp_jwt_token: str,
-):
-    response = await affiliate_client.post(
-        f"/entitlements/{entitlement_gcp.id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
-    )
-
-    assert response.status_code == 403
 
 
 async def test_terminate_entitlement_untag_error(
