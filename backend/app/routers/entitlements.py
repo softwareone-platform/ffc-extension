@@ -128,7 +128,7 @@ async def get_entitlement_by_id(
 @router.post(
     "/{id}/terminate",
     response_model=EntitlementRead,
-    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.AFFILIATE))],
 )
 async def terminate_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
