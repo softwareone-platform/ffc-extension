@@ -513,7 +513,26 @@ async def test_terminate_entitlement_success(
     admin_user: User,
     gcp_extension: System,
     db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
 ):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+
     assert entitlement_gcp.terminated_at is None
     assert entitlement_gcp.terminated_by is None
     assert entitlement_gcp.status == EntitlementStatus.NEW
@@ -620,6 +639,130 @@ async def test_terminate_entitlement_by_affiliate(
     )
 
     assert response.status_code == 403
+
+
+async def test_terminate_entitlement_untag_error(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 502
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
+
+
+async def test_terminate_entitlement_get_tag_error(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 502
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
+
+
+async def test_terminate_entitlement_tag_not_found(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=404,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 200
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.TERMINATED
 
 
 # ==================
