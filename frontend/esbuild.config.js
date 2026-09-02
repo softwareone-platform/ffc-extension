@@ -9,7 +9,7 @@ const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
-const extensionVersion = process?.env?.FFC_EXT_EXTENSION_VERSION ?? "0.0.0-local";
+const extensionVersion = process?.env?.FFC_EXT_EXTENSION_VERSION ?? "0.0.0-dev";
 
 const RELOAD_URL_MATCH = 'portal.s1.show';
 
