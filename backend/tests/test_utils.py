@@ -9,10 +9,15 @@ import pytest
 from fastapi import HTTPException, status
 from pytest_mock import MockerFixture
 
+from app.conf import Settings
+from app.db.models import Account
+from app.enums import AccountStatus, AccountType
 from app.utils import (
+    _fetch_affiliate_products,
     async_groupby,
     compute_daily_expenses,
     find_first,
+    get_affiliate_products,
     get_instance_external_id,
     get_jwt_token_claims,
     get_jwt_token_expires,
@@ -21,6 +26,7 @@ from app.utils import (
     wrap_http_error_in_502,
     wrap_http_not_found_in_400,
 )
+from tests.types import ModelFactory
 
 
 def _make_jwt(claims: dict) -> str:
@@ -233,3 +239,62 @@ def test_get_instance_external_id_hashes_when_no_container_found(
     )
     expected = hashlib.sha256(b"not-hex-host").hexdigest()[:12]
     assert get_instance_external_id() == expected
+
+
+async def test_fetch_affiliate_products_collects_unique_sorted_products(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    account_factory: ModelFactory[Account],
+) -> None:
+    """Only active affiliate accounts contribute, and each product id appears once."""
+    engine = mocker.AsyncMock()
+    mocker.patch("app.utils.configure_db_engine", return_value=engine)
+    await account_factory(
+        type=AccountType.AFFILIATE,
+        status=AccountStatus.ACTIVE,
+        products="PRD-2222-2222, PRD-1111-1111",
+    )
+    await account_factory(
+        type=AccountType.AFFILIATE, status=AccountStatus.ACTIVE, products="PRD-1111-1111"
+    )
+    await account_factory(type=AccountType.AFFILIATE, status=AccountStatus.ACTIVE, products=None)
+    await account_factory(
+        type=AccountType.AFFILIATE, status=AccountStatus.DISABLED, products="PRD-8888-8888"
+    )
+    await account_factory(
+        type=AccountType.OPERATIONS, status=AccountStatus.ACTIVE, products="PRD-9999-9999"
+    )
+
+    products = await _fetch_affiliate_products(test_settings)
+
+    assert products == ["PRD-1111-1111", "PRD-2222-2222"]
+    engine.dispose.assert_awaited_once()
+
+
+async def test_fetch_affiliate_products_disposes_the_engine_on_failure(
+    mocker: MockerFixture,
+    test_settings: Settings,
+) -> None:
+    """The engine the bootstrap opened is always closed, so the workers fork cleanly."""
+    engine = mocker.AsyncMock()
+    mocker.patch("app.utils.configure_db_engine", return_value=engine)
+    mocker.patch("app.utils.AccountHandler", side_effect=RuntimeError("no database"))
+
+    with pytest.raises(RuntimeError, match="no database"):
+        await _fetch_affiliate_products(test_settings)
+
+    engine.dispose.assert_awaited_once()
+
+
+def test_get_affiliate_products_runs_the_fetch_outside_an_event_loop(
+    mocker: MockerFixture,
+    test_settings: Settings,
+) -> None:
+    """`bootstrap` is synchronous, so the products are fetched through `asyncio.run`."""
+    fetch = mocker.patch(
+        "app.utils._fetch_affiliate_products",
+        new=mocker.AsyncMock(return_value=["PRD-1111-1111"]),
+    )
+
+    assert get_affiliate_products(test_settings) == ["PRD-1111-1111"]
+    fetch.assert_awaited_once_with(test_settings)

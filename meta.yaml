@@ -2,13 +2,23 @@ version: {{ settings.extension_version }}
 openapi: /bypass/openapi.json
 events:
   - event: platform.commerce.order.created
-    condition: "and(in(type,(Purchase,Change, Termination)),eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
+    condition: "and(in(type,(Purchase,Change,Termination)),eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
     path: "/events/commerce/orders"
     task: true
   - event: platform.commerce.order.status_changed
-    condition: "and(in(type,(Purchase,Change, Termination)),eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
+    condition: "and(in(type,(Purchase,Change,Termination)),eq(status,Processing),eq(product.id,{{ settings.mpt_product_id }}))"
     path: "/events/commerce/orders"
     task: true
+{% if products %}
+  - event: platform.commerce.subscription.status_changed
+    condition: "and(in(status,(Active,Terminated)),in(product.id,{{ products|join(',') }}))"
+    path: "/events/commerce/subscriptions"
+    task: true
+  - event: platform.commerce.subscription.created
+    condition: "in(product.id,{{ products|join(',') }})"
+    path: "/events/commerce/subscriptions"
+    task: true
+{% endif %}
 webhooks:
   - type: ValidateChangeOrderDraft
     description: Validate draft change orders.
