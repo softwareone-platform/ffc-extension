@@ -19,6 +19,6 @@ plugs:
 - id: finops{% if settings.ui_plugs_prefix != "ffc" %}_{{ settings.ui_plugs_prefix }}{% endif %}
   name: FinOps for Cloud {% if settings.ui_plugs_prefix != "ffc" %} ({{ settings.ui_plugs_prefix }}){% endif %}
   description: This section shows all of the customers Organisations created in FinOps.
-  icon: adobe.png
+  icon: query_stats
   socket: portal.root
   href: "/static/StandaloneRoot-{{ settings.extension_version }}.js"
