@@ -1,8 +1,8 @@
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
+import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { Navigation } from "@swo/design-system/navigation";
 import { Skeleton } from "@swo/design-system/skeleton";
 import { NO_VALUE } from "@swo/design-system/utils";
-import { InPageHighlight } from "@swo/in-page-highlight";
 
 import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { useFixedT } from "~shared/hooks/useFixedT";

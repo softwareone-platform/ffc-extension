@@ -1,6 +1,6 @@
+import { ListOption } from "@swo/design-system/dropdown";
 import { GridCellActions } from "@swo/design-system/grid";
 import { NO_VALUE } from "@swo/design-system/utils";
-import { ListOption } from "@swo/dropdown";
 
 export interface GridCellDynamicActionsProps<TItem extends object, TAction extends string> {
   item: TItem;

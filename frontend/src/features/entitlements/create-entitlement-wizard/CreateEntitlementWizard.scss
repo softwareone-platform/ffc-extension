@@ -1,4 +1,9 @@
 .step {
+  &.review-step {
+    p {
+      margin: 0 0 var(--spacing-3);
+    }
+  }
   &.summary-step {
     .step__notification {
       margin-bottom: var(--spacing-3);
