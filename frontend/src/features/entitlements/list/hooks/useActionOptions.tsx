@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { ListOption } from "@swo/dropdown";
+import { ListOption } from "@swo/design-system/dropdown";
 
 import { EntitlementStatus } from "~api/ffc-api-model";
 import { Entitlement, EntitlementAction } from "~features/entitlements/api/model";

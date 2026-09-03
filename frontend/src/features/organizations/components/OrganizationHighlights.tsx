@@ -1,7 +1,7 @@
+import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { Navigation } from "@swo/design-system/navigation";
 import { Skeleton } from "@swo/design-system/skeleton";
 import { DisplayValue } from "@swo/design-system/utils";
-import { InPageHighlight } from "@swo/in-page-highlight";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useFormatMoney } from "~shared/utils/NumberUtils";

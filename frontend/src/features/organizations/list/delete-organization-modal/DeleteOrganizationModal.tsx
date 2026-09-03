@@ -1,4 +1,4 @@
-import { InlineNotification } from "@swo/notification";
+import { InlineNotification } from "@swo/design-system/notification";
 
 import { Organization } from "~features/organizations/api/model";
 import { Modal } from "~shared/components/modal/Modal";

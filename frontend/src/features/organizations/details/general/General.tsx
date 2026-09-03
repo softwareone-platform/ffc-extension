@@ -7,8 +7,8 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 
 import "./General.scss";
 
-import { InPageHighlight } from "@swo/in-page-highlight";
-import { BoldText, MediumText } from "@swo/text";
+import { InPageHighlight } from "@swo/design-system/in-page-highlight";
+import { BoldText, MediumText } from "@swo/design-system/text";
 
 export function OrganizationGeneralDetails() {
   const { organizationId } = useParams();

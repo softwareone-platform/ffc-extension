@@ -16,6 +16,7 @@
       "~api/*": ["api/*"],
       "~app/*": ["app/*"],
       "~features/*": ["features/*"],
+      "~fixes/*": ["fixes/*"],
       "~organizations/*": ["features/organizations/*"],
       "~entitlements/*": ["features/entitlements/*"],
       "~shared/*": ["shared/*"],

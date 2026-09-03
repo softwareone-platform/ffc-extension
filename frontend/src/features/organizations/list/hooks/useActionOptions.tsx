@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { ListOption } from "@swo/dropdown";
+import { ListOption } from "@swo/design-system/dropdown";
 
 import { OrganizationRead, OrganizationStatus } from "~api/ffc-api-model";
 import { OrganizationAction } from "~features/organizations/api/model";

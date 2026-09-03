@@ -9,7 +9,7 @@ const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
-const extensionVersion = process?.env?.FFC_EXT_EXTENSION_VERSION ?? "0.0.0-local";
+const extensionVersion = process?.env?.FFC_EXT_EXTENSION_VERSION ?? "0.0.0-dev";
 
 const RELOAD_URL_MATCH = 'portal.s1.show';
 
@@ -31,6 +31,7 @@ const ctx = await context({
     '~api': srcDir('api'),
     '~app': srcDir('app'),
     '~features': srcDir('features'),
+    '~fixes': srcDir('fixes'),
     '~organizations': srcDir('features/organizations'),
     '~entitlements': srcDir('features/entitlements'),
     '~shared': srcDir('shared'),
