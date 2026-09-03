@@ -154,7 +154,7 @@ async def terminate_entitlement(
         tag_data = None
         try:
             response = await ffcapi_client.get_tag_by_datasource_name(
-                entitlement.datasource_id,
+                str(entitlement.linked_datasource_id),
                 "entitlement",
             )
             tag_data = response.json()
