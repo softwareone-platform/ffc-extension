@@ -517,7 +517,7 @@ async def test_terminate_entitlement_success(
 ):
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         json={
             "id": "tag_id",
@@ -581,7 +581,7 @@ async def test_terminate_entitlement_by_affiliate_success(
 ):
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         json={
             "id": "tag_id",
@@ -703,7 +703,7 @@ async def test_terminate_entitlement_untag_error(
 ):
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         json={
             "id": "tag_id",
@@ -751,7 +751,7 @@ async def test_terminate_entitlement_get_tag_error(
 ):
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         status_code=500,
     )
@@ -789,7 +789,7 @@ async def test_terminate_entitlement_tag_not_found(
 ):
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.datasource_id}/tags/entitlement",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         status_code=404,
     )
