@@ -9,12 +9,16 @@ from app.dependencies.api_clients import (
     OptscaleAuthClient,
     OptscaleClient,
 )
+from app.dependencies.auth import CurrentAuthContext
 from app.dependencies.core import AppSettings
 from app.dependencies.db import EntitlementRepository, OrganizationRepository
-from app.fulfilment.processing import OrderProcessorFactory as _OrderProcessorFactory
+from app.events.orders.processing import OrderEventHandler as _OrderEventHandler
+from app.events.subscriptions.processing import (
+    SubscriptionEventHandler as _SubscriptionEventHandler,
+)
 
 
-def get_order_processor_factory(
+def get_order_event_handler(
     api_modifier_client: APIModifierClient,
     client: InstallationClient,
     ext_client: ExtensionClient,
@@ -23,8 +27,8 @@ def get_order_processor_factory(
     organization_repo: OrganizationRepository,
     entitlement_repo: EntitlementRepository,
     settings: AppSettings,
-) -> _OrderProcessorFactory:
-    return _OrderProcessorFactory(
+) -> _OrderEventHandler:
+    return _OrderEventHandler(
         api_modifier_client=api_modifier_client,
         client=client,
         ext_client=ext_client,
@@ -36,4 +40,21 @@ def get_order_processor_factory(
     )
 
 
-OrderProcessorFactory = Annotated[_OrderProcessorFactory, Depends(get_order_processor_factory)]
+def get_subscription_event_handler(
+    client: InstallationClient,
+    ext_client: ExtensionClient,
+    entitlement_repo: EntitlementRepository,
+    auth_context: CurrentAuthContext,
+) -> _SubscriptionEventHandler:
+    return _SubscriptionEventHandler(
+        client=client,
+        ext_client=ext_client,
+        entitlement_repo=entitlement_repo,
+        account=auth_context.account,
+    )
+
+
+OrderEventHandler = Annotated[_OrderEventHandler, Depends(get_order_event_handler)]
+SubscriptionEventHandler = Annotated[
+    _SubscriptionEventHandler, Depends(get_subscription_event_handler)
+]
