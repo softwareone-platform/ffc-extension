@@ -2,7 +2,7 @@ import datetime
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, StringConstraints
 
 from app.enums import DatasourceType, EntitlementStatus
 from app.schemas.accounts import AccountReference
@@ -16,7 +16,11 @@ from app.schemas.organizations import OrganizationReference
 
 
 class EntitlementBase(BaseSchema):
-    name: Annotated[str, Field(min_length=1, max_length=255, examples=["Microsoft CSP"])]
+    name: Annotated[
+        str,
+        Field(min_length=1, max_length=255, examples=["Microsoft CSP"]),
+        StringConstraints(strip_whitespace=True),
+    ]
     affiliate_external_id: Annotated[
         str, Field(min_length=1, max_length=255, examples=["SUB-9876-5534-9172"])
     ]
@@ -31,9 +35,12 @@ class EntitlementCreate(EntitlementBase):
 
 
 class EntitlementUpdate(BaseSchema):
-    name: Annotated[str | None, Field(min_length=1, max_length=255, examples=["Microsoft CSP"])] = (
-        None
-    )
+    name: Annotated[
+        str | None,
+        Field(min_length=1, max_length=255, examples=["Microsoft CSP"]),
+        StringConstraints(strip_whitespace=True),
+    ] = None
+
     affiliate_external_id: Annotated[
         str | None, Field(min_length=1, max_length=255, examples=["SUB-9876-5534-9172"])
     ] = None

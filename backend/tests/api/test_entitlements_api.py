@@ -64,6 +64,42 @@ async def test_can_create_entitlements(
     assert result.one_or_none() is not None
 
 
+async def test_can_create_entitlements_with_whitespace_in_name(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    db_session: AsyncSession,
+):
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "   AWS   ",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "SPONSOR_CONTAINER_ID_1234",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+
+    assert data["id"] is not None
+    assert data["name"] == "AWS"
+    assert data["affiliate_external_id"] == "EXTERNAL_ID_987123"
+    assert data["datasource_id"] == "SPONSOR_CONTAINER_ID_1234"
+    assert data["status"] == "new"
+    assert data["events"]["created"]["at"] is not None
+    assert data["events"]["created"]["by"]["id"] == str(gcp_extension.id)
+    assert data["events"]["created"]["by"]["type"] == gcp_extension.type
+    assert data["events"]["created"]["by"]["name"] == gcp_extension.name
+    assert data["events"]["updated"]["at"] is not None
+    assert data["events"]["updated"]["by"]["id"] == str(gcp_extension.id)
+    assert data["events"]["updated"]["by"]["type"] == gcp_extension.type
+    assert data["events"]["updated"]["by"]["name"] == gcp_extension.name
+
+    result = await db_session.execute(select(Entitlement).where(Entitlement.id == data["id"]))
+    assert result.one_or_none() is not None
+
+
 async def test_create_entitlement_with_incomplete_data(api_client: AsyncClient, gcp_jwt_token: str):
     response = await api_client.post(
         "/entitlements",
@@ -79,6 +115,24 @@ async def test_create_entitlement_with_incomplete_data(api_client: AsyncClient, 
 
     assert detail["type"] == "missing"
     assert detail["loc"] == ["body", "datasource_id"]
+
+
+async def test_create_entitlement_with_empty_name(api_client: AsyncClient, gcp_jwt_token: str):
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "SPONSOR_CONTAINER_ID_1234",
+        },
+    )
+
+    assert response.status_code == 422
+    [detail] = response.json()["detail"]
+
+    assert detail["type"] == "string_too_short"
+    assert detail["loc"] == ["body", "name"]
 
 
 async def test_create_entitlement_by_affiliate_with_owner(
