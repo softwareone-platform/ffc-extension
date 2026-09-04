@@ -3,11 +3,14 @@ from datetime import datetime
 from typing import Any, Protocol, TypeVar
 
 from app.db.models import Base
-from app.fulfilment.processing import OrderProcessor, OrderProcessorFactory
+from app.events.orders.processing import OrderEventHandler, OrderProcessor
+from app.schemas.core import Event
 
 ModelT = TypeVar("ModelT", bound=Base)
 ModelFactory = Callable[..., Awaitable[ModelT]]
+EventFactory = Callable[..., Event]
 OrderFactory = Callable[..., dict[str, Any]]
+MPTSubscriptionFactory = Callable[..., dict[str, Any]]
 
 
 class JWTTokenFactory(Protocol):
@@ -23,6 +26,7 @@ class JWTTokenFactory(Protocol):
 
 
 ProcessorBuilder = Callable[[dict[str, Any]], OrderProcessor]
-FactoryBuilder = Callable[[dict[str, Any]], OrderProcessorFactory]
+HandlerBuilder = Callable[[dict[str, Any]], OrderEventHandler]
 TemplatesMocker = Callable[..., None]
+SubscriptionMocker = Callable[..., None]
 OptscaleOrganizationMocker: Callable[..., None]
