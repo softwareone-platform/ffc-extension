@@ -96,6 +96,22 @@ def test_entitlement_create_convert_schema_to_model():
     assert entitlement.datasource_id == data["datasource_id"]
 
 
+def test_entitlement_name_with_whitespace():
+    data = {
+        "name": "   AWS   ",
+        "affiliate_external_id": "ACC-123",
+        "datasource_id": "container-123",
+    }
+
+    entitlement_create = EntitlementCreate(**data)
+    entitlement = convert_schema_to_model(entitlement_create, Entitlement)
+    assert isinstance(entitlement, Entitlement)
+    assert entitlement.name != data["name"]
+    assert entitlement.name == data["name"].strip()
+    assert entitlement.affiliate_external_id == data["affiliate_external_id"]
+    assert entitlement.datasource_id == data["datasource_id"]
+
+
 @pytest.mark.parametrize("set_redeemed", [True, False])
 @pytest.mark.parametrize("set_terminated", [True, False])
 def test_entitlement_read_convert_model_to_schema(
