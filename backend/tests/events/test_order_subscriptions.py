@@ -1,6 +1,6 @@
 import pytest
 
-from app.fulfilment.subscriptions import get_subscription_by_line_and_item_id
+from app.events.orders.subscriptions import get_subscription_by_line_and_item_id
 
 
 def _subscription(sub_id: str, lines: list[dict]) -> dict:

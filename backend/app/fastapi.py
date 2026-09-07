@@ -180,6 +180,7 @@ def setup_app():
                 AuthorizedAccountTypes(
                     AccountType.ADMIN,
                     AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
                     actor_required=False,
                 ),
             ),

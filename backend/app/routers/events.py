@@ -2,15 +2,10 @@ import logging
 
 from fastapi import APIRouter
 
-from app.conf import get_settings
-from app.dependencies.api_clients import (
-    ExtensionClient,
-)
 from app.dependencies.core import ExtensionContext
-from app.dependencies.fulfillment import OrderProcessorFactory
-from app.fulfilment.error import ERR_ORDER_TYPE_NOT_SUPPORTED
-from app.fulfilment.exceptions import UnsupportedOrderTypeError
-from app.fulfilment.processing import ProcessingStatus
+from app.dependencies.events import OrderEventHandler, SubscriptionEventHandler
+from app.events.orders.error import ERR_ORDER_TYPE_NOT_SUPPORTED
+from app.events.tasks import process_event
 from app.schemas.core import Event, EventResponse
 
 logger = logging.getLogger(__name__)
@@ -28,74 +23,15 @@ async def validate_order(order: dict):
 async def process_order(
     event: Event,
     ext_ctx: ExtensionContext,
-    ext_client: ExtensionClient,
-    factory: OrderProcessorFactory,
+    handler: OrderEventHandler,
 ) -> EventResponse:
-    logger.info("Event: %s", event)
-    order_id = event.object.id
-    task_id = event.task.id  # type: ignore
-    logger.info("Changing task %s status to Processing", task_id)
-    task = await ext_client.get_task(task_id)
-    task_account_id = task["parameters"]["accountId"]
-    ext_account_id = ext_ctx.account_id
-    if task_account_id != ext_account_id:
-        logger.info(
-            "The task %s does not match the ext account id %s", task_account_id, ext_account_id
-        )
-        await ext_client.start_task(task_id, ext_ctx.instance_id)
-        await ext_client.complete_task(task_id)
-        await ext_client.log_task(
-            task_id,
-            severity="Info",
-            error_message=(
-                f"The task was ignored for the account {task_account_id} which is not the "
-                f"fulfillment owner. The Fulfillment of the order {order_id} is a vendor activity "
-                f"and is it processed under the vendor account {ext_account_id}"
-            ),
-        )
-        return EventResponse.ok()
+    return await process_event(ext_ctx, event, handler)
 
-    await ext_client.start_task(task_id, ext_ctx.instance_id)
-    try:
-        processor = await factory.get_order_type_processor(order_id)
-        result = await processor.process()
 
-        match result.status:
-            case ProcessingStatus.RESCHEDULE:
-                await ext_client.log_task(
-                    task_id,
-                    severity=result.severity,
-                    error_message=result.message,
-                )
-                await ext_client.reschedule_task(task_id)
-                return EventResponse.reschedule(seconds=get_settings().reschedule_seconds)
-
-            case ProcessingStatus.COMPLETE:
-                await ext_client.log_task(
-                    task_id,
-                    severity=result.severity,
-                    error_message=result.message,
-                )
-                await ext_client.complete_task(task_id)
-                return EventResponse.ok()
-            case ProcessingStatus.CANCEL:
-                await ext_client.log_task(
-                    task_id,
-                    severity=result.severity,
-                    error_message=result.message,
-                )
-                return EventResponse.cancel()
-            case ProcessingStatus.SKIP:
-                await ext_client.log_task(
-                    task_id,
-                    severity=result.severity,
-                    error_message=result.message,
-                )
-                return EventResponse.ok()
-    except UnsupportedOrderTypeError as exception:
-        await ext_client.log_task(
-            task_id,
-            severity="Warning",
-            error_message=str(exception),
-        )
-        return EventResponse.cancel()
+@router.post("/subscriptions")
+async def process_subscription(
+    event: Event,
+    ext_ctx: ExtensionContext,
+    handler: SubscriptionEventHandler,
+) -> EventResponse:
+    return await process_event(ext_ctx, event, handler)

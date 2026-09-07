@@ -152,6 +152,7 @@ class Account(Base, HumanReadablePKMixin, AuditableMixin):
     new_entitlements_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
     active_entitlements_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
     terminated_entitlements_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
+    products: Mapped[str] = mapped_column(String(511), nullable=True)
 
     @property
     def account_user(self) -> AccountUser | None:

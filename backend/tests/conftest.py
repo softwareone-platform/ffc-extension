@@ -52,8 +52,7 @@ from app.enums import (
     SystemStatus,
     UserStatus,
 )
-from app.fastapi import setup_app
-from app.fulfilment.constants import (
+from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     ORDER_TYPE_CHANGE,
     ORDER_TYPE_PURCHASE,
@@ -63,13 +62,16 @@ from app.fulfilment.constants import (
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
 )
-from app.fulfilment.processing import (
+from app.events.orders.processing import (
+    OrderEventHandler,
     OrderProcessor,
-    OrderProcessorFactory,
 )
+from app.events.subscriptions.constants import ACTIVE_SUBSCRIPTION_STATUS
+from app.events.subscriptions.processing import SubscriptionEventHandler
+from app.fastapi import setup_app
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
-from tests.types import ModelFactory, OrderFactory
+from tests.types import ModelFactory, MPTSubscriptionFactory, OrderFactory
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -222,6 +224,22 @@ async def mpt_api_client(
 
 
 @pytest.fixture
+def mpt_client(test_settings: Settings) -> MPTClient:
+    """A `MPTClient` pinned to test settings, with its transport mocked."""
+    client = MPTClient(auth=MPTExtensionAuth())
+    client.settings = test_settings
+    return client
+
+
+@pytest.fixture
+def mpt_extension_client():
+    """An `MPTClient` authenticated with the static extension token (no token refresh)."""
+    from app.api_clients.mpt import MPTClient, MPTExtensionAuth
+
+    return MPTClient(MPTExtensionAuth())
+
+
+@pytest.fixture
 def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Account]:
     async def _account(
         name: str | None = None,
@@ -234,6 +252,7 @@ def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Acco
         new_entitlements_count: int = 0,
         active_entitlements_count: int = 0,
         terminated_entitlements_count: int = 0,
+        products: str | None = None,
     ) -> Account:
         account = Account(
             type=type or AccountType.AFFILIATE,
@@ -246,6 +265,7 @@ def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Acco
             new_entitlements_count=new_entitlements_count,
             active_entitlements_count=active_entitlements_count,
             terminated_entitlements_count=terminated_entitlements_count,
+            products=products,
         )
         db_session.add(account)
         await db_session.commit()
@@ -705,6 +725,9 @@ def assert_equal_or_raises[T](
         assert func() == expected
 
 
+# ---------
+
+
 @pytest.fixture
 def order_parameters_factory():
     def _order_parameters():
@@ -793,14 +816,6 @@ def fulfillment_parameters_factory():
         ]
 
     return _fulfillment_parameters
-
-
-@pytest.fixture
-def mpt_extension_client():
-    """An `MPTClient` authenticated with the static extension token (no token refresh)."""
-    from app.api_clients.mpt import MPTClient, MPTExtensionAuth
-
-    return MPTClient(MPTExtensionAuth())
 
 
 @pytest.fixture
@@ -2234,17 +2249,19 @@ def mock_owned_task(mocker: MockerFixture, mocked_extension_ctx) -> Callable[...
 
 @pytest.fixture
 def event_factory() -> Callable[..., Event]:
-    """Return a builder for an order `status_changed` marketplace event."""
+    """Return a builder for an `status_changed` marketplace event."""
 
     def _event(
         *,
-        order_id: str,
+        object_id: str,
+        object_name: str = "order",
+        object_type: str = "Order",
         task_id: str = "TSK-0014-5578-6577-4688",
         event_id: str = "01ef68d7-3792-48cc-96cc-924599f6d490",
     ) -> Event:
         return Event(
             id=event_id,
-            object=Object(id=order_id, name="order", object_type="Order"),
+            object=Object(id=object_id, name=object_name, object_type=object_type),
             details=Details(
                 event_type="status_changed",
                 enqueue_time=datetime(2026, 6, 10, 14, 50, 30, 609000, tzinfo=UTC),
@@ -2272,22 +2289,46 @@ def post_order_event(
     return _post
 
 
+@pytest.fixture
+async def post_subscription_event(
+    mpt_api_client: AsyncClient,
+    system_jwt_token_factory: Callable[[System], str],
+    system_factory: ModelFactory[System],
+    subscription_account: Account,
+) -> Callable[[Event], Awaitable[Response]]:
+    """Return a helper that posts an event to the subscriptions endpoint as the affiliate."""
+    subscription_system = await system_factory(
+        external_id="TKN-3333-3333",
+        owner=subscription_account,
+    )
+    token = system_jwt_token_factory(subscription_system)
+
+    async def _post(event: Event) -> Response:
+        return await mpt_api_client.post(
+            "/events/commerce/subscriptions",
+            headers={"Authorization": f"Bearer {token}"},
+            json=event.model_dump(mode="json", by_alias=True),
+        )
+
+    return _post
+
+
 # ---------------------------------------------------------------------------
 # Fulfilment order processors
 # ---------------------------------------------------------------------------
 
-
-RealProcessorBuilder = Callable[[dict[str, Any]], Awaitable[OrderProcessor]]
+OrderProcessorBuilder = Callable[[dict[str, Any]], Awaitable[OrderProcessor]]
 
 
 @pytest.fixture
-def order_processor_factory(
+def order_event_handler(
     test_settings: Settings,
     db_session: AsyncSession,
     mpt_client: MPTClient,
-) -> OrderProcessorFactory:
-    """An `OrderProcessorFactory` with real clients and repositories on the test DB."""
-    return OrderProcessorFactory(
+) -> OrderEventHandler:
+    """Return a `OrderEventHandler` whose client yields the given order."""
+
+    return OrderEventHandler(
         api_modifier_client=APIModifierClient(test_settings),
         client=mpt_client,
         ext_client=mpt_client,
@@ -2297,14 +2338,6 @@ def order_processor_factory(
         entitlement_repo=EntitlementHandler(db_session),
         settings=test_settings,
     )
-
-
-@pytest.fixture
-def mpt_client(test_settings: Settings) -> MPTClient:
-    """A real `MPTClient` pinned to test settings, with its transport mocked."""
-    client = MPTClient(auth=MPTExtensionAuth())
-    client.settings = test_settings
-    return client
 
 
 @pytest.fixture
@@ -2333,3 +2366,62 @@ def product_templates() -> list[dict[str, Any]]:
             "default": False,
         },
     ]
+
+
+@pytest.fixture(autouse=True)
+def mock_affiliate_products(mocker: MockerFixture) -> None:
+    """`bootstrap` reads the affiliate products from the database, we don't want this."""
+    mocker.patch("app.bootstrap.get_affiliate_products", return_value=["PRD-1111-1111"])
+
+
+# ---------------------------------------------------------------------------
+# Subscription event processing
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mpt_subscription_factory() -> MPTSubscriptionFactory:
+    """Return a builder for the subscription payload the marketplace returns."""
+
+    def _subscription(
+        subscription_id: str = "SUB-1234-5678",
+        status: str = ACTIVE_SUBSCRIPTION_STATUS,
+        product_id: str = "PRD-1111-1111",
+        datasource_id: str | None = "ds0001234",
+        name: str = "Subscription for FinOps for Cloud",
+    ) -> dict[str, Any]:
+        return {
+            "id": subscription_id,
+            "name": name,
+            "status": status,
+            "product": {"id": product_id},
+            "externalIds": {"vendor": datasource_id} if datasource_id else {},
+        }
+
+    return _subscription
+
+
+@pytest.fixture
+async def subscription_account(account_factory: ModelFactory[Account]) -> Account:
+    """An affiliate account entitled to the product the subscription fixtures use."""
+    return await account_factory(
+        name="Microsoft",
+        type=AccountType.AFFILIATE,
+        external_id="ACC-3333-3333",
+        products="PRD-1111-1111,PRD-2222-2222",
+    )
+
+
+@pytest.fixture
+def subscription_event_handler(
+    db_session: AsyncSession,
+    mpt_client: MPTClient,
+    subscription_account: Account,
+) -> SubscriptionEventHandler:
+    """Return a `SubscriptionEventHandler` bound to the test session and an affiliate account."""
+    return SubscriptionEventHandler(
+        client=mpt_client,
+        ext_client=mpt_client,
+        entitlement_repo=EntitlementHandler(db_session),
+        account=subscription_account,
+    )
