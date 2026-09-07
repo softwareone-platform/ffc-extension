@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app import Settings
-from app.fulfilment.error import ERR_ADMIN_CONTACT, ERR_CURRENCY, ERR_ORGANIZATION_NAME
+from app.events.orders.error import ERR_ADMIN_CONTACT, ERR_CURRENCY, ERR_ORGANIZATION_NAME
 from app.parameters import (
     PARAM_ADMIN_CONTACT,
     PARAM_BILLED_PERCENTAGE,

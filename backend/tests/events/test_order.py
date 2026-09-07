@@ -1,6 +1,5 @@
 import copy
 import logging
-from collections.abc import Callable
 from datetime import date
 from typing import Any
 
@@ -17,7 +16,7 @@ from app.conf import Settings
 from app.db.handlers import AccountHandler, EntitlementHandler, OrganizationHandler
 from app.db.models import Account, Entitlement, Organization
 from app.enums import AccountStatus, AccountType, EntitlementStatus, OrganizationStatus
-from app.fulfilment.constants import (
+from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     PROCESSING_TEMPLATE_TYPE,
     PURCHASE_EXISTING_TEMPLATE_NAME,
@@ -25,7 +24,7 @@ from app.fulfilment.constants import (
     QUERYING_TEMPLATE_TYPE,
     TERMINATE_TEMPLATE_NAME,
 )
-from app.fulfilment.error import (
+from app.events.orders.error import (
     ERR_ADMIN_CONTACT,
     ERR_CURRENCY,
     ERR_DUE_DATE_IS_REACHED,
@@ -34,16 +33,13 @@ from app.fulfilment.error import (
     ERR_ORGANIZATION_NAME,
     ValidationError,
 )
-from app.fulfilment.exceptions import (
+from app.events.orders.exceptions import (
     OrderMovedToQuery,
     OrderNotValidError,
     UnsupportedOrderTypeError,
 )
-from app.fulfilment.processing import (
-    OrderProcessorFactory,
-    ProcessingStatus,
-    PurchaseOrderProcessor,
-)
+from app.events.orders.processing import OrderEventHandler, PurchaseOrderProcessor
+from app.events.processing import ProcessingStatus
 from app.parameters import (
     PARAM_ADMIN_CONTACT,
     PARAM_CURRENCY,
@@ -57,17 +53,17 @@ from tests.types import OrderFactory
 PRODUCT_ID = "PRD-4141-4379"
 
 
-# -- get_order_type_processor --
+# -- get_processor --
 
 
-async def test_get_order_type_processor(
+async def test_get_processor(
     purchase_order: dict[str, Any],
     db_session: AsyncSession,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
-    """`get_order_type_processor` builds the processor for the order type on the test session."""
+    """`get_processor` builds the processor for the order type on the test session."""
     order_id = purchase_order["id"]
     httpx_mock.add_response(
         method="GET",
@@ -76,7 +72,7 @@ async def test_get_order_type_processor(
         json=purchase_order,
     )
 
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     assert isinstance(processor, PurchaseOrderProcessor)
     assert processor.order == purchase_order
@@ -88,7 +84,7 @@ async def test_process_order_without_due_date(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     product_templates: list[dict[str, Any]],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -136,25 +132,24 @@ async def test_process_order_without_due_date(
             "$meta": {"pagination": {"total": len(product_templates)}},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
     assert result.status is ProcessingStatus.CANCEL
     assert result.severity == "Error"
-    assert f"{order_id}: Purchase Order processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
     assert result.message == ERR_DUE_DATE_NOT_SET.message
 
 
-async def test_get_order_type_processor_rejects_unsupported_type(
+async def test_get_processor_rejects_unsupported_order_type(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """`get_order_type_processor` raises and warns for an order type with no processor."""
-
+    """`get_processor` raises and warns for an order type with no processor."""
     purchase_order["type"] = "BlaBla"
     httpx_mock.add_response(
         method="GET",
@@ -165,7 +160,7 @@ async def test_get_order_type_processor_rejects_unsupported_type(
 
     with caplog.at_level(logging.WARNING):
         with pytest.raises(UnsupportedOrderTypeError, match="BlaBla"):
-            await order_processor_factory.get_order_type_processor(order_id=purchase_order["id"])
+            await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     assert "The order type BlaBla is not supported." in caplog.text
 
@@ -177,7 +172,7 @@ async def test_set_template_assigns_id_and_returns_copy(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """`set_template` returns a copy with the new template id, leaving the original untouched."""
     httpx_mock.add_response(
@@ -187,9 +182,7 @@ async def test_set_template_assigns_id_and_returns_copy(
         json=purchase_order,
     )
 
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     result = processor.set_template(order=purchase_order, template_id="TPL-1234-5678-0001")
     assert processor.order is result
@@ -202,7 +195,7 @@ async def test_set_template_raises_when_template_id_is_missing(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """`set_template` raises `ValueError` when no template id is provided."""
     httpx_mock.add_response(
@@ -212,9 +205,8 @@ async def test_set_template_raises_when_template_id_is_missing(
         json=purchase_order,
     )
 
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     with pytest.raises(ValueError, match="Template id is required"):
         processor.set_template(order=purchase_order, template_id="")
 
@@ -223,7 +215,7 @@ async def test_set_template_raises_when_order_malformed(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """`set_template` raises `KeyError` when the order is missing its template key."""
     purchase_order.pop("template", None)
@@ -234,9 +226,7 @@ async def test_set_template_raises_when_order_malformed(
         json=purchase_order,
     )
 
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with pytest.raises(KeyError, match="Order is malformed"):
         processor.set_template(order=purchase_order, template_id="TPL-1234-5678-0001")
@@ -249,7 +239,7 @@ async def test_get_product_template_returns_specific_by_name(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     product_templates: list[dict[str, Any]],
 ) -> None:
     """`get_product_template_id` returns the id of the template matching the type and name."""
@@ -260,9 +250,7 @@ async def test_get_product_template_returns_specific_by_name(
         json=purchase_order,
     )
 
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
     rows = test_settings.mpt_api_rows_per_page
     httpx_mock.add_response(
         method="GET",
@@ -274,6 +262,7 @@ async def test_get_product_template_returns_specific_by_name(
             "$meta": {"pagination": {"total": len(product_templates)}},
         },
     )
+
     template_id = await processor.get_product_template_id(PROCESSING_TEMPLATE_TYPE, "Purchase")
     assert template_id == "TPL-0001"
 
@@ -282,7 +271,7 @@ async def test_get_product_template_fails_back_to_default(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     product_templates: list[dict[str, Any]],
 ) -> None:
     """`get_product_template_id` falls back to the default template when the name is unknown."""
@@ -303,9 +292,8 @@ async def test_get_product_template_fails_back_to_default(
             "$meta": {"pagination": {"total": len(product_templates)}},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     template_id = await processor.get_product_template_id(PROCESSING_TEMPLATE_TYPE, "DoesNotExist")
     assert template_id == "TPL-0002"
 
@@ -314,7 +302,7 @@ async def test_get_product_template_returns_default_when_name_is_none(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     product_templates: list[dict[str, Any]],
 ) -> None:
     """`get_product_template_id` returns the default template when the requested name is `None`."""
@@ -335,9 +323,8 @@ async def test_get_product_template_returns_default_when_name_is_none(
             "$meta": {"pagination": {"total": len(product_templates)}},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     template_id = await processor.get_product_template_id(QUERYING_TEMPLATE_TYPE, None)
     assert template_id == "TPL-0003"
 
@@ -346,7 +333,7 @@ async def test_get_product_template_uses_cache_without_http_call(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """`get_product_template_id` serves a cached template without hitting the marketplace."""
     httpx_mock.add_response(
@@ -355,11 +342,10 @@ async def test_get_product_template_uses_cache_without_http_call(
         match_params={"select": "subscriptions.lines"},
         json=purchase_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
     processor.template_cache[(PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME)] = "TPL-CACHED"
     processor.template_cache[(PROCESSING_TEMPLATE_TYPE, None)] = "TPL-DEFAULT"
+
     template_id = await processor.get_product_template_id(
         PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME
     )
@@ -370,7 +356,7 @@ async def test_get_product_template_raises_exception(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """`get_product_template_id` raises when the product declares no template of that type."""
     rows = test_settings.mpt_api_rows_per_page
@@ -389,9 +375,7 @@ async def test_get_product_template_raises_exception(
         ),
         json={"data": [], "$meta": {"pagination": {"total": 0}}},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with pytest.raises(OrderNotValidError, match="has no template type"):
         await processor.get_product_template_id(PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME)
@@ -403,11 +387,10 @@ async def test_fetch_product_template_builds_cache(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     product_templates: list[dict[str, Any]],
 ) -> None:
     """`fetch_product_templates` caches every template keyed by type and name."""
-
     rows = test_settings.mpt_api_rows_per_page
     httpx_mock.add_response(
         method="GET",
@@ -425,9 +408,8 @@ async def test_fetch_product_template_builds_cache(
             "$meta": {"pagination": {"total": len(product_templates)}},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     await processor.fetch_product_templates(PRODUCT_ID)
     assert processor.template_cache == {
         (PROCESSING_TEMPLATE_TYPE, PURCHASE_TEMPLATE_NAME): "TPL-0001",
@@ -449,8 +431,7 @@ async def test_fetch_product_templates_with_no_templates_leaves_cache_empty(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
-    product_templates: list[dict[str, Any]],
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """`fetch_product_templates` leaves the cache empty when no templates are returned."""
     rows = test_settings.mpt_api_rows_per_page
@@ -470,9 +451,7 @@ async def test_fetch_product_templates_with_no_templates_leaves_cache_empty(
             "$meta": {"pagination": {"total": 0}},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     await processor.fetch_product_templates(PRODUCT_ID)
     assert processor.template_cache == {}
@@ -485,7 +464,7 @@ async def test_set_processing_order_template_switches_template(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     product_templates: list[dict[str, Any]],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -508,9 +487,7 @@ async def test_set_processing_order_template_switches_template(
         },
     )
 
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     updated_order = copy.deepcopy(purchase_order)
     updated_order["template"]["id"] = "TPL-0001"
@@ -519,6 +496,7 @@ async def test_set_processing_order_template_switches_template(
         url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
         json=updated_order,
     )
+
     with caplog.at_level(logging.INFO):
         response = await processor.set_processing_order_template()
     assert response == updated_order
@@ -530,14 +508,13 @@ async def test_set_processing_order_template_switches_template(
 async def test_set_processing_order_template_keeps_matching_template(
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     order_factory: OrderFactory,
     product_templates: list[dict[str, Any]],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`set_processing_order_template` leaves the order untouched when it already matches."""
     rows = test_settings.mpt_api_rows_per_page
-
     order = order_factory(
         order_type="Purchase",
         status="Processing",
@@ -560,7 +537,8 @@ async def test_set_processing_order_template_keeps_matching_template(
         },
     )
 
-    processor = await order_processor_factory.get_order_type_processor(order_id=order["id"])
+    processor = await order_event_handler.get_processor(object_id=order["id"])
+
     with caplog.at_level(logging.INFO):
         response = await processor.set_processing_order_template()
     assert response == order
@@ -570,14 +548,14 @@ async def test_set_processing_order_template_keeps_matching_template(
     assert httpx_mock.get_requests(method="PUT") == []
 
 
-# -- validate_and_move_to_querying_if_needed / validate_order --
+# -- validate_and_move_to_querying_if_needed / validate --
 
 
 async def test_validate_returns_true_for_valid_order(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`validate_and_move_to_querying_if_needed` returns `True` and touches nothing when valid."""
@@ -587,10 +565,9 @@ async def test_validate_returns_true_for_valid_order(
         match_params={"select": "subscriptions.lines"},
         json=purchase_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
     order_before = copy.deepcopy(processor.order)
+
     result = await processor.validate_and_move_to_querying_if_needed()
     assert result is True
     assert processor.order == order_before  # nothing written back
@@ -614,7 +591,7 @@ async def test_validate_moves_invalid_order_to_querying(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
     external_id: str,
     expected_error: ValidationError,
@@ -663,9 +640,8 @@ async def test_validate_moves_invalid_order_to_querying(
         json=querying_order,
         match_json={"template": {"id": "TPL-0003"}},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     with caplog.at_level(logging.INFO):
         result = await processor.validate_and_move_to_querying_if_needed()
     assert result is False
@@ -674,13 +650,13 @@ async def test_validate_moves_invalid_order_to_querying(
     )
 
 
-async def test_validate_order_status_not_valid(
-    order_factory: Callable[..., dict[str, Any]],
-    order_processor_factory: OrderProcessorFactory,
+async def test_validate_status_not_valid(
+    order_factory: OrderFactory,
+    order_event_handler: OrderEventHandler,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
 ) -> None:
-    """`validate_order` raises `OrderNotValidError` when the order is not in Processing status."""
+    """`validate` raises `OrderNotValidError` when the order is not in Processing status."""
     order = order_factory(
         order_type="Purchase",
         status="Completed",
@@ -693,42 +669,39 @@ async def test_validate_order_status_not_valid(
         match_params={"select": "subscriptions.lines"},
         json=order,
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order["id"])
+    processor = await order_event_handler.get_processor(object_id=order["id"])
+
     with pytest.raises(OrderNotValidError, match=order["id"]):
-        await processor.validate_order()
+        await processor.validate()
 
 
-async def test_validate_order_passes_for_valid_processing_order(
+async def test_validate_passes_for_valid_processing_order(
     purchase_order: dict[str, Any],
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
 ) -> None:
-    """`validate_order` returns `None` and does not move a valid Processing order to querying."""
-
+    """`validate` returns `None` and does not move a valid Processing order to querying."""
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
         match_params={"select": "subscriptions.lines"},
         json=purchase_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
-    assert await processor.validate_order() is None
+    assert await processor.validate() is None
     assert httpx_mock.get_requests(method="PUT") == []
     assert httpx_mock.get_requests(method="POST") == []
 
 
 async def test_validate_order_raises_when_moved_to_querying(
     purchase_order: dict[str, Any],
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
 ) -> None:
-    """`validate_order` raises `OrderMovedToQuery` after an invalid order is moved to querying."""
-
+    """`validate` raises `OrderMovedToQuery` after an invalid order is moved to querying."""
     rows = test_settings.mpt_api_rows_per_page
     get_ordering_parameter(purchase_order, PARAM_ORGANIZATION_NAME)["value"] = None
     querying_order = copy.deepcopy(purchase_order)
@@ -767,11 +740,10 @@ async def test_validate_order_raises_when_moved_to_querying(
         json=querying_order,
         match_json={"template": {"id": "TPL-0003"}},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     with pytest.raises(OrderMovedToQuery, match=purchase_order["id"]):
-        await processor.validate_order()
+        await processor.validate()
 
 
 # -- apply_fulfillment_defaults --
@@ -779,7 +751,7 @@ async def test_validate_order_raises_when_moved_to_querying(
 
 async def test_apply_fulfillment_defaults_noop_when_nothing_to_update(
     purchase_order: dict[str, Any],
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
 ) -> None:
@@ -790,9 +762,8 @@ async def test_apply_fulfillment_defaults_noop_when_nothing_to_update(
         match_params={"select": "subscriptions.lines"},
         json=purchase_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     response = await processor.apply_fulfillment_defaults()
     assert response == purchase_order
     assert httpx_mock.get_requests(method="PUT") == []
@@ -801,7 +772,7 @@ async def test_apply_fulfillment_defaults_noop_when_nothing_to_update(
 @freeze_time("2026-08-11")
 async def test_apply_fulfillment_defaults_fills_missing_parameters(
     purchase_order: dict[str, Any],
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
 ) -> None:
@@ -836,15 +807,15 @@ async def test_apply_fulfillment_defaults_fills_missing_parameters(
     for parameter in expected_parameters["fulfillment"]:
         if parameter["externalId"] in expected_values:
             parameter["value"] = expected_values[parameter["externalId"]]
+
     httpx_mock.add_response(
         method="PUT",
         url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
-        match_json={"parameters": expected_parameters},
         json=updated_order,
+        match_json={"parameters": expected_parameters},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     response = await processor.apply_fulfillment_defaults()
     assert response == updated_order
     assert processor.order == updated_order
@@ -857,12 +828,11 @@ async def test_get_or_create_organization(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`get_or_create_organization` provisions a new OptScale org and links the agreement."""
-
     agreement_id = purchase_order["agreement"]["id"]
     httpx_mock.add_response(
         method="GET",
@@ -895,14 +865,13 @@ async def test_get_or_create_organization(
             "currency": "USD",
         },
     )
+
     httpx_mock.add_response(
         method="PUT",
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
         json={"id": agreement_id},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with caplog.at_level(logging.INFO):
         organization = await processor.get_or_create_organization(employee_id="employee-id")
@@ -928,12 +897,11 @@ async def test_get_or_create_organization_already_exists(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`get_or_create_organization` reuses an already-linked organization without provisioning."""
-
     agreement_id = purchase_order["agreement"]["id"]
     existing_organization = await OrganizationHandler(db_session).create(
         Organization(
@@ -963,9 +931,7 @@ async def test_get_or_create_organization_already_exists(
             },
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with caplog.at_level(logging.INFO):
         organization = await processor.get_or_create_organization("employee-id")
@@ -992,7 +958,7 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -1039,9 +1005,7 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
         json={"id": agreement_id},
         match_json={"externalIds": {"vendor": existing_organization.id}},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with caplog.at_level(logging.INFO):
         organization = await processor.get_or_create_organization(employee_id="employee-id")
@@ -1053,6 +1017,7 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
     # the stored row is reused, not replaced: its own fields are untouched
     assert existing_organization.name == "Pre-existing ORG"
     assert existing_organization.currency == "EUR"
+
     assert "Organization on OptScale created with id OPT-ORG-0002" in caplog.text
     assert "Organization already exists with id" not in caplog.text
 
@@ -1064,7 +1029,7 @@ async def test_create_employee_with_existing_user(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`create_employee` reuses the existing OptScale user and records `isNewUser`."""
@@ -1099,9 +1064,7 @@ async def test_create_employee_with_existing_user(
         url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
         json=updated_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with caplog.at_level(logging.INFO):
         employee_id, employee_email = await processor.create_employee()
@@ -1117,7 +1080,7 @@ async def test_create_employee_with_no_existing_user(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
 ) -> None:
@@ -1125,7 +1088,10 @@ async def test_create_employee_with_no_existing_user(
     order_id = purchase_order["id"]
     employee_id = "f0bd0c4a-7c55-45b7-8b58-27740e38789a"
     generated_password = "a-generated-password"
-    mocker.patch("app.fulfilment.processing.secrets.token_urlsafe", return_value=generated_password)
+    mocker.patch(
+        "app.events.orders.processing.secrets.token_urlsafe",
+        return_value=generated_password,
+    )
     updated_order = copy.deepcopy(purchase_order)
     for param in updated_order["parameters"]["fulfillment"]:
         if param["externalId"] == "isNewUser":
@@ -1164,7 +1130,7 @@ async def test_create_employee_with_no_existing_user(
         json=updated_order,
         match_json={"parameters": updated_order["parameters"]},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.INFO):
         created_employee_id, employee_email = await processor.create_employee()
@@ -1183,7 +1149,7 @@ async def test_create_order_subscription_skips_when_subscription_already_exists(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
 ) -> None:
     """`create_order_subscription` does nothing when the line already has a subscription."""
@@ -1202,19 +1168,17 @@ async def test_create_order_subscription_skips_when_subscription_already_exists(
             linked_organization_id="OPT-ORG-0001",
         )
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
     await processor.create_order_subscription(organization)
     assert organization.id is not None
     assert httpx_mock.get_requests(method="POST") == []
 
 
 async def test_create_order_subscription_creates_missing_subscription(
-    order_factory: Callable[..., dict[str, Any]],
+    order_factory: OrderFactory,
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -1254,10 +1218,11 @@ async def test_create_order_subscription_creates_missing_subscription(
         },
     )
 
-    processor = await order_processor_factory.get_order_type_processor(order_id=order["id"])
+    processor = await order_event_handler.get_processor(object_id=order["id"])
 
     with caplog.at_level(logging.INFO):
         await processor.create_order_subscription(organization)
+
     assert f"{order['id']}: subscription {line['id']} (SUB-9999-0001) created" in caplog.text
 
 
@@ -1271,7 +1236,7 @@ async def test_create_order_subscription_creates_missing_subscription(
 async def test_get_complete_template(
     purchase_order: dict[str, Any],
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     is_new: bool,
     expected_template_id: str,
     test_settings: Settings,
@@ -1307,9 +1272,8 @@ async def test_get_complete_template(
         ),
         json={"data": templates, "$meta": {"pagination": {"total": len(templates)}}},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     template_id = await processor.get_complete_template(is_new)
     assert template_id == expected_template_id
     templates_requests = httpx_mock.get_requests(
@@ -1329,7 +1293,7 @@ async def test_send_reset_password_new_user_sends_reset(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`send_reset_password` triggers a password reset for a newly created user."""
@@ -1345,9 +1309,8 @@ async def test_send_reset_password_new_user_sends_reset(
         json={"email": "pl@example.com"},
         match_json={"email": "pl@example.com"},
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     with caplog.at_level(logging.INFO):
         await processor.send_reset_password("pl@example.com", is_new=True)
     assert "Employee pl@example.com password reset sent" in caplog.text
@@ -1357,7 +1320,7 @@ async def test_send_reset_password_swallows_reset_failure(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`send_reset_password` logs and swallows a failure raised while sending the reset."""
@@ -1367,14 +1330,13 @@ async def test_send_reset_password_swallows_reset_failure(
         match_params={"select": "subscriptions.lines"},
         json=purchase_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
     httpx_mock.add_exception(
         httpx.ConnectError("Optscale down"),
         method="POST",
         url=f"{test_settings.optscale_rest_api_base_url}/restore_password",
     )
+
     with caplog.at_level(logging.ERROR):
         await processor.send_reset_password("pl@example.com", is_new=True)
     assert "Failed to reset password" in caplog.text
@@ -1384,7 +1346,7 @@ async def test_send_reset_password_existing_user_is_noop(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`send_reset_password` does nothing for an existing user."""
@@ -1394,9 +1356,8 @@ async def test_send_reset_password_existing_user_is_noop(
         match_params={"select": "subscriptions.lines"},
         json=purchase_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(
-        order_id=purchase_order["id"]
-    )
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
     with caplog.at_level(logging.INFO):
         await processor.send_reset_password("pl@example.com", is_new=False)
     assert httpx_mock.get_requests(method="POST") == []
@@ -1410,7 +1371,7 @@ async def test_purchase_order_process_completes_order(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -1499,7 +1460,7 @@ async def test_purchase_order_process_completes_order(
             "parameters": {"fulfillment": [{"externalId": "dueDate", "value": None}]},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.INFO):
         result = await processor.process()
@@ -1524,7 +1485,7 @@ async def test_purchase_order_process_new_user_branch(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
     caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
@@ -1534,7 +1495,10 @@ async def test_purchase_order_process_new_user_branch(
     agreement_id = purchase_order["agreement"]["id"]
     rows = test_settings.mpt_api_rows_per_page
     generated_password = "a-generated-password"
-    mocker.patch("app.fulfilment.processing.secrets.token_urlsafe", return_value=generated_password)
+    mocker.patch(
+        "app.events.orders.processing.secrets.token_urlsafe",
+        return_value=generated_password,
+    )
     for param in purchase_order["parameters"]["fulfillment"]:
         if param["externalId"] == "isNewUser":
             param["value"] = ["Yes"]
@@ -1638,7 +1602,7 @@ async def test_purchase_order_process_new_user_branch(
         json={"email": "pl@example.com"},
         match_json={"email": "pl@example.com"},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.INFO):
         result = await processor.process()
@@ -1662,7 +1626,7 @@ async def test_purchase_order_process_skips_when_order_moved_to_query(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` returns a SKIP result and halts when validation moves the order to querying."""
@@ -1708,14 +1672,14 @@ async def test_purchase_order_process_skips_when_order_moved_to_query(
         json=querying_order,
         match_json={"template": {"id": "TPL-0003"}},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.INFO):
         result = await processor.process()
 
     assert result.status is ProcessingStatus.SKIP
     assert result.severity == "Info"
-    assert result.message == "Order parameters are missing or invalid. Order Skipped."
+    assert result.message == f"Order {order_id} parameters are missing or invalid. Order Skipped."
     # processing halts right after validation: no employee is created, no order completed
     assert (
         httpx_mock.get_request(
@@ -1738,7 +1702,7 @@ async def test_purchase_order_process_reschedules_before_due_date(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` returns RESCHEDULE when an error occurs and the due date has not been reached."""
@@ -1761,7 +1725,7 @@ async def test_purchase_order_process_reschedules_before_due_date(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         json={"errors": {"templates": "boom"}},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
@@ -1772,13 +1736,13 @@ async def test_purchase_order_process_reschedules_before_due_date(
     assert f"An error occurred while processing the order {order_id}" in result.message
     assert "HTTPStatusError" in result.message
     assert httpx_mock.get_requests(method="POST") == []
-    assert f"{order_id}: Purchase Order processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
 
 
 async def test_change_order_process_fail(
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
     change_order: dict[str, Any],
 ) -> None:
@@ -1797,7 +1761,7 @@ async def test_change_order_process_fail(
         match_json={"statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type="Change")},
     )
     with caplog.at_level(logging.INFO):
-        processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+        processor = await order_event_handler.get_processor(object_id=order_id)
         result = await processor.process()
 
     assert result.status is ProcessingStatus.COMPLETE
@@ -1812,7 +1776,7 @@ async def test_change_order_process_handles_a_malformed_order(
     change_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """An order missing its `type` key is rescheduled with a traceback, not propagated."""
@@ -1824,7 +1788,7 @@ async def test_change_order_process_handles_a_malformed_order(
         match_params={"select": "subscriptions.lines"},
         json=change_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
     processor.order = {key: value for key, value in change_order.items() if key != "type"}
 
     with caplog.at_level(logging.ERROR):
@@ -1834,7 +1798,7 @@ async def test_change_order_process_handles_a_malformed_order(
     assert result.severity == "Warning"
     assert result.message is not None
     assert f"An error occurred while processing the order {order_id}" in result.message
-    assert f"{order_id}: Change Order processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
     assert "KeyError" in caplog.text
     # the order is never failed: the payload could not even be built
     assert httpx_mock.get_requests(method="POST") == []
@@ -1844,7 +1808,7 @@ async def test_purchase_order_process_cancels_when_no_due_date(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` fails the order and returns CANCEL when an error occurs and no due date is set."""
@@ -1871,7 +1835,7 @@ async def test_purchase_order_process_cancels_when_no_due_date(
         json=purchase_order,
         match_json={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
@@ -1879,7 +1843,7 @@ async def test_purchase_order_process_cancels_when_no_due_date(
     assert result.status is ProcessingStatus.CANCEL
     assert result.severity == "Error"
     assert result.message == ERR_DUE_DATE_NOT_SET.message
-    assert f"{order_id}: Purchase Order processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
 
 
 @freeze_time("2025-06-01")
@@ -1887,7 +1851,7 @@ async def test_purchase_order_process_fails_when_due_date_reached(
     purchase_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` fails the order and returns COMPLETE when an error occurs past the due date."""
@@ -1915,22 +1879,22 @@ async def test_purchase_order_process_fails_when_due_date_reached(
         json=purchase_order,
         match_json={"statusNotes": ERR_DUE_DATE_IS_REACHED.to_dict(due_date="2025-01-01")},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
 
     assert result.status is ProcessingStatus.COMPLETE
     assert result.severity == "Error"
-    assert f"{order_id}: Purchase Order processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
 
 
-# TerminateOrderProcessor
+# # TerminateOrderProcessor
 async def test_terminated_order_process_completes_order(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
 ) -> None:
     """`process` runs every step in order and completes an existing-user purchase order."""
@@ -1944,7 +1908,7 @@ async def test_terminated_order_process_completes_order(
         match_params={"select": "subscriptions.lines"},
         json=terminate_order,
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     organization = await OrganizationHandler(db_session).create(
         Organization(
@@ -2077,9 +2041,10 @@ async def test_terminate_cancels_when_order_has_no_due_date_parameter(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
-    """The terminate flow cancels when the order declares no `dueDate` parameter."""
+    pass
+    """The terminate flow cancels when the order declares no 'dueDate` parameter."""
     order_id = terminate_order["id"]
     terminate_order["parameters"]["fulfillment"] = [
         param
@@ -2099,7 +2064,7 @@ async def test_terminate_cancels_when_order_has_no_due_date_parameter(
         match_json={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
     )
 
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
     result = await processor.process()
     assert result.status is ProcessingStatus.CANCEL
     assert result.severity == "Error"
@@ -2118,7 +2083,7 @@ async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
 ) -> None:
     """`process` completes without suspending when the OptScale organization is already disabled."""
@@ -2193,7 +2158,7 @@ async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
             "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
         },
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     result = await processor.process()
 
@@ -2211,7 +2176,7 @@ async def test_terminated_order_cancel_when_organization_not_found(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
 ) -> None:
     """The terminate flow cancels when the agreement points at an unknown organization."""
     order_id = terminate_order["id"]
@@ -2230,7 +2195,7 @@ async def test_terminated_order_cancel_when_organization_not_found(
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
         json={"externalIds": {"client": "", "vendor": unknown_organization_id}},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     result = await processor.process()
 
@@ -2253,7 +2218,7 @@ async def test_terminated_order_cancel_when_organization_not_linked(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
 ) -> None:
     """The terminate flow cancels when the organization has no FinOps for Cloud link."""
@@ -2281,7 +2246,7 @@ async def test_terminated_order_cancel_when_organization_not_linked(
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
         json={"externalIds": {"client": "", "vendor": organization.id}},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     result = await processor.process()
 
@@ -2306,7 +2271,7 @@ async def test_terminated_order_reschedule_before_due_date_is_reached(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` returns RESCHEDULE when an error occurs and the due date has not been reached."""
@@ -2326,7 +2291,7 @@ async def test_terminated_order_reschedule_before_due_date_is_reached(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         json={"errors": {"agreement": "big error"}},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
@@ -2339,7 +2304,7 @@ async def test_terminated_order_reschedule_before_due_date_is_reached(
     # the order is neither failed nor completed and no organization is suspended
     assert httpx_mock.get_requests(method="POST") == []
     assert httpx_mock.get_requests(method="PATCH") == []
-    assert f"{order_id}: Terminate processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
 
 
 @freeze_time("2026-08-06")
@@ -2347,7 +2312,7 @@ async def test_terminated_order_fails_when_before_due_date_is_reached(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` fails the order and returns COMPLETE when an error occurs past the due date."""
@@ -2374,7 +2339,7 @@ async def test_terminated_order_fails_when_before_due_date_is_reached(
         json=terminate_order,
         match_json={"statusNotes": ERR_DUE_DATE_IS_REACHED.to_dict(due_date="2026-07-12")},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
@@ -2391,7 +2356,7 @@ async def test_terminated_order_fails_when_before_due_date_is_reached(
         is None
     )
     assert httpx_mock.get_requests(method="PATCH") == []
-    assert f"{order_id}: Terminate processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text
 
 
 @freeze_time("2026-08-06")
@@ -2399,7 +2364,7 @@ async def test_terminated_order_cancel_when_no_due_date_is_set(
     terminate_order: dict[str, Any],
     test_settings: Settings,
     httpx_mock: HTTPXMock,
-    order_processor_factory: OrderProcessorFactory,
+    order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """`process` fails the order and returns CANCEL when an error occurs and no due date is set."""
@@ -2425,7 +2390,7 @@ async def test_terminated_order_cancel_when_no_due_date_is_set(
         json=terminate_order,
         match_json={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
     )
-    processor = await order_processor_factory.get_order_type_processor(order_id=order_id)
+    processor = await order_event_handler.get_processor(object_id=order_id)
 
     with caplog.at_level(logging.ERROR):
         result = await processor.process()
@@ -2449,4 +2414,4 @@ async def test_terminated_order_cancel_when_no_due_date_is_set(
         is None
     )
     assert httpx_mock.get_requests(method="PATCH") == []
-    assert f"{order_id}: Terminate processing failed." in caplog.text
+    assert f"{order_id}: order processing failed." in caplog.text

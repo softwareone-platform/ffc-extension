@@ -7,7 +7,7 @@ from mrok.agent import ziticorn
 
 from app.conf import Settings
 from app.logging import get_logging_config
-from app.utils import get_instance_external_id, get_meta
+from app.utils import get_affiliate_products, get_instance_external_id, get_meta
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def bootstrap(
 
     data = {
         "externalId": external_id,
-        "meta": get_meta(),
+        "meta": get_meta(products=get_affiliate_products(settings)),
     }
     for evtinfo in data["meta"]["events"]:
         msg = (

@@ -322,6 +322,9 @@ class MPTClient:
     async def fail_order(self, order_id: str, payload: dict | None = None):
         return await self.run_object_action("commerce/orders", order_id, "fail", payload=payload)
 
+    async def get_subscription(self, subscription_id: str) -> dict[str, Any]:
+        return await self.get("commerce/subscriptions", subscription_id)
+
     async def create_subscription(self, order_id, subscription):
         return await self.create(
             f"/commerce/orders/{order_id}/subscriptions",
