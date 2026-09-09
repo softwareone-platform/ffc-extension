@@ -15,7 +15,7 @@ events:
     path: "/events/commerce/subscriptions"
     task: true
   - event: platform.commerce.subscription.created
-    condition: "in(product.id,{{ products|join(',') }})"
+    condition: "and(in(status,(Active,Terminated)),in(product.id,{{ products|join(',') }}))"
     path: "/events/commerce/subscriptions"
     task: true
 {% endif %}

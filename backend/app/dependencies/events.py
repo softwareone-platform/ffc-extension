@@ -20,7 +20,7 @@ from app.events.subscriptions.processing import (
 
 def get_order_event_handler(
     api_modifier_client: APIModifierClient,
-    client: InstallationClient,
+    installation_client: InstallationClient,
     ext_client: ExtensionClient,
     optscale_auth_client: OptscaleAuthClient,
     optscale_client: OptscaleClient,
@@ -30,7 +30,7 @@ def get_order_event_handler(
 ) -> _OrderEventHandler:
     return _OrderEventHandler(
         api_modifier_client=api_modifier_client,
-        client=client,
+        installation_client=installation_client,
         ext_client=ext_client,
         optscale_auth_client=optscale_auth_client,
         optscale_client=optscale_client,
@@ -41,13 +41,13 @@ def get_order_event_handler(
 
 
 def get_subscription_event_handler(
-    client: InstallationClient,
+    installation_client: InstallationClient,
     ext_client: ExtensionClient,
     entitlement_repo: EntitlementRepository,
     auth_context: CurrentAuthContext,
 ) -> _SubscriptionEventHandler:
     return _SubscriptionEventHandler(
-        client=client,
+        installation_client=installation_client,
         ext_client=ext_client,
         entitlement_repo=entitlement_repo,
         account=auth_context.account,
