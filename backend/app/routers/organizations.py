@@ -208,19 +208,7 @@ async def get_datasources_by_organization_id(
 
     datasources = response.json()
     return create_page(
-        [
-            DatasourceRead(
-                id=datasource["id"],
-                name=datasource["name"],
-                type=datasource["type"],
-                parent=datasource.get("parent"),
-                resources_charged_this_month=datasource["resources"],
-                expenses_so_far_this_month=datasource["cost"],
-                expenses_forecast_this_month=datasource["forecast"],
-                datasource_id=datasource["account_id"],
-            )
-            for datasource in datasources["items"]
-        ],
+        [DatasourceRead(**datasource) for datasource in datasources["items"]],
         params=params,
         total=datasources["total"],
     )

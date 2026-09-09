@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Annotated
 
 import pycountry
-from pydantic import Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from app.enums import DatasourceType, OrganizationStatus
 from app.schemas.core import (
@@ -89,18 +89,19 @@ class OrganizationReference(IdSchema):
 
 
 class DatasourceBase(BaseSchema):
+    model_config = ConfigDict(populate_by_name=True)
     id: uuid.UUID
     name: str
     type: DatasourceType
+    datasource_id: str | None = Field(default=None, validation_alias="account_id")
 
 
 class DatasourceRead(DatasourceBase):
     parent: DatasourceBase | None = None
     parent_id: uuid.UUID | None = None
-    resources_charged_this_month: int
-    expenses_so_far_this_month: float
-    expenses_forecast_this_month: float
-    datasource_id: str
+    resources_charged_this_month: int = Field(validation_alias="resources")
+    expenses_so_far_this_month: float = Field(validation_alias="cost")
+    expenses_forecast_this_month: float = Field(validation_alias="forecast")
 
 
 class AdditionalAdminRequestBase(BaseSchema):
