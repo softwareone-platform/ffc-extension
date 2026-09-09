@@ -121,18 +121,18 @@ class SubscriptionProcessor(EventProcessor):
 class SubscriptionEventHandler(EventHandler):
     def __init__(
         self,
-        client: MPTClient,
+        installation_client: MPTClient,
         ext_client: MPTClient,
         entitlement_repo: EntitlementRepository,
         account: Account,
     ):
-        self.client = client
+        self.installation_client = installation_client
         self.ext_client = ext_client
         self.entitlement_repo = entitlement_repo
         self.account = account
 
     async def get_processor(self, object_id: str) -> SubscriptionProcessor:
-        subscription = await self.client.get_subscription(object_id)
+        subscription = await self.installation_client.get_subscription(object_id)
         if not subscription:
             raise SubscriptionNotFoundError(f"No subscription found for {object_id}.")
         return SubscriptionProcessor(
