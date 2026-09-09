@@ -2330,7 +2330,7 @@ def order_event_handler(
 
     return OrderEventHandler(
         api_modifier_client=APIModifierClient(test_settings),
-        client=mpt_client,
+        installation_client=mpt_client,
         ext_client=mpt_client,
         optscale_auth_client=OptscaleAuthClient(test_settings),
         optscale_client=OptscaleClient(test_settings),
@@ -2420,7 +2420,7 @@ def subscription_event_handler(
 ) -> SubscriptionEventHandler:
     """Return a `SubscriptionEventHandler` bound to the test session and an affiliate account."""
     return SubscriptionEventHandler(
-        client=mpt_client,
+        installation_client=mpt_client,
         ext_client=mpt_client,
         entitlement_repo=EntitlementHandler(db_session),
         account=subscription_account,

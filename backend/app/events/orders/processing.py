@@ -69,7 +69,7 @@ class OrderProcessor(EventProcessor):
     def __init__(
         self,
         api_modifier_client: APIModifierClient,
-        client: InstallationClient,
+        installation_client: InstallationClient,
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
@@ -79,7 +79,7 @@ class OrderProcessor(EventProcessor):
         order: dict[str, Any],
     ):
         self.api_modifier_client = api_modifier_client
-        self.client = client
+        self.installation_client = installation_client
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
@@ -133,7 +133,9 @@ class OrderProcessor(EventProcessor):
         return template_id
 
     async def fetch_product_templates(self, product_id: str) -> None:
-        async for template in self.ext_client.get_templates_by_product_id(product_id=product_id):
+        async for template in self.installation_client.get_templates_by_product_id(
+            product_id=product_id
+        ):
             template_id = template["id"]
             template_type = template["type"]
             template_name = template["name"] if not template["default"] else None
@@ -150,11 +152,11 @@ class OrderProcessor(EventProcessor):
         order_id = self.order["id"]
         if not validation_succeeded:
             template_id = await self.get_product_template_id(QUERYING_TEMPLATE_TYPE, None)
-            await self.ext_client.update_order(
+            await self.installation_client.update_order(
                 order_id=order_id,
                 parameters=order_with_validation_errors["parameters"],
             )
-            querying_order = await self.ext_client.set_status_to_querying(
+            querying_order = await self.installation_client.set_status_to_querying(
                 order_id=order_id, payload={"template": {"id": template_id}}
             )
             querying_order["parameters"] = order_with_validation_errors["parameters"]
@@ -182,7 +184,7 @@ class OrderProcessor(EventProcessor):
                         f"Order {self.order['id']} has not fulfillment parameter {param_name}"
                     )
                 param["value"] = param_value
-            self.order = await self.ext_client.update_order(
+            self.order = await self.installation_client.update_order(
                 order_id=order["id"], parameters=order["parameters"]
             )
             logger.info("%s: updating fulfillment parameters", self.order["id"])
@@ -211,7 +213,9 @@ class OrderProcessor(EventProcessor):
     ) -> Organization:
         """Get or create the organization and link it back to the marketplace agreement."""
         agreement_id = self.order["agreement"]["id"]
-        agreement = await self.ext_client.get_agreement(agreement_id, select=["authorization"])
+        agreement = await self.installation_client.get_agreement(
+            agreement_id, select=["authorization"]
+        )
 
         org_name = get_ordering_parameter(self.order, PARAM_ORGANIZATION_NAME)["value"]
         org_currency = get_ordering_parameter(self.order, PARAM_CURRENCY)["value"]
@@ -238,7 +242,7 @@ class OrderProcessor(EventProcessor):
                     "linked_organization_id": optscale_organization["id"],
                 },
             )
-            await self.ext_client.update_agreement(
+            await self.installation_client.update_agreement(
                 agreement_id,
                 externalIds={"vendor": organization.id},
             )
@@ -277,7 +281,7 @@ class OrderProcessor(EventProcessor):
             is_new = True
             logger.info("Employee created with id %s for order %s", employee_id, self.order["id"])
         updated_order = set_is_new_user(self.order, is_new=is_new)
-        self.order = await self.ext_client.update_order(
+        self.order = await self.installation_client.update_order(
             self.order["id"],
             parameters=updated_order["parameters"],
         )
@@ -303,7 +307,7 @@ class OrderProcessor(EventProcessor):
                         },
                     ],
                 }
-                subscription = await self.ext_client.create_subscription(
+                subscription = await self.installation_client.create_subscription(
                     order_id=self.order["id"],
                     subscription=subscription,
                 )
@@ -319,7 +323,7 @@ class OrderProcessor(EventProcessor):
         due_date: date | None = get_due_date(self.order)
         if due_date is None:
             # No due date to retry against: fail the order and cancel.
-            await self.ext_client.fail_order(
+            await self.installation_client.fail_order(
                 order_id=self.order["id"],
                 payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
             )
@@ -339,7 +343,7 @@ class OrderProcessor(EventProcessor):
             )
         # Due date reached: fail the order and let the task complete.
         status_notes = ERR_DUE_DATE_IS_REACHED.to_dict(due_date=due_date.strftime("%Y-%m-%d"))
-        await self.ext_client.fail_order(
+        await self.installation_client.fail_order(
             order_id=self.order["id"],
             payload={"statusNotes": status_notes},
         )
@@ -385,7 +389,7 @@ class PurchaseOrderProcessor(OrderProcessor):
         current_template_id = self.order.get("template", {}).get("id")
         if template_id != current_template_id:
             order = self.set_template(order=self.order, template_id=template_id)
-            order = await self.ext_client.update_order(
+            order = await self.installation_client.update_order(
                 order_id=order["id"],
                 template={"id": template_id},
             )
@@ -418,7 +422,7 @@ class PurchaseOrderProcessor(OrderProcessor):
         is_new_user_param = get_fulfillment_parameter(self.order, PARAM_IS_NEW_USER)
         is_new = is_new_user_param.get("value") == ["Yes"]
         template_id = await self.get_complete_template(is_new)
-        await self.ext_client.complete_order(
+        await self.installation_client.complete_order(
             order_id=self.order["id"],
             payload={
                 "template": {"id": template_id},
@@ -436,7 +440,7 @@ class PurchaseOrderProcessor(OrderProcessor):
 
 class ChangeOrderProcessor(OrderProcessor):
     async def handle(self) -> ProcessingResult:
-        await self.ext_client.fail_order(
+        await self.installation_client.fail_order(
             order_id=self.order["id"],
             payload={
                 "statusNotes": ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=self.order["type"])
@@ -457,7 +461,7 @@ class TerminateOrderProcessor(OrderProcessor):
         await self._store_order_parameters_updates(get_due_date_update(self.order, self.settings))
 
         agreement_id = self.order["agreement"]["id"]
-        agreement = await self.ext_client.get_agreement(agreement_id)
+        agreement = await self.installation_client.get_agreement(agreement_id)
         organization_id = agreement.get("externalIds", {}).get("vendor")
         organization = await self.organization_repo.first(
             where_clauses=[
@@ -499,7 +503,7 @@ class TerminateOrderProcessor(OrderProcessor):
             severity = "Info"
             message = f"The Organization {organization_id} was successfully suspended."
 
-        await self.ext_client.complete_order(
+        await self.installation_client.complete_order(
             order_id=self.order["id"],
             payload={
                 "template": {"id": template_id},
@@ -524,7 +528,7 @@ class OrderEventHandler(EventHandler):
     def __init__(
         self,
         api_modifier_client: APIModifierClient,
-        client: InstallationClient,
+        installation_client: InstallationClient,
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
@@ -533,7 +537,7 @@ class OrderEventHandler(EventHandler):
         settings: AppSettings,
     ):
         self.api_modifier_client = api_modifier_client
-        self.client = client
+        self.installation_client = installation_client
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
@@ -569,7 +573,7 @@ class OrderEventHandler(EventHandler):
         return True
 
     async def get_processor(self, object_id: str) -> OrderProcessor:
-        order = await self.client.get_order(object_id, select=["subscriptions.lines"])
+        order = await self.installation_client.get_order(object_id, select=["subscriptions.lines"])
         order_type = order["type"]
         logger.info("ORDER TYPE: %s", order_type)
         processor_cls = PROCESSOR_BY_TYPE.get(order_type)
@@ -578,7 +582,7 @@ class OrderEventHandler(EventHandler):
             raise UnsupportedOrderTypeError(order_type)
         return processor_cls(
             api_modifier_client=self.api_modifier_client,
-            client=self.client,
+            installation_client=self.installation_client,
             ext_client=self.ext_client,
             optscale_auth_client=self.optscale_auth_client,
             optscale_client=self.optscale_client,
