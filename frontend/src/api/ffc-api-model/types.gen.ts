@@ -514,7 +514,11 @@ export type DatasourceBase = {
     /**
      * DatasourceType
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    /**
+     * Datasource Id
+     */
+    datasource_id?: string | null;
 };
 
 /**
@@ -611,7 +615,7 @@ export type DatasourceExpenseRead = {
     /**
      * DatasourceType
      */
-    linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+    linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
     /**
      * OrganizationReference
      */
@@ -666,7 +670,7 @@ export type DatasourceInfo = {
     /**
      * DatasourceType
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
 };
 
 /**
@@ -684,7 +688,11 @@ export type DatasourceRead = {
     /**
      * DatasourceType
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    /**
+     * Datasource Id
+     */
+    datasource_id?: string | null;
     parent?: {
         /**
          * Id
@@ -697,7 +705,11 @@ export type DatasourceRead = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
     } | null;
     /**
      * Parent Id
@@ -715,16 +727,12 @@ export type DatasourceRead = {
      * Expenses Forecast This Month
      */
     expenses_forecast_this_month: number;
-    /**
-     * Datasource Id
-     */
-    datasource_id: string;
 };
 
 /**
  * DatasourceType
  */
-export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
 
 /**
  * Details
@@ -858,7 +866,7 @@ export type EntitlementRead = {
      * Linked Datasource Name
      */
     linked_datasource_name?: string | null;
-    linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+    linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
     /**
      * AccountReference
      */
@@ -1031,7 +1039,7 @@ export type EntitlementRedeemInput = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
     };
 };
 
@@ -1606,7 +1614,7 @@ export type LimitOffsetPageDatasourceExpenseRead = {
         /**
          * DatasourceType
          */
-        linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+        linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
         /**
          * OrganizationReference
          */
@@ -1678,7 +1686,11 @@ export type LimitOffsetPageDatasourceRead = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
         parent?: {
             /**
              * Id
@@ -1691,7 +1703,11 @@ export type LimitOffsetPageDatasourceRead = {
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            /**
+             * Datasource Id
+             */
+            datasource_id?: string | null;
         } | null;
         /**
          * Parent Id
@@ -1709,10 +1725,6 @@ export type LimitOffsetPageDatasourceRead = {
          * Expenses Forecast This Month
          */
         expenses_forecast_this_month: number;
-        /**
-         * Datasource Id
-         */
-        datasource_id: string;
     }>;
     /**
      * Total
@@ -1815,7 +1827,7 @@ export type LimitOffsetPageEntitlementRead = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -3104,7 +3116,7 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
             /**
              * DatasourceType
              */
-            linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+            linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
             /**
              * OrganizationReference
              */
@@ -3206,7 +3218,7 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
              * Linked Datasource Name
              */
             linked_datasource_name?: string | null;
-            linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+            linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
             /**
              * AccountReference
              */
@@ -3474,7 +3486,7 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -3768,7 +3780,7 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -4002,7 +4014,7 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -4179,7 +4191,7 @@ export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostData = {
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
         };
     };
     path: {
@@ -4266,7 +4278,7 @@ export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -5360,7 +5372,11 @@ export type GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDataso
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            /**
+             * Datasource Id
+             */
+            datasource_id?: string | null;
             parent?: {
                 /**
                  * Id
@@ -5373,7 +5389,11 @@ export type GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDataso
                 /**
                  * DatasourceType
                  */
-                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+                /**
+                 * Datasource Id
+                 */
+                datasource_id?: string | null;
             } | null;
             /**
              * Parent Id
@@ -5391,10 +5411,6 @@ export type GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDataso
              * Expenses Forecast This Month
              */
             expenses_forecast_this_month: number;
-            /**
-             * Datasource Id
-             */
-            datasource_id: string;
         }>;
         /**
          * Total
@@ -5486,7 +5502,11 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
         parent?: {
             /**
              * Id
@@ -5499,7 +5519,11 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            /**
+             * Datasource Id
+             */
+            datasource_id?: string | null;
         } | null;
         /**
          * Parent Id
@@ -5517,10 +5541,6 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
          * Expenses Forecast This Month
          */
         expenses_forecast_this_month: number;
-        /**
-         * Datasource Id
-         */
-        datasource_id: string;
     };
 };
 
@@ -7211,3 +7231,138 @@ export type ProcessOrderEventsCommerceOrdersPostResponses = {
 };
 
 export type ProcessOrderEventsCommerceOrdersPostResponse = ProcessOrderEventsCommerceOrdersPostResponses[keyof ProcessOrderEventsCommerceOrdersPostResponses];
+
+export type ProcessSubscriptionEventsCommerceSubscriptionsPostData = {
+    /**
+     * Event
+     */
+    body: {
+        /**
+         * Id
+         *
+         * Unique message ID, can be used to correlate with platform logs.
+         */
+        id: string;
+        /**
+         * Object
+         */
+        object: {
+            /**
+             * Id
+             *
+             * Unique object ID, maps to the platform object ID property.
+             */
+            id: string;
+            /**
+             * Name
+             *
+             * Object name, maps to the platform object name property.
+             */
+            name: string;
+            /**
+             * Objecttype
+             *
+             * The object's type, maps to the “routing.entity” property of the EventMessage.
+             */
+            objectType: string;
+        };
+        /**
+         * Details
+         */
+        details: {
+            /**
+             * Eventtype
+             *
+             * The type of the event. Maps to the “routing.event” property of the EventMessage.
+             */
+            eventType: string;
+            /**
+             * Enqueuetime
+             *
+             * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
+             */
+            enqueueTime: string;
+            /**
+             * Deliverytime
+             *
+             * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
+             */
+            deliveryTime: string;
+        };
+        /**
+         * Information about the event's related task. Maps to the task created by Task Orchestrator.
+         */
+        task?: {
+            /**
+             * Id
+             *
+             * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
+             */
+            id: string;
+        } | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/events/commerce/subscriptions';
+};
+
+export type ProcessSubscriptionEventsCommerceSubscriptionsPostErrors = {
+    /**
+     * HTTPValidationError
+     *
+     * Validation Error
+     */
+    422: {
+        /**
+         * Detail
+         */
+        detail?: Array<{
+            /**
+             * Location
+             */
+            loc: Array<string | number>;
+            /**
+             * Message
+             */
+            msg: string;
+            /**
+             * Error Type
+             */
+            type: string;
+            /**
+             * Input
+             */
+            input?: unknown;
+            /**
+             * Context
+             */
+            ctx?: {
+                [key: string]: unknown;
+            };
+        }>;
+    };
+};
+
+export type ProcessSubscriptionEventsCommerceSubscriptionsPostError = ProcessSubscriptionEventsCommerceSubscriptionsPostErrors[keyof ProcessSubscriptionEventsCommerceSubscriptionsPostErrors];
+
+export type ProcessSubscriptionEventsCommerceSubscriptionsPostResponses = {
+    /**
+     * EventResponse
+     *
+     * Successful Response
+     */
+    200: {
+        /**
+         * Response
+         */
+        response: 'OK' | 'Delay' | 'Cancel';
+        /**
+         * Delay
+         *
+         * The minimum delay the Extensions Service must wait before sending the event again.
+         */
+        delay?: number | null;
+    };
+};
+
+export type ProcessSubscriptionEventsCommerceSubscriptionsPostResponse = ProcessSubscriptionEventsCommerceSubscriptionsPostResponses[keyof ProcessSubscriptionEventsCommerceSubscriptionsPostResponses];
