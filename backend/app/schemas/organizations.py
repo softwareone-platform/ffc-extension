@@ -89,7 +89,7 @@ class OrganizationReference(IdSchema):
 
 
 class DatasourceBase(BaseSchema):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
     id: uuid.UUID
     name: str
     type: DatasourceType
