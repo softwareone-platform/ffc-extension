@@ -42,7 +42,7 @@ export function EntityEvents<TEntity extends EntityEventsSchema>({
     <>
       <MediumText size={4}>{tSharedDetails("events")}</MediumText>
       <InPageHighlight style="block">
-        {events?.map((event, i) => (
+        {events?.map((event) => (
           <InPageHighlight.Item key={event.name} title={event.name}>
             {event.at ? (
               <EntityReference

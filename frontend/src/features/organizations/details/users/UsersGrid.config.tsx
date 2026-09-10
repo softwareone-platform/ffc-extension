@@ -31,6 +31,7 @@ type Columns = Array<
 
 export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
+  const tUserTypes = useFixedT("shared:grid:userTypes");
   const getActions = useActionOptions();
   const { role } = useUserRole();
 
@@ -57,7 +58,7 @@ export function useColumns(): Columns {
         cell: (item: Employee) => (
           <GridCellSimple>
             <StatusChip
-              status={item.is_admin ? "Admin" : "User"}
+              status={item.is_admin ? tUserTypes("admin") : tUserTypes("user")}
               color={item.is_admin ? "success" : "gray"}
             />
           </GridCellSimple>
@@ -75,10 +76,7 @@ export function useColumns(): Columns {
         name: "last_login",
         title: tColumns("lastLogin"),
         fields: ["last_login"],
-        cell: (item: Employee) => (
-          // <GridCellSimple>{item.last_login}</GridCellSimple>
-          <GridCellDate value={item.last_login} />
-        ),
+        cell: (item: Employee) => <GridCellDate value={item.last_login} />,
         initialWidth: 150,
       },
       {
@@ -104,18 +102,27 @@ export function useColumns(): Columns {
 
 export function useFields() {
   const tFields = useFixedT("shared:grid:fields");
+  const tUserTypes = useFixedT("shared:grid:userTypes");
 
   return useMemo(
     (): GridFieldDefinition[] => [
       {
-        title: tFields("id"),
+        title: tFields("userId"),
         name: "id",
       },
       { title: tFields("email"), name: "email" },
-      // { title: tFields("displayName"), name: "display_name" },
-      { title: tFields("displayName"), name: "name" }, // temporary until we fix filtering in the backend
-      { title: tFields("lastLogin"), name: "last_login" },
-      { title: tFields("createdAt"), name: "created_at" },
+      { title: tFields("userName"), name: "display_name" },
+      {
+        name: "is_admin",
+        title: tFields("is_admin"),
+        type: "list",
+        options: [
+          { value: "true", label: tUserTypes("admin") },
+          { value: "false", label: tUserTypes("user") },
+        ],
+      },
+      { title: tFields("lastLogin"), name: "last_login", type: "date" },
+      { title: tFields("created_at"), name: "created_at", type: "date" },
     ],
     [tFields],
   );

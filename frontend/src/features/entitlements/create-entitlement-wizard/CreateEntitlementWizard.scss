@@ -1,4 +1,8 @@
 .step {
+  h4 {
+    margin: 0 0 var(--spacing-3);
+  }
+
   &.review-step {
     p {
       margin: 0 0 var(--spacing-3);
@@ -7,6 +11,15 @@
   &.summary-step {
     .step__notification {
       margin-bottom: var(--spacing-3);
+    }
+  }
+
+  &__content {
+    .step-input {
+      margin-bottom: 20px;
+      p {
+        margin: var(--spacing-1) 0 0;
+      }
     }
   }
 }
