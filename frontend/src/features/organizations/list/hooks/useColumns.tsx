@@ -35,7 +35,7 @@ export function useColumns(): Columns {
       {
         name: "name",
         title: tColumns("organization"),
-        fields: ["name", "id", "linked_organization_id"],
+        fields: ["name", "id"],
         cell: (item: OrganizationRead) => (
           <GridCellTitleSubtitle
             title={<Link to={`${item.id}/general`}>{item.name}</Link>}
@@ -62,13 +62,23 @@ export function useColumns(): Columns {
         initialWidth: 175,
       },
       {
-        name: "operations_additional_id",
-        title: tColumns("operations_additional_id"),
+        name: "linked_organization_id",
+        title: tColumns("linked_organization_id"),
+        fields: ["linked_organization_id"],
+        cell: (item: OrganizationRead) => (
+          <GridCellSimple>{item.linked_organization_id}</GridCellSimple>
+        ),
+        initialWidth: 200,
+        isHidden: true,
+      },
+      {
+        name: "operations_external_id",
+        title: tColumns("operations_external_id"),
         fields: ["operations_external_id"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>{item.operations_external_id}</GridCellSimple>
         ),
-        initialWidth: 350,
+        initialWidth: 200,
       },
       {
         name: "updated_at",
@@ -86,10 +96,10 @@ export function useColumns(): Columns {
         isHidden: true,
       },
       {
-        name: "terminated_at",
-        title: tColumns("terminated_at"),
-        fields: ["events.terminated.at"],
-        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.terminated?.at} />,
+        name: "deleted_at",
+        title: tColumns("deleted_at"),
+        fields: ["events.deleted.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.deleted?.at} />,
         initialWidth: 150,
         isHidden: true,
       },

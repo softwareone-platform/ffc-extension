@@ -17,11 +17,6 @@ export function EntitlementsGeneralDetails() {
     <div>
       <MediumText size={4}>{tSharedDetails("additionalIds")}</MediumText>
       <InPageHighlight direction="horizontal" style="block">
-        <InPageHighlight.Item title={tProperties("dataSource")}>
-          <BoldText color="grey-5">
-            <DisplayValue value={entity?.datasource_id || NO_VALUE} />
-          </BoldText>
-        </InPageHighlight.Item>
         <InPageHighlight.Item title={tProperties("linkedDataSource")}>
           <BoldText color="grey-5">
             <DisplayValue value={entity?.linked_datasource_id || NO_VALUE} />
