@@ -8,6 +8,7 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { NO_VALUE } from "@swo/design-system/utils";
 import { Paths } from "@swo/rql-client";
 
 import { DatasourceRead } from "~api/ffc-api-model";
@@ -33,14 +34,21 @@ export function useColumns(): Columns {
   return useMemo(() => {
     return [
       {
+        name: "id",
+        title: tColumns("id"),
+        fields: ["id"],
+        cell: (item: DatasourceRead) => <GridCellSimple>{item.id}</GridCellSimple>,
+        isHidden: true,
+      },
+      {
         name: "name",
         title: tColumns("dataSource"),
-        fields: ["name"],
+        fields: ["name", "datasource_id"],
         cell: (item: DatasourceRead) => (
           <GridCellSimple>
             <EntityReferenceCell
               primaryContent={item.name}
-              secondaryContent={item.id}
+              secondaryContent={item.datasource_id || ""}
               secondaryContentMaxHeight={50}
               icon={<DataSourceIcon name={item.type} size={48} />}
             />
@@ -58,8 +66,21 @@ export function useColumns(): Columns {
       {
         name: "parent_id",
         title: tColumns("parent_id"),
-        fields: ["parent_id"],
-        cell: (item: DatasourceRead) => <GridCellSimple>{item.parent_id}</GridCellSimple>,
+        fields: ["parent_id", "parent.id", "parent.name", "parent.type"],
+        cell: (item: DatasourceRead) => {
+          return item.parent?.id ? (
+            <GridCellSimple>
+              <EntityReferenceCell
+                primaryContent={item.parent?.name}
+                secondaryContent={item.parent?.id}
+                secondaryContentMaxHeight={50}
+                icon={<DataSourceIcon name={item.parent?.type || "unknown"} size={48} />}
+              />
+            </GridCellSimple>
+          ) : (
+            <GridCellSimple>{NO_VALUE}</GridCellSimple>
+          );
+        },
       },
       {
         name: "resources_charged_this_month",
@@ -97,6 +118,7 @@ export function useColumns(): Columns {
 
 export function useFields() {
   const tFields = useFixedT("shared:grid:fields");
+  const tValue = useFixedT("shared:grid:dataSourceType");
 
   return useMemo(
     (): GridFieldDefinition[] => [
@@ -105,7 +127,20 @@ export function useFields() {
         name: "id",
       },
       { title: tFields("name"), name: "name" },
-      { title: tFields("type"), name: "type" },
+      {
+        name: "type",
+        title: tFields("type"),
+        type: "list",
+        options: [
+          { value: "aws_cnr", label: tValue("aws_cnr") },
+          { value: "azure_cnr", label: tValue("azure_cnr") },
+          { value: "azure_tenant", label: tValue("azure_tenant") },
+          { value: "gcp_cnr", label: tValue("gcp_cnr") },
+          { value: "gcp_tenant", label: tValue("gcp_tenant") },
+          { value: "unknown", label: tValue("unknown") },
+        ],
+      },
+      { title: tFields("datasourceId"), name: "datasource_id" },
     ],
     [tFields],
   );

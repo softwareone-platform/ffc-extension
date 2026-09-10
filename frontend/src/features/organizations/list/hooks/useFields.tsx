@@ -18,6 +18,7 @@ export function useFields() {
       { title: tFields("currency"), name: "currency" },
       { title: tFields("billingCurrency"), name: "billing_currency" },
       { title: tFields("operationsAdditionalId"), name: "operations_external_id" },
+      { title: tFields("linkedOrganizationId"), name: "linked_organization_id" },
       {
         title: tFields("created_at"),
         name: "events.created.at",
@@ -26,6 +27,11 @@ export function useFields() {
       {
         title: tFields("terminated_at"),
         name: "events.terminated.at",
+        type: "date",
+      },
+      {
+        title: tFields("deleted_at"),
+        name: "events.deleted.at",
         type: "date",
       },
       {
