@@ -11,6 +11,7 @@ ModelFactory = Callable[..., Awaitable[ModelT]]
 EventFactory = Callable[..., Event]
 OrderFactory = Callable[..., dict[str, Any]]
 MPTSubscriptionFactory = Callable[..., dict[str, Any]]
+SubscriptionsPageMocker = Callable[..., None]
 
 
 class JWTTokenFactory(Protocol):
