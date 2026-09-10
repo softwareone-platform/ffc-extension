@@ -38,6 +38,8 @@ function CustomIcon({
     }
 
     const availableIcons: string[] = [
+      "aws",
+      "aws_cnr",
       "azure_cnr",
       "azure_tenant",
       "gcp_cnr",
