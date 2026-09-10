@@ -72,7 +72,7 @@ export function useColumns(): Columns {
             <GridCellSimple>
               <EntityReferenceCell
                 primaryContent={item.parent?.name}
-                secondaryContent={item.parent?.id}
+                secondaryContent={item.parent?.datasource_id || NO_VALUE}
                 secondaryContentMaxHeight={50}
                 icon={<DataSourceIcon name={item.parent?.type || "unknown"} size={48} />}
               />
