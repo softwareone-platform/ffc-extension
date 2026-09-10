@@ -37,12 +37,23 @@ function CustomIcon({
       return;
     }
 
+    const availableIcons: string[] = [
+      "azure_cnr",
+      "azure_tenant",
+      "gcp_cnr",
+      "gcp_tenant",
+      "google",
+      "microsoft",
+      "unknown",
+    ];
+
+    if (!availableIcons.includes(name)) {
+      name = "unknown";
+    }
+
     import(`./icons/${name}.tsx`)
       .then((module) => {
         setIconContent(module.default);
-        // if (viewBox) {
-        //   setViewBox(viewBox);
-        // }
       })
       .catch((error) => {
         console.error(`Error loading icon: ${name}`, error);

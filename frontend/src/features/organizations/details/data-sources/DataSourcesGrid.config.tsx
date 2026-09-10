@@ -48,7 +48,7 @@ export function useColumns(): Columns {
           <GridCellSimple>
             <EntityReferenceCell
               primaryContent={item.name}
-              secondaryContent={item.datasource_id}
+              secondaryContent={item.datasource_id || ""}
               secondaryContentMaxHeight={50}
               icon={<DataSourceIcon name={item.type} size={48} />}
             />
@@ -68,7 +68,7 @@ export function useColumns(): Columns {
         title: tColumns("parent_id"),
         fields: ["parent_id", "parent.id", "parent.name", "parent.type"],
         cell: (item: DatasourceRead) => {
-          return item.parent && item.parent_id ? (
+          return item.parent && item.parent.id ? (
             <GridCellSimple>
               <EntityReferenceCell
                 primaryContent={item.parent?.name}
@@ -136,6 +136,7 @@ export function useFields() {
           { value: "azure_cnr", label: tValue("azure_cnr") },
           { value: "azure_tenant", label: tValue("azure_tenant") },
           { value: "gcp_cnr", label: tValue("gcp_cnr") },
+          { value: "gcp_tenant", label: tValue("gcp_tenant") },
           { value: "unknown", label: tValue("unknown") },
         ],
       },
