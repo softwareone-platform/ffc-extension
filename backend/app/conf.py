@@ -82,6 +82,11 @@ class Settings(BaseSettings):
     # Limit parallel tasks in commands execution
     max_parallel_tasks: int = 10
 
+    # Subscriptions sync command
+    subscriptions_sync_page_size: int = 50
+    subscriptions_sync_max_parallel: int = 5
+    subscriptions_sync_lookback_hours: int = 24
+
     reschedule_seconds: int = 300
     ui_plugs_prefix: str = "ffc"
 
