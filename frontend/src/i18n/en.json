@@ -269,7 +269,8 @@
         "azure_cnr": "Azure subscription",
         "azure_tenant": "Azure tenant",
         "aws_cnr": "AWS subscription",
-        "gcp_cnr": "GCP subscription",
+        "gcp_cnr": "GCP project",
+        "gcp_tenant": "GCP tenant",
         "unknown": "Unknown"
       },
       "userTypes": {
