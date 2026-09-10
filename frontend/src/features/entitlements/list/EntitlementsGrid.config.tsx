@@ -69,7 +69,6 @@ export function useColumns(): Columns {
         ),
         initialWidth: 250,
       },
-
       {
         name: "data_source",
         title: tColumns("data_source"),
@@ -84,7 +83,7 @@ export function useColumns(): Columns {
       {
         name: "organization",
         title: tColumns("organization"),
-        fields: [],
+        fields: ["events.redeemed.by.id", "events.redeemed.by.name"],
         cell: (item: Entitlement) => (
           <>
             {item.events.redeemed ? (
@@ -135,10 +134,27 @@ export function useColumns(): Columns {
         isHidden: true,
       },
       {
+        name: "redeemed_at",
+        title: tColumns("redeemed_at"),
+        fields: ["events.redeemed.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.redeemed?.at} />,
+        initialWidth: 100,
+        isHidden: true,
+      },
+
+      {
         name: "terminated_at",
         title: tColumns("terminated_at"),
         fields: ["events.terminated.at"],
         cell: (item: Entitlement) => <GridCellDateTime date={item.events?.terminated?.at} />,
+        initialWidth: 100,
+        isHidden: true,
+      },
+      {
+        name: "deleted_at",
+        title: tColumns("deleted_at"),
+        fields: ["events.deleted.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.deleted?.at} />,
         initialWidth: 100,
         isHidden: true,
       },
@@ -170,6 +186,7 @@ export function useColumns(): Columns {
 
 export function useFields() {
   const tFields = useFixedT("shared:grid:fields");
+  const tDataSourceType = useFixedT("shared:grid:dataSourceType");
 
   return useMemo(
     (): GridFieldDefinition[] => [
@@ -185,8 +202,47 @@ export function useFields() {
         name: "affiliate_external_id",
       },
       {
+        title: tFields("datasourceId"),
+        name: "datasource_id",
+      },
+      {
+        title: tFields("linked_datasource_id"),
+        name: "linked_datasource_id",
+      },
+      {
+        title: tFields("linked_datasource_name"),
+        name: "linked_datasource_name",
+      },
+      {
+        title: tFields("linked_datasource_type"),
+        name: "linked_datasource_type",
+        type: "list",
+        options: [
+          { value: "azure_cnr", label: tDataSourceType("azure_cnr") },
+          { value: "aws_cnr", label: tDataSourceType("aws_cnr") },
+        ],
+      },
+      {
+        title: tFields("organization_id"),
+        name: "events.redeemed.by.id",
+      },
+      {
+        title: tFields("organization_name"),
+        name: "events.redeemed.by.name",
+      },
+      {
         title: tFields("created_at"),
         name: "events.created.at",
+        type: "date",
+      },
+      {
+        title: tFields("updated_at"),
+        name: "events.updated.at",
+        type: "date",
+      },
+      {
+        title: tFields("redeemed_at"),
+        name: "events.redeemed.at",
         type: "date",
       },
       {
@@ -195,8 +251,8 @@ export function useFields() {
         type: "date",
       },
       {
-        title: tFields("updated_at"),
-        name: "events.updated.at",
+        title: tFields("deleted_at"),
+        name: "events.deleted.at",
         type: "date",
       },
       {

@@ -6,7 +6,7 @@
         "properties": {
           "name": "Name",
           "operations_external_id": "Operations external ID",
-          "linked_organization_id": "Linked additional ID",
+          "linked_organization_id": "Linked organization ID",
           "currency": "Currency",
           "billing_currency": "Billing currency"
         }
@@ -221,8 +221,11 @@
         "created_at": "Created",
         "terminated_at": "Terminated",
         "updated_at": "Updated",
-        "operations_additional_id": "Operations Additional ID",
-        "billing_currency": "Billing Currency"
+        "redeemed_at": "Activated",
+        "deleted_at": "Deleted",
+        "operations_external_id": "Operations Additional ID",
+        "billing_currency": "Billing Currency",
+        "linked_organization_id": "Linked Organization ID"
       },
       "fields": {
         "id": "ID",
@@ -230,12 +233,14 @@
         "currency": "Currency",
         "billingCurrency": "Billing Currency",
         "operationsAdditionalId": "Operations Additional ID",
+        "linkedOrganizationId": "Linked Organization ID",
         "status": "Status",
         "type": "Type",
         "displayName": "Display Name",
         "email": "Email",
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
+        "datasourceId": "Data Source ID",
         "entitlement": {
           "name": "Entitlement Name",
           "id": "Entitlement ID"
@@ -244,16 +249,32 @@
           "name": "Affiliate Name",
           "id": "Affiliate ID"
         },
+        "is_admin": "User Type",
         "lastLogin": "Last Login",
         "createdAt": "Created At",
         "created_at": "Created",
+        "redeemed_at": "Activated",
         "terminated_at": "Terminated",
-        "updated_at": "Updated"
+        "updated_at": "Updated",
+        "deleted_at": "Deleted",
+        "userName": "User Name",
+        "userId": "User ID",
+        "linked_datasource_id": "Linked Data Source ID",
+        "linked_datasource_name": "Linked Data Source Name",
+        "linked_datasource_type": "Linked Data Source Type",
+        "organization_id": "Organization ID",
+        "organization_name": "Organization Name"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
+        "azure_tenant": "Azure tenant",
         "aws_cnr": "AWS subscription",
-        "gcp_cnr": "GCP subscription"
+        "gcp_cnr": "GCP subscription",
+        "unknown": "Unknown"
+      },
+      "userTypes": {
+        "admin": "Admin",
+        "user": "User"
       },
       "actions": {
         "add": "Add"
@@ -266,7 +287,7 @@
       "events": "Events"
     },
     "properties": {
-      "linkedDataSource": "Linked data source",
+      "linkedDataSource": "Linked data source ID",
       "dataSource": "Data source",
       "affiliate_external_id": "Affiliate external ID",
       "created": "Created",
