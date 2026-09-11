@@ -17,6 +17,7 @@ import { useOrganizationContext } from "~organizations/providers/OrganizationsPr
 import DataSourceIcon from "~shared/components/custom-icons/CustomIcon";
 import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
@@ -162,20 +163,19 @@ export function useAsyncOptions(organizationId: string) {
 export function useGridConfig(organizationId: string) {
   const columns = useColumns();
   const fields = useFields();
-  // const views = useViews();
   const asyncOptions = useAsyncOptions(organizationId);
+  const gridInfoDialogConfig = useGridInfoDialogConfiguration();
 
   const config = useMemo(
     () =>
       ({
         id: "grid__organizations-details-data-sources",
-        // memoizeId: 'gridWithRqlStory',
-        // views,
         columns,
         fields,
         isDefaultView: true,
         selectedView: "default",
         ...asyncOptions,
+        ...gridInfoDialogConfig,
       }) as UseAsyncGridConfig<DatasourceRead>,
     [columns, fields, asyncOptions],
   );
