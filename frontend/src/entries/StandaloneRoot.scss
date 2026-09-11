@@ -1,4 +1,3 @@
-@use "../../node_modules/@swo/design-tokens/src/index" as *;
 @use "../../node_modules/@swo/design-tokens/src/style" as *;
 
 // --- resets --------------------------------------------------------------
@@ -96,9 +95,6 @@ th {
 
 // --- typography ----------------------------------------------------------
 // Base typography for all elements, matching platform defaults.
-* {
-  @extend %regular2;
-}
 
 h1 {
   @extend %regular6;
