@@ -17,6 +17,7 @@ import { useOrganizationsApi } from "~organizations/api";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";
 import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { useUserRole } from "~shared/hooks/useUserRole";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
@@ -148,6 +149,7 @@ export function useGridConfig(
   const columns = useColumns();
   const fields = useFields();
   const asyncOptions = useAsyncOptions(organizationId);
+  const gridInfoDialogConfig = useGridInfoDialogConfiguration();
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -170,6 +172,7 @@ export function useGridConfig(
         isDefaultView: true,
         selectedView: "default",
         ...asyncOptions,
+        ...gridInfoDialogConfig,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<EmployeeRead>,
     [columns, fields, asyncOptions, onGridActionEvent],

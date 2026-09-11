@@ -277,6 +277,11 @@
         "admin": "Admin",
         "user": "User"
       },
+      "infoDialog": {
+        "noData": {
+          "description": "There is no data available to display."
+        }
+      },
       "actions": {
         "add": "Add"
       }
