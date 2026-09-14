@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from typing import Annotated
 
@@ -13,6 +14,9 @@ from app.schemas.core import (
     CommonEventsSchema,
     IdSchema,
 )
+
+# Optscale reports "never imported" as 0, which pydantic coerces to the epoch.
+EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 
 EXCLUDED_CURRENCIES = [
     "XAU",  # gold
@@ -99,9 +103,38 @@ class DatasourceBase(BaseSchema):
 class DatasourceRead(DatasourceBase):
     parent: DatasourceBase | None = None
     parent_id: uuid.UUID | None = None
+    # Not every upstream payload carries the import timestamps: default them to the epoch so
+    # that a datasource that has never been imported is reported the same way Optscale does.
+    last_import_at: datetime = EPOCH
+    last_import_modified_at: datetime = EPOCH
+    last_import_attempt_at: datetime = EPOCH
+    last_import_attempt_error: str | None = None
     resources_charged_this_month: int = Field(validation_alias="resources")
     expenses_so_far_this_month: float = Field(validation_alias="cost")
     expenses_forecast_this_month: float = Field(validation_alias="forecast")
+
+
+class DatasourceForceReimport(BaseSchema):
+    last_import_at: Annotated[
+        date | None,
+        Field(
+            default=None,
+            examples=["2026-09-01"],
+            description=(
+                "Date, in ISO format, to set as the datasource's last import timestamp before "
+                "scheduling the reimport. When omitted it defaults to the epoch (0), which "
+                "reimports all the available expenses."
+            ),
+        ),
+    ] = None
+
+    @property
+    def last_import_at_timestamp(self) -> int:
+        """`last_import_at` as seconds since the epoch at UTC midnight, or 0 when not provided."""
+        if self.last_import_at is None:
+            return 0
+
+        return int(datetime.combine(self.last_import_at, time.min, tzinfo=UTC).timestamp())
 
 
 class AdditionalAdminRequestBase(BaseSchema):

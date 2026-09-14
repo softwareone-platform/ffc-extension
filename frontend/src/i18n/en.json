@@ -31,6 +31,33 @@
         "title": "Events"
       }
     },
+    "dataSources": {
+      "force_import": {
+        "title": "Force data import",
+        "submit": "Force import",
+        "confirm_line1": "Are you sure you want to force a data import for:",
+        "properties": {
+          "id": "Id",
+          "name": "Name",
+          "linked_datasource_id": "Linked datasource ID"
+        },
+        "confirm_line2": "If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
+        "confirm_line3": "The import is queued with high priority and takes time to complete.",
+        "use_last_import_at": "Import from a specific date",
+        "last_import_at": "Import expenses from",
+        "last_import_at_description": "Expenses are reimported starting from this date."
+      },
+      "errors": {
+        "force_import_failed_with_code_400": "Failed to force import: the organization is not linked to a FinOps for Cloud organization.",
+        "force_import_failed_with_code_401": "Failed to force import: your session has expired. Please sign in again.",
+        "force_import_failed_with_code_403": "Failed to force import: Forbidden. You don't have permission to perform this action.",
+        "force_import_failed_with_code_404": "Failed to force import: Not found. The specified organization or data source does not exist.",
+        "force_import_failed_with_code_422": "Failed to force import: the request was rejected. Please check the data source and try again.",
+        "force_import_failed_with_code_500": "Failed to force import: Internal server error. Please try again later.",
+        "force_import_failed_with_code_502": "Failed to force import: the FinOps for Cloud API could not be reached. Please try again later.",
+        "force_import_failed_with_code_unknown": "Failed to force import: An unknown error occurred. Please try again."
+      }
+    },
     "users": {
       "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
       "errors": {
@@ -179,7 +206,8 @@
       "redeem": "Redeem",
       "terminate": "Terminate",
       "delete": "Delete",
-      "make_admin": "Make Admin"
+      "make_admin": "Make Admin",
+      "force_import": "Force import"
     },
     "grid": {
       "views": {
@@ -211,6 +239,7 @@
         "resources_charged_this_month": "Resources Charged (this month)",
         "expenses_so_far_this_month": "Expenses to date (this month)",
         "expenses_forecast_this_month": "Expenses forecast (this month)",
+        "last_import_at": "Last import at",
         "lastLogin": "Last login",
         "createdAt": "Created",
         "affiliate_external_id": "Affiliate External ID",

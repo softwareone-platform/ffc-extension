@@ -7,7 +7,12 @@ import { Entity } from "@swo/service";
 
 import { http } from "@mpt-extension/sdk";
 
-import { DatasourceRead, EmployeeRead, OrganizationRead } from "~api/ffc-api-model";
+import {
+  DatasourceForceReimport,
+  DatasourceRead,
+  EmployeeRead,
+  OrganizationRead,
+} from "~api/ffc-api-model";
 import { getCustomQueryString } from "~shared/utils/rqlHelper";
 
 import { EditOrganizationForm } from "../list/edit-organization-modal/EditOrganization.Schema";
@@ -77,6 +82,17 @@ export function useOrganizationsApi() {
     [],
   );
 
+  const forceReimportDatasource = useCallback(
+    async (organizationId: string, datasourceId: string, data?: DatasourceForceReimport) => {
+      return http<void>({
+        method: "POST",
+        url: `${rootPath}/${organizationId}/datasources/${datasourceId}/force-reimport`,
+        data,
+      });
+    },
+    [],
+  );
+
   return useMemo(
     () => ({
       list,
@@ -85,6 +101,7 @@ export function useOrganizationsApi() {
       deleteOrganization,
       listOrganizationEmployees,
       listOrganizationDataSources,
+      forceReimportDatasource,
     }),
     [
       list,
@@ -93,6 +110,7 @@ export function useOrganizationsApi() {
       deleteOrganization,
       listOrganizationEmployees,
       listOrganizationDataSources,
+      forceReimportDatasource,
     ],
   );
 }

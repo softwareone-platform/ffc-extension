@@ -656,6 +656,18 @@ export type DatasourceExpenseRead = {
 };
 
 /**
+ * DatasourceForceReimport
+ */
+export type DatasourceForceReimport = {
+    /**
+     * Last Import At
+     *
+     * Date, in ISO format, to set as the datasource's last import timestamp before scheduling the reimport. When omitted it defaults to the epoch (0), which reimports all the available expenses.
+     */
+    last_import_at?: string | null;
+};
+
+/**
  * DatasourceInfo
  */
 export type DatasourceInfo = {
@@ -715,6 +727,22 @@ export type DatasourceRead = {
      * Parent Id
      */
     parent_id?: string | null;
+    /**
+     * Last Import At
+     */
+    last_import_at?: string;
+    /**
+     * Last Import Modified At
+     */
+    last_import_modified_at?: string;
+    /**
+     * Last Import Attempt At
+     */
+    last_import_attempt_at?: string;
+    /**
+     * Last Import Attempt Error
+     */
+    last_import_attempt_error?: string | null;
     /**
      * Resources Charged This Month
      */
@@ -1713,6 +1741,22 @@ export type LimitOffsetPageDatasourceRead = {
          * Parent Id
          */
         parent_id?: string | null;
+        /**
+         * Last Import At
+         */
+        last_import_at?: string;
+        /**
+         * Last Import Modified At
+         */
+        last_import_modified_at?: string;
+        /**
+         * Last Import Attempt At
+         */
+        last_import_attempt_at?: string;
+        /**
+         * Last Import Attempt Error
+         */
+        last_import_attempt_error?: string | null;
         /**
          * Resources Charged This Month
          */
@@ -5400,6 +5444,22 @@ export type GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDataso
              */
             parent_id?: string | null;
             /**
+             * Last Import At
+             */
+            last_import_at?: string;
+            /**
+             * Last Import Modified At
+             */
+            last_import_modified_at?: string;
+            /**
+             * Last Import Attempt At
+             */
+            last_import_attempt_at?: string;
+            /**
+             * Last Import Attempt Error
+             */
+            last_import_attempt_error?: string | null;
+            /**
              * Resources Charged This Month
              */
             resources_charged_this_month: number;
@@ -5530,6 +5590,22 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
          */
         parent_id?: string | null;
         /**
+         * Last Import At
+         */
+        last_import_at?: string;
+        /**
+         * Last Import Modified At
+         */
+        last_import_modified_at?: string;
+        /**
+         * Last Import Attempt At
+         */
+        last_import_attempt_at?: string;
+        /**
+         * Last Import Attempt Error
+         */
+        last_import_attempt_error?: string | null;
+        /**
          * Resources Charged This Month
          */
         resources_charged_this_month: number;
@@ -5547,7 +5623,17 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
 export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponse = GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses[keyof GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses];
 
 export type ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostData = {
-    body?: never;
+    /**
+     * Data
+     */
+    body?: {
+        /**
+         * Last Import At
+         *
+         * Date, in ISO format, to set as the datasource's last import timestamp before scheduling the reimport. When omitted it defaults to the epoch (0), which reimports all the available expenses.
+         */
+        last_import_at?: string | null;
+    } | null;
     path: {
         /**
          * Datasource Id
