@@ -22,6 +22,7 @@ import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
@@ -350,6 +351,7 @@ export function useGridConfig(
   const fields = useFields();
   const views = useViews();
   const asyncOptions = useAsyncOptions();
+  const gridInfoDialogConfig = useGridInfoDialogConfiguration();
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -373,6 +375,7 @@ export function useGridConfig(
         views,
         isDefaultView: false,
         selectedView: "main",
+        ...gridInfoDialogConfig,
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,

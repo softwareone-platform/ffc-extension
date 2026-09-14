@@ -1,5 +1,7 @@
 import { ReactElement, useEffect, useState } from "react";
 
+import unknownIcon from "./icons/unknown";
+
 type IconProps = {
   readonly name: string;
   readonly width?: number;
@@ -32,6 +34,7 @@ function CustomIcon({
   useEffect(() => setViewBox(`0 0 ${boxWidth} ${boxHeight}`), [boxHeight, boxWidth]);
 
   const [iconContent, setIconContent] = useState<ReactElement>();
+
   useEffect(() => {
     if (!name) {
       return;
@@ -53,13 +56,13 @@ function CustomIcon({
       name = "unknown";
     }
 
-    import(`./icons/${name}.tsx`)
-      .then((module) => {
-        setIconContent(module.default);
-      })
-      .catch((error) => {
-        console.error(`Error loading icon: ${name}`, error);
-      });
+    const asyncImport = async () => {
+      const module = await import(`./icons/${name}.tsx`);
+      setIconContent(module.default);
+    };
+
+    asyncImport();
+
   }, [name]);
 
   return (
@@ -70,7 +73,7 @@ function CustomIcon({
       height={height}
       className={className}
     >
-      {iconContent}
+      {iconContent ?? unknownIcon}
     </svg>
   );
 }
