@@ -115,7 +115,7 @@ def _build_args(opts: dict[str, Any]) -> list[str]:
         ),
     ],
 )
-@freeze_time("2026-03-16")
+@freeze_time("2026-03-16", ignore=["typer"])
 def test_process_billing_command(
     mocker: MockerFixture,
     opts: dict[str, Any],
