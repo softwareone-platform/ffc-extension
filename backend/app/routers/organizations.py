@@ -33,6 +33,7 @@ from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
     AdditionalAdminRequestCreate,
     AdditionalAdminRequestRead,
+    DatasourceForceReimport,
     DatasourceRead,
     OrganizationCreate,
     OrganizationRead,
@@ -243,6 +244,10 @@ async def get_datasource_by_id(
         expenses_so_far_this_month=datasource["details"]["cost"],
         expenses_forecast_this_month=datasource["details"]["forecast"],
         datasource_id=datasource["account_id"],
+        last_import_at=datasource.get("last_import_at", 0),
+        last_import_modified_at=datasource.get("last_import_modified_at", 0),
+        last_import_attempt_at=datasource.get("last_import_attempt_at", 0),
+        last_import_attempt_error=datasource.get("last_import_attempt_error"),
     )
 
 
@@ -255,16 +260,19 @@ async def force_reimport_datasource(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
     optscale_client: OptscaleClient,
+    data: DatasourceForceReimport | None = None,
 ):
     validate_linked_organization_id(organization)
+    # Optscale expects the import timestamps as seconds since the epoch.
+    last_import_at = data.last_import_at_timestamp if data is not None else 0
     with wrap_http_error_in_502(
         f"Error scheduling import of cloud account with ID {datasource_id}"
     ):
         await optscale_client.update_datasource(
             datasource_id=datasource_id,
             payload={
-                "last_import_at": 0,
-                "last_import_modified_at": 0,
+                "last_import_at": last_import_at,
+                "last_import_modified_at": last_import_at,
             },
         )
         await optscale_client.force_reimport_datasource(datasource_id)
