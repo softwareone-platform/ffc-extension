@@ -19,7 +19,7 @@
   "license": "ISC",
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.36.0",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.57.0",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^24.10.1",
