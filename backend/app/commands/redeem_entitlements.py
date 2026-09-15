@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 import httpx
@@ -19,12 +20,21 @@ from app.notifications import (
     NotificationDetails,
     send_exception,
     send_info,
+    send_warning,
 )
 from app.telemetry import capture_telemetry_cli_command
 
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 100
+
+
+@dataclass
+class DatasourceResult:
+    """Outcome of processing a single datasource."""
+
+    redeemed_entitlement: Entitlement | None = None
+    duplicate_entitlements: list[Entitlement] = field(default_factory=list)
 
 
 async def fetch_datasources_for_organization(settings: Settings, organization_id: str) -> dict:
@@ -53,7 +63,7 @@ async def process_datasource(
     organization: Organization,
     entitlement_handler: EntitlementHandler,
     ffc_api_client: FFCAPIClient,
-):
+) -> DatasourceResult:
     datasource_id = datasource["account_id"]
     datasource_type = datasource["type"]
     datasource_name = datasource["name"]
@@ -64,7 +74,7 @@ async def process_datasource(
                 f"Found {datasource_id} {datasource_name} of type {datasource_type}, "
                 "skip containers!"
             )
-            return
+            return DatasourceResult()
         case "azure_cnr" | "aws_cnr" | "gcp_cnr":
             type_name = datasource["type"].split("_")[0].capitalize()
             logger.info(
@@ -75,43 +85,86 @@ async def process_datasource(
                 f"Found {datasource_id} {datasource_name} of type {datasource_type}, "
                 "unsupported type!"
             )
-            return
+            return DatasourceResult()
     try:
-        instance = await entitlement_handler.first(
+        entitlements = await entitlement_handler.query_db(
             where_clauses=[
                 Entitlement.datasource_id == datasource_id,
-                Entitlement.status == EntitlementStatus.NEW,
-            ]
+                Entitlement.status.in_((EntitlementStatus.NEW, EntitlementStatus.ACTIVE)),
+            ],
+            order_by=[Entitlement.created_at],
         )
-        if instance:
-            updated_entitlement = await entitlement_handler.update(
-                instance,
-                data={
-                    "status": EntitlementStatus.ACTIVE,
-                    "redeemed_at": instance.redeem_at or datetime.now(UTC),
-                    "redeemed_by": organization,
-                    "linked_datasource_id": datasource["id"],
-                    "linked_datasource_type": datasource["type"],
-                    "linked_datasource_name": datasource["name"],
-                },
+        active_entitlements = [
+            entitlement
+            for entitlement in entitlements
+            if entitlement.status == EntitlementStatus.ACTIVE
+        ]
+        new_entitlements = [
+            entitlement
+            for entitlement in entitlements
+            if entitlement.status == EntitlementStatus.NEW
+        ]
+
+        if active_entitlements:
+            if len(entitlements) > 1:
+                logger.warning(
+                    f"Found {len(entitlements)} duplicate entitlements "
+                    f"({', '.join(entitlement.id for entitlement in entitlements)}) "
+                    f"for datasource {datasource_id} - {datasource_name}, "
+                    "one of them is already active: skipping."
+                )
+                return DatasourceResult(duplicate_entitlements=list(entitlements))
+
+            logger.info(
+                f"The entitlement {active_entitlements[0].id} - {active_entitlements[0].name} "
+                f"is already active for datasource {datasource_id} - {datasource_name}: skipping."
             )
-            await create_entitlement_tag_for_datasource(
-                ffc_api_client=ffc_api_client,
-                entitlement_id=instance.id,
-                datasource_id=datasource["id"],
-            )
-            msg = (
-                f"The entitlement {instance.id} - {instance.name} "
-                f"owned by {instance.owner.id} - {instance.owner.name} "
-                f"has been redeemed by {organization.id} - {organization.name} "
-                f"for datasource {datasource_id} - {datasource_name}."
-            )
-            logger.info(msg)
-            return updated_entitlement
-        else:
+            return DatasourceResult()
+
+        if not new_entitlements:
             logger.info(
                 f"Entitlement not found for datasource {datasource_id} - {datasource_name}."
             )
+            return DatasourceResult()
+
+        duplicate_entitlements = list(new_entitlements) if len(new_entitlements) > 1 else []
+        instance = new_entitlements[0]
+
+        if duplicate_entitlements:
+            logger.warning(
+                f"Found {len(new_entitlements)} duplicate entitlements "
+                f"({', '.join(entitlement.id for entitlement in new_entitlements)}) "
+                f"for datasource {datasource_id} - {datasource_name}, "
+                f"redeeming the oldest one: {instance.id}."
+            )
+
+        updated_entitlement = await entitlement_handler.update(
+            instance,
+            data={
+                "status": EntitlementStatus.ACTIVE,
+                "redeemed_at": instance.redeem_at or datetime.now(UTC),
+                "redeemed_by": organization,
+                "linked_datasource_id": datasource["id"],
+                "linked_datasource_type": datasource["type"],
+                "linked_datasource_name": datasource["name"],
+            },
+        )
+        await create_entitlement_tag_for_datasource(
+            ffc_api_client=ffc_api_client,
+            entitlement_id=instance.id,
+            datasource_id=datasource["id"],
+        )
+        msg = (
+            f"The entitlement {instance.id} - {instance.name} "
+            f"owned by {instance.owner.id} - {instance.owner.name} "
+            f"has been redeemed by {organization.id} - {organization.name} "
+            f"for datasource {datasource_id} - {datasource_name}."
+        )
+        logger.info(msg)
+        return DatasourceResult(
+            redeemed_entitlement=updated_entitlement,
+            duplicate_entitlements=duplicate_entitlements,
+        )
 
     except DatabaseError as e:  # pragma: no cover
         msg = (
@@ -120,6 +173,67 @@ async def process_datasource(
         )
         logger.error(msg)
         await send_exception("Redeem Entitlements Error", msg)
+        return DatasourceResult()
+
+
+async def notify_redeemed_entitlements(redeemed_entitlements: list[Entitlement]) -> None:
+    msg = "Entitlement has" if len(redeemed_entitlements) == 1 else "Entitlements have"
+    msg = f"{len(redeemed_entitlements)} {msg} been successfully redeemed."
+    await send_info(
+        "Redeem Entitlements Success",
+        msg,
+        details=NotificationDetails(
+            header=(
+                ColumnHeader("Entitlement", width="stretch"),
+                ColumnHeader("Owner", width="stretch"),
+                ColumnHeader("Organization", width="stretch"),
+                ColumnHeader("Datasource", width="stretch"),
+            ),
+            rows=[
+                (
+                    f"{ent.id}\t/\t{ent.name}",
+                    f"{ent.owner.id}\t/\t{ent.owner.name}",
+                    f"{ent.redeemed_by.id}\t/\t{ent.redeemed_by.name}",  # type: ignore
+                    f"{ent.datasource_id}\t/\t{ent.linked_datasource_name}",
+                )
+                for ent in redeemed_entitlements
+            ],
+        ),
+    )
+
+
+async def notify_duplicate_entitlements(
+    organization: Organization,
+    duplicate_entitlements: list[tuple[dict, list[Entitlement]]],
+) -> None:
+    msg = "datasource has" if len(duplicate_entitlements) == 1 else "datasources have"
+    msg = (
+        f"{len(duplicate_entitlements)} {msg} multiple entitlements in "
+        f"`new` or `active` status for the organization "
+        f"{organization.id} - {organization.name}."
+    )
+    await send_warning(
+        "Redeem Entitlements Duplicates",
+        msg,
+        details=NotificationDetails(
+            header=(
+                ColumnHeader("Datasource", width="stretch"),
+                ColumnHeader("Entitlement", width="stretch"),
+                ColumnHeader("Owner", width="stretch"),
+                ColumnHeader("Status", width="auto"),
+            ),
+            rows=[
+                (
+                    f"{datasource['account_id']}\t/\t{datasource['name']}",
+                    f"{ent.id}\t/\t{ent.name}",
+                    f"{ent.owner.id}\t/\t{ent.owner.name}",
+                    ent.status.value,
+                )
+                for datasource, entitlements in duplicate_entitlements
+                for ent in entitlements
+            ],
+        ),
+    )
 
 
 @capture_telemetry_cli_command(__name__, "Redeem Entitlements")
@@ -154,40 +268,24 @@ async def redeem_entitlements(settings: Settings):
                 await send_exception("Redeem Entitlements Error", message)
                 continue
             redeemed_entitlements = []
+            duplicate_entitlements: list[tuple[dict, list[Entitlement]]] = []
             for datasource in datasources:
-                entitlement = await process_datasource(
+                result = await process_datasource(
                     datasource,
                     organization,
                     entitlement_handler,
                     ffc_api_client,
                 )
-                if entitlement:
-                    redeemed_entitlements.append(entitlement)
+                if result.redeemed_entitlement:
+                    redeemed_entitlements.append(result.redeemed_entitlement)
+                if result.duplicate_entitlements:
+                    duplicate_entitlements.append((datasource, result.duplicate_entitlements))
 
             if len(redeemed_entitlements) > 0:
-                msg = "Entitlement has" if len(redeemed_entitlements) == 1 else "Entitlements have"
-                msg = f"{len(redeemed_entitlements)} {msg} been successfully redeemed."
-                await send_info(
-                    "Redeem Entitlements Success",
-                    msg,
-                    details=NotificationDetails(
-                        header=(
-                            ColumnHeader("Entitlement", width="stretch"),
-                            ColumnHeader("Owner", width="stretch"),
-                            ColumnHeader("Organization", width="stretch"),
-                            ColumnHeader("Datasource", width="stretch"),
-                        ),
-                        rows=[
-                            (
-                                f"{ent.id}\t/\t{ent.name}",
-                                f"{ent.owner.id}\t/\t{ent.owner.name}",
-                                f"{ent.redeemed_by.id}\t/\t{ent.redeemed_by.name}",  # type: ignore
-                                f"{ent.datasource_id}\t/\t{ent.linked_datasource_name}",
-                            )
-                            for ent in redeemed_entitlements
-                        ],
-                    ),
-                )
+                await notify_redeemed_entitlements(redeemed_entitlements)
+
+            if len(duplicate_entitlements) > 0:
+                await notify_duplicate_entitlements(organization, duplicate_entitlements)
 
 
 def command(ctx: typer.Context):

@@ -112,6 +112,22 @@ async def create_entitlement(
                 detail=f"No Active Affiliate Account has been found with ID {data.owner.id}.",
             )
 
+    existing_entitlement = await entitlement_repo.first(
+        where_clauses=[
+            Entitlement.datasource_id == data.datasource_id,
+            Entitlement.owner_id == owner.id,
+            Entitlement.status.in_([EntitlementStatus.NEW, EntitlementStatus.ACTIVE]),
+        ]
+    )
+    if existing_entitlement:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"An Entitlement in status '{existing_entitlement.status.value}' "
+                f"already exist for the data source {data.datasource_id}"
+            ),
+        )
+
     entitlement = convert_schema_to_model(data, Entitlement)
     entitlement.owner = owner
     db_entitlement = await entitlement_repo.create(entitlement)
