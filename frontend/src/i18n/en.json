@@ -39,12 +39,13 @@
         "properties": {
           "id": "Id",
           "name": "Name",
-          "linked_datasource_id": "Linked datasource ID"
+          "linked_datasource_id": "Linked datasource ID:"
         },
-        "confirm_line2": "If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
+        "confirm_line2": "*If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
         "confirm_line3": "The import is queued with high priority and takes time to complete.",
-        "use_last_import_at": "Import from a specific date",
+        "use_last_import_at": "Import from a specific date*",
         "last_import_at": "Import expenses from",
+        "last_import_at_placeholder": "Select a date",
         "last_import_at_description": "Expenses are reimported starting from this date."
       },
       "errors": {

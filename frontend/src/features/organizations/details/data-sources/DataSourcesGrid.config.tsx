@@ -177,7 +177,7 @@ export function useFields() {
       },
       { title: tFields("datasourceId"), name: "datasource_id" },
     ],
-    [tFields],
+    [tFields, tValue],
   );
 }
 
@@ -228,7 +228,7 @@ export function useGridConfig(
         ...gridInfoDialogConfig,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<DatasourceRead>,
-    [columns, fields, asyncOptions, onGridActionEvent],
+    [columns, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
