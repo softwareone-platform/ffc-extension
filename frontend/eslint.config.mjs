@@ -13,7 +13,7 @@ import tseslint from 'typescript-eslint';
  */
 export default tseslint.config(
     {
-        ignores: ['node_modules/**', 'dist/**', '../static/**', 'coverage/**','package*.json', 'tsconfig.json', 'vite.config.*', 'esbuild.config.*', 'eslint.config.*'],
+        ignores: ['node_modules/**', 'dist/**', '../static/**', 'coverage/**','src/api/**','package*.json', 'tsconfig.json', 'vite.config.*', 'esbuild.config.*', 'eslint.config.*'],
     },
     {
         files: ['**/*.{ts,tsx,js,mjs,cjs,json}'],

@@ -29,16 +29,17 @@ function CustomIcon({
     height = size;
   }
 
-  const [viewBox, setViewBox] = useState<string>(`0 0 ${boxWidth} ${boxHeight}`);
-
-  useEffect(() => setViewBox(`0 0 ${boxWidth} ${boxHeight}`), [boxHeight, boxWidth]);
-
   const [iconContent, setIconContent] = useState<ReactElement>();
 
   useEffect(() => {
     if (!name) {
       return;
     }
+
+    const asyncImport = async (name: string) => {
+      const module = await import(`./icons/${name}.tsx`);
+      setIconContent(module.default);
+    };
 
     const availableIcons: string[] = [
       "aws",
@@ -52,22 +53,13 @@ function CustomIcon({
       "unknown",
     ];
 
-    if (!availableIcons.includes(name)) {
-      name = "unknown";
-    }
-
-    const asyncImport = async () => {
-      const module = await import(`./icons/${name}.tsx`);
-      setIconContent(module.default);
-    };
-
-    asyncImport();
+    asyncImport(availableIcons.includes(name) ? name : "unknown");
   }, [name]);
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={viewBox}
+      viewBox={`0 0 ${boxWidth} ${boxHeight}`}
       width={width}
       height={height}
       className={className}

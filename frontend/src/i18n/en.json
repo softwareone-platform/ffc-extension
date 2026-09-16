@@ -49,19 +49,13 @@
         "last_import_at_description": "Expenses are reimported starting from this date."
       },
       "errors": {
-        "force_import_failed_with_code_400": "Failed to force import: the organization is not linked to a FinOps for Cloud organization.",
-        "force_import_failed_with_code_401": "Failed to force import: your session has expired. Please sign in again.",
-        "force_import_failed_with_code_403": "Failed to force import: Forbidden. You don't have permission to perform this action.",
-        "force_import_failed_with_code_404": "Failed to force import: Not found. The specified organization or data source does not exist.",
-        "force_import_failed_with_code_422": "Failed to force import: the request was rejected. Please check the data source and try again.",
-        "force_import_failed_with_code_500": "Failed to force import: Internal server error. Please try again later.",
-        "force_import_failed_with_code_502": "Failed to force import: the FinOps for Cloud API could not be reached. Please try again later.",
-        "force_import_failed_with_code_unknown": "Failed to force import: An unknown error occurred. Please try again."
+        "failed_with_code": "Error {{code}}: Failed to force import."
       }
     },
     "users": {
       "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
       "errors": {
+        "failed_with_code": "Error {{code}}: Failed to add user.",
         "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
         "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
         "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
@@ -82,13 +76,17 @@
       "title": "Make user admin",
       "promote_to_admin": "Promote to admin",
       "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
-      "make_admin_warning_line2": "This action cannot be undone."
+      "make_admin_warning_line2": "This action cannot be undone.",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to make user an admin."
+      }
     },
     "edit": {
       "title": "Edit organization",
       "edit_organization_info": "Update the details for the organization",
       "save": "Save",
       "errors": {
+        "failed_with_code": "Error {{code}}: Failed to edit organization.",
         "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
         "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
         "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
@@ -98,10 +96,14 @@
     },
     "delete_organization": {
       "title": "Delete organization",
+      "not_deletable": "This organization cannot be deleted before {{date}}.",
       "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
       "delete_organization_warning_line2": "This action cannot be undone.",
       "delete": "Delete",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to delete organization."
+      }
     }
   },
   "entitlements": {
@@ -160,6 +162,9 @@
             "required": "Affiliate external ID is required"
           }
         }
+      },
+      "error": {
+        "failed_with_code": "Error {{code}}: Failed to add entitlement."
       }
     },
     "terminate_entitlement": {
@@ -169,6 +174,11 @@
       "terminate_entitlement_warning_line3": "This process cannot be reversed.",
       "terminate": "Terminate",
       "cancel": "Cancel"
+    },
+    "entitlement_action": {
+      "errors": {
+        "failed_with_code": "Error {{code}}: Action failed."
+      }
     },
     "delete_entitlement": {
       "title": "Delete entitlement",

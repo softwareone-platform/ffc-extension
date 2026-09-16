@@ -98,7 +98,7 @@ export function useColumns(): Columns {
         isHidden: role !== "admin",
       },
     ];
-  }, [tColumns]);
+  }, [tColumns, getActions, role, tUserTypes]);
 }
 
 export function useFields() {
@@ -125,7 +125,7 @@ export function useFields() {
       { title: tFields("lastLogin"), name: "last_login", type: "date" },
       { title: tFields("created_at"), name: "created_at", type: "date" },
     ],
-    [tFields],
+    [tFields, tUserTypes],
   );
 }
 
@@ -175,7 +175,7 @@ export function useGridConfig(
         ...gridInfoDialogConfig,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<EmployeeRead>,
-    [columns, fields, asyncOptions, onGridActionEvent],
+    [columns, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
