@@ -268,7 +268,7 @@ export function useFields() {
         ],
       },
     ],
-    [tFields],
+    [tFields, tDataSourceType],
   );
 }
 
@@ -379,7 +379,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
-    [columns, fields, views, asyncOptions, onGridActionEvent],
+    [columns, fields, views, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);

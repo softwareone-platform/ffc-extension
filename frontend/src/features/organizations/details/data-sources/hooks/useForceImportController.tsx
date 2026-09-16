@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 import { DatasourceRead } from "~api/ffc-api-model";
 import { useOrganizationsApi } from "~organizations/api";
 import { ModalControllerProps } from "~shared/components/modal/types";
-import { useFixedT } from "~shared/hooks/useFixedT";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { toIsoDateString } from "~shared/utils/DateUtils";
 
 export function useForceImportController({ onClose }: ModalControllerProps = {}) {
@@ -14,7 +14,7 @@ export function useForceImportController({ onClose }: ModalControllerProps = {})
   const [lastImportAt, setLastImportAt] = useState<Date | undefined>(undefined);
   const [isLastImportAtEnabled, setIsLastImportAtEnabled] = useState(false);
   const { forceReimportDatasource } = useOrganizationsApi();
-  const tErrors = useFixedT("organization:dataSources:errors");
+  const { getErrorMessage } = useErrorDetails("organization:dataSources:errors");
 
   const reset = useCallback((): void => {
     setError(null);
@@ -31,10 +31,9 @@ export function useForceImportController({ onClose }: ModalControllerProps = {})
 
   const onError = useCallback(
     (err: AxiosError): void => {
-      const status = err.response?.status ?? err.status ?? "unknown";
-      setError(tErrors("force_import_failed_with_code_" + status));
+      setError(getErrorMessage(err));
     },
-    [tErrors],
+    [getErrorMessage],
   );
 
   const onSuccess = useCallback((): void => {

@@ -6,12 +6,12 @@ import { AxiosError } from "axios";
 import { Entitlement } from "~features/entitlements/api/model";
 import { useEntitlementsApi } from "~features/entitlements/api/useEntitlementsApi";
 import { ModalControllerProps } from "~shared/components/modal/types";
-import { useFixedT } from "~shared/hooks/useFixedT";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 
 export function useEntitlementController({ onClose }: ModalControllerProps = {}) {
   const { terminateEntitlement, deleteEntitlement } = useEntitlementsApi();
   const [error, setError] = useState<string | null>(null);
-  const tErrors = useFixedT("entitlements:terminate:errors");
+  const { getErrorMessage } = useErrorDetails("entitlements:entitlement_action:errors");
 
   const cancel = useCallback((): void => {
     if (onClose) {
@@ -22,9 +22,9 @@ export function useEntitlementController({ onClose }: ModalControllerProps = {})
 
   const onError = useCallback(
     (err: AxiosError): void => {
-      setError(tErrors("terminate_entitlement_failed_with_code_" + (err.status || "unknown")));
+      setError(getErrorMessage(err));
     },
-    [tErrors],
+    [getErrorMessage],
   );
 
   const onSuccess = useCallback((): void => {
