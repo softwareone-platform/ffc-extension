@@ -321,7 +321,11 @@ export const getDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasou
 export const forceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPost = <ThrowOnError extends boolean = false>(options: Options<ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostData, ThrowOnError>): RequestResult<ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponses, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostErrors, ThrowOnError> => (options.client ?? client).post<ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponses, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/ops/v1/organizations/{organization_id}/datasources/{datasource_id}/force-reimport',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

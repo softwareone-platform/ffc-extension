@@ -62,7 +62,6 @@ function CustomIcon({
     };
 
     asyncImport();
-
   }, [name]);
 
   return (
