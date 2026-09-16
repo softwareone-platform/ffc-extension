@@ -295,6 +295,7 @@ def entitlement_factory(
         redeemed_at: datetime | None = None,
         redeemed_by: Organization | None = None,
         terminated_at: datetime | None = None,
+        created_at: datetime | None = None,
     ) -> Entitlement:
         entitlement = Entitlement(
             name=name or "AWS",
@@ -311,6 +312,8 @@ def entitlement_factory(
             redeemed_by=redeemed_by,
             terminated_at=terminated_at,
         )
+        if created_at is not None:
+            entitlement.created_at = created_at
         db_session.add(entitlement)
         await db_session.commit()
         await db_session.refresh(entitlement)
