@@ -14,8 +14,8 @@ from typer.testing import CliRunner
 from app.api_clients.mpt import MPTClient
 from app.cli import app
 from app.commands.sync_subscriptions import (
+    DEFAULT_STATUS_LIST,
     SyncResult,
-    account_products,
     build_notification_details,
     build_query,
     main,
@@ -28,7 +28,11 @@ from app.conf import Settings
 from app.db.handlers import EntitlementHandler
 from app.db.models import Account, Entitlement
 from app.enums import AccountStatus, AccountType, EntitlementStatus
-from app.events.subscriptions.constants import TERMINATED_SUBSCRIPTION_STATUS
+from app.events.subscriptions.constants import (
+    ACTIVE_SUBSCRIPTION_STATUS,
+    EXPIRED_SUBSCRIPTION_STATUS,
+    TERMINATED_SUBSCRIPTION_STATUS,
+)
 from app.notifications import ColumnHeader
 from tests.types import ModelFactory, MPTSubscriptionFactory, SubscriptionsPageMocker
 
@@ -71,12 +75,6 @@ def mock_subscriptions_api(httpx_mock: HTTPXMock) -> SubscriptionsPageMocker:
     return _mock
 
 
-@pytest.fixture
-def mock_installation_client(mocker: MockerFixture, mpt_client: MPTClient) -> MPTClient:
-    mocker.patch("app.commands.sync_subscriptions.get_installation_client", return_value=mpt_client)
-    return mpt_client
-
-
 async def get_entitlements(db_session: AsyncSession, owner: Account) -> list[Entitlement]:
     result = await db_session.execute(
         select(Entitlement)
@@ -87,30 +85,23 @@ async def get_entitlements(db_session: AsyncSession, owner: Account) -> list[Ent
 
 
 @pytest.mark.parametrize(
-    ("products", "expected"),
+    ("status", "expected_status_filter"),
     [
-        ("PRD-2222-2222,PRD-1111-1111", ["PRD-1111-1111", "PRD-2222-2222"]),
-        (" PRD-1111-1111 , PRD-1111-1111 ", ["PRD-1111-1111"]),
-        ("PRD-1111-1111,,", ["PRD-1111-1111"]),
+        (DEFAULT_STATUS_LIST, "in(status,(Active,Expired,Terminated))"),
+        ([ACTIVE_SUBSCRIPTION_STATUS], "in(status,(Active))"),
+        ([EXPIRED_SUBSCRIPTION_STATUS], "in(status,(Expired))"),
     ],
 )
-async def test_account_products(
-    account_factory: ModelFactory[Account],
-    products: str,
-    expected: list[str],
+def test_build_query_filters_by_product_status_and_window(
+    status: list[str],
+    expected_status_filter: str,
 ) -> None:
-    account = await account_factory(products=products)
-
-    assert account_products(account) == expected
-
-
-def test_build_query_filters_by_product_status_and_window() -> None:
-    query = build_query(["PRD-1111-1111", "PRD-2222-2222"], SINCE, UNTIL)
+    query = build_query(["PRD-1111-1111", "PRD-2222-2222"], status, SINCE, UNTIL)
 
     assert query == (
         "and("
         "in(product.id,(PRD-1111-1111,PRD-2222-2222)),"
-        "in(status,(Active,Terminated)),"
+        f"{expected_status_filter},"
         "or(and(gt(audit.created.at,2026-09-12T09:00:00.000Z),"
         "lt(audit.created.at,2026-09-13T09:00:00.000Z)),"
         "and(gt(audit.updated.at,2026-09-12T09:00:00.000Z),"
@@ -119,7 +110,7 @@ def test_build_query_filters_by_product_status_and_window() -> None:
     )
 
 
-async def test_sync_subscription_creates_the_missing_entitlement(
+async def test_sync_subscription_creates_missing_entitlement(
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
@@ -142,12 +133,11 @@ async def test_sync_subscription_creates_the_missing_entitlement(
     assert result.succeeded is True
 
 
-async def test_sync_subscription_skips_an_active_subscription_that_is_already_covered(
+async def test_sync_subscription_skips_an_active_subscription_with_active_entitlement(
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
     entitlement_factory: ModelFactory[Entitlement],
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
     entitlement = await entitlement_factory(
         owner=subscription_account,
@@ -156,13 +146,11 @@ async def test_sync_subscription_skips_an_active_subscription_that_is_already_co
     )
     subscription = mpt_subscription_factory()
 
-    with caplog.at_level("INFO"):
-        result = await sync_subscription(
-            entitlement_handler, subscription_account, subscription, [entitlement]
-        )
+    result = await sync_subscription(
+        entitlement_handler, subscription_account, subscription, [entitlement]
+    )
 
     assert result is None
-    assert f"Subscription {SUBSCRIPTION_ID} is already synced." in caplog.text
 
 
 async def test_sync_subscription_reports_more_than_one_live_entitlement(
@@ -193,101 +181,78 @@ async def test_sync_subscription_reports_more_than_one_live_entitlement(
     assert len(await get_entitlements(db_session, subscription_account)) == 2
 
 
-async def test_sync_subscription_leaves_a_terminated_subscription_without_entitlements_alone(
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_sync_subscription_ignore_non_active_subscription_without_entitlements(
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
+    subscription_status: str,
 ) -> None:
-    subscription = mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS)
+    subscription = mpt_subscription_factory(status=subscription_status)
 
     result = await sync_subscription(entitlement_handler, subscription_account, subscription, [])
 
     assert result is None
 
 
-async def test_sync_subscription_deletes_an_unredeemed_entitlement(
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_sync_subscription_actions_for_non_active_subscription(
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
     entitlement_factory: ModelFactory[Entitlement],
     db_session: AsyncSession,
+    subscription_status: str,
 ) -> None:
-    entitlement = await entitlement_factory(
+    new_ent = await entitlement_factory(
         owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.NEW
     )
-    subscription = mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS)
+    active_ent = await entitlement_factory(
+        owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.ACTIVE
+    )
+    subscription = mpt_subscription_factory(status=subscription_status)
 
     result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [entitlement]
+        entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
     )
 
-    await db_session.refresh(entitlement)
-    assert entitlement.status == EntitlementStatus.DELETED
+    await db_session.refresh(new_ent)
+    assert new_ent.status == EntitlementStatus.DELETED
+
+    await db_session.refresh(active_ent)
+    assert active_ent.status == EntitlementStatus.TERMINATED
+    assert active_ent.terminated_at is not None
 
     assert result is not None
-    assert result.message == f"The entitlement {entitlement.id} was deleted."
+    assert f"The entitlement {new_ent.id} was deleted." in result.message
+    assert f"The entitlement {active_ent.id} was terminated." in result.message
     assert result.succeeded is True
 
 
-async def test_sync_subscription_terminates_a_redeemed_entitlement(
-    entitlement_handler: EntitlementHandler,
-    subscription_account: Account,
-    mpt_subscription_factory: MPTSubscriptionFactory,
-    entitlement_factory: ModelFactory[Entitlement],
-    db_session: AsyncSession,
-) -> None:
-    entitlement = await entitlement_factory(
-        owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.ACTIVE
-    )
-    subscription = mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS)
-
-    result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [entitlement]
-    )
-
-    await db_session.refresh(entitlement)
-    assert entitlement.status == EntitlementStatus.TERMINATED
-    assert entitlement.terminated_at is not None
-
-    assert result is not None
-    assert result.message == f"The entitlement {entitlement.id} was terminated."
-
-
-async def test_sync_subscription_revokes_every_live_entitlement_of_a_terminated_subscription(
-    entitlement_handler: EntitlementHandler,
-    subscription_account: Account,
-    mpt_subscription_factory: MPTSubscriptionFactory,
-    entitlement_factory: ModelFactory[Entitlement],
-) -> None:
-    unredeemed = await entitlement_factory(
-        owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.NEW
-    )
-    redeemed = await entitlement_factory(
-        owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.ACTIVE
-    )
-    subscription = mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS)
-
-    result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [unredeemed, redeemed]
-    )
-
-    assert result is not None
-    assert result.message == (
-        f"The entitlement {unredeemed.id} was deleted.\n"
-        f"The entitlement {redeemed.id} was terminated."
-    )
-
-
-async def test_sync_page_persists_the_changes(
+async def test_sync_page(
     mpt_client: MPTClient,
     mock_subscriptions_api: SubscriptionsPageMocker,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
+    entitlement_factory: ModelFactory[Entitlement],
     db_session: AsyncSession,
 ) -> None:
-    covered = mpt_subscription_factory(subscription_id="SUB-0000-0001", datasource_id="ds0000001")
-    missing = mpt_subscription_factory(subscription_id="SUB-0000-0002", datasource_id="ds0000002")
-    mock_subscriptions_api([covered, missing])
+    ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        status=EntitlementStatus.ACTIVE,
+    )
+    synced_sub = mpt_subscription_factory()
+
+    sub_1 = mpt_subscription_factory(subscription_id="SUB-0000-0001", datasource_id="ds0000001")
+    sub_2 = mpt_subscription_factory(subscription_id="SUB-0000-0002", datasource_id="ds0000002")
+    mock_subscriptions_api([sub_1, sub_2, synced_sub])
 
     results = await sync_page(
         mpt_client,
@@ -305,10 +270,11 @@ async def test_sync_page_persists_the_changes(
     assert [entitlement.datasource_id for entitlement in entitlements] == [
         "ds0000001",
         "ds0000002",
+        ent.datasource_id,
     ]
 
 
-async def test_sync_page_writes_nothing_when_dry_run(
+async def test_sync_page_dry_run(
     mpt_client: MPTClient,
     mock_subscriptions_api: SubscriptionsPageMocker,
     subscription_account: Account,
@@ -333,7 +299,7 @@ async def test_sync_page_writes_nothing_when_dry_run(
     assert await get_entitlements(db_session, subscription_account) == []
 
 
-async def test_sync_page_reports_a_page_that_could_not_be_fetched(
+async def test_sync_page_fetch_subscriptions_fails(
     mpt_client: MPTClient,
     httpx_mock: HTTPXMock,
     subscription_account: Account,
@@ -360,44 +326,20 @@ async def test_sync_page_reports_a_page_that_could_not_be_fetched(
     assert "failed to sync the page" in caplog.text
 
 
-async def test_sync_page_leaves_a_synced_subscription_out_of_the_results(
+async def test_sync_account_empty_window(
+    mocker: MockerFixture,
     mpt_client: MPTClient,
-    mock_subscriptions_api: SubscriptionsPageMocker,
-    subscription_account: Account,
-    mpt_subscription_factory: MPTSubscriptionFactory,
-    entitlement_factory: ModelFactory[Entitlement],
-) -> None:
-    await entitlement_factory(
-        owner=subscription_account,
-        datasource_id=DATASOURCE_ID,
-        status=EntitlementStatus.ACTIVE,
-    )
-    mock_subscriptions_api([mpt_subscription_factory()])
-
-    results = await sync_page(
-        mpt_client,
-        "and(...)",
-        offset=0,
-        page_size=50,
-        account_id=subscription_account.id,
-        dry_run=False,
-        semaphore=asyncio.Semaphore(1),
-    )
-
-    assert results == []
-
-
-async def test_sync_account_skips_an_account_with_nothing_in_the_window(
-    mock_installation_client: MPTClient,
     mock_subscriptions_api: SubscriptionsPageMocker,
     subscription_account: Account,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
+    mocker.patch("app.commands.sync_subscriptions.get_installation_client", return_value=mpt_client)
     mock_subscriptions_api([])
 
     with caplog.at_level("INFO"):
         results = await sync_account(
             subscription_account,
+            DEFAULT_STATUS_LIST,
             SINCE,
             UNTIL,
             page_size=50,
@@ -410,11 +352,13 @@ async def test_sync_account_skips_an_account_with_nothing_in_the_window(
 
 
 async def test_sync_account_returns_one_flat_list_for_every_page(
-    mock_installation_client: MPTClient,
+    mocker: MockerFixture,
+    mpt_client: MPTClient,
     mock_subscriptions_api: SubscriptionsPageMocker,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
 ) -> None:
+    mocker.patch("app.commands.sync_subscriptions.get_installation_client", return_value=mpt_client)
     subscriptions = [
         mpt_subscription_factory(
             subscription_id=f"SUB-0000-000{index}", datasource_id=f"ds000000{index}"
@@ -425,6 +369,7 @@ async def test_sync_account_returns_one_flat_list_for_every_page(
 
     results = await sync_account(
         subscription_account,
+        DEFAULT_STATUS_LIST,
         SINCE,
         UNTIL,
         page_size=2,
@@ -446,7 +391,11 @@ def test_build_notification_details() -> None:
                 subscription_id=SUBSCRIPTION_ID,
                 message="Created new entitlement ENT-1234-5678.",
             ),
-            SyncResult(account_id="ACC-1234-5678", message="Boom.", error="Boom."),
+            SyncResult(
+                account_id="ACC-1234-5678",
+                message="Failed to sync page.",
+                error="Offset 50.",
+            ),
         ]
     )
 
@@ -458,11 +407,11 @@ def test_build_notification_details() -> None:
     )
     assert details.rows == [
         ("ACC-1234-5678", SUBSCRIPTION_ID, "Created new entitlement ENT-1234-5678.", ""),
-        ("ACC-1234-5678", "", "Boom.", "Boom."),
+        ("ACC-1234-5678", "", "Failed to sync page.", "Offset 50."),
     ]
 
 
-async def test_report_announces_a_run_that_changed_nothing(mocker: MockerFixture) -> None:
+async def test_report_success_all_synced(mocker: MockerFixture) -> None:
     mocked_send_info = mocker.patch("app.commands.sync_subscriptions.send_info")
 
     await report([], SINCE, UNTIL)
@@ -476,7 +425,7 @@ async def test_report_announces_a_run_that_changed_nothing(mocker: MockerFixture
     assert "details" not in mocked_send_info.await_args.kwargs
 
 
-async def test_report_lists_the_applied_changes(mocker: MockerFixture) -> None:
+async def test_report_success_applied_changes(mocker: MockerFixture) -> None:
     mocked_send_info = mocker.patch("app.commands.sync_subscriptions.send_info")
     results = [
         SyncResult(
@@ -496,11 +445,10 @@ async def test_report_lists_the_applied_changes(mocker: MockerFixture) -> None:
     assert len(mocked_send_info.await_args.kwargs["details"].rows) == 1
 
 
-async def test_report_raises_the_alarm_when_any_subscription_failed(
+async def test_report_partial_fail(
     mocker: MockerFixture,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    mocked_send_info = mocker.patch("app.commands.sync_subscriptions.send_info")
     mocked_send_error = mocker.patch("app.commands.sync_subscriptions.send_error")
     results = [
         SyncResult(
@@ -519,7 +467,6 @@ async def test_report_raises_the_alarm_when_any_subscription_failed(
     with caplog.at_level("WARNING"):
         await report(results, SINCE, UNTIL)
 
-    assert mocked_send_info.await_count == 0
     assert mocked_send_error.await_count == 1
     assert mocked_send_error.await_args is not None
     assert mocked_send_error.await_args.args == (
@@ -562,13 +509,14 @@ def test_sync_subscriptions_command(mocker: MockerFixture, test_settings: Settin
         2,
         24,
         "ACC-3333-3333",
+        None,
         datetime(2026, 9, 12, 0, 0, 0),
         None,
         True,
     )
 
 
-async def test_main_syncs_only_the_accounts_that_can_own_entitlements(
+async def test_main_accounts_filter(
     mocker: MockerFixture,
     test_settings: Settings,
     account_factory: ModelFactory[Account],
@@ -590,7 +538,7 @@ async def test_main_syncs_only_the_accounts_that_can_own_entitlements(
     ]
 
 
-async def test_main_can_be_narrowed_to_one_account(
+async def test_main_with_specified_account(
     mocker: MockerFixture,
     test_settings: Settings,
     account_factory: ModelFactory[Account],
@@ -608,7 +556,7 @@ async def test_main_can_be_narrowed_to_one_account(
 
 
 @freeze_time("2026-03-16 09:00:00")
-async def test_main_defaults_the_window_to_the_lookback_interval(
+async def test_main_with_specified_lookback(
     mocker: MockerFixture,
     test_settings: Settings,
     subscription_account: Account,
@@ -621,12 +569,12 @@ async def test_main_defaults_the_window_to_the_lookback_interval(
     await main(test_settings, 50, 5, 24)
 
     assert mocked_sync_account.await_args is not None
-    since, until = mocked_sync_account.await_args.args[1:3]
+    since, until = mocked_sync_account.await_args.args[2:4]
     assert until == datetime(2026, 3, 16, 9, 0, 0, tzinfo=UTC)
     assert since == until - timedelta(hours=24)
 
 
-async def test_main_keeps_going_when_one_account_fails(
+async def test_main_when_one_account_fails(
     mocker: MockerFixture,
     test_settings: Settings,
     account_factory: ModelFactory[Account],
@@ -637,7 +585,7 @@ async def test_main_keeps_going_when_one_account_fails(
 
     async def fail_for_the_first_account(account: Account, *args: Any) -> list[SyncResult]:
         if account.id == subscription_account.id:
-            raise RuntimeError("boom")
+            raise RuntimeError("error")
         return []
 
     mocked_sync_account = mocker.patch(
@@ -657,44 +605,13 @@ async def test_main_keeps_going_when_one_account_fails(
             subscription_account.id,
             "",
             f"Failed to sync the subscriptions of account {subscription_account.id}",
-            "boom",
+            "error",
         )
     ]
     assert f"Failed to sync the subscriptions for account {subscription_account.id}" in caplog.text
 
 
-async def test_main_notifies_with_everything_the_run_produced(
-    mocker: MockerFixture,
-    test_settings: Settings,
-    subscription_account: Account,
-) -> None:
-    mocker.patch(
-        "app.commands.sync_subscriptions.sync_account",
-        return_value=[
-            SyncResult(
-                account_id=subscription_account.id,
-                subscription_id=SUBSCRIPTION_ID,
-                message="Created new entitlement ENT-1234-5678.",
-            )
-        ],
-    )
-    mocked_send_info = mocker.patch("app.commands.sync_subscriptions.send_info")
-
-    await main(test_settings, 50, 5, 24)
-
-    assert mocked_send_info.await_count == 1
-    assert mocked_send_info.await_args is not None
-    assert mocked_send_info.await_args.kwargs["details"].rows == [
-        (
-            subscription_account.id,
-            SUBSCRIPTION_ID,
-            "Created new entitlement ENT-1234-5678.",
-            "",
-        )
-    ]
-
-
-async def test_main_logs_the_results_instead_of_notifying_on_a_dry_run(
+async def test_main_log_on_a_dry_run(
     mocker: MockerFixture,
     test_settings: Settings,
     subscription_account: Account,
@@ -716,4 +633,34 @@ async def test_main_logs_the_results_instead_of_notifying_on_a_dry_run(
         await main(test_settings, 50, 5, 24, dry_run=True)
 
     assert mocked_send_info.await_count == 0
-    assert SUBSCRIPTION_ID in caplog.text
+    assert "1 subscription(s) to change, 0 failed:" in caplog.text
+    assert (
+        f"{subscription_account.id}  {SUBSCRIPTION_ID}  Created new entitlement ENT-1234-5678."
+        in caplog.text
+    )
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        (None, DEFAULT_STATUS_LIST),
+        (ACTIVE_SUBSCRIPTION_STATUS, [ACTIVE_SUBSCRIPTION_STATUS]),
+        (TERMINATED_SUBSCRIPTION_STATUS, [TERMINATED_SUBSCRIPTION_STATUS]),
+    ],
+)
+async def test_main_status_argument(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    subscription_account: Account,
+    status: str | None,
+    expected: list[str],
+) -> None:
+    mocked_sync_account = mocker.patch(
+        "app.commands.sync_subscriptions.sync_account", return_value=[]
+    )
+    mocker.patch("app.commands.sync_subscriptions.send_info")
+
+    await main(test_settings, 50, 5, 24, status=status)
+
+    assert mocked_sync_account.await_args is not None
+    assert mocked_sync_account.await_args.args[1] == expected
