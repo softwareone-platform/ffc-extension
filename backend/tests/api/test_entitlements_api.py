@@ -273,6 +273,42 @@ async def test_create_entitlement_by_admin_with_owner_not_affiliate(
     assert error == (f"No Active Affiliate Account has been found with ID {admin_account.id}.")
 
 
+@pytest.mark.parametrize(
+    "existing_status",
+    [EntitlementStatus.NEW, EntitlementStatus.ACTIVE],
+)
+async def test_create_entitlement_already_existing_for_datasource(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_account: Account,
+    entitlement_factory: ModelFactory[Entitlement],
+    existing_status: EntitlementStatus,
+):
+    await entitlement_factory(
+        name="AWS",
+        affiliate_external_id="EXTERNAL_ID_987123",
+        datasource_id="SPONSOR_CONTAINER_ID_1234",
+        owner=gcp_account,
+        status=existing_status,
+    )
+
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "SPONSOR_CONTAINER_ID_1234",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        f"An Entitlement in status '{existing_status.value}' already exist "
+        "for the data source SPONSOR_CONTAINER_ID_1234"
+    )
+
+
 # ================
 # Get Entitlements
 # ================
