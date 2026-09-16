@@ -8,7 +8,6 @@ import { RqlQuery } from "@swo/rql-client";
 import { useReactQueryRqlGrid } from "./useReactQueryRqlGrid";
 
 jest.mock("@swo/design-system/grid", () => ({
-  ...jest.requireActual("@swo/design-system/grid"),
   buildRqlQuery: jest.fn(),
 }));
 

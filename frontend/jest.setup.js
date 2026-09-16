@@ -1,4 +1,15 @@
 import {jest} from '@jest/globals';
+import {TextEncoder, TextDecoder} from 'node:util';
+
+// jsdom lacks TextEncoder/TextDecoder; react-router-dom needs them at import time.
+Object.assign(globalThis, {TextEncoder, TextDecoder});
+
+// @mpt-extension/sdk declares only an "import" export condition, so require() can't
+// resolve it in Jest's CJS mode. Stub the small surface (setup + http) globally.
+jest.mock('@mpt-extension/sdk', () => ({
+  setup: jest.fn(),
+  http: jest.fn(),
+}), { virtual: true });
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),

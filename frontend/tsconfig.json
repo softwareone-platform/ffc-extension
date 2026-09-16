@@ -10,7 +10,7 @@
     "outDir": "../static",
     "skipLibCheck": true,
     "baseUrl": "./src",
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "@testing-library/jest-dom"],
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
     "paths": {
       "~api/*": ["api/*"],
