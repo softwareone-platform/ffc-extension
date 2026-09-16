@@ -1,7 +1,7 @@
 import base64
 import secrets
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import httpx
 import jwt
@@ -22,6 +22,7 @@ from app.utils import (
     get_jwt_token_claims,
     get_jwt_token_expires,
     get_meta,
+    get_organization_deletable_at,
     wrap_exc_in_http_response,
     wrap_http_error_in_502,
     wrap_http_not_found_in_400,
@@ -42,6 +43,44 @@ def test_find_first_returns_first_match() -> None:
 def test_find_first_returns_default_when_no_match() -> None:
     """`find_first` returns the provided default when nothing matches."""
     assert find_first(lambda x: x > 9, [1, 2], default="none") == "none"
+
+
+@pytest.mark.parametrize(
+    ("terminated_at", "expected"),
+    [
+        pytest.param(
+            datetime(2026, 7, 1, tzinfo=UTC),
+            datetime(2026, 9, 1, tzinfo=UTC),
+            id="first-day-of-the-month",
+        ),
+        pytest.param(
+            datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
+            datetime(2026, 9, 1, tzinfo=UTC),
+            id="mid-month-time-is-truncated",
+        ),
+        pytest.param(
+            datetime(2026, 11, 30, 23, 59, 59, tzinfo=UTC),
+            datetime(2027, 1, 1, tzinfo=UTC),
+            id="rolls-over-the-year",
+        ),
+        pytest.param(
+            datetime(2026, 12, 31, tzinfo=UTC),
+            datetime(2027, 2, 1, tzinfo=UTC),
+            id="rolls-over-the-year-into-a-shorter-month",
+        ),
+    ],
+)
+def test_get_organization_deletable_at(terminated_at: datetime, expected: datetime) -> None:
+    """The deletion is available at midnight UTC of the 1st day, 2 months after the termination."""
+    assert get_organization_deletable_at(terminated_at) == expected
+
+
+def test_get_organization_deletable_at_normalizes_non_utc_timezones() -> None:
+    """A termination that already falls on the next day in UTC is shifted accordingly."""
+    # 2026-07-31 22:30 UTC-3 is 2026-08-01 01:30 UTC, so 2 months later is October, not September
+    terminated_at = datetime(2026, 7, 31, 22, 30, tzinfo=timezone(-timedelta(hours=3)))
+
+    assert get_organization_deletable_at(terminated_at) == datetime(2026, 10, 1, tzinfo=UTC)
 
 
 def test_compute_daily_expenses_fills_missing_days() -> None:
