@@ -36,8 +36,16 @@ export function DataSourceForceImportModal({
   const tForceImport = useFixedT("organization:dataSources:force_import");
   const tProperties = useFixedT("organization:dataSources:force_import:properties");
 
-  const { cancel, forceImport, isPending, error, reset, lastImportAt, setLastImportAt } =
-    useForceImportController({ onClose });
+  const {
+    cancel,
+    forceImport,
+    isPending,
+    error,
+    reset,
+    lastImportAt,
+    setLastImportAt,
+    setIsLastImportAtEnabled,
+  } = useForceImportController({ onClose });
 
   // The modal stays mounted between openings, so clear the previous input and error each time.
   useEffect(() => {
@@ -101,7 +109,10 @@ export function DataSourceForceImportModal({
           label={tForceImport("last_import_at")}
           description={tForceImport("last_import_at_description")}
           value={lastImportAt}
-          onChange={setLastImportAt}
+          onChange={(date) => {
+            setLastImportAt(date);
+            setIsLastImportAtEnabled(!!date);
+          }}
           maxDate={new Date()}
           placeholder={tForceImport("last_import_at_placeholder")}
           isDisabled={isPending}
