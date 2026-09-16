@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
 import pycountry
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, computed_field, field_validator
 
 from app.enums import DatasourceType, OrganizationStatus
 from app.schemas.core import (
@@ -13,6 +14,7 @@ from app.schemas.core import (
     CommonEventsSchema,
     IdSchema,
 )
+from app.utils import get_organization_deletable_at
 
 EXCLUDED_CURRENCIES = [
     "XAU",  # gold
@@ -74,6 +76,20 @@ class OrganizationRead(IdSchema, OrganizationBase):
     status: OrganizationStatus
     events: OrganizationEventsSchema
     expenses_info: OrganizationExpensesInfo | None = None
+
+    @computed_field(  # type: ignore[prop-decorator]
+        examples=["2026-09-01T00:00:00Z"],
+        description=(
+            "The moment from which a terminated organization can be deleted, "
+            "null if the organization has not been terminated."
+        ),
+    )
+    @property
+    def deletable_at(self) -> datetime | None:
+        if self.events.terminated is None:
+            return None
+
+        return get_organization_deletable_at(self.events.terminated.at)
 
 
 class OrganizationUpdate(BaseSchema):

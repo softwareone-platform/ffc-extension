@@ -2130,6 +2130,12 @@ export type LimitOffsetPageOrganizationRead = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Deletable At
+         *
+         * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
+         */
+        readonly deletable_at: string | null;
     }>;
     /**
      * Total
@@ -2668,6 +2674,12 @@ export type OrganizationRead = {
          */
         possible_monthly_saving?: string;
     } | null;
+    /**
+     * Deletable At
+     *
+     * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
+     */
+    readonly deletable_at: string | null;
 };
 
 /**
@@ -3006,6 +3018,309 @@ export type LimitOffsetPageEmployeeReadWritable = {
      * Offset
      */
     offset: number;
+};
+
+/**
+ * LimitOffsetPage[OrganizationRead]
+ */
+export type LimitOffsetPageOrganizationReadWritable = {
+    /**
+     * Items
+     */
+    items: Array<{
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Currency
+         */
+        currency: string;
+        /**
+         * Billing Currency
+         */
+        billing_currency: string;
+        /**
+         * Operations External Id
+         */
+        operations_external_id: string;
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Linked Organization Id
+         */
+        linked_organization_id?: string | null;
+        /**
+         * OrganizationStatus
+         */
+        status: 'active' | 'terminated' | 'deleted';
+        /**
+         * OrganizationEventsSchema
+         */
+        events: {
+            /**
+             * AuditFieldSchema
+             */
+            created: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            };
+            /**
+             * AuditFieldSchema
+             */
+            updated: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            };
+            deleted?: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            } | null;
+            terminated?: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                } | null;
+            } | null;
+        };
+        expenses_info?: {
+            /**
+             * Limit
+             */
+            limit?: string;
+            /**
+             * Expenses This Month
+             */
+            expenses_this_month?: string;
+            /**
+             * Expenses This Month Forecast
+             */
+            expenses_this_month_forecast?: string;
+            /**
+             * Possible Monthly Saving
+             */
+            possible_monthly_saving?: string;
+        } | null;
+    }>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Limit
+     */
+    limit: number | null;
+    /**
+     * Offset
+     */
+    offset: number;
+};
+
+/**
+ * OrganizationRead
+ */
+export type OrganizationReadWritable = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Currency
+     */
+    currency: string;
+    /**
+     * Billing Currency
+     */
+    billing_currency: string;
+    /**
+     * Operations External Id
+     */
+    operations_external_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Linked Organization Id
+     */
+    linked_organization_id?: string | null;
+    /**
+     * OrganizationStatus
+     */
+    status: 'active' | 'terminated' | 'deleted';
+    /**
+     * OrganizationEventsSchema
+     */
+    events: {
+        /**
+         * AuditFieldSchema
+         */
+        created: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system';
+                /**
+                 * Name
+                 */
+                name: string;
+            } | null;
+        };
+        /**
+         * AuditFieldSchema
+         */
+        updated: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system';
+                /**
+                 * Name
+                 */
+                name: string;
+            } | null;
+        };
+        deleted?: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system';
+                /**
+                 * Name
+                 */
+                name: string;
+            } | null;
+        } | null;
+        terminated?: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system';
+                /**
+                 * Name
+                 */
+                name: string;
+            } | null;
+        } | null;
+    };
+    expenses_info?: {
+        /**
+         * Limit
+         */
+        limit?: string;
+        /**
+         * Expenses This Month
+         */
+        expenses_this_month?: string;
+        /**
+         * Expenses This Month Forecast
+         */
+        expenses_this_month_forecast?: string;
+        /**
+         * Possible Monthly Saving
+         */
+        possible_monthly_saving?: string;
+    } | null;
 };
 
 export type ListDatasourceExpensesOpsV1ExpensesGetData = {
@@ -4581,6 +4896,12 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                  */
                 possible_monthly_saving?: string;
             } | null;
+            /**
+             * Deletable At
+             *
+             * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
+             */
+            readonly deletable_at: string | null;
         }>;
         /**
          * Total
@@ -4813,6 +5134,12 @@ export type CreateOrganizationOpsV1OrganizationsPostResponses = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Deletable At
+         *
+         * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
+         */
+        readonly deletable_at: string | null;
     };
 };
 
@@ -5073,6 +5400,12 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Deletable At
+         *
+         * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
+         */
+        readonly deletable_at: string | null;
     };
 };
 
@@ -5285,6 +5618,12 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Deletable At
+         *
+         * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
+         */
+        readonly deletable_at: string | null;
     };
 };
 
