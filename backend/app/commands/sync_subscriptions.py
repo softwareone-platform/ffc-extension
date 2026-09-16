@@ -2,7 +2,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import typer
 
@@ -14,6 +14,7 @@ from app.db.models import Account, Entitlement
 from app.enums import AccountStatus, AccountType, EntitlementStatus
 from app.events.subscriptions.constants import (
     ACTIVE_SUBSCRIPTION_STATUS,
+    EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 )
 from app.events.subscriptions.utils import get_datasource_id
@@ -25,6 +26,11 @@ logger = logging.getLogger(__name__)
 MPT_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.000Z"
 TIMEFRAME_INPUT_FORMATS = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"]
 READABLE_DT_FORMAT = "%Y-%m-%d %H:%M:%S UTC"
+DEFAULT_STATUS_LIST = [
+    ACTIVE_SUBSCRIPTION_STATUS,
+    EXPIRED_SUBSCRIPTION_STATUS,
+    TERMINATED_SUBSCRIPTION_STATUS,
+]
 
 
 @dataclass
@@ -41,11 +47,35 @@ class SyncResult:
         return self.error is None
 
 
+def format_results(results: list[SyncResult]) -> str:  # pragma: no cover
+    if not results:
+        return "Nothing to change: every subscription is already in sync."
+
+    changed = [result for result in results if result.succeeded]
+    failed = [result for result in results if not result.succeeded]
+    account_width = max(len(result.account_id) for result in results)
+    subscription_width = max(len(result.subscription_id or "-") for result in results)
+
+    lines = [f"{len(changed)} subscription(s) to change, {len(failed)} failed:"]
+    for result in results:
+        prefix = (
+            f"  {result.account_id:<{account_width}}  "
+            f"{(result.subscription_id or '-'):<{subscription_width}}  "
+        )
+        indent = " " * len(prefix)
+        details = result.message.splitlines()
+        if result.error:
+            details.append(f"FAILED: {result.error}")
+        lines.append(prefix + details[0])
+        lines.extend(indent + detail for detail in details[1:])
+    return "\n".join(lines)
+
+
 def account_products(account: Account) -> list[str]:
     return sorted({product.strip() for product in account.products.split(",") if product.strip()})
 
 
-def build_query(products: list[str], since: datetime, until: datetime) -> str:
+def build_query(products: list[str], status: list[str], since: datetime, until: datetime) -> str:
     lower = since.strftime(MPT_DATETIME_FORMAT)
     upper = until.strftime(MPT_DATETIME_FORMAT)
     window = ",".join(
@@ -54,7 +84,7 @@ def build_query(products: list[str], since: datetime, until: datetime) -> str:
     )
     conditions = [
         f"in(product.id,({','.join(products)}))",
-        f"in(status,({','.join([ACTIVE_SUBSCRIPTION_STATUS, TERMINATED_SUBSCRIPTION_STATUS])}))",
+        f"in(status,({','.join(status)}))",
         f"or({window})",
     ]
     return f"and({','.join(conditions)})"
@@ -117,7 +147,6 @@ async def sync_subscription(
                 message="\n".join(actions),
             )
 
-    logger.info(f"Subscription {sub_id} is already synced.")
     return None
 
 
@@ -187,6 +216,7 @@ async def sync_page(
 
 async def sync_account(
     account: Account,
+    status: list[str],
     since: datetime,
     until: datetime,
     page_size: int,
@@ -194,7 +224,7 @@ async def sync_account(
     semaphore: asyncio.Semaphore,
 ) -> list[SyncResult]:
     client: MPTClient = get_installation_client(account.external_id)
-    query = build_query(account_products(account), since, until)
+    query = build_query(account_products(account), status, since, until)
     total = await client.count("commerce/subscriptions", query)
     if not total:
         logger.info(f"{account.id}: no subscription events within the window. Skip it.")
@@ -268,6 +298,7 @@ async def main(
     max_parallel: int,
     lookback_hours: int,
     account_external_id: str | None = None,
+    status: str | None = None,
     since: datetime | None = None,
     until: datetime | None = None,
     dry_run: bool = False,
@@ -278,6 +309,11 @@ async def main(
     since = since or until - timedelta(hours=lookback_hours)
     if since.tzinfo is None:
         since = since.replace(tzinfo=UTC)
+
+    if status is None:
+        status = DEFAULT_STATUS_LIST
+    else:
+        status = [status]
 
     semaphore = asyncio.Semaphore(max_parallel)
 
@@ -297,10 +333,15 @@ async def main(
         f"{since.strftime(READABLE_DT_FORMAT)} and {until.strftime(READABLE_DT_FORMAT)}"
     )
 
+    if dry_run:
+        logger.warning("Changes won't be written to database. Command just shows what it will do.")
+
     results: list[SyncResult] = []
     for account in accounts:
         try:
-            results.extend(await sync_account(account, since, until, page_size, dry_run, semaphore))
+            results.extend(
+                await sync_account(account, status, since, until, page_size, dry_run, semaphore)
+            )
         except Exception as exc:
             logger.exception(f"Failed to sync the subscriptions for account {account.id}: {exc}")
             results.append(
@@ -312,7 +353,7 @@ async def main(
             )
 
     if dry_run:
-        logger.info(results)
+        logger.info(format_results(results))
     else:
         await report(results, since, until)
 
@@ -327,11 +368,19 @@ def command(
             help="Affiliate account external ID. Default: every active affiliate account",
         ),
     ] = None,
+    status: Annotated[
+        Literal[*DEFAULT_STATUS_LIST] | None,
+        typer.Option(
+            "--status",
+            "-s",
+            help="Sync subscriptions only in selected status. "
+            "Default: sync both active and terminated",
+        ),
+    ] = None,
     since: Annotated[
         datetime | None,
         typer.Option(
             "--since",
-            "-s",
             formats=TIMEFRAME_INPUT_FORMATS,
             help="Sync the subscriptions changed after this UTC date or datetime. "
             "Default: the start of command run minus the configured interval",
@@ -341,7 +390,6 @@ def command(
         datetime | None,
         typer.Option(
             "--until",
-            "-u",
             formats=TIMEFRAME_INPUT_FORMATS,
             help="Sync the subscriptions changed before this UTC date or datetime. "
             "Default: the start of command run",
@@ -381,6 +429,16 @@ def command(
     """
     logger.info("Starting command function")
     asyncio.run(
-        main(ctx.obj, page_size, max_parallel, lookback_hours, account, since, until, dry_run)
+        main(
+            ctx.obj,
+            page_size,
+            max_parallel,
+            lookback_hours,
+            account,
+            status,
+            since,
+            until,
+            dry_run,
+        )
     )
     logger.info("Completed command function")
