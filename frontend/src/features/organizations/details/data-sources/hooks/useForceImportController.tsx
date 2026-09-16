@@ -12,14 +12,12 @@ import { toIsoDateString } from "~shared/utils/DateUtils";
 export function useForceImportController({ onClose }: ModalControllerProps = {}) {
   const [error, setError] = useState<string | null>(null);
   const [lastImportAt, setLastImportAt] = useState<Date | undefined>(undefined);
-  const [isLastImportAtEnabled, setIsLastImportAtEnabled] = useState(false);
   const { forceReimportDatasource } = useOrganizationsApi();
   const tErrors = useFixedT("organization:dataSources:errors");
 
   const reset = useCallback((): void => {
     setError(null);
     setLastImportAt(undefined);
-    setIsLastImportAtEnabled(false);
   }, []);
 
   const cancel = useCallback((): void => {
@@ -76,10 +74,10 @@ export function useForceImportController({ onClose }: ModalControllerProps = {})
       mutate({
         organizationId,
         datasourceId: datasource.id,
-        lastImportAt: isLastImportAtEnabled ? lastImportAt : undefined,
+        lastImportAt,
       });
     },
-    [mutate, isLastImportAtEnabled, lastImportAt],
+    [mutate, lastImportAt],
   );
 
   return {
@@ -90,7 +88,5 @@ export function useForceImportController({ onClose }: ModalControllerProps = {})
     reset,
     lastImportAt,
     setLastImportAt,
-    isLastImportAtEnabled,
-    setIsLastImportAtEnabled,
   };
 }
