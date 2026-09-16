@@ -1,39 +1,34 @@
 @use "@swo/design-tokens" as *;
 
 .force-import-modal {
-  p {
-    margin: 0 0 var(--spacing-3);
-  }
-
   .modal__error {
-    margin-bottom: var(--spacing-3);
+    margin-bottom: var(--spacing-2);
   }
 
-  // Datasource identification block: spaced away from the text above and below it, but the
-  // three rows sit directly on top of each other. The design system renders them into a grid
-  // whose row-gap would otherwise separate them.
   .modal__properties {
-    margin: 0 0 var(--spacing-3);
+    margin: 0 0 var(--spacing-2);
 
     > div {
       row-gap: 0;
     }
 
-    // Belt and braces: the paragraph margin above must never reach the property values, which
-    // live inside a clipped, single-line ellipsis span.
     p {
       margin: 0;
     }
   }
 
   .modal__field {
-    margin-top: var(--spacing-6);
-    // Room below the date field so the calendar popover is not cramped against the footer.
-    padding-bottom: var(--spacing-8);
+    margin: 0 0 var(--spacing-2);
   }
 
-  // NOTE: the design system checkbox is a flex row; only spacing is safe to override here.
   .modal__checkbox {
-    margin-bottom: var(--spacing-3);
+    margin-bottom: var(--spacing-2);
+  }
+
+  .modal__datasource_info {
+    p {
+      margin: 0 0 var(--spacing-2);
+    }
+    margin: var(--spacing-2) 0;
   }
 }

@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 
-import { Checkbox } from "@swo/design-system/checkbox";
 import { DatePicker } from "@swo/design-system/date-picker";
 import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { InlineNotification } from "@swo/design-system/notification";
-import { BoldText } from "@swo/design-system/text";
+import { BoldText, RegularText } from "@swo/design-system/text";
 import { DisplayValue } from "@swo/design-system/utils";
 
 import { DatasourceRead } from "~api/ffc-api-model";
+import DataSourceIcon from "~shared/components/custom-icons/CustomIcon";
 import { Modal } from "~shared/components/modal/Modal";
 import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -15,6 +15,8 @@ import { useFixedT } from "~shared/hooks/useFixedT";
 import { useForceImportController } from "../hooks/useForceImportController";
 
 import "./DataSourceForceImportModal.scss";
+
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 
 type Props = {
   isOpen: boolean;
@@ -33,17 +35,9 @@ export function DataSourceForceImportModal({
 }: Readonly<Props>) {
   const tForceImport = useFixedT("organization:dataSources:force_import");
   const tProperties = useFixedT("organization:dataSources:force_import:properties");
-  const {
-    cancel,
-    forceImport,
-    isPending,
-    error,
-    reset,
-    lastImportAt,
-    setLastImportAt,
-    isLastImportAtEnabled,
-    setIsLastImportAtEnabled,
-  } = useForceImportController({ onClose });
+
+  const { cancel, forceImport, isPending, error, reset, lastImportAt, setLastImportAt } =
+    useForceImportController({ onClose });
 
   // The modal stays mounted between openings, so clear the previous input and error each time.
   useEffect(() => {
@@ -76,50 +70,50 @@ export function DataSourceForceImportModal({
           </InlineNotification>
         </div>
       )}
-      <p>{tForceImport("confirm_line1")}</p>
-      <InPageHighlight
-        className="modal__properties"
-        style="inline"
-        direction="vertical"
-        mode="dense"
-      >
-        <InPageHighlight.Item title={tProperties("id")}>
-          <BoldText as="span" color="grey-5">
-            <DisplayValue value={datasource?.datasource_id} />
-          </BoldText>
-        </InPageHighlight.Item>
-        <InPageHighlight.Item title={tProperties("name")}>
-          <BoldText as="span" color="grey-5">
-            <DisplayValue value={datasource?.name} />
-          </BoldText>
-        </InPageHighlight.Item>
-        <InPageHighlight.Item title={tProperties("linked_datasource_id")}>
-          <BoldText as="span" color="grey-5">
-            <DisplayValue value={datasource?.id} />
-          </BoldText>
-        </InPageHighlight.Item>
-      </InPageHighlight>
-      <p>{tForceImport("confirm_line2")}</p>
-      <p>{tForceImport("confirm_line3")}</p>
-      <div className="modal__field">
-        <Checkbox
-          className="modal__checkbox"
-          label={tForceImport("use_last_import_at")}
-          isChecked={isLastImportAtEnabled}
-          isDisabled={isPending}
-          onChange={(event) => setIsLastImportAtEnabled(event.target.checked)}
-          testId="force-import-use-last-import-at"
+      <InlineNotification status="info">
+        <p>{tForceImport("confirm_line3")}</p>
+      </InlineNotification>
+      <div className="modal__datasource_info">
+        <RegularText>{tForceImport("confirm_line1")}</RegularText>
+        <EntityReferenceCell
+          primaryContent={datasource?.name || ""}
+          secondaryContent={datasource?.datasource_id || ""}
+          secondaryContentMaxHeight={50}
+          icon={<DataSourceIcon name={datasource?.type || "unknown"} size={48} />}
         />
+      </div>
+      <div className="modal__datasource_properties">
+        <InPageHighlight
+          className="modal__properties"
+          style="inline"
+          direction="vertical"
+          mode="dense"
+        >
+          <InPageHighlight.Item title={tProperties("linked_datasource_id")}>
+            <BoldText as="span" color="grey-5">
+              <DisplayValue value={datasource?.id} />
+            </BoldText>
+          </InPageHighlight.Item>
+        </InPageHighlight>
+      </div>
+      <div className="modal__field">
         <DatePicker<Date>
           label={tForceImport("last_import_at")}
           description={tForceImport("last_import_at_description")}
           value={lastImportAt}
           onChange={setLastImportAt}
           maxDate={new Date()}
-          isDisabled={!isLastImportAtEnabled || isPending}
+          placeholder={tForceImport("last_import_at_placeholder")}
+          isDisabled={isPending}
           testId="force-import-last-import-at"
+          popoverCssPosition="fixed"
+          positions={{ position: "top-end", offset: { x: 0, y: -12 } }}
         />
       </div>
+
+      <p>
+        <i>{tForceImport("confirm_line2")}</i>
+      </p>
     </Modal>
   );
 }
