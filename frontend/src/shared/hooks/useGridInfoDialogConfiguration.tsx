@@ -6,15 +6,15 @@ import { useFixedT } from "./useFixedT";
 
 export function useGridInfoDialogConfiguration() {
   const { defaultNoDataConfiguration } = useDefaultInfoDialogConfiguration();
-  const t = useFixedT("shared:grid");
+  const tGrid = useFixedT("shared:grid");
 
   return useMemo(() => {
     return {
       noDataConfiguration: {
         ...defaultNoDataConfiguration,
-        description: t("infoDialog:noData:description"),
+        description: tGrid("infoDialog:noData:description"),
         button: undefined,
       },
     };
-  }, [defaultNoDataConfiguration]);
+  }, [defaultNoDataConfiguration, tGrid]);
 }

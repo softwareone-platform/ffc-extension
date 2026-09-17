@@ -47,7 +47,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entity<OrganizationRead>>,
-    [columns, views, fields, asyncOptions, onGridActionEvent],
+    [columns, views, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
