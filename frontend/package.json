@@ -18,7 +18,7 @@
     "lint:fix": "eslint \"src/**/*.{ts,tsx,js,mjs,cjs}\" --fix",
     "translations:sort": "node src/i18n/sortTranslations.ts",
     "fix:all": "npm-run-all translations:sort format lint:fix",
-    "check:all": "npm run build",
+    "check:all": "npm run lint && npm run build",
     "check": "npm-run-all lint format:check",
     "test": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096 --experimental-vm-modules\" jest --config=jest.config.js --passWithNoTests",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096 --experimental-vm-modules\" jest --config=jest-coverage.config.js --passWithNoTests --forceExit",
