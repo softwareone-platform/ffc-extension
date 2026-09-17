@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridFieldDefinition } from "@swo/design-system/grid";
+import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridColumnDefinition,
@@ -12,14 +12,21 @@ import { NO_VALUE } from "@swo/design-system/utils";
 import { Paths } from "@swo/rql-client";
 
 import { DatasourceRead } from "~api/ffc-api-model";
+import { DatasourceAction } from "~features/organizations/api/model";
 import { useOrganizationsApi } from "~organizations/api";
 import { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
 import DataSourceIcon from "~shared/components/custom-icons/CustomIcon";
 import { GridCellCurrency } from "~shared/components/grid/GridCellCurrency";
+import { GridCellDate } from "~shared/components/grid/GridCellDate";
+import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
+import { useUserRole } from "~shared/hooks/useUserRole";
+import { isEpoch } from "~shared/utils/DateUtils";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
+
+import { useActionOptions } from "./hooks/useActionOptions";
 
 type Columns = Array<
   Omit<GridColumnDefinition<DatasourceRead>, "fields"> & {
@@ -31,6 +38,8 @@ export function useColumns(): Columns {
   const tColumns = useFixedT("shared:grid:columns");
   const tDataSourceType = useFixedT("shared:grid:dataSourceType");
   const organization = useOrganizationContext();
+  const getActions = useActionOptions();
+  const { role } = useUserRole();
 
   return useMemo(() => {
     return [
@@ -113,8 +122,33 @@ export function useColumns(): Columns {
           />
         ),
       },
+      {
+        name: "last_import_at",
+        title: tColumns("last_import_at"),
+        fields: ["last_import_at"],
+        cell: (item: DatasourceRead) =>
+          isEpoch(item.last_import_at) ? (
+            <GridCellSimple>{NO_VALUE}</GridCellSimple>
+          ) : (
+            <GridCellDate value={item.last_import_at} />
+          ),
+      },
+      {
+        name: "actions",
+        title: tColumns("actions"),
+        fields: [],
+        cell: (item: DatasourceRead) => (
+          <GridCellDynamicActions<DatasourceRead, DatasourceAction>
+            item={item}
+            actions={getActions(item)}
+          />
+        ),
+        initialWidth: 100,
+        isScalable: false,
+        isHidden: role !== "admin",
+      },
     ];
-  }, [tColumns, tDataSourceType, organization]);
+  }, [tColumns, tDataSourceType, organization, getActions, role]);
 }
 
 export function useFields() {
@@ -143,7 +177,7 @@ export function useFields() {
       },
       { title: tFields("datasourceId"), name: "datasource_id" },
     ],
-    [tFields],
+    [tFields, tValue],
   );
 }
 
@@ -160,11 +194,27 @@ export function useAsyncOptions(organizationId: string) {
   }));
 }
 
-export function useGridConfig(organizationId: string) {
+export function useGridConfig(
+  organizationId: string,
+  onAction?: (action: DatasourceAction, item: DatasourceRead, silentRefresh: () => void) => void,
+) {
   const columns = useColumns();
   const fields = useFields();
   const asyncOptions = useAsyncOptions(organizationId);
   const gridInfoDialogConfig = useGridInfoDialogConfiguration();
+
+  const onGridActionEvent = useCallback(
+    (event: GridEvents) => {
+      if (event.type === "RowActionTriggered") {
+        onAction?.(
+          event.data.action as DatasourceAction,
+          event.data.item as DatasourceRead,
+          asyncOptions.silentRefresh,
+        );
+      }
+    },
+    [asyncOptions.silentRefresh, onAction],
+  );
 
   const config = useMemo(
     () =>
@@ -176,10 +226,15 @@ export function useGridConfig(organizationId: string) {
         selectedView: "default",
         ...asyncOptions,
         ...gridInfoDialogConfig,
+        onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<DatasourceRead>,
-    [columns, fields, asyncOptions],
+    [columns, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);
-  return { silentRefresh: asyncOptions.silentRefresh, ...gridProps };
+  return {
+    silentRefresh: asyncOptions.silentRefresh,
+    refresh: asyncOptions.refresh,
+    ...gridProps,
+  };
 }
