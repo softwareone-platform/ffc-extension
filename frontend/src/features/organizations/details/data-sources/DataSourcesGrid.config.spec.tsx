@@ -3,6 +3,15 @@ import { ReactNode } from "react";
 import { render, renderHook } from "@testing-library/react";
 
 import { DatasourceRead } from "~api/ffc-api-model";
+import { makeDatasource } from "~test-utils";
+import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
+import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
+import {
+  mockCustomIcon,
+  mockGridCellCurrency,
+  mockGridCellDate,
+  mockGridCellDynamicActions,
+} from "~test-utils/mocks/sharedGridCells";
 
 import {
   useAsyncOptions,
@@ -13,64 +22,16 @@ import {
 
 const NO_VALUE = "—";
 
-const mockUseGridAsync = jest.fn();
-jest.mock("@swo/design-system/grid", () => ({
-  GridCellSimple: ({ children }: { children: ReactNode }) => (
-    <div data-testid="grid-cell-simple">{children}</div>
-  ),
-  useGridAsync: (config: unknown) => mockUseGridAsync(config),
-}));
-
-jest.mock("@swo/design-system/entity-reference-cell", () => ({
-  EntityReferenceCell: ({
-    primaryContent,
-    secondaryContent,
-    icon,
-  }: {
-    primaryContent: ReactNode;
-    secondaryContent: ReactNode;
-    icon: ReactNode;
-  }) => (
-    <div data-testid="entity-reference-cell">
-      <span data-testid="primary">{primaryContent}</span>
-      <span data-testid="secondary">{secondaryContent}</span>
-      <span data-testid="icon">{icon}</span>
-    </div>
-  ),
-}));
-
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
+jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
 jest.mock("@swo/design-system/utils", () => ({
   ...jest.requireActual("@swo/design-system/utils"),
   NO_VALUE: "—",
 }));
-
-jest.mock("~shared/components/custom-icons/CustomIcon", () => ({
-  __esModule: true,
-  default: ({ name }: { name: string }) => <div data-testid="custom-icon">{name}</div>,
-}));
-
-jest.mock("~shared/components/grid/GridCellCurrency", () => ({
-  GridCellCurrency: ({ value, currency }: { value: number; currency: string }) => (
-    <div data-testid="grid-cell-currency">{`${value}|${currency}`}</div>
-  ),
-}));
-
-jest.mock("~shared/components/grid/GridCellDate", () => ({
-  GridCellDate: ({ value }: { value: unknown }) => (
-    <div data-testid="grid-cell-date">{String(value)}</div>
-  ),
-}));
-
-jest.mock("~shared/components/grid/GridCellDynamicActions", () => ({
-  GridCellDynamicActions: ({ item, actions }: { item: unknown; actions: unknown }) => (
-    <div data-testid="grid-cell-dynamic-actions">
-      <span data-testid="actions-item-id">{(item as { id?: string }).id}</span>
-      <span data-testid="actions-count">
-        {Array.isArray(actions) ? actions.length : 0}
-      </span>
-    </div>
-  ),
-}));
+jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
+jest.mock("~shared/components/grid/GridCellCurrency", () => mockGridCellCurrency);
+jest.mock("~shared/components/grid/GridCellDate", () => mockGridCellDate);
+jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
 
 jest.mock("~shared/utils/DateUtils", () => ({
   isEpoch: (value: unknown) => value === 0 || value === "1970-01-01T00:00:00Z",
@@ -176,12 +137,7 @@ describe("DataSourcesGrid.config", () => {
     it("renders the name column with EntityReferenceCell showing name, datasource_id and type icon", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "name")!;
-      const item = {
-        id: "internal-1",
-        name: "AWS Prod",
-        datasource_id: "aws-prod-123",
-        type: "aws_cnr",
-      } as DatasourceRead;
+      const item = makeDatasource();
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -193,14 +149,14 @@ describe("DataSourcesGrid.config", () => {
     it("renders the parent_id column with parent details when parent is set", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "parent_id")!;
-      const item = {
+      const item = makeDatasource({
         parent: {
           id: "p-1",
           name: "Parent DS",
           datasource_id: "parent-ds-123",
           type: "azure_tenant",
         },
-      } as DatasourceRead;
+      });
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -212,7 +168,7 @@ describe("DataSourcesGrid.config", () => {
     it("renders the parent_id column with NO_VALUE when parent is missing", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "parent_id")!;
-      const item = { parent: null } as unknown as DatasourceRead;
+      const item = makeDatasource({ parent: null });
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -222,7 +178,7 @@ describe("DataSourcesGrid.config", () => {
     it("renders resources_charged_this_month with empty currency", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "resources_charged_this_month")!;
-      const item = { resources_charged_this_month: 12 } as DatasourceRead;
+      const item = makeDatasource({ resources_charged_this_month: 12 });
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -230,12 +186,12 @@ describe("DataSourcesGrid.config", () => {
     });
 
     it.each([
-      ["expenses_so_far_this_month", "expenses_so_far_this_month", 42],
-      ["expenses_forecast_this_month", "expenses_forecast_this_month", 55],
+      ["expenses_so_far_this_month", "expenses_so_far_this_month" as const, 42],
+      ["expenses_forecast_this_month", "expenses_forecast_this_month" as const, 55],
     ])("renders %s with currency from organization context", (columnName, field, value) => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === columnName)!;
-      const item = { [field]: value } as unknown as DatasourceRead;
+      const item = makeDatasource({ [field]: value });
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -246,7 +202,7 @@ describe("DataSourcesGrid.config", () => {
       mockUseOrganizationContext.mockReturnValue(undefined);
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "expenses_so_far_this_month")!;
-      const item = { expenses_so_far_this_month: 7 } as DatasourceRead;
+      const item = makeDatasource({ expenses_so_far_this_month: 7 });
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -256,7 +212,7 @@ describe("DataSourcesGrid.config", () => {
     it("renders last_import_at as NO_VALUE when the value is an epoch marker", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "last_import_at")!;
-      const item = { last_import_at: 0 } as unknown as DatasourceRead;
+      const item = { ...makeDatasource(), last_import_at: 0 as unknown as string };
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -266,7 +222,7 @@ describe("DataSourcesGrid.config", () => {
     it("renders last_import_at as a date when the value is real", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "last_import_at")!;
-      const item = { last_import_at: "2026-01-15T10:00:00Z" } as unknown as DatasourceRead;
+      const item = makeDatasource({ last_import_at: "2026-01-15T10:00:00Z" });
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
@@ -276,11 +232,11 @@ describe("DataSourcesGrid.config", () => {
     it("renders the actions column with dynamic actions for the item", () => {
       const { result } = renderHook(() => useColumns());
       const column = result.current.find((c) => c.name === "actions")!;
-      const item = { id: "ds-1" } as DatasourceRead;
+      const item = makeDatasource();
 
       const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
 
-      expect(getByTestId("actions-item-id")).toHaveTextContent("ds-1");
+      expect(getByTestId("actions-item-id")).toHaveTextContent(item.id);
       expect(getByTestId("actions-count")).toHaveTextContent("1");
       expect(mockGetActions).toHaveBeenCalledWith(item);
     });

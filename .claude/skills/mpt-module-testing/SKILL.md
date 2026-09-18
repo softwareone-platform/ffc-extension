@@ -77,6 +77,75 @@ const queryClient = new QueryClient({
 <QueryClientProvider client={queryClient}>...</QueryClientProvider>
 ```
 
+## Sharing Mocks Across Specs
+
+`frontend/src/test-utils/` is the shared test-infrastructure root:
+
+```
+src/test-utils/
+├── index.ts                     # barrel: createQueryClientWrapper, renderWithRouter, factories
+├── renderWithQueryClient.tsx    # createQueryClientWrapper() — QueryClientProvider with retry: false
+├── renderWithRouter.tsx         # renderWithRouter(ui, { initialUrl, routePath })
+├── factories/                   # typed Partial<T>-overlay builders (e.g. makeDatasource)
+└── mocks/                       # shared mock factories (see Option A below)
+```
+
+Two mock-sharing options, matched to the situation:
+
+### Option A — Shared factory library (opt-in per spec) — the ffc-extension default
+
+For mocks reused across a few specs where each spec exercises a different subset of the mocked module's surface, keep them in `src/test-utils/mocks/` and import them.
+
+Constraints that shape the pattern:
+- Jest hoists `jest.mock(...)` above imports; the factory can only reference imported bindings or variables whose name starts with `mock` (case-insensitive). **Both should hold** — prefix module-shape exports with `mock*` AND import them statically.
+- ESLint's `@typescript-eslint/no-require-imports` blocks `require(...)` inside the factory. Static imports only.
+
+```tsx
+// src/test-utils/mocks/designSystemGrid.tsx
+import { ReactNode } from "react";
+
+export const mockGridProps = jest.fn();
+export const mockUseGridAsync = jest.fn();
+
+export const mockDesignSystemGrid = {
+  Grid: (props: unknown) => {
+    mockGridProps(props);
+    return <div data-testid="grid" />;
+  },
+  GridCellSimple: ({ children }: { children: ReactNode }) => (
+    <div data-testid="grid-cell-simple">{children}</div>
+  ),
+  useGridAsync: (config: unknown) => mockUseGridAsync(config),
+};
+```
+
+```tsx
+// Feature.spec.tsx
+import { mockDesignSystemGrid, mockGridProps } from "~test-utils/mocks/designSystemGrid";
+
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
+```
+
+The imported spies (`mockGridProps`, `mockUseGridAsync`) are the same instances the mock factory references, so `mockReturnValue` / `.mock.calls` in the test drive what the code-under-test sees. `clearMocks: true` in `jest.config.js` resets them between tests automatically.
+
+Existing shared mocks:
+- `~test-utils/mocks/designSystemGrid` — `Grid`, `GridCellSimple`, `useGridAsync`, `buildRqlQuery`
+- `~test-utils/mocks/entityReferenceCell` — `EntityReferenceCell`
+- `~test-utils/mocks/sharedGridCells` — `CustomIcon`, `GridCellCurrency`, `GridCellDate`, `GridCellDynamicActions`
+
+### Option B — Jest's manual mocks (`__mocks__/`)
+
+Use when *every* spec should see the same mock and no per-spec variation is needed. Follow [Jest's manual-mocks convention](https://jestjs.io/docs/manual-mocks):
+
+- **node_modules**: `<projectRoot>/__mocks__/<pkg>.tsx` — auto-applied to every test; no `jest.mock(...)` call needed.
+- **User modules**: `__mocks__/<module>.tsx` next to the real file — opt-in via `jest.mock('./module')` with **no factory**.
+
+Trade-off: readers of a spec cannot tell that a `node_modules` mock is in effect (it's auto-loaded). Prefer Option A when the mock exposes spies that specs assert on, or when specs need different shapes. No `__mocks__/` folders exist in this repo today — the shared surface is small enough that Option A is a better fit.
+
+### What NOT to share
+
+Feature-local mocks (a sibling component the spec is exercising, a hook only this feature uses) belong inline in the spec. Extracting them just pushes the reader between files for zero reuse.
+
 ## Testing Patterns
 
 ### Grid Components (thin wrappers)

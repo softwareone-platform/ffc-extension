@@ -1,14 +1,10 @@
 import { act, render, screen } from "@testing-library/react";
 
+import { mockDesignSystemGrid, mockGridProps } from "~test-utils/mocks/designSystemGrid";
+
 import { DataSourcesGrid } from "./DataSourcesGrid";
 
-const mockGridProps = jest.fn();
-jest.mock("@swo/design-system/grid", () => ({
-  Grid: (props: unknown) => {
-    mockGridProps(props);
-    return <div data-testid="grid" />;
-  },
-}));
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
 const mockUseGridConfig = jest.fn();
 jest.mock("./DataSourcesGrid.config", () => ({

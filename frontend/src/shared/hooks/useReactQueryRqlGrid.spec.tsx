@@ -1,31 +1,13 @@
-import { PropsWithChildren } from "react";
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 
 import { RqlQuery } from "@swo/rql-client";
 
+import { createQueryClientWrapper } from "~test-utils";
+import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
+
 import { useReactQueryRqlGrid } from "./useReactQueryRqlGrid";
 
-jest.mock("@swo/design-system/grid", () => ({
-  buildRqlQuery: jest.fn(),
-}));
-
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-
-  function TestComponent({ children }: PropsWithChildren) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-  }
-
-  return TestComponent;
-}
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
 describe("useReactQueryRqlGrid", () => {
   const mockData = {
@@ -46,7 +28,7 @@ describe("useReactQueryRqlGrid", () => {
     });
 
     const { result } = renderHook(() => useReactQueryRqlGrid(mockBaseQueryKey, options), {
-      wrapper: createWrapper(),
+      wrapper: createQueryClientWrapper(),
     });
 
     expect(result.current.data).toEqual([]);

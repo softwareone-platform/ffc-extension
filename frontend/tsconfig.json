@@ -20,7 +20,9 @@
       "~organizations/*": ["features/organizations/*"],
       "~entitlements/*": ["features/entitlements/*"],
       "~shared/*": ["shared/*"],
-      "~i18n/*": ["i18n/*"]
+      "~i18n/*": ["i18n/*"],
+      "~test-utils": ["test-utils"],
+      "~test-utils/*": ["test-utils/*"]
     }
   }
 }

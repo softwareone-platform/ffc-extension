@@ -34,6 +34,8 @@ export default {
     '~entitlements(.*)$': '<rootDir>/features/entitlements/$1',
     '~shared(.*)$': '<rootDir>/shared/$1',
     '~i18n(.*)$': '<rootDir>/i18n/$1',
+    '~test-utils$': '<rootDir>/test-utils',
+    '~test-utils/(.*)$': '<rootDir>/test-utils/$1',
   },
   setupFilesAfterEnv: ['@testing-library/jest-dom', '../jest.setup.js'],
   testTimeout: 10_000,
