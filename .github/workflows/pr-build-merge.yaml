@@ -58,7 +58,8 @@ jobs:
         run: uv --project backend run ruff check backend
 
       - name: Run tests
-        run: uv --project backend run pytest --rootdir=backend -c backend/pyproject.toml --cov-config=backend/pyproject.toml backend
+        working-directory: backend
+        run: uv run pytest
         env:
           FFC_EXT_POSTGRES_HOST: localhost
           FFC_EXT_POSTGRES_PORT: 5432
@@ -81,7 +82,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
-          path: coverage.xml
+          path: backend/coverage.xml
+          if-no-files-found: error
 
 
   validate-frontend:
@@ -121,6 +123,7 @@ jobs:
       with:
         name: frontend-coverage
         path: frontend/coverage/lcov.info
+        if-no-files-found: error
 
   teams:
     needs: [validate-backend, validate-frontend]
@@ -152,8 +155,8 @@ jobs:
           pr_status: ${{ github.event.pull_request.state }}
           is_merged: ${{ github.event.pull_request.merged }}
 
-  quality-check:
-    needs: [validate-backend, validate-frontend]
+  quality-check-frontend:
+    needs: validate-frontend
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -162,19 +165,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      # sonar.javascript.lcov.reportPaths=coverage/lcov.info is resolved against
+      # projectBaseDir (frontend/), so the report has to land in frontend/coverage/.
       - name: Download frontend coverage
         uses: actions/download-artifact@v4
         with:
           name: frontend-coverage
+          path: frontend/coverage
 
-      - name: Download backend coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-coverage
-
-      - name: SonarQube Scan
+      - name: SonarQube Scan Frontend
         uses: sonarsource/sonarqube-scan-action@v6
         if: ${{ !env.ACT }}
+        with:
+          projectBaseDir: frontend/
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -184,5 +187,44 @@ jobs:
         if: ${{ !env.ACT }}
         with:
           pollingTimeoutSec: 600
+          # The scanner writes its metadata under projectBaseDir, not the workspace root.
+          scanMetadataReportFile: frontend/.scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  quality-check-backend:
+    needs: validate-backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # sonar.python.coverage.reportPaths=coverage.xml is resolved against
+      # projectBaseDir (backend/), so the report has to land in backend/.
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend
+
+      - name: SonarQube Scan Backend
+        uses: sonarsource/sonarqube-scan-action@v6
+        if: ${{ !env.ACT }}
+        with:
+          projectBaseDir: backend/
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        if: ${{ !env.ACT }}
+        with:
+          pollingTimeoutSec: 600
+          # The scanner writes its metadata under projectBaseDir, not the workspace root.
+          scanMetadataReportFile: backend/.scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
