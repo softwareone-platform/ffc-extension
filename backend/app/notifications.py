@@ -188,7 +188,7 @@ def _adaptive_card(body: list[dict], actions: list[dict]) -> dict[str, Any]:
     return {
         "type": "AdaptiveCard",
         "version": "1.4",
-        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
         "body": body,
         "actions": actions,
         "msteams": {"width": "Full"},
