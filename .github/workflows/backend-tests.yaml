@@ -1,0 +1,75 @@
+name: Backend tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - release/*
+
+permissions:
+  contents: read
+
+jobs:
+  validate-backend:
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mysecurepass#
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv and set up its cache
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "backend/.python-version"
+
+      - name: Install the project dependancies
+        run: uv --project backend sync --all-extras --dev
+
+      - name: Create the .env file
+        run: cp env.example .env
+
+      - name: Run formatting checks
+        run: uv --project backend run ruff format --check --diff backend
+
+      - name: Run linting
+        run: uv --project backend run ruff check backend
+
+      - name: Run tests
+        working-directory: backend
+        run: uv run pytest
+        env:
+          FFC_EXT_POSTGRES_HOST: localhost
+          FFC_EXT_POSTGRES_PORT: 5432
+          FFC_EXT_POSTGRES_USER: postgres
+          FFC_EXT_POSTGRES_PASSWORD: mysecurepass#
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: error
