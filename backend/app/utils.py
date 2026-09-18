@@ -9,12 +9,13 @@ import os
 import socket
 import subprocess
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 
 import httpx
+from dateutil.relativedelta import relativedelta
 from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from yaml import safe_load
@@ -35,6 +36,21 @@ _JINJA_ENV = Environment(  # noqa: S701
 
 def find_first(func, iterable, default=None):
     return next(filter(func, iterable), default)
+
+
+def get_organization_deletable_at(terminated_at: datetime) -> datetime:
+    """
+    Computes the moment from which a terminated organization can be deleted: midnight UTC
+    of the first day of the month, two months after the organization has been terminated.
+
+    Args:
+        terminated_at (datetime): the moment the organization has been terminated.
+
+    Returns:
+        datetime: the timezone aware (UTC) moment from which the organization can be deleted.
+    """
+    deletable_date = terminated_at.astimezone(UTC).date() + relativedelta(months=2, day=1)
+    return datetime.combine(deletable_date, time.min, tzinfo=UTC)
 
 
 def compute_daily_expenses(

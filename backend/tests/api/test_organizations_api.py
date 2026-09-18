@@ -183,6 +183,29 @@ async def test_get_organization_with_operations_external_id_filter(
     assert len(data["items"]) == data["total"]
 
 
+async def test_get_all_organizations_include_deletable_at(
+    organization_factory: ModelFactory[Organization], api_client: AsyncClient, ffc_jwt_token: str
+):
+    """The listing endpoint exposes `deletable_at` only for the organizations terminated."""
+    active_organization = await organization_factory(operations_external_id="EXTERNAL_ID_1")
+    terminated_organization = await organization_factory(
+        operations_external_id="EXTERNAL_ID_2",
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
+    )
+
+    response = await api_client.get(
+        "/organizations",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+    )
+
+    assert response.status_code == 200
+    items = {item["id"]: item for item in response.json()["items"]}
+    # the active organization is not terminated, so the field is dropped by the serialization
+    assert "deletable_at" not in items[active_organization.id]
+    assert items[terminated_organization.id]["deletable_at"] == "2026-09-01T00:00:00Z"
+
+
 async def test_get_organization_with_not_valid_filter(
     organization_factory: ModelFactory[Organization], api_client: AsyncClient, ffc_jwt_token: str
 ):
@@ -553,6 +576,8 @@ async def test_get_organization_by_id(
     assert data["events"]["updated"]["by"]["name"] == ffc_extension.name
     assert data["expenses_info"] is not None
     assert data["expenses_info"]["expenses_this_month_forecast"] == "3690.91"
+    # the organization is not terminated, so the field is dropped by response_model_exclude_none
+    assert "deletable_at" not in data
 
 
 async def test_get_terminated_organization_by_id(
@@ -568,7 +593,7 @@ async def test_get_terminated_organization_by_id(
         updated_by=ffc_extension,
         linked_organization_id="ee7ebfaf-a222-4209-aecc-67861694a488",
         status=OrganizationStatus.TERMINATED,
-        terminated_at=datetime.now(UTC),
+        terminated_at=datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
     )
     httpx_mock.add_response(
         method="GET",
@@ -590,6 +615,7 @@ async def test_get_terminated_organization_by_id(
 
     assert data["events"]["terminated"]["at"] is not None
     assert data["status"] == "terminated"
+    assert data["deletable_at"] == "2026-09-01T00:00:00Z"
 
 
 async def test_get_non_existant_organization(api_client: AsyncClient, ffc_jwt_token: str):
@@ -943,7 +969,7 @@ async def test_delete_organization_to_early(
     response = await admin_client.delete(f"/organizations/{db_org.id}")
     assert response.status_code == 400
     assert response.json()["detail"] == (
-        f"The organization {db_org.name}cannot be deleted before September 1, 2026."
+        f"The organization {db_org.name} cannot be deleted before September 1, 2026."
     )
 
 
