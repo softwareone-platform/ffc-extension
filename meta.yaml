@@ -11,11 +11,11 @@ events:
     task: true
 {% if products %}
   - event: platform.commerce.subscription.status_changed
-    condition: "and(in(status,(Active,Terminated)),in(product.id,{{ products|join(',') }}))"
+    condition: "and(in(status,(Active,Terminated,Expired)),in(product.id,{{ products|join(',') }}))"
     path: "/events/commerce/subscriptions"
     task: true
   - event: platform.commerce.subscription.created
-    condition: "and(in(status,(Active,Terminated)),in(product.id,{{ products|join(',') }}))"
+    condition: "and(in(status,(Active,Terminated,Expired)),in(product.id,{{ products|join(',') }}))"
     path: "/events/commerce/subscriptions"
     task: true
 {% endif %}

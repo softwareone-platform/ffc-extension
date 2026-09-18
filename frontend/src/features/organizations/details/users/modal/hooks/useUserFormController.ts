@@ -5,7 +5,7 @@ import { AxiosError } from "axios";
 
 import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
-import { useFixedT } from "~shared/hooks/useFixedT";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 
 import { AddUserForm } from "../AddUserForm.Schema";
 import { useAddUserForm } from "./useAddUserForm";
@@ -20,8 +20,7 @@ export function useUserFormController({
   const { addAdmin } = useEmployeesApi();
   const [error, setError] = useState<string | null>(null);
   const { handleSubmit, control, reset } = useAddUserForm({ email: "", display_name: "" });
-  const tErrors = useFixedT("organization:users:errors");
-
+  const { getErrorMessage } = useErrorDetails("organization:users:errors");
   const handleCancel = useCallback((): void => {
     reset();
     setError("");
@@ -30,9 +29,9 @@ export function useUserFormController({
 
   const onError = useCallback(
     (err: AxiosError): void => {
-      setError(tErrors("add_admin_failed_with_code_" + (err.status || "unknown")));
+      setError(getErrorMessage(err));
     },
-    [tErrors],
+    [getErrorMessage],
   );
 
   const onSuccess = useCallback((): void => {

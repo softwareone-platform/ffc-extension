@@ -1,7 +1,8 @@
 import { PropsWithChildren, useEffect, useRef } from "react";
 
-import { InlineNotification } from "@swo/design-system/notification";
 import { RegularText } from "@swo/design-system/text";
+
+import { InlineErrorNotification } from "../error/InlineErrorNotification";
 
 export interface WizardStepProps extends PropsWithChildren {
   readonly title: string;
@@ -30,14 +31,7 @@ export function WizardStep({
     <div className={`step ${className}`}>
       {error ? (
         <div ref={errorRef} className={"step__error"}>
-          <InlineNotification status="error">
-            {error
-              .toString()
-              .split("\n")
-              .map((err, i) => (
-                <p key={"error_" + i}>{err}</p>
-              ))}
-          </InlineNotification>
+          <InlineErrorNotification error={error} />
         </div>
       ) : (
         <></>

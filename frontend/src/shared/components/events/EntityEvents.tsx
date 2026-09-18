@@ -35,7 +35,7 @@ export function EntityEvents<TEntity extends EntityEventsSchema>({
             at: value?.at,
           };
         }),
-    [entity, tProperties],
+    [entity, tProperties, tSharedDetails],
   );
 
   return (

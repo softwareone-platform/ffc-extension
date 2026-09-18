@@ -274,6 +274,44 @@ async def test_sync_page(
     ]
 
 
+async def test_sync_page_skips_subscriptions_without_a_datasource_id(
+    mpt_client: MPTClient,
+    mock_subscriptions_api: SubscriptionsPageMocker,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    db_session: AsyncSession,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A subscription without externalIds.vendor is skipped and reported, and left untouched."""
+    without_datasource = mpt_subscription_factory(
+        subscription_id="SUB-0000-0001", datasource_id=None
+    )
+    mock_subscriptions_api([without_datasource, mpt_subscription_factory()])
+
+    with caplog.at_level("WARNING"):
+        results = await sync_page(
+            mpt_client,
+            "and(...)",
+            offset=0,
+            page_size=50,
+            account_id=subscription_account.id,
+            dry_run=False,
+            semaphore=asyncio.Semaphore(1),
+        )
+
+    assert [result.subscription_id for result in results] == ["SUB-0000-0001", SUBSCRIPTION_ID]
+    skipped = results[0]
+    assert skipped.succeeded is False
+    assert skipped.message == "Subscription is not valid."
+    assert skipped.error == (
+        "The subscription has been skipped because has no datasource id (externalIds.vendor)."
+    )
+    assert f"SUB-0000-0001: {skipped.error}" in caplog.text
+
+    entitlements = await get_entitlements(db_session, subscription_account)
+    assert [entitlement.datasource_id for entitlement in entitlements] == [DATASOURCE_ID]
+
+
 async def test_sync_page_dry_run(
     mpt_client: MPTClient,
     mock_subscriptions_api: SubscriptionsPageMocker,

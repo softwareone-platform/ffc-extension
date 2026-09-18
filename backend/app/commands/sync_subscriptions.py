@@ -177,10 +177,27 @@ async def sync_page(
                 entitlement_handler = EntitlementHandler(session)
 
                 for subscription in subscriptions:
+                    datasource_id = get_datasource_id(subscription)
+                    if not datasource_id:
+                        error = (
+                            "The subscription has been skipped because "
+                            "has no datasource id (externalIds.vendor)."
+                        )
+                        logger.warning(f"{subscription['id']}: {error}")
+                        results.append(
+                            SyncResult(
+                                subscription_id=subscription["id"],
+                                account_id=account_id,
+                                message="Subscription is not valid.",
+                                error=error,
+                            )
+                        )
+                        continue
+
                     entitlements = await entitlement_handler.query_db(
                         where_clauses=[
                             Entitlement.owner == account,
-                            Entitlement.datasource_id == get_datasource_id(subscription),
+                            Entitlement.datasource_id == datasource_id,
                             Entitlement.status.in_(
                                 [EntitlementStatus.NEW, EntitlementStatus.ACTIVE]
                             ),

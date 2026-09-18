@@ -34,7 +34,9 @@
         "anthropic.claude-code",
         "vivaxy.vscode-conventional-commits",
         "eamodio.gitlens",
-        "astral-sh.ty"
+        "astral-sh.ty",
+        "rvest.vs-code-prettier-eslint",
+        "dbaeumer.vscode-eslint"
       ],
       "settings": {
         "python.terminal.activateEnvironment": false,

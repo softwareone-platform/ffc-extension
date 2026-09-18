@@ -1,6 +1,5 @@
-import { InlineNotification } from "@swo/design-system/notification";
-
 import { Employee } from "~features/organizations/api/model";
+import { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
 import { Modal } from "~shared/components/modal/Modal";
 import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -43,16 +42,7 @@ export function UserMakeAdminModal({
       isSubmitting={isPending}
       submitButtonColor="danger"
     >
-      {error && (
-        <InlineNotification status="error">
-          {error
-            .toString()
-            .split("\n")
-            .map((err, i) => (
-              <p key={"error_" + i}>{err}</p>
-            ))}
-        </InlineNotification>
-      )}
+      <InlineErrorNotification error={error} />
       <p>
         {tEntitlement("make_admin_warning_line1", {
           employeeId: employee?.id ?? "error",

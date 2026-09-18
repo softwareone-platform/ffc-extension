@@ -14,6 +14,8 @@ import { Entitlement } from "./model";
 
 const rootPath = "/ops/v1/entitlements";
 
+export type EntitlementCreated = EntitlementCreate & { id?: string };
+
 export function useEntitlementsApi() {
   const list = useCallback(
     async (
@@ -37,7 +39,7 @@ export function useEntitlementsApi() {
   }, []);
 
   const save = useCallback(async (entity: EntitlementCreate) => {
-    return http<EntitlementCreate & { id?: string }>(
+    return http<EntitlementCreated>(
       "id" in entity && entity.id
         ? {
             method: "PUT",

@@ -15,6 +15,7 @@ from app.enums import AccountType, EntitlementStatus
 from app.events.processing import ProcessingStatus
 from app.events.subscriptions.constants import (
     ACTIVE_SUBSCRIPTION_STATUS,
+    EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 )
 from app.events.subscriptions.exceptions import SubscriptionNotFoundError
@@ -281,18 +282,23 @@ async def test_active_subscription_create_an_entitlement_if_no_live_exists(
     assert result.message == f"The entitlement {issued.id} was created."
 
 
-# -- terminated subscription --
+# -- inactive subscription --
 
 
-async def test_terminated_subscription_does_nothing_when_no_entitlement_is_bound(
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_inactive_subscription_does_nothing_when_no_entitlement_is_bound(
     subscription_event_handler: SubscriptionEventHandler,
     mpt_subscription_factory: MPTSubscriptionFactory,
     mock_get_subscription: SubscriptionMocker,
     subscription_account: Account,
     db_session: AsyncSession,
+    subscription_status: str,
 ) -> None:
     """Nothing was ever issued for this datasource, so there is nothing to terminate."""
-    mock_get_subscription(mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS))
+    mock_get_subscription(mpt_subscription_factory(status=subscription_status))
     processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
 
     result = await processor.process()
@@ -302,19 +308,24 @@ async def test_terminated_subscription_does_nothing_when_no_entitlement_is_bound
     assert await get_entitlements(db_session, subscription_account) == []
 
 
-async def test_terminated_subscription_deletes_not_redeemed_entitlement(
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_inactive_subscription_deletes_not_redeemed_entitlement(
     subscription_event_handler: SubscriptionEventHandler,
     mpt_subscription_factory: MPTSubscriptionFactory,
     mock_get_subscription: SubscriptionMocker,
     entitlement_factory: ModelFactory[Entitlement],
     subscription_account: Account,
     db_session: AsyncSession,
+    subscription_status: str,
 ) -> None:
     """A NEW entitlement was never redeemed, so it is dropped rather than terminated."""
     unredeemed = await entitlement_factory(
         owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.NEW
     )
-    mock_get_subscription(mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS))
+    mock_get_subscription(mpt_subscription_factory(status=subscription_status))
     processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
 
     result = await processor.process()
@@ -327,19 +338,24 @@ async def test_terminated_subscription_deletes_not_redeemed_entitlement(
     assert result.message == f"The entitlement {unredeemed.id} was deleted."
 
 
-async def test_terminated_subscription_terminates_an_active_entitlement(
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_inactive_subscription_terminates_an_active_entitlement(
     subscription_event_handler: SubscriptionEventHandler,
     mpt_subscription_factory: MPTSubscriptionFactory,
     mock_get_subscription: SubscriptionMocker,
     entitlement_factory: ModelFactory[Entitlement],
     subscription_account: Account,
     db_session: AsyncSession,
+    subscription_status: str,
 ) -> None:
     """An ACTIVE entitlement is in use, so it is terminated."""
     redeemed = await entitlement_factory(
         owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.ACTIVE
     )
-    mock_get_subscription(mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS))
+    mock_get_subscription(mpt_subscription_factory(status=subscription_status))
     processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
 
     result = await processor.process()

@@ -6,6 +6,7 @@ import { AxiosError } from "axios";
 import { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationsApi } from "~features/organizations/api/useOrganizationsApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { EditOrganizationForm } from "../EditOrganization.Schema";
@@ -27,6 +28,7 @@ export function useOrganizationsController({
     operations_external_id: "",
     currency: "",
   });
+  const { getErrorMessage } = useErrorDetails("organizations:edit:errors");
   const tErrors = useFixedT("organizations:edit:errors");
 
   useEffect(() => {
@@ -52,9 +54,9 @@ export function useOrganizationsController({
 
   const onError = useCallback(
     (err: AxiosError): void => {
-      setError(tErrors("organization_edit_failed_with_code_" + (err.status || "unknown")));
+      setError(getErrorMessage(err));
     },
-    [tErrors],
+    [getErrorMessage],
   );
 
   const onSuccess = useCallback((): void => {

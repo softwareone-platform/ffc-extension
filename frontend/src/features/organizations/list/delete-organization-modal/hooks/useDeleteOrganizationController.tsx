@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 import { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationsApi } from "~features/organizations/api/useOrganizationsApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
-import { useFixedT } from "~shared/hooks/useFixedT";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 
 export type DeleteOrganizationModalControllerProps = {
   onClose?: (result?: ModalCloseResult) => void;
@@ -17,8 +17,7 @@ export function useDeleteOrganizationController({
 }: DeleteOrganizationModalControllerProps) {
   const { deleteOrganization } = useOrganizationsApi();
   const [error, setError] = useState<string | null>(null);
-
-  const tErrors = useFixedT("organizations:delete:errors");
+  const { getErrorMessage } = useErrorDetails("organizations:delete_organization:errors");
 
   const handleCancel = useCallback((): void => {
     if (onClose) {
@@ -29,9 +28,9 @@ export function useDeleteOrganizationController({
 
   const onError = useCallback(
     (err: AxiosError): void => {
-      setError(tErrors("organization_delete_failed_with_code_" + (err.status || "unknown")));
+      setError(getErrorMessage(err));
     },
-    [tErrors],
+    [getErrorMessage],
   );
 
   const onSuccess = useCallback((): void => {

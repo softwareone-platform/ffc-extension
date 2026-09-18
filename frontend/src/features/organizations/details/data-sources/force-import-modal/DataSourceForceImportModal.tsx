@@ -18,6 +18,8 @@ import "./DataSourceForceImportModal.scss";
 
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 
+import { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
+
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;
@@ -58,18 +60,7 @@ export function DataSourceForceImportModal({
       submitLabel={tForceImport("submit")}
       isSubmitting={isPending}
     >
-      {error && (
-        <div className="modal__error">
-          <InlineNotification status="error">
-            {error
-              .toString()
-              .split("\n")
-              .map((err, i) => (
-                <p key={"error_" + i}>{err}</p>
-              ))}
-          </InlineNotification>
-        </div>
-      )}
+      <InlineErrorNotification error={error} />
       <InlineNotification status="info">
         <p>{tForceImport("confirm_line3")}</p>
       </InlineNotification>

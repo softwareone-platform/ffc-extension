@@ -9,6 +9,7 @@ from app.events.core import EventHandler, EventProcessor
 from app.events.processing import ProcessingResult, ProcessingStatus
 from app.events.subscriptions.constants import (
     ACTIVE_SUBSCRIPTION_STATUS,
+    EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 )
 from app.events.subscriptions.exceptions import (
@@ -93,7 +94,7 @@ class SubscriptionProcessor(EventProcessor):
         )
         return self.completed(f"The entitlement {entitlement.id} was created.")
 
-    async def handle_terminated(self, entitlement: Entitlement | None) -> ProcessingResult:
+    async def handle_inactive(self, entitlement: Entitlement | None) -> ProcessingResult:
         """Drop an entitlement that was never redeemed, terminate the one in use."""
         if entitlement is None:
             return self.completed(f"No entitlement is bound to the subscription {self.object_id}.")
@@ -109,8 +110,11 @@ class SubscriptionProcessor(EventProcessor):
         entitlement = await self.get_entitlement()
         if self.subscription["status"] == ACTIVE_SUBSCRIPTION_STATUS:
             return await self.handle_active(entitlement)
-        elif self.subscription["status"] == TERMINATED_SUBSCRIPTION_STATUS:
-            return await self.handle_terminated(entitlement)
+        elif self.subscription["status"] in [
+            EXPIRED_SUBSCRIPTION_STATUS,
+            TERMINATED_SUBSCRIPTION_STATUS,
+        ]:
+            return await self.handle_inactive(entitlement)
         else:
             return self.completed(
                 f"The subscription status {self.subscription['status']} is not handled.",
