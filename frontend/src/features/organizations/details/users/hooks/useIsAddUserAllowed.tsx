@@ -8,7 +8,6 @@ export function useIsUserAddAllowed(organizationId: string) {
   const { role } = useUserRole();
   const { data: organization } = useOrganizationDetailsApi(organizationId);
 
-
   const isAddUserAllowed = useMemo(() => {
     const addUserAllowedRoles: Set<AccountType> = new Set(["admin"]);
     const addUserAllowedStatuses: Set<OrganizationStatus> = new Set(["active"]);

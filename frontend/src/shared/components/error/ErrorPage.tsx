@@ -23,10 +23,13 @@ export function ErrorPage({ title, subtitle, errorDescription, className }: Prop
   const navigate = useNavigate();
   const errorDescriptionRef = useRef<HTMLDivElement>(null);
 
-  const onHomeClick = useCallback((evt: React.MouseEvent<HTMLAnchorElement>) => {
-    evt.preventDefault();
-    navigate("/");
-  }, [navigate]);
+  const onHomeClick = useCallback(
+    (evt: React.MouseEvent<HTMLAnchorElement>) => {
+      evt.preventDefault();
+      navigate("/");
+    },
+    [navigate],
+  );
 
   return (
     <div className={`page page-embedded ${className}`}>
