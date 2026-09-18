@@ -1,0 +1,175 @@
+# Sonar runs after the test workflows rather than inside them, so that the
+# README test badges reflect the test suites alone and are not reddened by a
+# Quality Gate failure or by the 10 minute gate polling.
+#
+# Each test workflow triggers this one independently: the backend scan does not
+# wait for the frontend suite, exactly as the old `needs: validate-backend` did.
+name: Sonar quality gate
+
+on:
+  workflow_run:
+    workflows: ["Backend tests", "Frontend tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read # download the coverage artifact from the triggering run
+  pull-requests: read
+
+jobs:
+  quality-check:
+    # Mirrors the old `needs: validate-*`: nothing to scan if the tests failed.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # workflow_run checks out the default branch by default, but Sonar has to
+      # analyse the commit that was actually tested.
+      - name: Checkout the tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      # workflow_run jobs can read secrets even for pull requests from forks, so
+      # the local Docker action is taken from the default branch instead of from
+      # the code under review.
+      - name: Checkout the trusted action source
+        uses: actions/checkout@v4
+        with:
+          path: .trusted-actions
+
+      - name: Resolve which side to scan
+        id: side
+        env:
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          set -euo pipefail
+          case "$WORKFLOW_NAME" in
+            "Backend tests")
+              dir=backend
+              artifact=backend-coverage
+              # sonar.python.coverage.reportPaths=coverage.xml is resolved
+              # against projectBaseDir (backend/), so the report has to land
+              # in backend/.
+              artifact_path=backend
+              project_key=softwareone-mpt-github_ffc-extension_backend
+              label=Backend
+              ;;
+            "Frontend tests")
+              dir=frontend
+              artifact=frontend-coverage
+              # sonar.javascript.lcov.reportPaths=coverage/lcov.info is resolved
+              # against projectBaseDir (frontend/), so the report has to land in
+              # frontend/coverage/.
+              artifact_path=frontend/coverage
+              project_key=softwareone-mpt-github_ffc-extension_frontend
+              label=Frontend
+              ;;
+            *)
+              echo "Unexpected triggering workflow: $WORKFLOW_NAME" >&2
+              exit 1
+              ;;
+          esac
+          {
+            echo "dir=$dir"
+            echo "artifact=$artifact"
+            echo "artifact_path=$artifact_path"
+            echo "project_key=$project_key"
+            echo "label=$label"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Resolve the analysis target
+        id: target
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TRIGGER_EVENT: ${{ github.event.workflow_run.event }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          set -euo pipefail
+
+          # A push to main or release/*: a plain branch analysis.
+          if [[ "$TRIGGER_EVENT" != "pull_request" ]]; then
+            {
+              echo "is_pr=false"
+              echo "args=-Dsonar.branch.name=$HEAD_BRANCH"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # workflow_run leaves `pull_requests` empty for pull requests opened
+          # from a fork, so fall back to a lookup by head branch.
+          number="$EVENT_PR_NUMBER"
+          if [[ -z "$number" ]]; then
+            number=$(gh pr list --repo "$REPO" --head "$HEAD_BRANCH" --state open --limit 1 \
+              --json number --jq '.[0].number // ""')
+          fi
+          if [[ -z "$number" ]]; then
+            echo "No open pull request found for branch $HEAD_BRANCH" >&2
+            exit 1
+          fi
+
+          pr=$(gh pr view "$number" --repo "$REPO" --json baseRefName,title,url,author)
+          base=$(jq -r '.baseRefName' <<<"$pr")
+          author=$(jq -r '.author.login' <<<"$pr")
+          url=$(jq -r '.url' <<<"$pr")
+
+          {
+            echo "is_pr=true"
+            echo "number=$number"
+            echo "author=$author"
+            echo "url=$url"
+            # The scanner cannot auto-detect a pull request under workflow_run,
+            # so the decoration parameters are passed explicitly.
+            echo "args=-Dsonar.pullrequest.key=$number -Dsonar.pullrequest.branch=$HEAD_BRANCH -Dsonar.pullrequest.base=$base"
+            # A title is free text; a delimited value keeps it out of the parser.
+            echo "title<<__PR_TITLE__"
+            jq -r '.title' <<<"$pr"
+            echo "__PR_TITLE__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download coverage from the test run
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.side.outputs.artifact }}
+          path: ${{ steps.side.outputs.artifact_path }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v6
+        if: ${{ !env.ACT }}
+        with:
+          projectBaseDir: ${{ steps.side.outputs.dir }}/
+          args: ${{ steps.target.outputs.args }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        if: ${{ !env.ACT }}
+        with:
+          pollingTimeoutSec: 600
+          # The scanner writes its metadata under projectBaseDir, not the workspace root.
+          scanMetadataReportFile: ${{ steps.side.outputs.dir }}/.scannerwork/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Notify Microsoft Teams of the Quality Gate
+        if: ${{ !cancelled() && steps.target.outputs.is_pr == 'true' }}
+        continue-on-error: true
+        uses: ./.trusted-actions/.github/actions/notify-sonar-teams
+        with:
+          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          bot_image_url: https://raw.githubusercontent.com/softwareone-platform/ffc-extension/main/.github/workflows/assets/turing_team_pr_bot.png
+          repo: ${{ github.repository }}
+          project_key: ${{ steps.side.outputs.project_key }}
+          project_label: ${{ steps.side.outputs.label }}
+          pr_number: ${{ steps.target.outputs.number }}
+          pr_title: ${{ steps.target.outputs.title }}
+          pr_author: ${{ steps.target.outputs.author }}
+          pr_url: ${{ steps.target.outputs.url }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
