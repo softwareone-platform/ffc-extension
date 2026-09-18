@@ -37,5 +37,6 @@ export default {
   },
   setupFilesAfterEnv: ['@testing-library/jest-dom', '../jest.setup.js'],
   testTimeout: 10_000,
+  clearMocks: true,
   workerIdleMemoryLimit: '512MB',
 };

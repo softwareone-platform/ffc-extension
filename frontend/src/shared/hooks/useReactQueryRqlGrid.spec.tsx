@@ -39,10 +39,6 @@ describe("useReactQueryRqlGrid", () => {
   const mockQueryFn = jest.fn().mockResolvedValue(mockData);
   const mockBaseQueryKey = ["test-entities"];
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("should initialize with empty data array and total 0", () => {
     const options = (query: RqlQuery<object>) => ({
       queryKey: ["test-entities", query.toString()],

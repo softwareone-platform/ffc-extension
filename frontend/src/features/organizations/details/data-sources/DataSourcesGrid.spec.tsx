@@ -29,7 +29,6 @@ describe("DataSourcesGrid", () => {
   const refresh = jest.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
     mockUseGridConfig.mockReturnValue({
       refresh,
       silentRefresh: jest.fn(),
@@ -80,9 +79,7 @@ describe("DataSourcesGrid", () => {
       onAction("force_import", item);
     });
 
-    const calls = mockForceImportModal.mock.calls;
-    const latestCall = calls[calls.length - 1][0];
-    expect(latestCall).toMatchObject({
+    expect(mockForceImportModal.mock.lastCall![0]).toMatchObject({
       isOpen: true,
       datasource: item,
       organizationId: "org-abc",
@@ -97,8 +94,6 @@ describe("DataSourcesGrid", () => {
       onAction("unsupported_action", { id: "ds-2" });
     });
 
-    const calls = mockForceImportModal.mock.calls;
-    const latestCall = calls[calls.length - 1][0];
-    expect(latestCall.isOpen).toBe(false);
+    expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(false);
   });
 });

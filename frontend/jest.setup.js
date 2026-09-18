@@ -54,7 +54,4 @@ jest.mock('@swo/design-system/utils', () => ({
   },
 }));
 
-jest.setTimeout(5_000);
-jest.useFakeTimers();
-
 global.jest = jest;

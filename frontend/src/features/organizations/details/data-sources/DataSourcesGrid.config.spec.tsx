@@ -110,7 +110,6 @@ jest.mock("./hooks/useActionOptions", () => ({
 
 describe("DataSourcesGrid.config", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
     mockUseOrganizationContext.mockReturnValue({ currency: "USD" });
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
     mockUseGridInfoDialogConfiguration.mockReturnValue({ noDataConfiguration: {} });
