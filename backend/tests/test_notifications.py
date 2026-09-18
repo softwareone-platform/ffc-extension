@@ -70,7 +70,7 @@ async def test_send_notification_full(httpx_mock: HTTPXMock, mocker: MockerFixtu
                     "content": {
                         "type": "AdaptiveCard",
                         "version": "1.4",
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
                         "body": [
                             {
                                 "text": "Title",
@@ -226,7 +226,7 @@ async def test_send_notification_simple(httpx_mock: HTTPXMock, mocker: MockerFix
                     "content": {
                         "type": "AdaptiveCard",
                         "version": "1.4",
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                        "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
                         "body": [
                             {
                                 "text": "Title",

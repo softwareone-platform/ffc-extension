@@ -1,0 +1,61 @@
+name: Notify Teams of Sonar Quality Gate
+description: >
+  Reads the Quality Gate result and new-code measures for one SonarQube Cloud
+  project from the Sonar web API and posts them to Microsoft Teams as an
+  adaptive card, styled to match the pull request notification card.
+inputs:
+  webhook_url:
+    required: true
+    description: Teams incoming webhook URL
+  bot_image_url:
+    required: true
+    description: URL of the bot image to be used in the notification
+  repo:
+    required: true
+    description: Repository name in the format `owner/repo`
+  project_key:
+    required: true
+    description: Sonar project key to report on
+  project_label:
+    required: true
+    description: Human readable name for the project, e.g. `Backend`
+  pr_number:
+    required: true
+    description: Pull request number
+  pr_title:
+    required: true
+    description: Title of the pull request
+  pr_author:
+    required: true
+    description: Author of the pull request
+  pr_url:
+    required: true
+    description: URL of the pull request
+  sonar_token:
+    required: false
+    default: ""
+    description: Sonar token. Only needed for private projects.
+  sonar_host:
+    required: false
+    default: https://sonarcloud.io
+    description: Sonar base URL
+  note:
+    required: false
+    default: ""
+    description: Optional extra line rendered above the metrics, e.g. why the card was sent
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    WEBHOOK_URL: ${{ inputs.webhook_url }}
+    BOT_IMAGE_URL: ${{ inputs.bot_image_url }}
+    REPO: ${{ inputs.repo }}
+    PROJECT_KEY: ${{ inputs.project_key }}
+    PROJECT_LABEL: ${{ inputs.project_label }}
+    PR_NUMBER: ${{ inputs.pr_number }}
+    PR_TITLE: ${{ inputs.pr_title }}
+    PR_AUTHOR: ${{ inputs.pr_author }}
+    PR_URL: ${{ inputs.pr_url }}
+    SONAR_TOKEN: ${{ inputs.sonar_token }}
+    SONAR_HOST: ${{ inputs.sonar_host }}
+    NOTE: ${{ inputs.note }}

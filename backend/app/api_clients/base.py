@@ -16,7 +16,6 @@ class APIClientError(Exception):
     client_name: ClassVar[str]
 
     def __init_subclass__(cls):
-        super().__init_subclass__()
         cls.client_name = cls.__module__.split(".")[-1]
 
     def __init__(self, message: str):

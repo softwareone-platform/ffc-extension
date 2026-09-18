@@ -192,6 +192,22 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      - name: Notify Microsoft Teams of Frontend Quality Gate
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        continue-on-error: true
+        uses: ./.github/actions/notify-sonar-teams
+        with:
+          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          bot_image_url: https://raw.githubusercontent.com/softwareone-platform/ffc-extension/main/.github/workflows/assets/turing_team_pr_bot.png
+          repo: ${{ github.repository }}
+          project_key: softwareone-mpt-github_ffc-extension_frontend
+          project_label: Frontend
+          pr_number: ${{ github.event.pull_request.number }}
+          pr_title: ${{ github.event.pull_request.title }}
+          pr_author: ${{ github.event.pull_request.user.login }}
+          pr_url: ${{ github.event.pull_request.html_url }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
   quality-check-backend:
     needs: validate-backend
     runs-on: ubuntu-latest
@@ -228,3 +244,19 @@ jobs:
           scanMetadataReportFile: backend/.scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Notify Microsoft Teams of Backend Quality Gate
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        continue-on-error: true
+        uses: ./.github/actions/notify-sonar-teams
+        with:
+          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          bot_image_url: https://raw.githubusercontent.com/softwareone-platform/ffc-extension/main/.github/workflows/assets/turing_team_pr_bot.png
+          repo: ${{ github.repository }}
+          project_key: softwareone-mpt-github_ffc-extension_backend
+          project_label: Backend
+          pr_number: ${{ github.event.pull_request.number }}
+          pr_title: ${{ github.event.pull_request.title }}
+          pr_author: ${{ github.event.pull_request.user.login }}
+          pr_url: ${{ github.event.pull_request.html_url }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
