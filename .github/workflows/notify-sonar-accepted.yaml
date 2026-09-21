@@ -1,0 +1,95 @@
+# Accepting an issue in SonarQube Cloud does not start an analysis and does not
+# fire an analysis webhook, so there is no event to subscribe to. The only way
+# to spot it is to poll the accepted-issue count per open pull request and
+# compare it with the count seen on the previous run.
+name: Notify Teams on accepted Sonar issues
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  poll-accepted-issues:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # A fresh key is written on every run and the newest matching entry is
+      # restored, which gives a mutable cache entry.
+      - name: Restore previously seen counts
+        uses: actions/cache/restore@v4
+        with:
+          path: .sonar-accepted-state
+          key: sonar-accepted-state-${{ github.run_id }}
+          restore-keys: sonar-accepted-state-
+
+      - name: Notify on newly accepted issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_HOST: https://sonarcloud.io
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          BOT_IMAGE_URL: https://raw.githubusercontent.com/softwareone-platform/ffc-extension/main/.github/workflows/assets/turing_team_pr_bot.png
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p .sonar-accepted-state
+          # An isolated venv avoids "externally-managed-environment" on the
+          # runner's system Python.
+          python -m venv .venv-notify
+          .venv-notify/bin/pip install --quiet --disable-pip-version-check "requests>=2.32,<3"
+
+          auth=()
+          if [[ -n "${SONAR_TOKEN:-}" ]]; then auth=(-u "${SONAR_TOKEN}:"); fi
+
+          gh pr list --state open --limit 100 \
+            --json number,title,url,author \
+            --jq '.[] | [.number, .author.login, .url, .title] | @tsv' > prs.tsv
+
+          while IFS=$'\t' read -r num author url title; do
+            [[ -z "${num:-}" ]] && continue
+            for entry in "Backend:softwareone-mpt-github_ffc-extension_backend" \
+                         "Frontend:softwareone-mpt-github_ffc-extension_frontend"; do
+              label="${entry%%:*}"
+              key="${entry#*:}"
+
+              count=$(curl -sS ${auth[@]+"${auth[@]}"} \
+                "${SONAR_HOST}/api/measures/component?component=${key}&pullRequest=${num}&metricKeys=new_accepted_issues" \
+                | jq -r '[.component.measures[]? | select(.metric=="new_accepted_issues")
+                          | (.value // .periods[0].value // .period.value)] | first // ""')
+
+              # No analysis for this PR yet: nothing to compare.
+              [[ -z "$count" ]] && continue
+
+              state_file=".sonar-accepted-state/${num}-${label}"
+              prev=$(cat "$state_file" 2>/dev/null || echo "")
+              echo "$count" > "$state_file"
+
+              # First sighting records a baseline without notifying, so enabling
+              # this workflow does not replay every already-accepted issue.
+              if [[ -z "$prev" || "$count" -le "$prev" ]]; then
+                echo "PR #${num} ${label}: accepted=${count} (was '${prev:-none}') - no card"
+                continue
+              fi
+
+              delta=$(( count - prev ))
+              echo "PR #${num} ${label}: accepted went ${prev} -> ${count}, notifying"
+              PROJECT_KEY="$key" PROJECT_LABEL="$label" \
+              PR_NUMBER="$num" PR_TITLE="$title" PR_AUTHOR="$author" PR_URL="$url" \
+              NOTE="${delta} issue(s) newly accepted on this pull request." \
+                .venv-notify/bin/python .github/actions/notify-sonar-teams/notify_sonar_teams.py
+            done
+          done < prs.tsv
+
+      - name: Save seen counts
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .sonar-accepted-state
+          key: sonar-accepted-state-${{ github.run_id }}

@@ -4,6 +4,7 @@ import { GridEvents, UseAsyncGridConfig, useGridAsync } from "@swo/design-system
 import { Entity } from "@swo/service";
 
 import { OrganizationRead } from "~api/ffc-api-model";
+import { useGridIdentity } from "~shared/hooks/useGridIdentity";
 import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 
 import { Organization, OrganizationAction } from "../api/model";
@@ -20,6 +21,7 @@ export function useGridConfig(
   const views = useViews();
   const asyncOptions = useAsyncOptions();
   const gridInfoDialogConfig = useGridInfoDialogConfiguration();
+  const identity = useGridIdentity("organizations-list");
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -37,7 +39,7 @@ export function useGridConfig(
   const config = useMemo(
     () =>
       ({
-        id: "grid__organizations-list",
+        ...identity,
         views,
         columns,
         fields,
@@ -47,7 +49,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entity<OrganizationRead>>,
-    [columns, views, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
+    [identity, columns, views, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);

@@ -17,6 +17,7 @@ import { useOrganizationsApi } from "~organizations/api";
 import { GridCellDate } from "~shared/components/grid/GridCellDate";
 import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useGridIdentity } from "~shared/hooks/useGridIdentity";
 import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { useUserRole } from "~shared/hooks/useUserRole";
@@ -150,7 +151,7 @@ export function useGridConfig(
   const fields = useFields();
   const asyncOptions = useAsyncOptions(organizationId);
   const gridInfoDialogConfig = useGridInfoDialogConfiguration();
-
+  const identity = useGridIdentity("organizations-details-users");
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
       if (event.type === "RowActionTriggered") {
@@ -166,7 +167,7 @@ export function useGridConfig(
   const config = useMemo(
     () =>
       ({
-        id: "grid__organizations-details-users",
+        ...identity,
         columns,
         fields,
         isDefaultView: true,
@@ -175,7 +176,7 @@ export function useGridConfig(
         ...gridInfoDialogConfig,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<EmployeeRead>,
-    [columns, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
+    [identity, columns, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);

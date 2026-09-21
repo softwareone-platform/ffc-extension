@@ -22,6 +22,7 @@ import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useGridIdentity } from "~shared/hooks/useGridIdentity";
 import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
@@ -352,6 +353,7 @@ export function useGridConfig(
   const views = useViews();
   const asyncOptions = useAsyncOptions();
   const gridInfoDialogConfig = useGridInfoDialogConfiguration();
+  const identity = useGridIdentity("entitlements-list");
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -369,7 +371,7 @@ export function useGridConfig(
   const config = useMemo(
     () =>
       ({
-        id: "grid__entitlements-list",
+        ...identity,
         columns,
         fields,
         views,
@@ -379,7 +381,7 @@ export function useGridConfig(
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
-    [columns, fields, views, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
+    [identity, columns, fields, views, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);

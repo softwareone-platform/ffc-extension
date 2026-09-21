@@ -23,8 +23,7 @@ type RegionalSettings = {
   firstDayOfWeek: number;
 };
 
-const STALE_TIME = 5000;
-// const STALE_TIME = 1000 * 60 * 5;
+const STALE_TIME = 60 * 1000; // 1 minute
 
 const LANGUAGE: LanguageCode = "en-US";
 
