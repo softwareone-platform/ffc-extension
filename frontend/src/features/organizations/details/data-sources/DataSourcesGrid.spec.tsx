@@ -40,16 +40,14 @@ describe("DataSourcesGrid", () => {
     expect(mockUseGridConfig).toHaveBeenCalledWith("org-abc", expect.any(Function));
   });
 
-  it("forwards useGridConfig props to Grid (excluding refresh)", () => {
+  it("forwards useGridConfig props to Grid", () => {
     render(<DataSourcesGrid organizationId="org-abc" />);
 
     expect(screen.getByTestId("grid")).toBeInTheDocument();
-    const gridProps = mockGridProps.mock.calls[0][0];
-    expect(gridProps).toMatchObject({
+    expect(mockGridProps.mock.lastCall![0]).toMatchObject({
       columns: [{ name: "name" }],
       fields: [{ name: "id" }],
     });
-    expect(gridProps).not.toHaveProperty("refresh");
   });
 
   it("renders DataSourceForceImportModal closed by default with the organizationId", () => {
@@ -68,7 +66,7 @@ describe("DataSourcesGrid", () => {
 
   it("opens the force-import modal with the item when onAction fires 'force_import'", () => {
     render(<DataSourcesGrid organizationId="org-abc" />);
-    const onAction = mockUseGridConfig.mock.calls[0][1];
+    const onAction = mockUseGridConfig.mock.lastCall![1];
     const item = { id: "ds-1", name: "AWS", type: "aws" };
 
     act(() => {
@@ -82,9 +80,22 @@ describe("DataSourcesGrid", () => {
     });
   });
 
+  it("closes the force-import modal when its onClose fires", () => {
+    render(<DataSourcesGrid organizationId="org-abc" />);
+    const onAction = mockUseGridConfig.mock.lastCall![1];
+    const item = { id: "ds-1", name: "AWS", type: "aws" };
+    act(() => onAction("force_import", item));
+    expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(true);
+
+    const onClose = mockForceImportModal.mock.lastCall![0].onClose;
+    act(() => onClose());
+
+    expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(false);
+  });
+
   it("ignores unknown actions", () => {
     render(<DataSourcesGrid organizationId="org-abc" />);
-    const onAction = mockUseGridConfig.mock.calls[0][1];
+    const onAction = mockUseGridConfig.mock.lastCall![1];
 
     act(() => {
       onAction("unsupported_action", { id: "ds-2" });

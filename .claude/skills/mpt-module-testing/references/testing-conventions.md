@@ -42,7 +42,7 @@ Canonical rules and snippets: [SKILL.md → Design System Mocking](../SKILL.md#d
 Two things that bite repeatedly:
 
 - Use the FULL `@swo/design-system/[component]` path (not the shortened `@swo/[component]` from `mpt-vikings-ui`) — otherwise Jest treats them as distinct module IDs and the mock silently no-ops.
-- Return only the runtime exports the SUT actually uses. Type-only exports (`GridColumnDefinition`, `UseAsyncGridConfig`, etc.) are erased by SWC. Do **not** `...jest.requireActual("@swo/design-system/...")` inside a factory — the real module is huge and blows the heap (see [troubleshooting.md](./troubleshooting.md#problem-heap-oom-when-spreading-the-real-design-system-module)).
+- Return only the runtime exports the code under test actually uses. Type-only exports (`GridColumnDefinition`, `UseAsyncGridConfig`, etc.) are erased by SWC. Do **not** `...jest.requireActual("@swo/design-system/...")` inside a factory — the real module is huge and blows the heap (see [troubleshooting.md](./troubleshooting.md#problem-heap-oom-when-spreading-the-real-design-system-module)).
 
 ### Pre-Mocked Modules
 

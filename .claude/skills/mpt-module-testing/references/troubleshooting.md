@@ -95,23 +95,6 @@ const { getByTestId } = render(
 );
 ```
 
-### Problem: `TS2550: Property 'at' does not exist on type 'any[]'`
-
-**Cause:** `tsconfig.json` uses `"target": "ES2020"`, but `Array.prototype.at` is ES2022.
-
-**Solution:** use index arithmetic instead:
-
-```typescript
-// ❌ requires ES2022
-const latest = mockFn.mock.calls.at(-1);
-
-// ✅ works on ES2020
-const calls = mockFn.mock.calls;
-const latest = calls[calls.length - 1];
-```
-
----
-
 ## Design System Mocking Issues
 
 ### Problem: Mock not applied to a design-system component
@@ -143,7 +126,7 @@ jest.mock("@swo/design-system/grid", () => ({
   buildRqlQuery: jest.fn(),
 }));
 
-// ✅ Return only the runtime exports the SUT uses; type-only exports are erased by SWC
+// ✅ Return only the runtime exports the code under test uses; type-only exports are erased by SWC
 jest.mock("@swo/design-system/grid", () => ({
   buildRqlQuery: jest.fn(),
 }));
@@ -171,7 +154,7 @@ Global stubs: `TextEncoder` / `TextDecoder` on `globalThis`.
 
 ### Problem: `No QueryClient set, use QueryClientProvider to set one`
 
-**Cause:** the SUT (or one of its hooks) calls `useQueryClient` / `useQuery`, but the test doesn't wrap it in a `QueryClientProvider`.
+**Cause:** the code under test (or one of its hooks) calls `useQueryClient` / `useQuery`, but the test doesn't wrap it in a `QueryClientProvider`.
 
 ```typescript
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -231,6 +214,8 @@ await user.click(screen.getByRole("button", { name: /save/i }));
 
 If you add a new top-level alias in `tsconfig.json`, add the matching entry to `jest.config.js` (`moduleNameMapper`) — TS and Jest maintain separate maps.
 
+**Known drift:** `tsconfig.json` declares `~fixes/*` → `fixes/*`, but `jest.config.js` does not map it. No spec currently imports from `~fixes`, but the first one to do so will need to add the mapping to `moduleNameMapper`.
+
 ---
 
 ## Prevention Checklist
@@ -241,7 +226,7 @@ Before committing a spec:
 - [ ] Mocks use classic `jest.mock` + static `import` (SWC hoists in CJS mode)
 - [ ] Design-system mocks use the full `@swo/design-system/[component]` path
 - [ ] No re-mocking of pre-mocked modules (`useFixedT`, `@swo/design-system/utils`, `react-i18next`, `react-router-dom`, `@mpt-extension/sdk`)
-- [ ] Mock factory returns only runtime exports the SUT uses (no `...jest.requireActual(...)` for big design-system modules)
+- [ ] Mock factory returns only runtime exports the code under test uses (no `...jest.requireActual(...)` for big design-system modules)
 - [ ] State-changing callbacks invoked from test code wrapped in `act(...)`
 - [ ] Path aliases (`~shared/`, `~organizations/`, etc.) used consistently
 - [ ] `npm test` passes locally

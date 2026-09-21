@@ -13,7 +13,7 @@ Stack: `jest@30` + `@swc/jest` (CJS) + `jest-environment-jsdom` + `@testing-libr
 - Use `.spec.tsx` extension (NOT `.test.tsx`)
 - Mock with classic `jest.mock(path, factory)` — SWC hoists it above `import`
 - Mock design system using the FULL path: `@swo/design-system/[component]`
-- Mock only the runtime exports the SUT uses (type-only exports are erased)
+- Mock only the runtime exports the code under test uses (type-only exports are erased)
 - Use `function` keyword for test setup functions
 - Wrap state-changing callbacks (invoked directly from test) in `act(...)`
 - Use `MemoryRouter` + `Routes` + `Route` for `useParams`

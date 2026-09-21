@@ -169,12 +169,34 @@ Feature-local mocks (a sibling component the spec is exercising, a hook only thi
 - Use `userEvent.click()` for interactions
 - `await waitFor(...)` for async assertions
 
+## Scope of a unit test
+
+### Test in unit tests
+- The code under test's own branching on inputs (`null`, `undefined`, missing, role, feature flag)
+- Error paths the code under test itself owns (React Query hooks that expose `error`, action components that catch)
+- Memoization boundaries when the `useMemo` dep list is non-trivial
+- Callback wiring (capture the passed callback, invoke, assert side-effect)
+
+### Don't test in unit tests
+- **Empty-list rendering when Grid is mocked.** The mock's HTML is identical regardless of `data.length`. Only test the empty case when the code under test has explicit `if (data.length === 0)` branching.
+- **Translation keys.** `useTranslation` and `useFixedT` are identity-mocked in `jest.setup.js`; asserting keys tests the mock, not the code under test. Use i18n extraction/lint for missing keys; use e2e for translated-text assertions.
+- **Third-party library internals** (React Query cache, RQL parser output).
+- **Every prop forwarded to a mocked child.** Assert the ones that carry semantic meaning; skip the passthrough noise.
+
+### Null / missing input coverage
+
+For any input that can be `null`/`undefined` at runtime, add one test with the missing value:
+- Column cells that read nullable relations (`item.parent?.name`) — one `renderColumnCell` test with the field set to `null`
+- Context hooks (`useOrganizationContext`) that can return `undefined` — one `mockReturnValue(undefined)` test
+- Route params — one `renderWithRouter` call with the param absent
+
 ## AAA Pattern
 
 Follow **Arrange-Act-Assert** strictly:
 - No `if` statements or branching in tests
 - Use `it.each` / `describe.each` for parameterized tests (fields ↔ column mapping is a great case)
 - Prefer setup functions / `beforeEach` over inline mocks
+- Use `mockFn.mock.lastCall![i]` for "last invocation" assertions (cleaner than `.calls[len-1]`)
 
 ## Reference Example
 

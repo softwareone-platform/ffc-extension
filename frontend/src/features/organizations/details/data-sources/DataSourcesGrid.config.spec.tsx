@@ -1,9 +1,7 @@
-import { ReactNode } from "react";
+import { renderHook } from "@testing-library/react";
 
-import { render, renderHook } from "@testing-library/react";
-
-import { DatasourceRead } from "~api/ffc-api-model";
-import { makeDatasource } from "~test-utils";
+import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
+import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
 import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import {
@@ -21,6 +19,18 @@ import {
 } from "./DataSourcesGrid.config";
 
 const NO_VALUE = "—";
+
+const COLUMN_FIELDS = [
+  ["id", ["id"]],
+  ["name", ["name", "datasource_id"]],
+  ["type", ["type"]],
+  ["parent_id", ["parent_id", "parent.id", "parent.name", "parent.type"]],
+  ["resources_charged_this_month", ["resources_charged_this_month"]],
+  ["expenses_so_far_this_month", ["expenses_so_far_this_month"]],
+  ["expenses_forecast_this_month", ["expenses_forecast_this_month"]],
+  ["last_import_at", ["last_import_at"]],
+  ["actions", []],
+] as const;
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
@@ -74,72 +84,45 @@ describe("DataSourcesGrid.config", () => {
     mockUseOrganizationContext.mockReturnValue({ currency: "USD" });
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
     mockUseGridInfoDialogConfiguration.mockReturnValue({ noDataConfiguration: {} });
-    mockGetActions.mockReturnValue([{ value: "force_import", label: "Force import" }]);
   });
 
   describe("useColumns", () => {
-    it("returns 9 columns in the expected order", () => {
+    it("returns columns in the expected order", () => {
       const { result } = renderHook(() => useColumns());
 
-      expect(result.current.map((c) => c.name)).toEqual([
-        "id",
-        "name",
-        "type",
-        "parent_id",
-        "resources_charged_this_month",
-        "expenses_so_far_this_month",
-        "expenses_forecast_this_month",
-        "last_import_at",
-        "actions",
-      ]);
+      expect(result.current.map((c) => c.name)).toEqual(COLUMN_FIELDS.map(([name]) => name));
     });
 
-    it.each([
-      ["id", ["id"]],
-      ["name", ["name", "datasource_id"]],
-      ["type", ["type"]],
-      ["parent_id", ["parent_id", "parent.id", "parent.name", "parent.type"]],
-      ["resources_charged_this_month", ["resources_charged_this_month"]],
-      ["expenses_so_far_this_month", ["expenses_so_far_this_month"]],
-      ["expenses_forecast_this_month", ["expenses_forecast_this_month"]],
-      ["last_import_at", ["last_import_at"]],
-      ["actions", []],
-    ])("column '%s' maps to fields %j", (name, expectedFields) => {
+    it.each(COLUMN_FIELDS)("column '%s' maps to fields %j", (name, expectedFields) => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === name);
+      const column = columnByName(result.current, name);
 
-      expect(column?.fields).toEqual(expectedFields);
+      expect(column.fields).toEqual(expectedFields);
     });
 
     it("marks the id column as hidden", () => {
       const { result } = renderHook(() => useColumns());
-      const idColumn = result.current.find((c) => c.name === "id")!;
+      const idColumn = columnByName(result.current, "id");
 
       expect(idColumn.isHidden).toBe(true);
     });
 
-    it("hides the actions column when the user is not admin", () => {
-      mockUseUserRole.mockReturnValue({ user: null, role: "operations" });
+    it.each([
+      ["operations", true],
+      ["admin", false],
+    ])("hides the actions column for role '%s' → isHidden=%s", (role, isHidden) => {
+      mockUseUserRole.mockReturnValue({ user: null, role });
       const { result } = renderHook(() => useColumns());
-      const actionsColumn = result.current.find((c) => c.name === "actions")!;
+      const actionsColumn = columnByName(result.current, "actions");
 
-      expect(actionsColumn.isHidden).toBe(true);
-    });
-
-    it("shows the actions column when the user is admin", () => {
-      mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
-      const { result } = renderHook(() => useColumns());
-      const actionsColumn = result.current.find((c) => c.name === "actions")!;
-
-      expect(actionsColumn.isHidden).toBe(false);
+      expect(actionsColumn.isHidden).toBe(isHidden);
     });
 
     it("renders the name column with EntityReferenceCell showing name, datasource_id and type icon", () => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "name")!;
       const item = makeDatasource();
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, "name", item);
 
       expect(getByTestId("primary")).toHaveTextContent("AWS Prod");
       expect(getByTestId("secondary")).toHaveTextContent("aws-prod-123");
@@ -148,7 +131,6 @@ describe("DataSourcesGrid.config", () => {
 
     it("renders the parent_id column with parent details when parent is set", () => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "parent_id")!;
       const item = makeDatasource({
         parent: {
           id: "p-1",
@@ -158,7 +140,7 @@ describe("DataSourcesGrid.config", () => {
         },
       });
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, "parent_id", item);
 
       expect(getByTestId("primary")).toHaveTextContent("Parent DS");
       expect(getByTestId("secondary")).toHaveTextContent("parent-ds-123");
@@ -167,20 +149,22 @@ describe("DataSourcesGrid.config", () => {
 
     it("renders the parent_id column with NO_VALUE when parent is missing", () => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "parent_id")!;
       const item = makeDatasource({ parent: null });
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, "parent_id", item);
 
       expect(getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
     });
 
     it("renders resources_charged_this_month with empty currency", () => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "resources_charged_this_month")!;
       const item = makeDatasource({ resources_charged_this_month: 12 });
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(
+        result.current,
+        "resources_charged_this_month",
+        item,
+      );
 
       expect(getByTestId("grid-cell-currency")).toHaveTextContent("12|");
     });
@@ -190,10 +174,9 @@ describe("DataSourcesGrid.config", () => {
       ["expenses_forecast_this_month", "expenses_forecast_this_month" as const, 55],
     ])("renders %s with currency from organization context", (columnName, field, value) => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === columnName)!;
       const item = makeDatasource({ [field]: value });
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, columnName, item);
 
       expect(getByTestId("grid-cell-currency")).toHaveTextContent(`${value}|USD`);
     });
@@ -201,40 +184,41 @@ describe("DataSourcesGrid.config", () => {
     it("falls back to empty currency when organization context is undefined", () => {
       mockUseOrganizationContext.mockReturnValue(undefined);
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "expenses_so_far_this_month")!;
       const item = makeDatasource({ expenses_so_far_this_month: 7 });
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(
+        result.current,
+        "expenses_so_far_this_month",
+        item,
+      );
 
       expect(getByTestId("grid-cell-currency")).toHaveTextContent("7|");
     });
 
     it("renders last_import_at as NO_VALUE when the value is an epoch marker", () => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "last_import_at")!;
       const item = { ...makeDatasource(), last_import_at: 0 as unknown as string };
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, "last_import_at", item);
 
       expect(getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
     });
 
     it("renders last_import_at as a date when the value is real", () => {
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "last_import_at")!;
       const item = makeDatasource({ last_import_at: "2026-01-15T10:00:00Z" });
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, "last_import_at", item);
 
       expect(getByTestId("grid-cell-date")).toHaveTextContent("2026-01-15T10:00:00Z");
     });
 
     it("renders the actions column with dynamic actions for the item", () => {
+      mockGetActions.mockReturnValue([{ value: "force_import", label: "Force import" }]);
       const { result } = renderHook(() => useColumns());
-      const column = result.current.find((c) => c.name === "actions")!;
       const item = makeDatasource();
 
-      const { getByTestId } = render(<>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>);
+      const { getByTestId } = renderColumnCell(result.current, "actions", item);
 
       expect(getByTestId("actions-item-id")).toHaveTextContent(item.id);
       expect(getByTestId("actions-count")).toHaveTextContent("1");
@@ -282,7 +266,7 @@ describe("DataSourcesGrid.config", () => {
 
     it("builds query options that scope the queryKey by organizationId and delegate to the API", () => {
       renderHook(() => useAsyncOptions("org-123"));
-      const optionsFactory = mockUseReactQueryRqlGrid.mock.calls[0][1];
+      const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
       const query = { toString: () => "rql-string" };
 
       const options = optionsFactory(query);
@@ -290,6 +274,30 @@ describe("DataSourcesGrid.config", () => {
 
       expect(options.queryKey).toEqual([["OrganizationDataSources"], "rql-string", "org-123"]);
       expect(mockListOrganizationDataSources).toHaveBeenCalledWith("org-123", query);
+    });
+
+    it("wires mapAxiosResponseDataList as the select transform", () => {
+      renderHook(() => useAsyncOptions("org-123"));
+      const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
+
+      const options = optionsFactory({ toString: () => "rql" });
+
+      expect(options.select).toBe(mapAxiosResponseDataList);
+    });
+
+    it("re-scopes the queryKey when organizationId changes", () => {
+      const { rerender } = renderHook(({ orgId }) => useAsyncOptions(orgId), {
+        initialProps: { orgId: "org-1" },
+      });
+      const query = { toString: () => "rql" };
+
+      rerender({ orgId: "org-2" });
+      const latestFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
+      const options = latestFactory(query);
+      options.queryFn();
+
+      expect(options.queryKey).toEqual([["OrganizationDataSources"], "rql", "org-2"]);
+      expect(mockListOrganizationDataSources).toHaveBeenLastCalledWith("org-2", query);
     });
   });
 
@@ -313,10 +321,12 @@ describe("DataSourcesGrid.config", () => {
 
       renderHook(() => useGridConfig("org-123"));
 
-      const arg = mockUseGridAsync.mock.calls[0][0];
+      const arg = mockUseGridAsync.mock.lastCall![0];
       expect(arg).toEqual(
         expect.objectContaining({
-          id: "grid__organizations-details-data-sources",
+          id: "ffc-extension__organizations-details-data-sources--admin",
+          memoizeId: "ffc-extension__organizations-details-data-sources--admin",
+          storageParameters: ["unknown"],
           isDefaultView: true,
           selectedView: "default",
           silentRefresh,
@@ -324,7 +334,7 @@ describe("DataSourcesGrid.config", () => {
           onEvent: expect.any(Function),
         }),
       );
-      expect(arg.columns).toHaveLength(9);
+      expect(arg.columns).toHaveLength(COLUMN_FIELDS.length);
       expect(arg.fields).toHaveLength(4);
     });
 
@@ -344,7 +354,7 @@ describe("DataSourcesGrid.config", () => {
       const onAction = jest.fn();
 
       renderHook(() => useGridConfig("org-123", onAction));
-      const onEvent = mockUseGridAsync.mock.calls[0][0].onEvent;
+      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent;
       const item = { id: "ds-1" };
 
       onEvent({ type: "RowActionTriggered", data: { action: "force_import", item } });
@@ -357,7 +367,7 @@ describe("DataSourcesGrid.config", () => {
       const onAction = jest.fn();
 
       renderHook(() => useGridConfig("org-123", onAction));
-      const onEvent = mockUseGridAsync.mock.calls[0][0].onEvent;
+      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent;
 
       onEvent({ type: "SomeOtherEvent", data: {} });
 
