@@ -1,11 +1,18 @@
 import type { ComponentProps } from "react";
 
-import type { Grid, GridCellSimple, UseAsyncGridConfig } from "@swo/design-system/grid";
+import type {
+  Grid,
+  GridCellSimple,
+  UseAsyncGridConfig,
+  buildRqlQuery,
+} from "@swo/design-system/grid";
 
 type MockGridProps = ComponentProps<typeof Grid>;
 type MockGridCellSimpleProps = Pick<ComponentProps<typeof GridCellSimple>, "children">;
-export const mockGridProps = jest.fn();
-export const mockUseGridAsync = jest.fn();
+export const mockGridProps = jest.fn() as jest.MockedFunction<(props: MockGridProps) => void>;
+export const mockUseGridAsync = jest.fn() as jest.MockedFunction<
+  (config: UseAsyncGridConfig<object>) => unknown
+>;
 export const mockDesignSystemGrid = {
   Grid: (props: MockGridProps) => {
     mockGridProps(props);
@@ -15,5 +22,5 @@ export const mockDesignSystemGrid = {
     return <div data-testid="grid-cell-simple">{children}</div>;
   },
   useGridAsync: (config: UseAsyncGridConfig<object>) => mockUseGridAsync(config),
-  buildRqlQuery: jest.fn(),
+  buildRqlQuery: jest.fn() as jest.MockedFunction<typeof buildRqlQuery>,
 };

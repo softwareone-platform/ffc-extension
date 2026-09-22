@@ -1,3 +1,7 @@
+import type { useOrganizationsApi } from "~organizations/api";
+import type { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
+import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
+import type { useUserRole } from "~shared/hooks/useUserRole";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import {
@@ -7,14 +11,24 @@ import {
   mockGridCellDynamicActions,
 } from "~test-utils/mocks/sharedGridCells";
 
+import type { useActionOptions } from "./hooks/useActionOptions";
+
 export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 
-export const mockUseOrganizationContext = jest.fn();
-export const mockListOrganizationDataSources = jest.fn();
+type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
+
+export const mockUseOrganizationContext = jest.fn() as jest.MockedFunction<
+  typeof useOrganizationContext
+>;
+export const mockListOrganizationDataSources = jest.fn() as jest.MockedFunction<
+  OrganizationsApi["listOrganizationDataSources"]
+>;
 export const mockUseReactQueryRqlGrid = jest.fn();
-export const mockUseUserRole = jest.fn();
-export const mockUseGridInfoDialogConfiguration = jest.fn();
-export const mockGetActions = jest.fn();
+export const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
+export const mockUseGridInfoDialogConfiguration = jest.fn() as jest.MockedFunction<
+  typeof useGridInfoDialogConfiguration
+>;
+export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);

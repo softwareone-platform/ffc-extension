@@ -58,6 +58,58 @@ export const mockGridCellCurrency = {
 
 For components whose props are not exported, prefer `ComponentProps<typeof Component>` (or a `Pick<>` subset of it) over re-declaring the prop contract by hand.
 
+### Type `jest.fn()` spies with the real signature
+
+Untyped `jest.fn()` returns `jest.Mock<any, any>`, so `mockReturnValue({ ... })` and `.mock.lastCall![0]` accept any shape. Cast each spy to the real signature so drift (rename, param removal, added return field) surfaces at compile time instead of runtime.
+
+```text
+// hook mock — reuse the real hook's signature
+import type { useUserRole } from "~shared/hooks/useUserRole";
+export const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
+
+// method on an object returned by a hook
+import type { useOrganizationsApi } from "~organizations/api";
+type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
+export const mockListOrganizationDataSources = jest.fn() as jest.MockedFunction<
+  OrganizationsApi["listOrganizationDataSources"]
+>;
+
+// component prop-capture spy — reuse the component's props type
+import type { ComponentProps } from "react";
+import type { Modal } from "~shared/components/modal/Modal";
+type MockModalProps = ComponentProps<typeof Modal>;
+export const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
+
+// function returned FROM a hook (`useActionOptions` returns a fn)
+import type { useActionOptions } from "./hooks/useActionOptions";
+export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
+```
+
+Related: when the factory wraps a spy with a spreader, prefer `Parameters<typeof realFn>` over `...args: unknown[]` — same drift signal for the call site:
+
+```text
+jest.mock("../hooks/useForceImportController", () => ({
+  useForceImportController: (...args: Parameters<typeof useForceImportController>) =>
+    mockUseForceImportController(...args),
+}));
+```
+
+**Generic hooks** — `jest.MockedFunction<typeof genericHook>` instantiates every generic to its default (`unknown`, `DefaultError`, `QueryKey`, …), so the return-shape check happens against defaults, not the caller's instantiation. Either accept the caveat (still catches signature-level drift) or leave the spy untyped for hooks like `useReactQueryRqlGrid`. The one in `DataSourcesGrid.config.spec.mocks.ts` is intentionally left untyped for this reason.
+
+**Partial fixtures.** Once spies are typed, `mockReturnValue({ currency: "USD" })` fails when the real return type has more required fields than the test actually reads. Two acceptable escapes, in order of preference:
+
+1. Provide the missing fields with realistic defaults (best when there are only 1–2 gaps).
+2. Cast the stand-in: `mockReturnValue({ currency: "USD" } as OrganizationRead)` or `as unknown as ReturnType<typeof useX>()`. Keep the cast tight to the mock call so a reader sees "this is a partial stand-in" — don't `as any` the whole spy or blanket-widen the return type.
+
+**Optional callbacks captured from `.mock.lastCall`.** Reading an optional prop off a typed spy (`mockUseGridAsync.mock.lastCall![0].onEvent`) yields `Callback | undefined`. When the code under test unconditionally wires it up, use a non-null assertion at the read site (`.onEvent!`), not `?.()` at every call — the assertion doubles as documentation ("we expect this to be present") and stays honest if the source ever stops wiring it.
+
+Applied examples in this repo:
+
+- `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.config.spec.mocks.ts` — hook / API-method / returned-function spies typed via `jest.MockedFunction`
+- `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.spec.mocks.tsx` — `mockUseGridConfig` typed as `jest.MockedFunction<typeof useGridConfig>`; component-capture spy typed via `ComponentProps`
+- `frontend/src/features/organizations/details/data-sources/force-import-modal/DataSourceForceImportModal.spec.mocks.tsx` — every component-capture spy typed to its `ComponentProps<typeof …>`
+- `frontend/src/test-utils/mocks/designSystemGrid.tsx` — shared spies (`mockGridProps`, `mockUseGridAsync`, `buildRqlQuery`) typed to the source signatures
+
 ### Globally enabled modules — DO NOT mock again
 
 **Global node_modules mocks** live in `frontend/__mocks__/`.
@@ -150,18 +202,24 @@ Constraints that shape the pattern:
 
 ```text
 // src/test-utils/mocks/designSystemGrid.tsx
-import { ReactNode } from "react";
+import type { ComponentProps } from "react";
+import type { Grid, GridCellSimple, UseAsyncGridConfig } from "@swo/design-system/grid";
 
-export const mockGridProps = jest.fn();
-export const mockUseGridAsync = jest.fn();
+type MockGridProps = ComponentProps<typeof Grid>;
+type MockGridCellSimpleProps = Pick<ComponentProps<typeof GridCellSimple>, "children">;
+
+export const mockGridProps = jest.fn() as jest.MockedFunction<(props: MockGridProps) => void>;
+export const mockUseGridAsync = jest.fn() as jest.MockedFunction<
+  (config: UseAsyncGridConfig<object>) => unknown
+>;
 
 export const mockDesignSystemGrid = {
-  Grid: (props: unknown) => {
+  Grid: (props: MockGridProps) => {
     mockGridProps(props);
     return null;
   },
-  GridCellSimple: ({ children }: { children: ReactNode }) => children,
-  useGridAsync: (config: unknown) => mockUseGridAsync(config),
+  GridCellSimple: ({ children }: MockGridCellSimpleProps) => children,
+  useGridAsync: (config: UseAsyncGridConfig<object>) => mockUseGridAsync(config),
 };
 ```
 
@@ -204,15 +262,19 @@ For a spec whose prelude of local `jest.mock` + `mock*` spies exceeds ~20-30 lin
 
 ```text
 // DataSourcesGrid.config.spec.mocks.ts
+import type { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
+import type { useUserRole } from "~shared/hooks/useUserRole";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 
 // Re-export shared spies the spec asserts against
 export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 
-// Local spies live here — must still start with `mock*`
-export const mockUseOrganizationContext = jest.fn();
-export const mockUseUserRole = jest.fn();
+// Local spies — typed to the real hook signature so mockReturnValue is checked
+export const mockUseOrganizationContext = jest.fn() as jest.MockedFunction<
+  typeof useOrganizationContext
+>;
+export const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 
 // jest.mock calls — hoisted per-file, but Jest applies them to the test's
 // module registry when the sibling is imported from the spec.
@@ -299,7 +361,7 @@ Only reach for **Option A** (`~test-utils/mocks/`) when the mock will be importe
 
 ### Grid Components (thin wrappers)
 - Mock `@swo/design-system/grid` (`Grid`, `useGridAsync`, `GridCellSimple`)
-- Mock the co-located `*.config` module and stub `useGridConfig` return with `silentRefresh`, `refresh`, `onEvent`, `columns`, `fields`
+- Mock the co-located `*.config` module and stub `useGridConfig` return with the props the wrapper actually spreads into `<Grid />` (typically `silentRefresh`, `refresh`, `onEvent`). Once `mockUseGridConfig` is typed as `jest.MockedFunction<typeof useGridConfig>`, partial stubs need a `as unknown as ReturnType<typeof useGridConfig>` bridge — see `DataSourcesGrid.spec.tsx` for the canonical shape
 - If the wrapper wires row actions (e.g. force-import modal) — capture the `onAction` callback via `mockUseGridConfig.mock.calls[0][1]`, invoke inside `act(() => ...)`, assert modal props changed
 
 ### Details Container

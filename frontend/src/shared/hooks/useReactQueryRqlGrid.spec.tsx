@@ -20,7 +20,7 @@ function primeBuildRqlQuery(rql = "next-rql") {
     clone() {
       return this;
     },
-  });
+  } as unknown as RqlQuery<object>);
 }
 
 describe("useReactQueryRqlGrid", () => {

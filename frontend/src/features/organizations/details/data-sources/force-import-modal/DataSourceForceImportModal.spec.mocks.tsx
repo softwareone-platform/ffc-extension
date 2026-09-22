@@ -9,6 +9,8 @@ import type { Modal } from "~shared/components/modal/Modal";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
+import type { useForceImportController } from "../hooks/useForceImportController";
+
 type MockInPageHighlightProps = ComponentProps<
   typeof import("@swo/design-system/in-page-highlight").InPageHighlight
 >;
@@ -24,10 +26,16 @@ type MockDatePickerProps = ComponentProps<typeof DatePicker>;
 type MockInlineNotificationProps = ComponentProps<typeof InlineNotification>;
 type MockInlineErrorNotificationProps = ComponentProps<typeof InlineErrorNotification>;
 
-export const mockModal = jest.fn();
-export const mockDatePicker = jest.fn();
-export const mockInlineErrorNotification = jest.fn();
-export const mockUseForceImportController = jest.fn();
+export const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
+export const mockDatePicker = jest.fn() as jest.MockedFunction<
+  (props: MockDatePickerProps) => void
+>;
+export const mockInlineErrorNotification = jest.fn() as jest.MockedFunction<
+  (props: MockInlineErrorNotificationProps) => void
+>;
+export const mockUseForceImportController = jest.fn() as jest.MockedFunction<
+  typeof useForceImportController
+>;
 
 jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
 jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
@@ -76,5 +84,6 @@ jest.mock("~shared/components/error/InlineErrorNotification", () => ({
 }));
 
 jest.mock("../hooks/useForceImportController", () => ({
-  useForceImportController: (...args: unknown[]) => mockUseForceImportController(...args),
+  useForceImportController: (...args: Parameters<typeof useForceImportController>) =>
+    mockUseForceImportController(...args),
 }));

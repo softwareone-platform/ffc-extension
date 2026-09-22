@@ -70,17 +70,30 @@ jest.mock("@swo/design-system/grid", () => ({
 }));
 ```
 
-Factory variables referenced from inside `jest.mock` must start with `mock` (Jest guardrail):
+Factory variables referenced from inside `jest.mock` must start with `mock` (Jest guardrail). Type the spy to the real signature so `mockReturnValue` and `.mock.lastCall` are checked:
 
 ```text
-const mockGridProps = jest.fn();
+import type { ComponentProps } from "react";
+import type { Grid } from "@swo/design-system/grid";
+
+type MockGridProps = ComponentProps<typeof Grid>;
+const mockGridProps = jest.fn() as jest.MockedFunction<(props: MockGridProps) => void>;
+
 jest.mock("@swo/design-system/grid", () => ({
-  Grid: (props: unknown) => {
+  Grid: (props: MockGridProps) => {
     mockGridProps(props);
     return null;
   },
 }));
 ```
+
+Rule of thumb:
+- Hook mock → `jest.MockedFunction<typeof realHook>`
+- Function returned from a hook → `jest.MockedFunction<ReturnType<typeof realHook>>`
+- Component-capture spy → `jest.MockedFunction<(props: ComponentProps<typeof Component>) => void>`
+- Method on a hook's returned object → `jest.MockedFunction<ReturnType<typeof useApi>["method"]>`
+- Generic hook → leave untyped; `jest.MockedFunction` collapses generics to their defaults
+- Partial fixture that a typed spy rejects → cast at the call site (`as X`, or `as unknown as ReturnType<typeof useX>`), not the spy declaration
 
 When the mock wall grows, extract it to a sibling `*.spec.mocks.ts[x]` file instead of leaving the whole prelude inline.
 

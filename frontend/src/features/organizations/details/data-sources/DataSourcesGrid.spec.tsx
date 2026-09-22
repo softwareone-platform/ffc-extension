@@ -1,5 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 
+import type { useGridConfig } from "./DataSourcesGrid.config";
 import { mockForceImportModal, mockUseGridConfig } from "./DataSourcesGrid.spec.mocks";
 import { DataSourcesGrid } from "./DataSourcesGrid";
 
@@ -19,9 +20,7 @@ describe("DataSourcesGrid", () => {
       refresh,
       silentRefresh: jest.fn(),
       onEvent: jest.fn(),
-      columns: [{ name: "name" }],
-      fields: [{ name: "id" }],
-    });
+    } as unknown as ReturnType<typeof useGridConfig>);
   });
 
   it("calls useGridConfig with organizationId and an onAction handler", () => {

@@ -1,7 +1,11 @@
 import { renderHook } from "@testing-library/react";
 
-import type { GridFieldDefinition } from "@swo/design-system/grid";
+import type { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import { NO_VALUE } from "@swo/design-system/utils";
+
+import type { AccountType, DatasourceType, OrganizationRead } from "~api/ffc-api-model";
+
+import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
@@ -31,9 +35,11 @@ const COLUMN_FIELDS = [
 
 describe("DataSourcesGrid.config", () => {
   beforeEach(() => {
-    mockUseOrganizationContext.mockReturnValue({ currency: "USD" });
+    mockUseOrganizationContext.mockReturnValue({ currency: "USD" } as OrganizationRead);
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
-    mockUseGridInfoDialogConfiguration.mockReturnValue({ noDataConfiguration: {} });
+    mockUseGridInfoDialogConfiguration.mockReturnValue({
+      noDataConfiguration: {},
+    } as ReturnType<typeof useGridInfoDialogConfiguration>);
   });
 
   describe("useColumns", () => {
@@ -57,7 +63,7 @@ describe("DataSourcesGrid.config", () => {
       expect(idColumn.isHidden).toBe(true);
     });
 
-    it.each([
+    it.each<[AccountType, boolean]>([
       ["operations", true],
       ["admin", false],
     ])("hides the actions column for role '%s' → isHidden=%s", (role, isHidden) => {
@@ -197,14 +203,15 @@ describe("DataSourcesGrid.config", () => {
       const typeField = result.current.find((f) => f.name === "type") as GridFieldDefinition;
 
       expect(typeField).toMatchObject({ type: "list" });
-      expect(typeField.options!.map((option) => option.value)).toEqual([
+      const expectedTypes = [
         "aws_cnr",
         "azure_cnr",
         "azure_tenant",
         "gcp_cnr",
         "gcp_tenant",
         "unknown",
-      ]);
+      ] as const satisfies readonly DatasourceType[];
+      expect(typeField.options!.map((option) => option.value)).toEqual(expectedTypes);
     });
   });
 
@@ -308,7 +315,7 @@ describe("DataSourcesGrid.config", () => {
       const onAction = jest.fn();
 
       renderHook(() => useGridConfig("org-123", onAction));
-      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent;
+      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
       const item = { id: "ds-1" };
 
       onEvent({ type: "RowActionTriggered", data: { action: "force_import", item } });
@@ -321,9 +328,9 @@ describe("DataSourcesGrid.config", () => {
       const onAction = jest.fn();
 
       renderHook(() => useGridConfig("org-123", onAction));
-      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent;
+      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
 
-      onEvent({ type: "SomeOtherEvent", data: {} });
+      onEvent({ type: "SomeOtherEvent", data: {} } as unknown as GridEvents);
 
       expect(onAction).not.toHaveBeenCalled();
     });
