@@ -4,13 +4,11 @@ import {TextEncoder, TextDecoder} from 'node:util';
 // jsdom lacks TextEncoder/TextDecoder; react-router-dom needs them at import time.
 Object.assign(globalThis, {TextEncoder, TextDecoder});
 
-// Global node_modules stubs are auto-discovered from <root>/__mocks__/:
-//   - @mpt-extension/sdk        → __mocks__/@mpt-extension/sdk.ts
-//   - react-router-dom          → __mocks__/react-router-dom.tsx
-//   - react-i18next             → __mocks__/react-i18next.tsx
-//   - @swo/design-system/utils  → __mocks__/@swo/design-system/utils.tsx
+// Shared node_modules stubs live in <root>/__mocks__/. Enable only the ones
+// that need deterministic global activation across specs.
+jest.mock('@swo/design-system/utils');
 
-// User-module mock (aliased path — not eligible for auto __mocks__/, keep here).
+// User-module mock (aliased path — not eligible for root __mocks__/, keep here).
 const identityFn = key => key;
 jest.mock('~shared/hooks/useFixedT', () => {
   return { useFixedT: jest.fn(() => identityFn) };

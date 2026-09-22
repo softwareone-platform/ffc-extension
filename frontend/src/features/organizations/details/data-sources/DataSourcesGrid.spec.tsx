@@ -1,25 +1,19 @@
 import { act, render, screen } from "@testing-library/react";
 
-import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
+import {
+  mockForceImportModal,
+  mockUseGridConfig,
+} from "./DataSourcesGrid.spec.mocks";
 
 import { DataSourcesGrid } from "./DataSourcesGrid";
 
-jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
+function renderGrid(organizationId = "org-abc") {
+  render(<DataSourcesGrid organizationId={organizationId} />);
+}
 
-const mockUseGridConfig = jest.fn();
-jest.mock("./DataSourcesGrid.config", () => ({
-  useGridConfig: (
-    ...args: Parameters<typeof import("./DataSourcesGrid.config").useGridConfig>
-  ) => mockUseGridConfig(...args),
-}));
-
-const mockForceImportModal = jest.fn();
-jest.mock("./force-import-modal/DataSourceForceImportModal", () => ({
-  DataSourceForceImportModal: (props: unknown) => {
-    mockForceImportModal(props);
-    return <div data-testid="force-import-modal" />;
-  },
-}));
+function getOnAction() {
+  return mockUseGridConfig.mock.lastCall![1] as (action: string, item: unknown) => void;
+}
 
 describe("DataSourcesGrid", () => {
   const refresh = jest.fn();
@@ -35,13 +29,13 @@ describe("DataSourcesGrid", () => {
   });
 
   it("calls useGridConfig with organizationId and an onAction handler", () => {
-    render(<DataSourcesGrid organizationId="org-abc" />);
+    renderGrid();
 
     expect(mockUseGridConfig).toHaveBeenCalledWith("org-abc", expect.any(Function));
   });
 
   it("renders DataSourceForceImportModal closed by default with the organizationId", () => {
-    render(<DataSourcesGrid organizationId="org-abc" />);
+    renderGrid();
 
     expect(screen.getByTestId("force-import-modal")).toBeInTheDocument();
     expect(mockForceImportModal).toHaveBeenCalledWith(
@@ -55,8 +49,8 @@ describe("DataSourcesGrid", () => {
   });
 
   it("opens the force-import modal with the item when onAction fires 'force_import'", () => {
-    render(<DataSourcesGrid organizationId="org-abc" />);
-    const onAction = mockUseGridConfig.mock.lastCall![1];
+    renderGrid();
+    const onAction = getOnAction();
     const item = { id: "ds-1", name: "AWS", type: "aws" };
 
     act(() => {
@@ -71,8 +65,8 @@ describe("DataSourcesGrid", () => {
   });
 
   it("closes the force-import modal when its onClose fires", () => {
-    render(<DataSourcesGrid organizationId="org-abc" />);
-    const onAction = mockUseGridConfig.mock.lastCall![1];
+    renderGrid();
+    const onAction = getOnAction();
     const item = { id: "ds-1", name: "AWS", type: "aws" };
     act(() => onAction("force_import", item));
     expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(true);
@@ -84,8 +78,8 @@ describe("DataSourcesGrid", () => {
   });
 
   it("ignores unknown actions", () => {
-    render(<DataSourcesGrid organizationId="org-abc" />);
-    const onAction = mockUseGridConfig.mock.lastCall![1];
+    renderGrid();
+    const onAction = getOnAction();
 
     act(() => {
       onAction("unsupported_action", { id: "ds-2" });

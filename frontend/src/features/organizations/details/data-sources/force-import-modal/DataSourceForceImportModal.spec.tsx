@@ -21,6 +21,8 @@ type Controller = {
   setLastImportAt: jest.Mock;
 };
 
+type ModalProps = React.ComponentProps<typeof DataSourceForceImportModal>;
+
 function primeController(overrides: Partial<Controller> = {}): Controller {
   const controller: Controller = {
     cancel: jest.fn(),
@@ -36,6 +38,20 @@ function primeController(overrides: Partial<Controller> = {}): Controller {
   return controller;
 }
 
+function makeProps(overrides: Partial<ModalProps> = {}): ModalProps {
+  return {
+    isOpen: true,
+    onClose: jest.fn(),
+    datasource: makeDatasource(),
+    organizationId: "org-123",
+    ...overrides,
+  };
+}
+
+function renderModal(overrides: Partial<ModalProps> = {}) {
+  return render(<DataSourceForceImportModal {...makeProps(overrides)} />);
+}
+
 describe("DataSourceForceImportModal", () => {
   const organizationId = "org-123";
   const datasource = makeDatasource();
@@ -44,14 +60,7 @@ describe("DataSourceForceImportModal", () => {
     it("does not call reset while the modal is closed", () => {
       const controller = primeController();
 
-      render(
-        <DataSourceForceImportModal
-          isOpen={false}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
+      renderModal({ isOpen: false, datasource, organizationId });
 
       expect(controller.reset).not.toHaveBeenCalled();
     });
@@ -59,45 +68,16 @@ describe("DataSourceForceImportModal", () => {
     it("calls reset when the modal opens", () => {
       const controller = primeController();
 
-      render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
+      renderModal({ datasource, organizationId });
 
       expect(controller.reset).toHaveBeenCalledTimes(1);
     });
 
     it("calls reset again the next time the modal reopens", () => {
       const controller = primeController();
-      const { rerender } = render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
-      rerender(
-        <DataSourceForceImportModal
-          isOpen={false}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
-
-      rerender(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
+      const { rerender } = renderModal({ datasource, organizationId });
+      rerender(<DataSourceForceImportModal {...makeProps({ isOpen: false, datasource, organizationId })} />);
+      rerender(<DataSourceForceImportModal {...makeProps({ datasource, organizationId })} />);
 
       expect(controller.reset).toHaveBeenCalledTimes(2);
     });
@@ -106,14 +86,7 @@ describe("DataSourceForceImportModal", () => {
   describe("submit", () => {
     it("invokes forceImport with organizationId and datasource when the modal submits with a datasource", () => {
       const controller = primeController();
-      render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
+      renderModal({ datasource, organizationId });
 
       act(() => mockModal.mock.lastCall![0].onSubmit());
 
@@ -122,14 +95,7 @@ describe("DataSourceForceImportModal", () => {
 
     it("does nothing on submit when the datasource is null", () => {
       const controller = primeController();
-      render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={null}
-          organizationId={organizationId}
-        />,
-      );
+      renderModal({ datasource: null, organizationId });
 
       act(() => mockModal.mock.lastCall![0].onSubmit());
 
@@ -148,14 +114,7 @@ describe("DataSourceForceImportModal", () => {
     },
   ])("renders EntityReferenceCell for $scenario", ({ input, primary, secondary, icon }) => {
     primeController();
-    const { getByTestId } = render(
-      <DataSourceForceImportModal
-        isOpen={true}
-        onClose={jest.fn()}
-        datasource={input}
-        organizationId={organizationId}
-      />,
-    );
+    const { getByTestId } = renderModal({ datasource: input, organizationId });
 
     expect(getByTestId("primary").textContent).toBe(primary);
     expect(getByTestId("secondary").textContent).toBe(secondary);
@@ -166,15 +125,7 @@ describe("DataSourceForceImportModal", () => {
     it("forwards controller state to Modal and DatePicker", () => {
       const lastImportAt = new Date("2026-01-15T00:00:00Z");
       primeController({ isPending: true, lastImportAt });
-      render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-          className="force-import-modal"
-        />,
-      );
+      renderModal({ datasource, organizationId, className: "force-import-modal" });
 
       const modalProps = mockModal.mock.lastCall![0];
       const datePickerProps = mockDatePicker.mock.lastCall![0];
@@ -192,14 +143,7 @@ describe("DataSourceForceImportModal", () => {
 
     it("wires Modal onCancel to controller.cancel and DatePicker onChange to controller.setLastImportAt", () => {
       const controller = primeController();
-      render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
+      renderModal({ datasource, organizationId });
 
       mockModal.mock.lastCall![0].onCancel();
       const picked = new Date("2026-02-01T00:00:00Z");
@@ -213,14 +157,7 @@ describe("DataSourceForceImportModal", () => {
   describe("error surface", () => {
     it("forwards the controller's error to InlineErrorNotification", () => {
       primeController({ error: "boom" });
-      render(
-        <DataSourceForceImportModal
-          isOpen={true}
-          onClose={jest.fn()}
-          datasource={datasource}
-          organizationId={organizationId}
-        />,
-      );
+      renderModal({ datasource, organizationId });
 
       expect(mockInlineErrorNotification).toHaveBeenLastCalledWith({ error: "boom" });
     });
@@ -230,14 +167,7 @@ describe("DataSourceForceImportModal", () => {
     const onClose = jest.fn();
     primeController();
 
-    render(
-      <DataSourceForceImportModal
-        isOpen={true}
-        onClose={onClose}
-        datasource={datasource}
-        organizationId={organizationId}
-      />,
-    );
+    renderModal({ onClose, datasource, organizationId });
 
     expect(mockUseForceImportController).toHaveBeenLastCalledWith({ onClose });
   });
