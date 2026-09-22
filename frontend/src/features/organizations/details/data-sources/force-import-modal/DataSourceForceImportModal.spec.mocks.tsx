@@ -1,13 +1,13 @@
 import type { ComponentProps } from "react";
 
-import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
-import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
-
-import type { Modal } from "~shared/components/modal/Modal";
-import type { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
 import type { DatePicker } from "@swo/design-system/date-picker";
 import type { InlineNotification } from "@swo/design-system/notification";
 import type { BoldText, RegularText } from "@swo/design-system/text";
+
+import type { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
+import type { Modal } from "~shared/components/modal/Modal";
+import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
+import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 type MockInPageHighlightProps = ComponentProps<
   typeof import("@swo/design-system/in-page-highlight").InPageHighlight

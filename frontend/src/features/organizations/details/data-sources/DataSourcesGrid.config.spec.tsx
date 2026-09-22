@@ -1,12 +1,12 @@
 import { renderHook } from "@testing-library/react";
 
 import type { GridFieldDefinition } from "@swo/design-system/grid";
-
 import { NO_VALUE } from "@swo/design-system/utils";
 
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
 
+import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./DataSourcesGrid.config";
 import {
   mockGetActions,
   mockListOrganizationDataSources,
@@ -16,13 +16,6 @@ import {
   mockUseReactQueryRqlGrid,
   mockUseUserRole,
 } from "./DataSourcesGrid.config.spec.mocks";
-
-import {
-  useAsyncOptions,
-  useColumns,
-  useFields,
-  useGridConfig,
-} from "./DataSourcesGrid.config";
 
 const COLUMN_FIELDS = [
   ["id", ["id"]],
@@ -142,11 +135,7 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ expenses_so_far_this_month: 0.000432 });
 
-      const { getByTestId } = renderColumnCell(
-        result.current,
-        "expenses_so_far_this_month",
-        item,
-      );
+      const { getByTestId } = renderColumnCell(result.current, "expenses_so_far_this_month", item);
 
       expect(getByTestId("grid-cell-currency")).toHaveTextContent("0.000432|USD");
     });
@@ -156,11 +145,7 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ expenses_so_far_this_month: 7 });
 
-      const { getByTestId } = renderColumnCell(
-        result.current,
-        "expenses_so_far_this_month",
-        item,
-      );
+      const { getByTestId } = renderColumnCell(result.current, "expenses_so_far_this_month", item);
 
       expect(getByTestId("grid-cell-currency")).toHaveTextContent("7|");
     });
@@ -204,12 +189,7 @@ describe("DataSourcesGrid.config", () => {
     it("returns id, name, type and datasource_id fields", () => {
       const { result } = renderHook(() => useFields());
 
-      expect(result.current.map((f) => f.name)).toEqual([
-        "id",
-        "name",
-        "type",
-        "datasource_id",
-      ]);
+      expect(result.current.map((f) => f.name)).toEqual(["id", "name", "type", "datasource_id"]);
     });
 
     it("exposes the type field as a list with datasource type options", () => {

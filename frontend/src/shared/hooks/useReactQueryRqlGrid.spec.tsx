@@ -1,8 +1,7 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import type { ComponentProps } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-import type { ComponentProps } from "react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { RqlQuery } from "@swo/rql-client";
 

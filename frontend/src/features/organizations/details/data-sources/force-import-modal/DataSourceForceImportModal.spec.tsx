@@ -2,16 +2,14 @@ import { act, render } from "@testing-library/react";
 
 import { makeDatasource } from "~test-utils";
 
+import type { useForceImportController } from "../hooks/useForceImportController";
+import { DataSourceForceImportModal } from "./DataSourceForceImportModal";
 import {
   mockDatePicker,
   mockInlineErrorNotification,
   mockModal,
   mockUseForceImportController,
 } from "./DataSourceForceImportModal.spec.mocks";
-
-import type { useForceImportController } from "../hooks/useForceImportController";
-
-import { DataSourceForceImportModal } from "./DataSourceForceImportModal";
 
 type Controller = ReturnType<typeof useForceImportController>;
 
@@ -70,7 +68,11 @@ describe("DataSourceForceImportModal", () => {
     it("calls reset again the next time the modal reopens", () => {
       const controller = primeController();
       const { rerender } = renderModal({ datasource, organizationId });
-      rerender(<DataSourceForceImportModal {...makeProps({ isOpen: false, datasource, organizationId })} />);
+      rerender(
+        <DataSourceForceImportModal
+          {...makeProps({ isOpen: false, datasource, organizationId })}
+        />,
+      );
       rerender(<DataSourceForceImportModal {...makeProps({ datasource, organizationId })} />);
 
       expect(controller.reset).toHaveBeenCalledTimes(2);

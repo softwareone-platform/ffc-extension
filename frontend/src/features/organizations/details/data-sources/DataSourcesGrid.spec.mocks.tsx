@@ -12,9 +12,8 @@ export const mockForceImportModal = jest.fn();
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
 jest.mock("./DataSourcesGrid.config", () => ({
-  useGridConfig: (
-    ...args: Parameters<typeof import("./DataSourcesGrid.config").useGridConfig>
-  ) => mockUseGridConfig(...args),
+  useGridConfig: (...args: Parameters<typeof import("./DataSourcesGrid.config").useGridConfig>) =>
+    mockUseGridConfig(...args),
 }));
 
 jest.mock("./force-import-modal/DataSourceForceImportModal", () => ({
@@ -23,4 +22,3 @@ jest.mock("./force-import-modal/DataSourceForceImportModal", () => ({
     return <div data-testid="force-import-modal" />;
   },
 }));
-

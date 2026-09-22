@@ -1,6 +1,6 @@
-import { screen } from "@testing-library/react";
-
 import type { ComponentProps } from "react";
+
+import { screen } from "@testing-library/react";
 
 import { renderWithRouter } from "~test-utils";
 
