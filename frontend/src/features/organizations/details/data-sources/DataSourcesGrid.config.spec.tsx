@@ -106,7 +106,7 @@ describe("DataSourcesGrid.config", () => {
       expect(getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
     });
 
-    it("renders resources_charged_this_month with empty currency", () => {
+    it("renders resources_charged_this_month without a currency code when organization context is undefined", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ resources_charged_this_month: 12 });
 
@@ -140,7 +140,7 @@ describe("DataSourcesGrid.config", () => {
       expect(getByTestId("grid-cell-currency")).toHaveTextContent("0.000432|USD");
     });
 
-    it("falls back to empty currency when organization context is undefined", () => {
+    it("renders currency cells without a currency code when organization context is undefined", () => {
       mockUseOrganizationContext.mockReturnValue(undefined);
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ expenses_so_far_this_month: 7 });
@@ -209,7 +209,7 @@ describe("DataSourcesGrid.config", () => {
   });
 
   describe("useAsyncOptions", () => {
-    it("initialises useReactQueryRqlGrid with the OrganizationDataSources base query key", () => {
+    it("initializes useReactQueryRqlGrid with the OrganizationDataSources base query key", () => {
       renderHook(() => useAsyncOptions("org-123"));
 
       expect(mockUseReactQueryRqlGrid).toHaveBeenCalledWith(
@@ -218,7 +218,7 @@ describe("DataSourcesGrid.config", () => {
       );
     });
 
-    it("builds query options that scope the queryKey by organizationId and delegate to the API", () => {
+    it("builds query options that scope the queryKey by organizationId and delegate to listOrganizationDataSources", () => {
       renderHook(() => useAsyncOptions("org-123"));
       const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
       const query = { toString: () => "rql-string" };
@@ -239,7 +239,7 @@ describe("DataSourcesGrid.config", () => {
       expect(options.select).toBe(mapAxiosResponseDataList);
     });
 
-    it("re-scopes the queryKey when organizationId changes", () => {
+    it("updates the scoped queryKey when organizationId changes", () => {
       const { rerender } = renderHook(({ orgId }) => useAsyncOptions(orgId), {
         initialProps: { orgId: "org-1" },
       });
@@ -269,7 +269,7 @@ describe("DataSourcesGrid.config", () => {
       });
     });
 
-    it("passes columns, fields, asyncOptions and gridInfoDialogConfig into useGridAsync", () => {
+    it("wires useColumns, useFields, async options, and info-dialog config into useGridAsync", () => {
       const gridAsyncResult = { onEvent: jest.fn() };
       mockUseGridAsync.mockReturnValue(gridAsyncResult);
 
@@ -303,7 +303,7 @@ describe("DataSourcesGrid.config", () => {
       expect(result.current.onEvent).toBe(gridAsyncResult.onEvent);
     });
 
-    it("invokes onAction with the row's action, item and silentRefresh on RowActionTriggered", () => {
+    it("forwards RowActionTriggered events to onAction with the action, item, and silentRefresh", () => {
       mockUseGridAsync.mockReturnValue({});
       const onAction = jest.fn();
 
@@ -316,7 +316,7 @@ describe("DataSourcesGrid.config", () => {
       expect(onAction).toHaveBeenCalledWith("force_import", item, silentRefresh);
     });
 
-    it("ignores non-RowActionTriggered events", () => {
+    it("ignores events that are not RowActionTriggered", () => {
       mockUseGridAsync.mockReturnValue({});
       const onAction = jest.fn();
 

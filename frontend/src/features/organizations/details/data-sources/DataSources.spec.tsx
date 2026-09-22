@@ -13,7 +13,7 @@ jest.mock("./DataSourcesGrid", () => ({
   ),
 }));
 
-describe("OrganizationDataSources", () => {
+describe("OrganizationDataSources route component", () => {
   it("renders DataSourcesGrid with organizationId from route params", () => {
     renderWithRouter(<OrganizationDataSources />, {
       initialUrl: "/organizations/org-123",
@@ -23,7 +23,7 @@ describe("OrganizationDataSources", () => {
     expect(screen.getByTestId("data-sources-grid")).toHaveTextContent("org-123");
   });
 
-  it("renders nothing when organizationId is missing", () => {
+  it("returns null when the organizationId route param is missing", () => {
     renderWithRouter(<OrganizationDataSources />, {
       initialUrl: "/organizations",
       routePath: "/organizations",

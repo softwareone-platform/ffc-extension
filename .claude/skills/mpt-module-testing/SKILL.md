@@ -347,6 +347,15 @@ Follow **Arrange-Act-Assert** strictly:
 - Prefer setup functions / `beforeEach` over inline mocks
 - Use `mockFn.mock.lastCall![i]` for "last invocation" assertions (cleaner than `.calls[len-1]`)
 
+## Readable Test Names
+
+Keep test names short, specific, and behavior-focused.
+
+- Prefer names that describe the observable result, not the implementation.
+- Include the important scenario or input when it matters (`missing route param`, `role = admin`, `null value`).
+- Use `describe` for the subject under test and `it` for the behavior being verified.
+- If a test name needs multiple `and`s, split it into separate tests.
+
 ## Canonical spec file layout
 
 Every spec should follow the same top-to-bottom order — makes scanning across specs frictionless.

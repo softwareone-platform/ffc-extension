@@ -50,7 +50,7 @@ describe("useReactQueryRqlGrid", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it("exposes the error from useQuery after initialization triggers a rejecting fetch", async () => {
+  it("returns the query error after onConfigChange triggers a rejected fetch", async () => {
     const failure = new Error("boom");
     primeBuildRqlQuery();
     const options = (query: RqlQuery<object>) => ({
@@ -70,7 +70,7 @@ describe("useReactQueryRqlGrid", () => {
     await waitFor(() => expect(result.current.error).toBe(failure));
   });
 
-  it("delegates onConfigChange to buildRqlQuery with the incoming config", async () => {
+  it("builds the RQL query from the supplied grid config", async () => {
     primeBuildRqlQuery();
     const options = (query: RqlQuery<object>) => ({
       queryKey: ["test-entities", query.toString()],
@@ -90,7 +90,7 @@ describe("useReactQueryRqlGrid", () => {
     expect(mockDesignSystemGrid.buildRqlQuery).toHaveBeenCalledWith(config);
   });
 
-  it("refresh invalidates the current queryKey, silentRefresh invalidates the baseQueryKey", async () => {
+  it("refresh invalidates the scoped query key and silentRefresh invalidates the base query key", async () => {
     primeBuildRqlQuery("scoped-rql");
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

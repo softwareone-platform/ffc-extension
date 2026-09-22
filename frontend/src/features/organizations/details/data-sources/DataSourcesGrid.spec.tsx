@@ -30,7 +30,7 @@ describe("DataSourcesGrid", () => {
     expect(mockUseGridConfig).toHaveBeenCalledWith("org-abc", expect.any(Function));
   });
 
-  it("renders DataSourceForceImportModal closed by default with the organizationId", () => {
+  it("passes the current organizationId to a closed force-import modal", () => {
     renderGrid();
 
     expect(screen.getByTestId("force-import-modal")).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe("DataSourcesGrid", () => {
     );
   });
 
-  it("opens the force-import modal with the item when onAction fires 'force_import'", () => {
+  it("opens the force-import modal with the selected item when onAction fires 'force_import'", () => {
     renderGrid();
     const onAction = getOnAction();
     const item = { id: "ds-1", name: "AWS", type: "aws" };
