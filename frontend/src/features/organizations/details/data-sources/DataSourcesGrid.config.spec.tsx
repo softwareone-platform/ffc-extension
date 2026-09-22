@@ -1,5 +1,7 @@
 import { renderHook } from "@testing-library/react";
 
+import type { GridFieldDefinition } from "@swo/design-system/grid";
+
 import { NO_VALUE } from "@swo/design-system/utils";
 
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
@@ -212,10 +214,10 @@ describe("DataSourcesGrid.config", () => {
 
     it("exposes the type field as a list with datasource type options", () => {
       const { result } = renderHook(() => useFields());
-      const typeField = result.current.find((f) => f.name === "type")!;
+      const typeField = result.current.find((f) => f.name === "type") as GridFieldDefinition;
 
       expect(typeField).toMatchObject({ type: "list" });
-      expect((typeField as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual([
+      expect(typeField.options!.map((option) => option.value)).toEqual([
         "aws_cnr",
         "azure_cnr",
         "azure_tenant",

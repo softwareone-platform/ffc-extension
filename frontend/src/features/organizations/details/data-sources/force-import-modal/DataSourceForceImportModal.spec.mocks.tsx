@@ -1,7 +1,28 @@
-import { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
+
+import type { Modal } from "~shared/components/modal/Modal";
+import type { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
+import type { DatePicker } from "@swo/design-system/date-picker";
+import type { InlineNotification } from "@swo/design-system/notification";
+import type { BoldText, RegularText } from "@swo/design-system/text";
+
+type MockInPageHighlightProps = ComponentProps<
+  typeof import("@swo/design-system/in-page-highlight").InPageHighlight
+>;
+type MockInPageHighlightItemProps = ComponentProps<
+  typeof import("@swo/design-system/in-page-highlight").InPageHighlight.Item
+>;
+
+type MockBoldTextProps = ComponentProps<typeof BoldText>;
+type MockRegularTextProps = ComponentProps<typeof RegularText>;
+
+type MockModalProps = ComponentProps<typeof Modal>;
+type MockDatePickerProps = ComponentProps<typeof DatePicker>;
+type MockInlineNotificationProps = ComponentProps<typeof InlineNotification>;
+type MockInlineErrorNotificationProps = ComponentProps<typeof InlineErrorNotification>;
 
 export const mockModal = jest.fn();
 export const mockDatePicker = jest.fn();
@@ -12,22 +33,22 @@ jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceC
 jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
 
 jest.mock("~shared/components/modal/Modal", () => ({
-  Modal: (props: { children: ReactNode } & Record<string, unknown>) => {
+  Modal: (props: MockModalProps) => {
     mockModal(props);
     return <div data-testid="modal">{props.children}</div>;
   },
 }));
 
 jest.mock("@swo/design-system/date-picker", () => ({
-  DatePicker: (props: Record<string, unknown>) => {
+  DatePicker: (props: MockDatePickerProps) => {
     mockDatePicker(props);
     return <div data-testid="date-picker" />;
   },
 }));
 
 jest.mock("@swo/design-system/in-page-highlight", () => {
-  const InPageHighlight = ({ children }: { children: ReactNode }) => <div>{children}</div>;
-  InPageHighlight.Item = ({ children, title }: { children: ReactNode; title: ReactNode }) => (
+  const InPageHighlight = ({ children }: MockInPageHighlightProps) => <div>{children}</div>;
+  InPageHighlight.Item = ({ children, title }: MockInPageHighlightItemProps) => (
     <div>
       <span data-testid="highlight-title">{title}</span>
       <span data-testid="highlight-value">{children}</span>
@@ -37,18 +58,18 @@ jest.mock("@swo/design-system/in-page-highlight", () => {
 });
 
 jest.mock("@swo/design-system/notification", () => ({
-  InlineNotification: ({ children }: { children: ReactNode }) => (
+  InlineNotification: ({ children }: MockInlineNotificationProps) => (
     <div data-testid="inline-notification">{children}</div>
   ),
 }));
 
 jest.mock("@swo/design-system/text", () => ({
-  BoldText: ({ children }: { children: ReactNode }) => <>{children}</>,
-  RegularText: ({ children }: { children: ReactNode }) => <>{children}</>,
+  BoldText: ({ children }: Pick<MockBoldTextProps, "children">) => <>{children}</>,
+  RegularText: ({ children }: Pick<MockRegularTextProps, "children">) => <>{children}</>,
 }));
 
 jest.mock("~shared/components/error/InlineErrorNotification", () => ({
-  InlineErrorNotification: (props: { error: unknown }) => {
+  InlineErrorNotification: (props: MockInlineErrorNotificationProps) => {
     mockInlineErrorNotification(props);
     return <div data-testid="inline-error" />;
   },

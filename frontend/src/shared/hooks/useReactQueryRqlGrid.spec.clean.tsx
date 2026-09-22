@@ -129,3 +129,4 @@ describe("useReactQueryRqlGrid", () => {
     expect(silentCall).toEqual({ queryKey: mockBaseQueryKey });
   });
 });
+

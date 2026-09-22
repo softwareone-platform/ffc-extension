@@ -1,4 +1,10 @@
+import type { ComponentProps } from "react";
+
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
+
+import type { DataSourceForceImportModal } from "./force-import-modal/DataSourceForceImportModal";
+
+type MockDataSourceForceImportModalProps = ComponentProps<typeof DataSourceForceImportModal>;
 
 export const mockUseGridConfig = jest.fn();
 export const mockForceImportModal = jest.fn();
@@ -12,7 +18,7 @@ jest.mock("./DataSourcesGrid.config", () => ({
 }));
 
 jest.mock("./force-import-modal/DataSourceForceImportModal", () => ({
-  DataSourceForceImportModal: (props: unknown) => {
+  DataSourceForceImportModal: (props: MockDataSourceForceImportModalProps) => {
     mockForceImportModal(props);
     return <div data-testid="force-import-modal" />;
   },

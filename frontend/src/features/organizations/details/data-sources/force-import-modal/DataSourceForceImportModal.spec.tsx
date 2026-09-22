@@ -9,17 +9,11 @@ import {
   mockUseForceImportController,
 } from "./DataSourceForceImportModal.spec.mocks";
 
+import type { useForceImportController } from "../hooks/useForceImportController";
+
 import { DataSourceForceImportModal } from "./DataSourceForceImportModal";
 
-type Controller = {
-  cancel: jest.Mock;
-  forceImport: jest.Mock;
-  isPending: boolean;
-  error: string | null;
-  reset: jest.Mock;
-  lastImportAt: Date | undefined;
-  setLastImportAt: jest.Mock;
-};
+type Controller = ReturnType<typeof useForceImportController>;
 
 type ModalProps = React.ComponentProps<typeof DataSourceForceImportModal>;
 

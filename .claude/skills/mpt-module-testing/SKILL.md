@@ -171,6 +171,25 @@ Existing shared mocks:
 - `~test-utils/mocks/entityReferenceCell` — `EntityReferenceCell`
 - `~test-utils/mocks/sharedGridCells` — `CustomIcon`, `GridCellCurrency`, `GridCellDate`, `GridCellDynamicActions`
 
+### Type-Safe Shared Test Utilities
+
+When you add or refactor helpers in `frontend/src/test-utils/` or `frontend/src/test-utils/mocks/`, prefer the same type the source code exports.
+
+- Prefer `import type` from the app component/hook when it exports props or return types
+- Prefer `Pick<...>` when the helper only touches part of the source contract
+- Prefer `ComponentProps<typeof Component>` when the source prop type is not exported
+- Use local `unknown` / `as unknown as ...` bridges only for intentional fixture gaps or runtime-only test inputs
+
+Applied examples in this repo:
+
+- `frontend/src/test-utils/mocks/designSystemGrid.tsx` — grid and cell mock props follow exported `Grid` / `GridCellSimple` component types
+- `frontend/src/test-utils/mocks/entityReferenceCell.tsx` — uses `ComponentProps<typeof EntityReferenceCell>`
+- `frontend/src/test-utils/mocks/sharedGridCells.tsx` — uses `GridCellCurrencyProps`, `GridCellDateProps`, and `GridCellDynamicActionsProps`
+- `frontend/src/test-utils/renderCell.tsx` — uses `Pick<GridColumnDefinition<T>, "cell" | "name">`
+- `frontend/src/test-utils/columnByName.ts` — uses `Pick<GridColumnDefinition<object>, "name">`
+- `frontend/src/features/organizations/details/data-sources/DataSources.spec.tsx` — container mock props use `ComponentProps<typeof DataSourcesGrid>`
+- `frontend/src/features/organizations/details/data-sources/force-import-modal/DataSourceForceImportModal.spec.mocks.tsx` — modal, date picker, notifications, text, and in-page highlight mocks use source-derived component props
+
 ### Option B — Per-spec sibling helper (`<file>.spec.mocks.ts[x]`)
 
 For a spec whose prelude of local `jest.mock` + `mock*` spies exceeds ~20-30 lines, touches more than 2-3 mocked modules, or simply reads like a “mock wall”, extract the entire prelude into a **sibling file next to the spec**: `<Feature>.spec.mocks.ts` (or `.tsx` if a factory returns JSX). The spec then imports only the spies and stays focused on setup helpers + `describe`.

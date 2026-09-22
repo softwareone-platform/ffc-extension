@@ -1,11 +1,14 @@
 import { screen } from "@testing-library/react";
 
+import type { ComponentProps } from "react";
+
 import { renderWithRouter } from "~test-utils";
 
 import { OrganizationDataSources } from "./DataSources";
+import { DataSourcesGrid } from "./DataSourcesGrid";
 
 jest.mock("./DataSourcesGrid", () => ({
-  DataSourcesGrid: ({ organizationId }: { organizationId: string }) => (
+  DataSourcesGrid: ({ organizationId }: ComponentProps<typeof DataSourcesGrid>) => (
     <div data-testid="data-sources-grid">{organizationId}</div>
   ),
 }));
