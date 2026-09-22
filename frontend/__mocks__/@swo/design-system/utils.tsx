@@ -23,6 +23,16 @@ module.exports = {
           : date instanceof Date
             ? date.toISOString()
             : "",
+    formatTime: (date: unknown) =>
+      !date
+        ? ""
+        : typeof date === "string"
+          ? date
+          : date instanceof Date
+            ? date.toISOString()
+            : "",
+    formatCurrency: (value: number, {currency}: {currency?: string} = {}) =>
+      `${value} ${currency ?? "UNK"}`.trim(),
   }),
   DisplayValue: ({
     value,

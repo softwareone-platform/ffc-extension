@@ -3,13 +3,13 @@ import { act, render } from "@testing-library/react";
 import { makeDatasource } from "~test-utils";
 
 import type { useForceImportController } from "../hooks/useForceImportController";
-import { DataSourceForceImportModal } from "./DataSourceForceImportModal";
 import {
   mockDatePicker,
   mockInlineErrorNotification,
   mockModal,
   mockUseForceImportController,
 } from "./DataSourceForceImportModal.spec.mocks";
+import { DataSourceForceImportModal } from "./DataSourceForceImportModal";
 
 type Controller = ReturnType<typeof useForceImportController>;
 

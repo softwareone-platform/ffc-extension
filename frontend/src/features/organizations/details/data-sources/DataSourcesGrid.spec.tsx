@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 
-import { DataSourcesGrid } from "./DataSourcesGrid";
 import { mockForceImportModal, mockUseGridConfig } from "./DataSourcesGrid.spec.mocks";
+import { DataSourcesGrid } from "./DataSourcesGrid";
 
 function renderGrid(organizationId = "org-abc") {
   render(<DataSourcesGrid organizationId={organizationId} />);

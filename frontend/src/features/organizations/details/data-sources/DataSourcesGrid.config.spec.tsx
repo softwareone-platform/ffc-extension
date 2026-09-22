@@ -6,7 +6,6 @@ import { NO_VALUE } from "@swo/design-system/utils";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
 
-import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./DataSourcesGrid.config";
 import {
   mockGetActions,
   mockListOrganizationDataSources,
@@ -16,6 +15,7 @@ import {
   mockUseReactQueryRqlGrid,
   mockUseUserRole,
 } from "./DataSourcesGrid.config.spec.mocks";
+import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./DataSourcesGrid.config";
 
 const COLUMN_FIELDS = [
   ["id", ["id"]],

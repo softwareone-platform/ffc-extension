@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 // Global mock for react-router-dom — pass everything through to the real module
 // EXCEPT Link, which we stub to render children only (avoids Router context in
 // specs that render an isolated component). Auto-discovered by Jest because
