@@ -31,15 +31,23 @@ jest.mock("@swo/grid", () => ({ ... }));
 
 Return only the runtime exports the code under test actually uses at runtime; type-only exports are erased by SWC and don't need to be present.
 
-### Pre-Mocked Modules (already in `jest.setup.js` — DO NOT mock again)
-- `react-router-dom` — `Link` only; other exports pass through to the real module
-- `react-i18next` — `useTranslation` returns identity `t`, `Trans` renders `i18nKey`
-- `~shared/hooks/useFixedT` — returns identity function
-- `@swo/design-system/utils` — `useDesignSystemOptions`, `useLocalisation`, `DisplayValue`
-- `@mpt-extension/sdk` — stubbed with `{ setup, http }` (`{ virtual: true }`; the package ships an ESM-only export, so `require()` cannot resolve it)
+### Pre-Mocked Modules — DO NOT mock again
 
-Global stubs also live there:
-- `TextEncoder` / `TextDecoder` on `globalThis` — jsdom does not provide them natively; `react-router-dom` reaches for them at import time.
+**Auto-applied node_modules mocks** live in `frontend/__mocks__/` (Jest auto-discovers them because the folder sits adjacent to `node_modules`):
+
+- `__mocks__/@mpt-extension/sdk.ts` — `{ setup, http }` stubs. The real package ships an ESM-only export, so `require()` cannot resolve it in CJS mode; the mock file bypasses that.
+- `__mocks__/react-router-dom.tsx` — passes real exports through, overrides `Link` to render children only.
+- `__mocks__/react-i18next.tsx` — `useTranslation` returns identity `t`; `Trans` renders `i18nKey`.
+- `__mocks__/@swo/design-system/utils.tsx` — passes real exports through; overrides `useDesignSystemOptions`, `useLocalisation`, `DisplayValue`.
+
+**User-module mock** (aliased path — cannot use root `__mocks__/` auto-discovery, stays in `jest.setup.js`):
+
+- `~shared/hooks/useFixedT` — returns identity function.
+
+**Global stubs** (also in `jest.setup.js`):
+
+- `TextEncoder` / `TextDecoder` on `globalThis` — jsdom does not provide them; `react-router-dom` reaches for them at import time.
+- `global.jest = jest` bridge — makes `jest.mock(...)` available in the ESM setup file.
 
 ### Never Mock
 - `react` or `react-dom`
@@ -133,18 +141,100 @@ Existing shared mocks:
 - `~test-utils/mocks/entityReferenceCell` — `EntityReferenceCell`
 - `~test-utils/mocks/sharedGridCells` — `CustomIcon`, `GridCellCurrency`, `GridCellDate`, `GridCellDynamicActions`
 
-### Option B — Jest's manual mocks (`__mocks__/`)
+### Option B — Per-spec sibling helper (`<file>.spec.mocks.ts[x]`)
 
-Use when *every* spec should see the same mock and no per-spec variation is needed. Follow [Jest's manual-mocks convention](https://jestjs.io/docs/manual-mocks):
+For a spec whose prelude of local `jest.mock` + `mock*` spies exceeds ~30 lines and none of the mocks are reusable, extract the entire prelude into a **sibling file next to the spec**: `<Feature>.spec.mocks.ts` (or `.tsx` if a factory returns JSX). The spec then imports only the spies and stays focused on setup helpers + `describe`.
 
-- **node_modules**: `<projectRoot>/__mocks__/<pkg>.tsx` — auto-applied to every test; no `jest.mock(...)` call needed.
-- **User modules**: `__mocks__/<module>.tsx` next to the real file — opt-in via `jest.mock('./module')` with **no factory**.
+```tsx
+// DataSourcesGrid.config.spec.mocks.ts
+import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
+import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 
-Trade-off: readers of a spec cannot tell that a `node_modules` mock is in effect (it's auto-loaded). Prefer Option A when the mock exposes spies that specs assert on, or when specs need different shapes. No `__mocks__/` folders exist in this repo today — the shared surface is small enough that Option A is a better fit.
+// Re-export shared spies the spec asserts against
+export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
+
+// Local spies live here — must still start with `mock*`
+export const mockUseOrganizationContext = jest.fn();
+export const mockUseUserRole = jest.fn();
+
+// jest.mock calls — hoisted per-file, but Jest applies them to the test's
+// module registry when the sibling is imported from the spec.
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
+jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
+jest.mock("~organizations/providers/OrganizationsProvider", () => ({
+  useOrganizationContext: () => mockUseOrganizationContext(),
+}));
+jest.mock("~shared/hooks/useUserRole", () => ({
+  useUserRole: () => mockUseUserRole(),
+}));
+```
+
+```tsx
+// DataSourcesGrid.config.spec.tsx
+import { renderHook } from "@testing-library/react";
+
+import {
+  mockUseGridAsync,
+  mockUseOrganizationContext,
+  mockUseUserRole,
+} from "./DataSourcesGrid.config.spec.mocks";
+
+import { useColumns } from "./DataSourcesGrid.config";
+
+describe("DataSourcesGrid.config", () => { ... });
+```
+
+Constraints that shape the pattern:
+- Same directory as the spec — relative paths (`./hooks/useActionOptions`) inside `jest.mock` calls resolve identically from either file.
+- Spies still start with `mock*` (Jest's guardrail applies regardless of file).
+- `jest.mock` calls in the sibling file *do* apply to the spec's test run — verified: Jest registers mocks in the per-test module registry as soon as the file is imported.
+- **When NOT to extract:** if the prelude is small (<20 lines) or if hiding the mock setup would confuse a future reader more than it saves lines. Small preludes stay inline — one file to open, one to reason about.
+
+Canonical examples: `DataSourcesGrid.config.spec.mocks.ts` and `DataSourceForceImportModal.spec.mocks.tsx`.
+
+### Option C — Root `__mocks__/` for global node_modules stubs
+
+Global stubs for third-party packages that every spec should get automatically live in `frontend/__mocks__/` (Jest's [manual-mocks convention](https://jestjs.io/docs/manual-mocks)). Auto-discovered because the folder sits adjacent to `node_modules`; no `jest.mock(...)` call needed in any spec.
+
+Currently applied (all `frontend/__mocks__/`):
+- `@mpt-extension/sdk.ts`
+- `react-router-dom.tsx`
+- `react-i18next.tsx`
+- `@swo/design-system/utils.tsx`
+
+Pattern for pass-through mocks:
+
+```tsx
+// frontend/__mocks__/react-router-dom.tsx
+const actual = jest.requireActual("react-router-dom");
+
+module.exports = {
+  ...actual,
+  Link: ({ children }: { children: ReactNode }) => <>{children}</>,
+};
+```
+
+**When to add a file here:**
+- The mock is a third-party (node_modules) package
+- Every spec should see the same shape — no per-spec variation
+- Reader ambiguity is acceptable (the mock is invisible from the spec file)
+
+**When NOT to use root `__mocks__/`:**
+- **User modules with aliased paths** (`~shared/…`, `~organizations/…`) — root `__mocks__/` doesn't reach them. Keep those in `jest.setup.js`, or extract per-spec via Option A/B.
+- **Feature-local mocks** — never a good fit; use Option A or Option B.
+- **Mocks with per-spec spy assertions** — the invisible auto-application makes the spy source hard to trace. Use Option A or Option B when specs assert on `.mock.calls`.
+
+### Option D — Jest's `__mocks__/` sibling for individual user modules
+
+Same convention but for user modules: place `<module>.tsx` inside a `__mocks__/` folder next to the real file. Requires opt-in per spec via `jest.mock('./module')` with **no factory**.
+
+Not used in this repo — the shared surface is small enough that Option A (`~test-utils/mocks/`) and Option B (per-spec sibling) cover every case with better spec-side visibility.
 
 ### What NOT to share
 
-Feature-local mocks (a sibling component the spec is exercising, a hook only this feature uses) belong inline in the spec. Extracting them just pushes the reader between files for zero reuse.
+Feature-local mocks with **small preludes** (a single sibling component or one hook) belong inline in the spec. Once the prelude grows past ~30 lines *or* the spec has more mock setup than actual tests visible above the fold, use **Option B** (per-spec sibling helper) — that keeps the setup near the spec without cluttering it.
+
+Only reach for **Option A** (`~test-utils/mocks/`) when the mock will be imported by two or more specs.
 
 ## Testing Patterns
 
@@ -198,12 +288,27 @@ Follow **Arrange-Act-Assert** strictly:
 - Prefer setup functions / `beforeEach` over inline mocks
 - Use `mockFn.mock.lastCall![i]` for "last invocation" assertions (cleaner than `.calls[len-1]`)
 
+## Canonical spec file layout
+
+Every spec should follow the same top-to-bottom order — makes scanning across specs frictionless.
+
+```
+1. imports (test-library → aliases → spies from .spec.mocks → SUT)
+2. constants / local types used by tests (COLUMN_FIELDS, NO_VALUE, Controller type)
+3. inline `jest.mock` calls + local `mock*` spies (only if no .spec.mocks sibling)
+4. helper functions (primeController, factory helpers)
+5. describe(...)
+```
+
+If the prelude at step 3 grows past ~30 lines, extract it to a `<file>.spec.mocks.ts[x]` sibling (Option B). The spec then keeps only steps 1, 2, 4, 5 — which reads like actual test code, not "mock wall then tests".
+
 ## Reference Example
 
-See `frontend/src/features/organizations/details/data-sources/*.spec.tsx` for the canonical pattern:
-- `DataSources.spec.tsx` — container + `MemoryRouter` + child mock
-- `DataSourcesGrid.spec.tsx` — thin Grid wrapper + `useGridConfig` mock + modal side-effect via `act()`
-- `DataSourcesGrid.config.spec.tsx` — `useColumns` / `useFields` / `useAsyncOptions` / `useGridConfig` with all peer hooks mocked
+See `frontend/src/features/organizations/details/data-sources/*.spec.tsx` for the canonical patterns:
+- `DataSources.spec.tsx` — container + `MemoryRouter` + child mock; small inline prelude (no sibling helper)
+- `DataSourcesGrid.spec.tsx` — thin Grid wrapper + `useGridConfig` mock + modal side-effect via `act()`; small inline prelude
+- `DataSourcesGrid.config.spec.tsx` + `DataSourcesGrid.config.spec.mocks.ts` — large prelude extracted to sibling helper (Option B); spec imports spies
+- `force-import-modal/DataSourceForceImportModal.spec.tsx` + `DataSourceForceImportModal.spec.mocks.tsx` — same pattern, `.tsx` sibling because factories return JSX
 
 ## References
 

@@ -2,14 +2,16 @@ import { renderHook } from "@testing-library/react";
 
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
-import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
-import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
+
 import {
-  mockCustomIcon,
-  mockGridCellCurrency,
-  mockGridCellDate,
-  mockGridCellDynamicActions,
-} from "~test-utils/mocks/sharedGridCells";
+  mockGetActions,
+  mockListOrganizationDataSources,
+  mockUseGridAsync,
+  mockUseGridInfoDialogConfiguration,
+  mockUseOrganizationContext,
+  mockUseReactQueryRqlGrid,
+  mockUseUserRole,
+} from "./DataSourcesGrid.config.spec.mocks";
 
 import {
   useAsyncOptions,
@@ -31,53 +33,6 @@ const COLUMN_FIELDS = [
   ["last_import_at", ["last_import_at"]],
   ["actions", []],
 ] as const;
-
-jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
-jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
-jest.mock("@swo/design-system/utils", () => ({
-  ...jest.requireActual("@swo/design-system/utils"),
-  NO_VALUE: "—",
-}));
-jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
-jest.mock("~shared/components/grid/GridCellCurrency", () => mockGridCellCurrency);
-jest.mock("~shared/components/grid/GridCellDate", () => mockGridCellDate);
-jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
-
-jest.mock("~shared/utils/DateUtils", () => ({
-  isEpoch: (value: unknown) => value === 0 || value === "1970-01-01T00:00:00Z",
-}));
-
-const mockUseOrganizationContext = jest.fn();
-jest.mock("~organizations/providers/OrganizationsProvider", () => ({
-  useOrganizationContext: () => mockUseOrganizationContext(),
-}));
-
-const mockListOrganizationDataSources = jest.fn();
-jest.mock("~organizations/api", () => ({
-  useOrganizationsApi: () => ({
-    listOrganizationDataSources: mockListOrganizationDataSources,
-  }),
-}));
-
-const mockUseReactQueryRqlGrid = jest.fn();
-jest.mock("~shared/hooks/useReactQueryRqlGrid", () => ({
-  useReactQueryRqlGrid: (...args: unknown[]) => mockUseReactQueryRqlGrid(...args),
-}));
-
-const mockUseUserRole = jest.fn();
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
-
-const mockUseGridInfoDialogConfiguration = jest.fn();
-jest.mock("~shared/hooks/useGridInfoDialogConfiguration", () => ({
-  useGridInfoDialogConfiguration: () => mockUseGridInfoDialogConfiguration(),
-}));
-
-const mockGetActions = jest.fn();
-jest.mock("./hooks/useActionOptions", () => ({
-  useActionOptions: () => mockGetActions,
-}));
 
 describe("DataSourcesGrid.config", () => {
   beforeEach(() => {
@@ -181,6 +136,19 @@ describe("DataSourcesGrid.config", () => {
       expect(getByTestId("grid-cell-currency")).toHaveTextContent(`${value}|USD`);
     });
 
+    it("passes fractional expense values through to GridCellCurrency unchanged", () => {
+      const { result } = renderHook(() => useColumns());
+      const item = makeDatasource({ expenses_so_far_this_month: 0.000432 });
+
+      const { getByTestId } = renderColumnCell(
+        result.current,
+        "expenses_so_far_this_month",
+        item,
+      );
+
+      expect(getByTestId("grid-cell-currency")).toHaveTextContent("0.000432|USD");
+    });
+
     it("falls back to empty currency when organization context is undefined", () => {
       mockUseOrganizationContext.mockReturnValue(undefined);
       const { result } = renderHook(() => useColumns());
@@ -195,9 +163,13 @@ describe("DataSourcesGrid.config", () => {
       expect(getByTestId("grid-cell-currency")).toHaveTextContent("7|");
     });
 
-    it("renders last_import_at as NO_VALUE when the value is an epoch marker", () => {
+    it.each([
+      ["epoch numeric", 0 as unknown as string],
+      ["epoch ISO string", "1970-01-01T00:00:00Z"],
+      ["undefined", undefined],
+    ])("renders last_import_at as NO_VALUE when the value is %s", (_label, value) => {
       const { result } = renderHook(() => useColumns());
-      const item = { ...makeDatasource(), last_import_at: 0 as unknown as string };
+      const item = { ...makeDatasource(), last_import_at: value };
 
       const { getByTestId } = renderColumnCell(result.current, "last_import_at", item);
 

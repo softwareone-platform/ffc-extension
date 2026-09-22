@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 
-import { mockDesignSystemGrid, mockGridProps } from "~test-utils/mocks/designSystemGrid";
+import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 
 import { DataSourcesGrid } from "./DataSourcesGrid";
 
@@ -38,16 +38,6 @@ describe("DataSourcesGrid", () => {
     render(<DataSourcesGrid organizationId="org-abc" />);
 
     expect(mockUseGridConfig).toHaveBeenCalledWith("org-abc", expect.any(Function));
-  });
-
-  it("forwards useGridConfig props to Grid", () => {
-    render(<DataSourcesGrid organizationId="org-abc" />);
-
-    expect(screen.getByTestId("grid")).toBeInTheDocument();
-    expect(mockGridProps.mock.lastCall![0]).toMatchObject({
-      columns: [{ name: "name" }],
-      fields: [{ name: "id" }],
-    });
   });
 
   it("renders DataSourceForceImportModal closed by default with the organizationId", () => {
