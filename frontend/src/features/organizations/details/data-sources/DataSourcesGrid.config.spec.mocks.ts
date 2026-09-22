@@ -18,10 +18,6 @@ export const mockGetActions = jest.fn();
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
-jest.mock("@swo/design-system/utils", () => ({
-  ...jest.requireActual("@swo/design-system/utils"),
-  NO_VALUE: "—",
-}));
 jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
 jest.mock("~shared/components/grid/GridCellCurrency", () => mockGridCellCurrency);
 jest.mock("~shared/components/grid/GridCellDate", () => mockGridCellDate);

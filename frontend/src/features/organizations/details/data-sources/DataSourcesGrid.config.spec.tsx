@@ -1,5 +1,7 @@
 import { renderHook } from "@testing-library/react";
 
+import { NO_VALUE } from "@swo/design-system/utils";
+
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
 
@@ -19,8 +21,6 @@ import {
   useFields,
   useGridConfig,
 } from "./DataSourcesGrid.config";
-
-const NO_VALUE = "—";
 
 const COLUMN_FIELDS = [
   ["id", ["id"]],

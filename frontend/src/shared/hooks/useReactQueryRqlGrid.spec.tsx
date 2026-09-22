@@ -13,6 +13,15 @@ import { useReactQueryRqlGrid } from "./useReactQueryRqlGrid";
 // Jest resolves the real @swo/design-system/grid module and OOMs.
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
+function primeBuildRqlQuery(rql = "next-rql") {
+  mockDesignSystemGrid.buildRqlQuery.mockReturnValue({
+    toString: () => rql,
+    clone() {
+      return this;
+    },
+  });
+}
+
 describe("useReactQueryRqlGrid", () => {
   const mockData = {
     data: [
@@ -42,12 +51,7 @@ describe("useReactQueryRqlGrid", () => {
 
   it("exposes the error from useQuery after initialization triggers a rejecting fetch", async () => {
     const failure = new Error("boom");
-    mockDesignSystemGrid.buildRqlQuery.mockReturnValue({
-      toString: () => "next-rql",
-      clone() {
-        return this;
-      },
-    });
+    primeBuildRqlQuery();
     const options = (query: RqlQuery<object>) => ({
       queryKey: ["test-entities", query.toString()],
       queryFn: () => Promise.reject(failure),
@@ -66,12 +70,7 @@ describe("useReactQueryRqlGrid", () => {
   });
 
   it("delegates onConfigChange to buildRqlQuery with the incoming config", async () => {
-    mockDesignSystemGrid.buildRqlQuery.mockReturnValue({
-      toString: () => "next-rql",
-      clone() {
-        return this;
-      },
-    });
+    primeBuildRqlQuery();
     const options = (query: RqlQuery<object>) => ({
       queryKey: ["test-entities", query.toString()],
       queryFn: mockQueryFn,
@@ -91,12 +90,7 @@ describe("useReactQueryRqlGrid", () => {
   });
 
   it("refresh invalidates the current queryKey, silentRefresh invalidates the baseQueryKey", async () => {
-    mockDesignSystemGrid.buildRqlQuery.mockReturnValue({
-      toString: () => "scoped-rql",
-      clone() {
-        return this;
-      },
-    });
+    primeBuildRqlQuery("scoped-rql");
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
