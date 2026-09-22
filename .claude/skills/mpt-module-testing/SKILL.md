@@ -17,12 +17,12 @@ Stack: `jest@30` + `@swc/jest` (CJS transform) + `jest-environment-jsdom` + `@te
 ### Design System Mocking — use the REAL import path
 Source code imports from `@swo/design-system/[component]`. Mock **exactly** that path — `@swo/[component]` (the pattern from `mpt-vikings-ui`) does not match anything and the mock silently no-ops.
 
-```typescript
+```text
 // ✅ Correct — matches actual imports in this repo
 jest.mock("@swo/design-system/grid", () => ({
-  Grid: (props: unknown) => <div data-testid="grid" />,
+  Grid: (_props: unknown) => null,
   useGridAsync: jest.fn(),
-  GridCellSimple: ({ children }) => <div>{children}</div>,
+  GridCellSimple: ({ children }: { children?: unknown }) => children,
 }));
 
 // ❌ Wrong — no source file imports "@swo/grid"
@@ -30,6 +30,33 @@ jest.mock("@swo/grid", () => ({ ... }));
 ```
 
 Return only the runtime exports the code under test actually uses at runtime; type-only exports are erased by SWC and don't need to be present.
+
+### Prefer source-exported types in shared mocks and test utils
+
+When a shared mock or utility mirrors a component or helper from app code, prefer the **same source-exported types** over handwritten prop shapes.
+
+- Use `import type` so the alignment is compile-time only.
+- Prefer `Pick<...>` when the mock only touches a subset of props.
+- This rule is strongest for `frontend/src/test-utils/mocks/` and `frontend/src/test-utils/` helpers.
+- Don't force it on tiny one-off inline mocks if a local shape is clearer.
+
+```text
+import type { GridCellDateProps } from "~shared/components/grid/GridCellDate";
+import type { GridCellCurrencyProps } from "~shared/components/grid/GridCellCurrency";
+
+type MockGridCellCurrencyProps = Pick<GridCellCurrencyProps, "value" | "currency">;
+
+export const mockGridCellDate = {
+  GridCellDate: ({ value }: GridCellDateProps) => String(value),
+};
+
+export const mockGridCellCurrency = {
+  GridCellCurrency: ({ value, currency }: MockGridCellCurrencyProps) =>
+    `${value}|${currency}`,
+};
+```
+
+For components whose props are not exported, prefer `ComponentProps<typeof Component>` (or a `Pick<>` subset of it) over re-declaring the prop contract by hand.
 
 ### Globally enabled modules — DO NOT mock again
 
@@ -75,20 +102,19 @@ data-sources/
 ## Test Wrappers
 
 **Router (preferred for `useParams` — don't mock it):**
-```typescript
-<MemoryRouter initialEntries={["/organizations/org-123"]}>
-  <Routes>
-    <Route path="/organizations/:organizationId" element={<Component />} />
-  </Routes>
-</MemoryRouter>
+```text
+renderWithRouter(componentUnderTest, {
+  initialUrl: "/organizations/org-123",
+  routePath: "/organizations/:organizationId",
+});
 ```
 
 **React Query:**
-```typescript
+```text
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
-<QueryClientProvider client={queryClient}>...</QueryClientProvider>
+const wrapper = createQueryClientWrapper();
 ```
 
 ## Sharing Mocks Across Specs
@@ -114,7 +140,7 @@ Constraints that shape the pattern:
 - Jest hoists `jest.mock(...)` above imports; the factory can only reference imported bindings or variables whose name starts with `mock` (case-insensitive). **Both should hold** — prefix module-shape exports with `mock*` AND import them statically.
 - ESLint's `@typescript-eslint/no-require-imports` blocks `require(...)` inside the factory. Static imports only.
 
-```tsx
+```text
 // src/test-utils/mocks/designSystemGrid.tsx
 import { ReactNode } from "react";
 
@@ -124,16 +150,14 @@ export const mockUseGridAsync = jest.fn();
 export const mockDesignSystemGrid = {
   Grid: (props: unknown) => {
     mockGridProps(props);
-    return <div data-testid="grid" />;
+    return null;
   },
-  GridCellSimple: ({ children }: { children: ReactNode }) => (
-    <div data-testid="grid-cell-simple">{children}</div>
-  ),
+  GridCellSimple: ({ children }: { children: ReactNode }) => children,
   useGridAsync: (config: unknown) => mockUseGridAsync(config),
 };
 ```
 
-```tsx
+```text
 // Feature.spec.tsx
 import { mockDesignSystemGrid, mockGridProps } from "~test-utils/mocks/designSystemGrid";
 
@@ -151,7 +175,7 @@ Existing shared mocks:
 
 For a spec whose prelude of local `jest.mock` + `mock*` spies exceeds ~20-30 lines, touches more than 2-3 mocked modules, or simply reads like a “mock wall”, extract the entire prelude into a **sibling file next to the spec**: `<Feature>.spec.mocks.ts` (or `.tsx` if a factory returns JSX). The spec then imports only the spies and stays focused on setup helpers + `describe`.
 
-```tsx
+```text
 // DataSourcesGrid.config.spec.mocks.ts
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
@@ -175,7 +199,7 @@ jest.mock("~shared/hooks/useUserRole", () => ({
 }));
 ```
 
-```tsx
+```text
 // DataSourcesGrid.config.spec.tsx
 import { renderHook } from "@testing-library/react";
 
@@ -187,7 +211,7 @@ import {
 
 import { useColumns } from "./DataSourcesGrid.config";
 
-describe("DataSourcesGrid.config", () => { ... });
+describe("DataSourcesGrid.config", () => { /* ... */ });
 ```
 
 Constraints that shape the pattern:
@@ -212,13 +236,13 @@ Available as root manual mocks, but **not assumed globally active**:
 
 Pattern for pass-through mocks:
 
-```tsx
+```text
 // frontend/__mocks__/react-router-dom.tsx
 const actual = jest.requireActual("react-router-dom");
 
 module.exports = {
   ...actual,
-  Link: ({ children }: { children: ReactNode }) => <>{children}</>,
+  Link: ({ children }: { children: ReactNode }) => children,
 };
 ```
 

@@ -1,4 +1,8 @@
-import { ReactNode } from "react";
+import type { ComponentProps } from "react";
+
+import type { GridCellSimple } from "@swo/design-system/grid";
+
+type MockGridCellSimpleProps = Pick<ComponentProps<typeof GridCellSimple>, "children">;
 
 export const mockGridProps = jest.fn();
 export const mockUseGridAsync = jest.fn();
@@ -8,7 +12,7 @@ export const mockDesignSystemGrid = {
     mockGridProps(props);
     return <div data-testid="grid" />;
   },
-  GridCellSimple: ({ children }: { children: ReactNode }) => (
+  GridCellSimple: ({ children }: MockGridCellSimpleProps) => (
     <div data-testid="grid-cell-simple">{children}</div>
   ),
   useGridAsync: (config: unknown) => mockUseGridAsync(config),
