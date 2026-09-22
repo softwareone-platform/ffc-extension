@@ -82,6 +82,14 @@ Selected shared third-party mocks are enabled once in `frontend/jest.setup.js` v
 - explicit `jest.mock(...)` activation for the root manual mocks that are intentionally global
 - `global.jest = jest` bridge — makes `jest.mock(...)` available in the ESM setup file.
 
+### Shared test environment hardening
+
+Keep environment-wide fixes in `frontend/jest.setup.js`; don't patch jsdom gaps in individual specs.
+
+- Add browser API stubs once at the global level when jsdom lacks them.
+- Keep root manual mocks for third-party modules that should be shared by every spec.
+- Keep shared mock helpers source-typed (`import type`, `Pick<>`, `ComponentProps<typeof ...>`) so they stay aligned with app code.
+
 ### Never Mock
 - `react` or `react-dom`
 - The full `react-router-dom` module in a spec-specific factory (use `MemoryRouter` + `Routes` + `Route` for route params — don't stub `useParams`)

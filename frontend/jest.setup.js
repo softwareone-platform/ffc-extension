@@ -12,6 +12,7 @@ jest.mock('@mpt-extension/sdk', () => ({
 }), { virtual: true });
 jest.mock('@swo/design-system/utils');
 
+// jsdom does not implement ResizeObserver, but some design-system components expect it during render.
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class ResizeObserver {
     observe() {}
