@@ -40,38 +40,53 @@ Stack: `jest@30` + `@swc/jest` (CJS) + `jest-environment-jsdom` + `@testing-libr
 
 ## Pre-Mocked Modules (`frontend/jest.setup.js`)
 
-DO NOT mock again: `react-router-dom` (Link only), `react-i18next`, `~shared/hooks/useFixedT`, `@swo/design-system/utils`, `@mpt-extension/sdk`.
+DO NOT mock again:
+
+- `@swo/design-system/utils` (globally enabled root manual mock)
+- `~shared/hooks/useFixedT` (aliased setup mock)
 
 Global stubs: `TextEncoder` / `TextDecoder`.
 
-Full details: [SKILL.md → Pre-Mocked Modules](../SKILL.md#pre-mocked-modules-already-in-jestsetupjs--do-not-mock-again).
+Available root manual mocks / special cases, but **not assumed globally active** by default:
+
+- `react-router-dom`
+- `react-i18next`
+- `@mpt-extension/sdk`
+
+Full details: [SKILL.md → Globally enabled modules](../SKILL.md#globally-enabled-modules--do-not-mock-again).
 
 ---
 
 ## Mock Pattern
 
-```typescript
+```text
 import { render, screen } from "@testing-library/react";
 
 import { DataSourcesGrid } from "./DataSourcesGrid";
 
 // jest.mock is hoisted above the import above by @swc/jest
 jest.mock("@swo/design-system/grid", () => ({
-  Grid: (props: unknown) => <div data-testid="grid" />,
+  Grid: (_props: unknown) => null,
 }));
 ```
 
 Factory variables referenced from inside `jest.mock` must start with `mock` (Jest guardrail):
 
-```typescript
+```text
 const mockGridProps = jest.fn();
 jest.mock("@swo/design-system/grid", () => ({
   Grid: (props: unknown) => {
     mockGridProps(props);
-    return <div data-testid="grid" />;
+    return null;
   },
 }));
 ```
+
+When the mock wall grows, extract it to a sibling `*.spec.mocks.ts[x]` file instead of leaving the whole prelude inline.
+
+Reusable shared mocks belong in `frontend/src/test-utils/mocks/`.
+
+For shared mocks and shared test helpers, prefer source-exported types (or `ComponentProps<typeof ...>`) over handwritten prop shapes.
 
 ---
 
@@ -90,7 +105,9 @@ Copy from — these are the reference specs for this repo:
 
 - `frontend/src/features/organizations/details/data-sources/DataSources.spec.tsx` — container + `MemoryRouter` + child mock
 - `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.spec.tsx` — thin Grid wrapper, captured `onAction` invoked via `act()`
+- `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.spec.mocks.tsx` — sibling helper pattern for a grown mock prelude
 - `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.config.spec.tsx` — `useColumns` / `useFields` / `useAsyncOptions` / `useGridConfig` with all peer hooks mocked
+- `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.config.spec.mocks.ts` — sibling helper pattern for config-hook tests
 - `frontend/src/shared/hooks/useReactQueryRqlGrid.spec.tsx` — hook with `QueryClientProvider` wrapper
 
 ---

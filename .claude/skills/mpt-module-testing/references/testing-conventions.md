@@ -46,9 +46,16 @@ Two things that bite repeatedly:
 
 ### Pre-Mocked Modules
 
-Full canonical list: [SKILL.md → Pre-Mocked Modules](../SKILL.md#pre-mocked-modules-already-in-jestsetupjs--do-not-mock-again).
+Full canonical list: [SKILL.md → Globally enabled modules](../SKILL.md#globally-enabled-modules--do-not-mock-again).
 
-Summary: `~shared/hooks/useFixedT`, `react-i18next`, `react-router-dom` (Link only), `@swo/design-system/utils`, `@mpt-extension/sdk` are stubbed globally. Global stubs: `TextEncoder` / `TextDecoder`. Don't re-mock these in specs.
+Summary:
+
+- `@swo/design-system/utils` is the only root manual mock assumed globally enabled from `frontend/jest.setup.js`
+- `~shared/hooks/useFixedT` is still mocked in `frontend/jest.setup.js`
+- `react-router-dom`, `react-i18next`, and `@mpt-extension/sdk` exist as root manual mocks / special cases, but are **not** assumed globally active unless setup explicitly enables them
+- Global stubs: `TextEncoder` / `TextDecoder`
+
+Don't re-mock the globally enabled/shared setup modules in specs.
 
 ### Never Mock
 
@@ -64,18 +71,55 @@ Basic `MemoryRouter` and `QueryClientProvider` snippets live in [SKILL.md → Te
 
 **`renderHook` with React Query** (used for hooks that call `useQuery` / `useQueryClient`):
 
-```typescript
+```text
 function createWrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: PropsWithChildren) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return createQueryClientWrapper();
 }
 
 const { result } = renderHook(() => useMyHook(), { wrapper: createWrapper() });
 ```
 
 Canonical example: `frontend/src/shared/hooks/useReactQueryRqlGrid.spec.tsx`.
+
+---
+
+## Mock Organization
+
+- Keep tiny mock preludes inline in the spec
+- Move larger spec-local setup into a sibling `*.spec.mocks.ts[x]`
+- Put reusable mocks used by 2+ specs in `frontend/src/test-utils/mocks/`
+- Reserve root `frontend/__mocks__/` for actual Jest manual mocks / third-party stubs
+
+Canonical local examples:
+
+- `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.spec.tsx` + `DataSourcesGrid.spec.mocks.tsx`
+- `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.config.spec.tsx` + `DataSourcesGrid.config.spec.mocks.ts`
+- `frontend/src/features/organizations/details/data-sources/force-import-modal/DataSourceForceImportModal.spec.tsx` + `DataSourceForceImportModal.spec.mocks.tsx`
+
+## Shared Mock / Utility Typing
+
+For shared helpers in `frontend/src/test-utils/mocks/` and `frontend/src/test-utils/`, prefer source-exported types instead of handwritten prop shapes.
+
+- Use `import type`
+- Prefer `Pick<...>` when the mock only touches a subset of props
+- If a source prop type is not exported, prefer `ComponentProps<typeof Component>` (or a `Pick<>` subset)
+
+```text
+import type { GridCellDateProps } from "~shared/components/grid/GridCellDate";
+import type { GridCellCurrencyProps } from "~shared/components/grid/GridCellCurrency";
+
+type MockGridCellCurrencyProps = Pick<GridCellCurrencyProps, "value" | "currency">;
+
+export const mockGridCellDate = {
+  GridCellDate: ({ value }: GridCellDateProps) => String(value),
+};
+
+export const mockGridCellCurrency = {
+  GridCellCurrency: ({ value, currency }: MockGridCellCurrencyProps) =>
+    `${value}|${currency}`,
+};
+```
 
 ---
 
@@ -130,7 +174,9 @@ Copy from these — they are the reference specs for this repo:
 
 - **Container:** `frontend/src/features/organizations/details/data-sources/DataSources.spec.tsx`
 - **Grid wrapper (with `act()`):** `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.spec.tsx`
+- **Grid wrapper sibling mocks:** `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.spec.mocks.tsx`
 - **Config hooks (largest, most patterns):** `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.config.spec.tsx`
+- **Config hooks sibling mocks:** `frontend/src/features/organizations/details/data-sources/DataSourcesGrid.config.spec.mocks.ts`
 - **Hook with React Query wrapper:** `frontend/src/shared/hooks/useReactQueryRqlGrid.spec.tsx`
 
 ---

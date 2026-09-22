@@ -12,16 +12,14 @@ Pitfalls unique to this repo's Jest setup (CJS + `@swc/jest` + jsdom).
 
 **Cause:** `@mpt-extension/sdk`'s `package.json` declares only `"exports": { ".": { "import": "./dist/index.js" } }`. In Jest's CJS mode `require()` refuses to resolve packages that expose only the `import` condition.
 
-**Solution:** already stubbed globally in `frontend/jest.setup.js` with `{ virtual: true }`:
+**Solution:** use the root manual mock at `frontend/__mocks__/@mpt-extension/sdk.ts`. Do **not** assume it is globally enabled from `frontend/jest.setup.js` unless setup explicitly opts it in.
 
-```javascript
-jest.mock('@mpt-extension/sdk', () => ({
-  setup: jest.fn(),
-  http: jest.fn(),
-}), { virtual: true });
+```text
+// opt in when a spec really needs it
+jest.mock("@mpt-extension/sdk");
 ```
 
-If you see the error, verify the stub is still in `jest.setup.js`. Do not add a per-spec workaround. `virtual: true` is mandatory — without it Jest first tries to resolve the module on disk and crashes.
+If you see the error, verify the root manual mock file still exists and that your test setup/spec opts in correctly when needed.
 
 ### Problem: `ReferenceError: TextEncoder is not defined` when importing `react-router-dom`
 
@@ -29,7 +27,7 @@ If you see the error, verify the stub is still in `jest.setup.js`. Do not add a 
 
 **Solution:** already stubbed globally in `frontend/jest.setup.js`:
 
-```javascript
+```text
 import {TextEncoder, TextDecoder} from 'node:util';
 Object.assign(globalThis, {TextEncoder, TextDecoder});
 ```
@@ -42,7 +40,7 @@ Object.assign(globalThis, {TextEncoder, TextDecoder});
 
 **Solution:** the config already includes those packages in `transformIgnorePatterns` so SWC transpiles them to CJS:
 
-```javascript
+```text
 // jest.config.js
 transformIgnorePatterns: [
   '/node_modules/(?!(@swo|@mpt-extension|axios|@tanstack|react-i18next|zod|zod-i18n-map|@hey-api|@hookform)/)',
@@ -59,7 +57,7 @@ If a new ESM-only dependency fails the same way, extend the negative lookahead.
 
 **Solution:** wrap the invocation in `act(...)`:
 
-```typescript
+```text
 import { act } from "@testing-library/react";
 
 const onAction = mockUseGridConfig.mock.calls[0][1];
@@ -75,7 +73,7 @@ expect(mockForceImportModal.mock.calls[mockForceImportModal.mock.calls.length - 
 
 **Solution:** add to `frontend/tsconfig.json`:
 
-```json
+```text
 {
   "compilerOptions": {
     "types": ["node", "jest", "@testing-library/jest-dom"]
@@ -89,9 +87,9 @@ expect(mockForceImportModal.mock.calls[mockForceImportModal.mock.calls.length - 
 
 **Solution:** cast to the function shape:
 
-```typescript
+```text
 const { getByTestId } = render(
-  <>{(column.cell as (item: DatasourceRead) => ReactNode)(item)}</>,
+  renderCell(column as Pick<GridColumnDefinition<DatasourceRead>, "cell" | "name">, item),
 );
 ```
 
@@ -103,12 +101,12 @@ const { getByTestId } = render(
 
 **Cause:** the mock path doesn't match the source import. In `ffc-extension/frontend` source imports from `@swo/design-system/[component]` (full path), NOT `@swo/[component]`. Jest treats them as distinct module IDs, so a mock on the shorter path never intercepts.
 
-```typescript
+```text
 // ❌ Wrong (pattern from mpt-vikings-ui, wrong for this repo)
-jest.mock("@swo/grid", () => ({ Grid: () => <div>Grid</div> }));
+jest.mock("@swo/grid", () => ({ Grid: () => null }));
 
 // ✅ Correct — matches actual source imports
-jest.mock("@swo/design-system/grid", () => ({ Grid: () => <div>Grid</div> }));
+jest.mock("@swo/design-system/grid", () => ({ Grid: () => null }));
 ```
 
 Applies to every design-system subpath: `@swo/design-system/grid`, `@swo/design-system/entity-reference-cell`, `@swo/design-system/modal`, `@swo/design-system/dropdown`, etc.
@@ -119,7 +117,7 @@ Applies to every design-system subpath: `@swo/design-system/grid`, `@swo/design-
 
 **Cause:** `@swo/design-system/grid` and siblings are huge modules with heavy side effects. Spreading the real module inside a mock factory pulls the entire dependency graph into the test process.
 
-```typescript
+```text
 // ❌ Wrong
 jest.mock("@swo/design-system/grid", () => ({
   ...jest.requireActual("@swo/design-system/grid"),
@@ -136,15 +134,18 @@ jest.mock("@swo/design-system/grid", () => ({
 
 **Symptom:** `Warning: Duplicate mock for '...'`.
 
-**Cause:** module already mocked in `jest.setup.js`.
+**Cause:** module already mocked in `jest.setup.js`, or it is a root manual mock you are treating as globally enabled when it is not.
 
 **Solution:** remove the mock from your spec. Pre-mocked modules:
 
-- `react-router-dom` (only `Link`; other exports pass through)
-- `react-i18next` (`useTranslation` returns identity `t`; `Trans` renders `i18nKey`)
+- `@swo/design-system/utils` (`useDesignSystemOptions`, `useLocalisation`, `DisplayValue`) — globally enabled
 - `~shared/hooks/useFixedT` (returns identity function)
-- `@swo/design-system/utils` (`useDesignSystemOptions`, `useLocalisation`, `DisplayValue`)
-- `@mpt-extension/sdk` (`{ setup, http }` with `{ virtual: true }`; ESM-only package)
+
+Root manual mocks / special cases available, but **not assumed globally active**:
+
+- `react-router-dom` (pass-through mock overriding `Link`)
+- `react-i18next` (`useTranslation` returns identity `t`; `Trans` renders `i18nKey`)
+- `@mpt-extension/sdk` (`{ setup, http }`; ESM-only package)
 
 Global stubs: `TextEncoder` / `TextDecoder` on `globalThis`.
 
@@ -156,16 +157,14 @@ Global stubs: `TextEncoder` / `TextDecoder` on `globalThis`.
 
 **Cause:** the code under test (or one of its hooks) calls `useQueryClient` / `useQuery`, but the test doesn't wrap it in a `QueryClientProvider`.
 
-```typescript
+```text
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return ({ children }: PropsWithChildren) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return createQueryClientWrapper();
 }
 
 const { result } = renderHook(() => useSomething(), { wrapper: createWrapper() });
@@ -179,7 +178,7 @@ If you're testing a shallow wrapper you can mock the config hook that pulls in R
 
 **Solution:** `await waitFor(...)`:
 
-```typescript
+```text
 await waitFor(() => {
   expect(screen.getByTestId("data")).toBeInTheDocument();
 });
@@ -187,7 +186,7 @@ await waitFor(() => {
 
 For user events use `userEvent` (already awaits its own effects):
 
-```typescript
+```text
 const user = userEvent.setup();
 await user.click(screen.getByRole("button", { name: /save/i }));
 ```
@@ -225,8 +224,10 @@ Before committing a spec:
 - [ ] `.spec.tsx` extension
 - [ ] Mocks use classic `jest.mock` + static `import` (SWC hoists in CJS mode)
 - [ ] Design-system mocks use the full `@swo/design-system/[component]` path
-- [ ] No re-mocking of pre-mocked modules (`useFixedT`, `@swo/design-system/utils`, `react-i18next`, `react-router-dom`, `@mpt-extension/sdk`)
+- [ ] No re-mocking of globally enabled modules (`useFixedT`, `@swo/design-system/utils`)
+- [ ] Root manual mocks (`react-router-dom`, `react-i18next`, `@mpt-extension/sdk`) are treated as opt-in unless setup explicitly enables them
 - [ ] Mock factory returns only runtime exports the code under test uses (no `...jest.requireActual(...)` for big design-system modules)
+- [ ] Shared mocks / shared test utils prefer source-exported types or `ComponentProps<typeof ...>` over handwritten prop shapes
 - [ ] State-changing callbacks invoked from test code wrapped in `act(...)`
 - [ ] Path aliases (`~shared/`, `~organizations/`, etc.) used consistently
 - [ ] `npm test` passes locally
