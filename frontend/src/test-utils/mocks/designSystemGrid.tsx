@@ -1,10 +1,10 @@
 import type { ComponentProps } from "react";
 
 import type {
+  buildRqlQuery,
   Grid,
   GridCellSimple,
   UseAsyncGridConfig,
-  buildRqlQuery,
 } from "@swo/design-system/grid";
 
 type MockGridProps = ComponentProps<typeof Grid>;

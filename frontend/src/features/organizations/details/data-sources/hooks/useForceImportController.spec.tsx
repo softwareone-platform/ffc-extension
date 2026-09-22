@@ -1,5 +1,4 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-
 import type { AxiosError } from "axios";
 
 import type { useOrganizationsApi } from "~organizations/api";
@@ -62,7 +61,6 @@ describe("useForceImportController", () => {
   it("forceImport sends last_import_at as an ISO date string when lastImportAt is set", async () => {
     mockForceReimportDatasource.mockResolvedValueOnce(OK_RESPONSE);
     const { result } = renderController();
-    console.log(result);
     act(() => {
       result.current.setLastImportAt(new Date(2026, 2, 15));
     });

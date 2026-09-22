@@ -134,6 +134,47 @@ Selected shared third-party mocks are enabled once in `frontend/jest.setup.js` v
 - explicit `jest.mock(...)` activation for the root manual mocks that are intentionally global
 - `global.jest = jest` bridge — makes `jest.mock(...)` available in the ESM setup file.
 
+### `npm test` runs jest + tsc + prettier + eslint in parallel
+
+`@swc/jest` deliberately skips type-checking to stay fast, so drift in typed mock spies (`jest.MockedFunction<typeof …>` vs. the real signature) only surfaces at `tsc` time. To keep the local feedback loop tight, `npm test` runs four checks in parallel via `npm-run-all --parallel --continue-on-error --print-label`:
+
+- `test:unit` — the raw jest invocation (still available on its own for tight-loop debugging)
+- `typecheck` — `tsc --noEmit`
+- `format:check` — `prettier --check`
+- `lint` — `eslint`, includes spec-scoped jest / testing-library / jest-dom rules (see below)
+
+`--continue-on-error` means all four complete every run — you see every failure class at once instead of iterating.
+
+### Spec-scoped ESLint rules (jest / testing-library / jest-dom)
+
+`eslint.config.mjs` has a dedicated block for spec files (`**/*.spec.{ts,tsx}`, `**/*.spec.mocks.{ts,tsx}`, `src/test-utils/**/*`, `jest.setup.js`) that enables the recommended rulesets from three plugins:
+
+- `eslint-plugin-jest` — `no-disabled-tests`, `no-focused-tests`, `expect-expect`, `valid-title`, `no-standalone-expect`, `no-conditional-expect`, etc.
+- `eslint-plugin-testing-library` (`flat/react` config) — `prefer-screen-queries`, `no-container`, `no-node-access`, `await-async-utils`, etc.
+- `eslint-plugin-jest-dom` — `prefer-in-document`, `prefer-to-have-text-content`, etc.
+
+App code is not touched by these rules. Two patterns to internalise:
+
+- **Use `screen.getBy*`, don't destructure from `render()` result.** The plugin flags `const { getByTestId } = render(...)` — use `render(...)` then `screen.getByTestId(...)` at the assertion site. Same applies to shared helpers like `renderColumnCell` that wrap `render` and return the RTL result.
+- **Prefer `toHaveTextContent(...)` over `.textContent === …`.** Jest-dom's matcher gives better diffs and normalises whitespace; `expect(el.textContent).toBe(...)` gets flagged.
+
+### `.spec.mocks` imports must load before the source under test
+
+`jest.mock(...)` calls inside a `.spec.mocks` sibling only fire when that sibling is imported. If the source-under-test import is placed *above* the sibling import, the real modules resolve first and the mocks never take effect — every dependency graph the source touches leaks in ("No QueryClient set", `Cannot destructure property … of undefined`, etc.).
+
+Prettier's sort-imports plugin used to alphabetize `./X.config` before `./X.config.spec.mocks`, which silently broke every spec that extracted its prelude. `frontend/.prettierrc.json` now has a dedicated group for `.spec.mocks` siblings that sits *before* the general `^[./]` group:
+
+```text
+"importOrder": [
+  ...,
+  "^~(.*)$",
+  "^[./].*\\.spec\\.mocks(\\.[a-z]+)?$",
+  "^[./]"
+]
+```
+
+Keep this ordering when adding new import-order rules. Never manually swap the two imports back — running `npm run format` will restore them.
+
 ### Shared test environment hardening
 
 Keep environment-wide fixes in `frontend/jest.setup.js`; don't patch jsdom gaps in individual specs.

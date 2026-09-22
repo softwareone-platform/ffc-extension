@@ -1,14 +1,15 @@
-import { act, render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { makeDatasource } from "~test-utils";
 
-import type { useForceImportController } from "../hooks/useForceImportController";
 import {
   mockDatePicker,
   mockInlineErrorNotification,
   mockModal,
   mockUseForceImportController,
 } from "./DataSourceForceImportModal.spec.mocks";
+
+import type { useForceImportController } from "../hooks/useForceImportController";
 import { DataSourceForceImportModal } from "./DataSourceForceImportModal";
 
 type Controller = ReturnType<typeof useForceImportController>;
@@ -110,11 +111,11 @@ describe("DataSourceForceImportModal", () => {
     },
   ])("renders EntityReferenceCell for $scenario", ({ input, primary, secondary, icon }) => {
     primeController();
-    const { getByTestId } = renderModal({ datasource: input, organizationId });
+    renderModal({ datasource: input, organizationId });
 
-    expect(getByTestId("primary").textContent).toBe(primary);
-    expect(getByTestId("secondary").textContent).toBe(secondary);
-    expect(getByTestId("custom-icon").textContent).toBe(icon);
+    expect(screen.getByTestId("primary")).toHaveTextContent(primary);
+    expect(screen.getByTestId("secondary")).toHaveTextContent(secondary);
+    expect(screen.getByTestId("custom-icon")).toHaveTextContent(icon);
   });
 
   describe("Modal / DatePicker wiring", () => {

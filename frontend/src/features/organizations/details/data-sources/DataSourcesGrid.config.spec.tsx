@@ -1,12 +1,10 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, screen } from "@testing-library/react";
 
 import type { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import { NO_VALUE } from "@swo/design-system/utils";
 
 import type { AccountType, DatasourceType, OrganizationRead } from "~api/ffc-api-model";
-
 import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
-
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeDatasource, renderColumnCell } from "~test-utils";
 
@@ -19,6 +17,7 @@ import {
   mockUseReactQueryRqlGrid,
   mockUseUserRole,
 } from "./DataSourcesGrid.config.spec.mocks";
+
 import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./DataSourcesGrid.config";
 
 const COLUMN_FIELDS = [
@@ -78,11 +77,11 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource();
 
-      const { getByTestId } = renderColumnCell(result.current, "name", item);
+      renderColumnCell(result.current, "name", item);
 
-      expect(getByTestId("primary")).toHaveTextContent("AWS Prod");
-      expect(getByTestId("secondary")).toHaveTextContent("aws-prod-123");
-      expect(getByTestId("custom-icon")).toHaveTextContent("aws_cnr");
+      expect(screen.getByTestId("primary")).toHaveTextContent("AWS Prod");
+      expect(screen.getByTestId("secondary")).toHaveTextContent("aws-prod-123");
+      expect(screen.getByTestId("custom-icon")).toHaveTextContent("aws_cnr");
     });
 
     it("renders the parent_id column with parent details when parent is set", () => {
@@ -96,33 +95,29 @@ describe("DataSourcesGrid.config", () => {
         },
       });
 
-      const { getByTestId } = renderColumnCell(result.current, "parent_id", item);
+      renderColumnCell(result.current, "parent_id", item);
 
-      expect(getByTestId("primary")).toHaveTextContent("Parent DS");
-      expect(getByTestId("secondary")).toHaveTextContent("parent-ds-123");
-      expect(getByTestId("custom-icon")).toHaveTextContent("azure_tenant");
+      expect(screen.getByTestId("primary")).toHaveTextContent("Parent DS");
+      expect(screen.getByTestId("secondary")).toHaveTextContent("parent-ds-123");
+      expect(screen.getByTestId("custom-icon")).toHaveTextContent("azure_tenant");
     });
 
     it("renders the parent_id column with NO_VALUE when parent is missing", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ parent: null });
 
-      const { getByTestId } = renderColumnCell(result.current, "parent_id", item);
+      renderColumnCell(result.current, "parent_id", item);
 
-      expect(getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
+      expect(screen.getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
     });
 
     it("renders resources_charged_this_month without a currency code when organization context is undefined", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ resources_charged_this_month: 12 });
 
-      const { getByTestId } = renderColumnCell(
-        result.current,
-        "resources_charged_this_month",
-        item,
-      );
+      renderColumnCell(result.current, "resources_charged_this_month", item);
 
-      expect(getByTestId("grid-cell-currency")).toHaveTextContent("12|");
+      expect(screen.getByTestId("grid-cell-currency")).toHaveTextContent("12|");
     });
 
     it.each([
@@ -132,18 +127,18 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ [field]: value });
 
-      const { getByTestId } = renderColumnCell(result.current, columnName, item);
+      renderColumnCell(result.current, columnName, item);
 
-      expect(getByTestId("grid-cell-currency")).toHaveTextContent(`${value}|USD`);
+      expect(screen.getByTestId("grid-cell-currency")).toHaveTextContent(`${value}|USD`);
     });
 
     it("passes fractional expense values through to GridCellCurrency unchanged", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ expenses_so_far_this_month: 0.000432 });
 
-      const { getByTestId } = renderColumnCell(result.current, "expenses_so_far_this_month", item);
+      renderColumnCell(result.current, "expenses_so_far_this_month", item);
 
-      expect(getByTestId("grid-cell-currency")).toHaveTextContent("0.000432|USD");
+      expect(screen.getByTestId("grid-cell-currency")).toHaveTextContent("0.000432|USD");
     });
 
     it("renders currency cells without a currency code when organization context is undefined", () => {
@@ -151,9 +146,9 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ expenses_so_far_this_month: 7 });
 
-      const { getByTestId } = renderColumnCell(result.current, "expenses_so_far_this_month", item);
+      renderColumnCell(result.current, "expenses_so_far_this_month", item);
 
-      expect(getByTestId("grid-cell-currency")).toHaveTextContent("7|");
+      expect(screen.getByTestId("grid-cell-currency")).toHaveTextContent("7|");
     });
 
     it.each([
@@ -164,18 +159,18 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = { ...makeDatasource(), last_import_at: value };
 
-      const { getByTestId } = renderColumnCell(result.current, "last_import_at", item);
+      renderColumnCell(result.current, "last_import_at", item);
 
-      expect(getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
+      expect(screen.getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
     });
 
     it("renders last_import_at as a date when the value is real", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource({ last_import_at: "2026-01-15T10:00:00Z" });
 
-      const { getByTestId } = renderColumnCell(result.current, "last_import_at", item);
+      renderColumnCell(result.current, "last_import_at", item);
 
-      expect(getByTestId("grid-cell-date")).toHaveTextContent("2026-01-15T10:00:00Z");
+      expect(screen.getByTestId("grid-cell-date")).toHaveTextContent("2026-01-15T10:00:00Z");
     });
 
     it("renders the actions column with dynamic actions for the item", () => {
@@ -183,10 +178,10 @@ describe("DataSourcesGrid.config", () => {
       const { result } = renderHook(() => useColumns());
       const item = makeDatasource();
 
-      const { getByTestId } = renderColumnCell(result.current, "actions", item);
+      renderColumnCell(result.current, "actions", item);
 
-      expect(getByTestId("actions-item-id")).toHaveTextContent(item.id);
-      expect(getByTestId("actions-count")).toHaveTextContent("1");
+      expect(screen.getByTestId("actions-item-id")).toHaveTextContent(item.id);
+      expect(screen.getByTestId("actions-count")).toHaveTextContent("1");
       expect(mockGetActions).toHaveBeenCalledWith(item);
     });
   });
