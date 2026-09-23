@@ -26,8 +26,8 @@ export class OrganizationDetailsPage extends ExtensionPage {
 
     this.pageSizeButton = this.extensionFrame.getByTestId('pagination__page-size-selector__button');
 
-    this.addUserEmailInput = this.wizardFrame.locator('input#email');
-    this.addUserNameInput = this.wizardFrame.locator('input#display_name');
+    this.addUserEmailInput = this.extensionFrame.locator('input#email');
+    this.addUserNameInput = this.extensionFrame.locator('input#display_name');
   }
 
   /** Tabs are routes, so opening one by URL beats clicking through the grid. */

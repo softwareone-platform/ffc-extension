@@ -79,8 +79,11 @@ export abstract class ExtensionPage extends PlatformPage {
     this.gridTable = this.extensionFrame.getByTestId('grid__table');
     this.toolbarDropdown = this.extensionFrame.getByTestId('grid__toolbar__view-selector__dropdown');
 
-    this.wizardModalHeaderTitle = this.wizardFrame.locator('//div[@class="modal-header-title"]');
-    this.wizardModalSaveBtn = this.wizardFrame.getByRole('button', { name: 'Save' });
+    // Modals render inside the extension iframe (not a separate wizard iframe). The
+    // design-system Modal.Header tags its title with data-testid="modal-header-title",
+    // which is stable across the hashed CSS-module class name.
+    this.wizardModalHeaderTitle = this.extensionFrame.getByTestId('modal-header-title');
+    this.wizardModalSaveBtn = this.extensionFrame.getByRole('button', { name: 'Save' });
   }
 
   /**

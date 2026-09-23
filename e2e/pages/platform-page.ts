@@ -1,4 +1,4 @@
-import { FrameLocator, Locator, Page } from '@playwright/test';
+import { Locator, Page } from '@playwright/test';
 
 import { LARGE_DATA_TIMEOUT } from '../utils/config';
 import { debugLog, errorLog } from '../utils/debug-logging';
@@ -8,7 +8,6 @@ export abstract class PlatformPage {
   readonly page: Page;
   readonly url: string;
   readonly main: Locator;
-  readonly wizardFrame: FrameLocator;
   readonly navigationHeaderBarTitle: Locator;
   readonly loadingPageImg: Locator;
 
@@ -17,7 +16,6 @@ export abstract class PlatformPage {
     this.url = url;
     this.main = this.page.locator('main');
 
-    this.wizardFrame = this.main.frameLocator('(//iframe)[2]');
     this.navigationHeaderBarTitle = this.main.getByTestId('navigation__header-bar__title');
     this.loadingPageImg = this.page.locator('#Vector_5');
   }
