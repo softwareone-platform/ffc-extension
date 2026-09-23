@@ -1,5 +1,8 @@
 FROM python:3.12
 
+ARG APP_VERSION=0.0.0-dev
+ENV FFC_EXT_EXTENSION_VERSION=${APP_VERSION}
+
 # Install basic utilites
 RUN apt-get update; \
     apt-get install -y --no-install-recommends ca-certificates curl vim postgresql-client netcat-openbsd less; \

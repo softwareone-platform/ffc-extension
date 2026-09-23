@@ -6,6 +6,7 @@ export const SEGMENTS = {
   root: "organizations",
   idParam: `:${PARAMS.organizationId}`,
   general: "general",
+  events: "events",
   dataSources: "data-sources",
   users: "users",
 } as const;
@@ -14,6 +15,7 @@ export const PATHS = {
   root: `/${SEGMENTS.root}`,
   detail: (id: string) => `/${SEGMENTS.root}/${id}`,
   general: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.general}`,
+  events: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.events}`,
   dataSources: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.dataSources}`,
   users: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.users}`,
   detailMatch: `/${SEGMENTS.root}/${SEGMENTS.idParam}/*`,

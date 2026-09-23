@@ -5,7 +5,6 @@ from typing import Annotated
 from uuid import UUID
 
 import httpx
-from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import create_page
 from sqlalchemy import Select
@@ -34,12 +33,17 @@ from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
     AdditionalAdminRequestCreate,
     AdditionalAdminRequestRead,
+    DatasourceForceReimport,
     DatasourceRead,
     OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
 )
-from app.utils import wrap_exc_in_http_response, wrap_http_error_in_502
+from app.utils import (
+    get_organization_deletable_at,
+    wrap_exc_in_http_response,
+    wrap_http_error_in_502,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -208,19 +212,7 @@ async def get_datasources_by_organization_id(
 
     datasources = response.json()
     return create_page(
-        [
-            DatasourceRead(
-                id=datasource["id"],
-                name=datasource["name"],
-                type=datasource["type"],
-                parent=datasource.get("parent"),
-                resources_charged_this_month=datasource["resources"],
-                expenses_so_far_this_month=datasource["cost"],
-                expenses_forecast_this_month=datasource["forecast"],
-                datasource_id=datasource["account_id"],
-            )
-            for datasource in datasources["items"]
-        ],
+        [DatasourceRead(**datasource) for datasource in datasources["items"]],
         params=params,
         total=datasources["total"],
     )
@@ -252,6 +244,10 @@ async def get_datasource_by_id(
         expenses_so_far_this_month=datasource["details"]["cost"],
         expenses_forecast_this_month=datasource["details"]["forecast"],
         datasource_id=datasource["account_id"],
+        last_import_at=datasource.get("last_import_at", 0),
+        last_import_modified_at=datasource.get("last_import_modified_at", 0),
+        last_import_attempt_at=datasource.get("last_import_attempt_at", 0),
+        last_import_attempt_error=datasource.get("last_import_attempt_error"),
     )
 
 
@@ -264,16 +260,19 @@ async def force_reimport_datasource(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
     optscale_client: OptscaleClient,
+    data: DatasourceForceReimport | None = None,
 ):
     validate_linked_organization_id(organization)
+    # Optscale expects the import timestamps as seconds since the epoch.
+    last_import_at = data.last_import_at_timestamp if data is not None else 0
     with wrap_http_error_in_502(
         f"Error scheduling import of cloud account with ID {datasource_id}"
     ):
         await optscale_client.update_datasource(
             datasource_id=datasource_id,
             payload={
-                "last_import_at": 0,
-                "last_import_modified_at": 0,
+                "last_import_at": last_import_at,
+                "last_import_modified_at": last_import_at,
             },
         )
         await optscale_client.force_reimport_datasource(datasource_id)
@@ -446,14 +445,14 @@ async def delete_organization_by_id(
             detail="Only terminated organization can be deleted.",
         )
 
-    delete_available_at = db_organization.terminated_at.date() + relativedelta(months=2, day=1)  # type: ignore
+    deletable_at = get_organization_deletable_at(db_organization.terminated_at)  # type: ignore
 
-    if datetime.now(UTC).date() < delete_available_at:
+    if datetime.now(UTC) < deletable_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                f"The organization {db_organization.name}cannot be deleted "
-                f"before {delete_available_at.strftime('%B %-d, %Y')}."
+                f"The organization {db_organization.name} cannot be deleted "
+                f"before {deletable_at.strftime('%B %-d, %Y')}."
             ),
         )
 

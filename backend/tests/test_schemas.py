@@ -96,6 +96,22 @@ def test_entitlement_create_convert_schema_to_model():
     assert entitlement.datasource_id == data["datasource_id"]
 
 
+def test_entitlement_create_datasource_name_with_whitespace():
+    data = {
+        "name": "AWS",
+        "affiliate_external_id": "ACC-123",
+        "datasource_id": "  container-123  ",
+    }
+
+    entitlement_create = EntitlementCreate(**data)
+    entitlement = convert_schema_to_model(entitlement_create, Entitlement)
+    assert isinstance(entitlement, Entitlement)
+    assert entitlement.name == data["name"]
+    assert entitlement.affiliate_external_id == data["affiliate_external_id"]
+    assert entitlement.datasource_id != data["datasource_id"]
+    assert entitlement.datasource_id == data["datasource_id"].strip()
+
+
 @pytest.mark.parametrize("set_redeemed", [True, False])
 @pytest.mark.parametrize("set_terminated", [True, False])
 def test_entitlement_read_convert_model_to_schema(
@@ -245,6 +261,59 @@ def test_organization_read_convert_model_to_schema(ffc_extension: System):
     assert org_read.events.updated.by.id == ffc_extension.id
     assert org_read.events.updated.by.type == ffc_extension.type
     assert org_read.events.updated.by.name == ffc_extension.name
+
+
+@pytest.mark.parametrize(
+    "status",
+    [OrganizationStatus.TERMINATED, OrganizationStatus.DELETED],
+    ids=["terminated", "deleted"],
+)
+def test_organization_read_deletable_at_is_exposed_once_terminated(
+    ffc_extension: System, status: OrganizationStatus
+):
+    """`deletable_at` is computed from the termination event, whatever the current status is."""
+    organization = Organization(
+        id="FORG-1234-5678-9012",
+        name="Test Org",
+        currency="EUR",
+        billing_currency="EUR",
+        operations_external_id="ORG-123",
+        linked_organization_id="FFC-123",
+        status=status,
+    )
+    organization.created_at = datetime.now(UTC)
+    organization.updated_at = datetime.now(UTC)
+    organization.created_by = ffc_extension
+    organization.updated_by = ffc_extension
+    organization.terminated_at = datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC)
+    organization.terminated_by = ffc_extension
+
+    org_read = convert_model_to_schema(OrganizationRead, organization)
+
+    assert org_read.deletable_at == datetime(2026, 9, 1, tzinfo=UTC)
+    assert org_read.model_dump(mode="json")["deletable_at"] == "2026-09-01T00:00:00Z"
+
+
+def test_organization_read_deletable_at_is_none_when_not_terminated(ffc_extension: System):
+    """`deletable_at` is null as long as the organization has not been terminated."""
+    organization = Organization(
+        id="FORG-1234-5678-9012",
+        name="Test Org",
+        currency="EUR",
+        billing_currency="EUR",
+        operations_external_id="ORG-123",
+        linked_organization_id="FFC-123",
+        status=OrganizationStatus.ACTIVE,
+    )
+    organization.created_at = datetime.now(UTC)
+    organization.updated_at = datetime.now(UTC)
+    organization.created_by = ffc_extension
+    organization.updated_by = ffc_extension
+
+    org_read = convert_model_to_schema(OrganizationRead, organization)
+
+    assert org_read.deletable_at is None
+    assert org_read.model_dump(mode="json")["deletable_at"] is None
 
 
 def test_organization_update_partial():

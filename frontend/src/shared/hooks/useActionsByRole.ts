@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import type { ListOption } from "@swo/dropdown";
+import type { ListOption } from "@swo/design-system/dropdown";
 
 import { useUserRole } from "~shared/hooks/useUserRole";
 

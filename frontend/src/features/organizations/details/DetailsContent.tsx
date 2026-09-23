@@ -7,6 +7,7 @@ import { SEGMENTS } from "~features/organizations/paths";
 import { useOrganizationDetailsApi } from "~organizations/api";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { OrganizationHighlights } from "../components/OrganizationHighlights";
 import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 
 // Inner content for organization details. Outer chrome comes from MainLayout.
@@ -19,10 +20,12 @@ export function OrganizationDetailsContent() {
     { label: tDetails("general:title"), path: SEGMENTS.general },
     { label: tDetails("dataSources:title"), path: SEGMENTS.dataSources },
     { label: tDetails("users:title"), path: SEGMENTS.users },
+    { label: tDetails("events:title"), path: SEGMENTS.events },
   ];
 
   return (
     <>
+      {organizationId && <OrganizationHighlights organizationId={organizationId} />}
       <Navigation.TopBar items={topBarItems} />
       <OrganizationsProvider organization={entity!}>
         <Card>

@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import {
+  GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -34,7 +35,7 @@ export function useColumns(): Columns {
       {
         name: "name",
         title: tColumns("organization"),
-        fields: ["name", "id", "linked_organization_id"],
+        fields: ["name", "id"],
         cell: (item: OrganizationRead) => (
           <GridCellTitleSubtitle
             title={<Link to={`${item.id}/general`}>{item.name}</Link>}
@@ -51,7 +52,7 @@ export function useColumns(): Columns {
       },
       {
         name: "billing_currency",
-        title: "Billing Currency",
+        title: tColumns("billing_currency"),
         fields: ["billing_currency"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>
@@ -61,17 +62,67 @@ export function useColumns(): Columns {
         initialWidth: 175,
       },
       {
-        name: "operations_additional_id",
-        title: "Operations additional ID",
+        name: "linked_organization_id",
+        title: tColumns("linked_organization_id"),
+        fields: ["linked_organization_id"],
+        cell: (item: OrganizationRead) => (
+          <GridCellSimple>{item.linked_organization_id}</GridCellSimple>
+        ),
+        initialWidth: 200,
+        isHidden: true,
+      },
+      {
+        name: "operations_external_id",
+        title: tColumns("operations_external_id"),
         fields: ["operations_external_id"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>{item.operations_external_id}</GridCellSimple>
         ),
-        initialWidth: 350,
+        initialWidth: 200,
+      },
+      {
+        name: "updated_at",
+        title: tColumns("updated_at"),
+        fields: ["events.updated.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.updated?.at} />,
+        initialWidth: 150,
+      },
+      {
+        name: "created_at",
+        title: tColumns("created_at"),
+        fields: ["events.created.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.created?.at} />,
+        initialWidth: 150,
+        isHidden: true,
+      },
+      {
+        name: "terminated_at",
+        title: tColumns("terminated_at"),
+        fields: ["events.terminated.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.terminated?.at} />,
+        initialWidth: 150,
+        isHidden: true,
+      },
+      {
+        name: "deleted_at",
+        title: tColumns("deleted_at"),
+        fields: ["events.deleted.at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.events?.deleted?.at} />,
+        initialWidth: 150,
+        sortable: false,
+        isHidden: true,
+      },
+      {
+        name: "deletable_at",
+        title: tColumns("deletable_at"),
+        fields: ["deletable_at"],
+        cell: (item: OrganizationRead) => <GridCellDateTime date={item.deletable_at} />,
+        initialWidth: 150,
+        isHidden: true,
       },
       {
         name: "status",
-        title: "Status",
+        title: tColumns("status"),
         fields: ["status"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>
@@ -88,7 +139,6 @@ export function useColumns(): Columns {
           <GridCellDynamicActions<OrganizationRead> item={item} actions={getActions(item)} />
         ),
         initialWidth: 100,
-        type: "Actions",
         isScalable: false,
         isHidden: role !== "admin",
       },

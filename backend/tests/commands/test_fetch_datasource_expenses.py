@@ -14,13 +14,11 @@ from typer.testing import CliRunner
 
 from app.cli import app
 from app.commands import fetch_datasource_expenses
-from app.conf import Settings
+from app.conf import Settings, get_settings
 from app.db.base import session_factory
-from app.db.handlers import DatasourceExpenseHandler
+from app.db.handlers import DatasourceExpenseHandler, OrganizationHandler
 from app.db.models import DatasourceExpense, Organization
 from app.enums import DatasourceType, OrganizationStatus
-from tests.fixtures.mock_api_clients import MockOptscaleClient
-from tests.types import ModelFactory
 
 
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
@@ -32,82 +30,121 @@ from tests.types import ModelFactory
     ],
 )
 async def test_create_new_datasource_expenses_single_organization(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
     organization_status: OrganizationStatus,
-    datasource_expense_factory: ModelFactory[DatasourceExpense],
-):
-    mocker.patch("app.commands.fetch_datasource_expenses.send_info")
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()),
-        status=organization_status,
+) -> None:
+    """Monthly datasources are stored and yesterday's expenses update the existing daily row.
+
+    Optscale and the MSTeams webhook are stubbed at the HTTP level with ``httpx_mock``, so the
+    real ``OptscaleClient`` (URL building, cluster secret auth, response parsing), the real
+    notification code and the real DB handlers run. Every non-deleted status is processed.
+    """
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
+    )
+
+    linked_organization_id = str(uuid.uuid4())
+    organization = await OrganizationHandler(db_session).create(
+        Organization(
+            name="ACME Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="AGR-1234-5678-9012",
+            linked_organization_id=linked_organization_id,
+            status=organization_status,
+        )
     )
 
     datasource_id1 = str(uuid.uuid4())
     datasource_id2 = str(uuid.uuid4())
 
-    existing_datasource_expense1 = await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id1,
-        linked_datasource_type=DatasourceType.AZURE_CNR,
-        datasource_name="First cloud account",
-        datasource_id="123456",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    existing_datasource_expense1 = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=datasource_id1,
+            linked_datasource_type=DatasourceType.AZURE_CNR,
+            datasource_name="First cloud account",
+            datasource_id="123456",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        organization,
-        [
-            {
-                "id": datasource_id1,
-                "name": "First cloud account",
-                "details": {"cost": 123.45},
-                "account_id": "123456",
-            },
-            {
-                "id": datasource_id2,
-                "name": "Second cloud account",
-                "details": {"cost": 567.89},
-                "account_id": "654321",
-            },
-        ],
+    organization_url = (
+        f"{test_settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
     )
-
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {
-            datasource_id1: {
-                "total": 12.34,
-                "id": datasource_id1,
-                "name": "First cloud account",
-                "account_id": "123456",
-                "type": "azure_cnr",
-            },
-            datasource_id2: {
-                "total": 56.78,
-                "id": datasource_id2,
-                "name": "Second cloud account",
-                "type": "azure_cnr",
-                "account_id": "654321",
-            },
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{organization_url}/cloud_accounts",
+        match_params={"details": "true"},
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "cloud_accounts": [
+                {
+                    "id": datasource_id1,
+                    "name": "First cloud account",
+                    "type": DatasourceType.AZURE_CNR.value,
+                    "account_id": "123456",
+                    "details": {"cost": 123.45},
+                },
+                {
+                    "id": datasource_id2,
+                    "name": "Second cloud account",
+                    "type": DatasourceType.AZURE_CNR.value,
+                    "account_id": "654321",
+                    "details": {"cost": 567.89},
+                },
+            ]
         },
     )
 
-    existing_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{organization_url}/breakdown_expenses",
+        match_params={
+            "start_date": str(day_start),
+            "end_date": str(day_end),
+            "breakdown_by": "cloud_account_id",
+        },
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "counts": {
+                datasource_id1: {
+                    "total": 12.34,
+                    "id": datasource_id1,
+                    "name": "First cloud account",
+                    "type": DatasourceType.AZURE_CNR.value,
+                    "account_id": "123456",
+                },
+                datasource_id2: {
+                    "total": 56.78,
+                    "id": datasource_id2,
+                    "name": "Second cloud account",
+                    "type": DatasourceType.AZURE_CNR.value,
+                    "account_id": "654321",
+                },
+            },
+            "start_date": day_start,
+            "end_date": day_end,
+            "breakdown_by": "cloud_account_id",
+        },
+    )
+
+    existing_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(existing_datasource_expenses) == 1
 
     await fetch_datasource_expenses.main(test_settings, organization.id)
 
-    new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    new_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(new_datasource_expenses) == 3
 
     ds_exp1_total = next(
@@ -120,7 +157,6 @@ async def test_create_new_datasource_expenses_single_organization(
         for ds_exp in new_datasource_expenses
         if ds_exp.linked_datasource_id == datasource_id2 and ds_exp.day == 20
     )
-
     ds_exp1_daily = next(
         ds_exp
         for ds_exp in new_datasource_expenses
@@ -145,300 +181,423 @@ async def test_create_new_datasource_expenses_single_organization(
     assert ds_exp2_total.datasource_name == "Second cloud account"
     assert ds_exp2_total.datasource_id == "654321"
 
+    # the daily figure updates the pre-existing row for yesterday instead of creating a new one
+    assert ds_exp1_daily.id == existing_datasource_expense1.id
     assert ds_exp1_daily.organization_id == organization.id
     assert ds_exp1_daily.year == 2025
     assert ds_exp1_daily.month == 3
     assert ds_exp1_daily.day == 19
     assert ds_exp1_daily.expenses == Decimal("12.34")
+    assert ds_exp1_daily.total_expenses == Decimal("123.45")
     assert ds_exp1_daily.datasource_name == "First cloud account"
     assert ds_exp1_daily.datasource_id == "123456"
 
+    notifications = httpx_mock.get_requests(method="POST", url=webhook_url)
+    assert len(notifications) == 1
+    assert "Datasource expenses updated for 1 organizations" in notifications[0].content.decode()
 
+
+@time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_create_new_datasource_expenses_single_organization_deleted(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
-    datasource_expense_factory: ModelFactory[DatasourceExpense],
-):
-    mocker.patch("app.commands.fetch_datasource_expenses.send_info")
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()),
-        status=OrganizationStatus.DELETED,
+    httpx_mock: HTTPXMock,
+) -> None:
+    """A deleted organization is skipped: Optscale
+    is never called and its expenses are untouched."""
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
     )
 
-    datasource_id1 = str(uuid.uuid4())
-
-    await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id1,
-        linked_datasource_type=DatasourceType.AZURE_CNR,
-        datasource_name="First cloud account",
-        datasource_id="123456",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    organization = await OrganizationHandler(db_session).create(
+        Organization(
+            name="ACME Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="AGR-1234-5678-9012",
+            linked_organization_id=str(uuid.uuid4()),
+            status=OrganizationStatus.DELETED,
+        )
     )
 
-    existing_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    existing_datasource_expense = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=str(uuid.uuid4()),
+            linked_datasource_type=DatasourceType.AZURE_CNR,
+            datasource_name="First cloud account",
+            datasource_id="123456",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
+    )
+
+    existing_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(existing_datasource_expenses) == 1
 
     await fetch_datasource_expenses.main(test_settings, organization.id)
 
-    new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    new_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(new_datasource_expenses) == 1
 
+    await db_session.refresh(existing_datasource_expense)
+    assert new_datasource_expenses[0].id == existing_datasource_expense.id
+    assert existing_datasource_expense.total_expenses == Decimal("123.45")
+    assert existing_datasource_expense.expenses == Decimal("0.0000")
 
+    # the notification is the only request made: Optscale was never contacted
+    assert not [
+        request
+        for request in httpx_mock.get_requests()
+        if str(request.url).startswith(test_settings.optscale_rest_api_base_url)
+    ]
+    notification = httpx_mock.get_request(method="POST", url=webhook_url)
+    assert notification is not None
+    assert "Datasource expenses updated for 0 organizations" in notification.content.decode()
+
+
+@time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_create_new_datasource_expenses_organization_deleted(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
-    datasource_expense_factory: ModelFactory[DatasourceExpense],
-):
-    mocker.patch("app.commands.fetch_datasource_expenses.send_info")
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()),
-        status=OrganizationStatus.DELETED,
+    httpx_mock: HTTPXMock,
+) -> None:
+    """The all-organizations run skips deleted organizations and leaves their expenses intact.
+
+    ``main`` is called without an organization ID, so the deleted organization is excluded by
+    the query itself.
+    """
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
     )
 
-    datasource_id1 = str(uuid.uuid4())
-
-    await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id1,
-        linked_datasource_type=DatasourceType.AZURE_CNR,
-        datasource_name="First cloud account",
-        datasource_id="123456",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    organization = await OrganizationHandler(db_session).create(
+        Organization(
+            name="ACME Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="AGR-1234-5678-9012",
+            linked_organization_id=str(uuid.uuid4()),
+            status=OrganizationStatus.DELETED,
+        )
     )
 
-    existing_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    existing_datasource_expense = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=str(uuid.uuid4()),
+            linked_datasource_type=DatasourceType.AZURE_CNR,
+            datasource_name="First cloud account",
+            datasource_id="123456",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
+    )
+
+    existing_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(existing_datasource_expenses) == 1
 
     await fetch_datasource_expenses.main(test_settings)
 
-    new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    new_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(new_datasource_expenses) == 1
+
+    await db_session.refresh(existing_datasource_expense)
+    assert new_datasource_expenses[0].id == existing_datasource_expense.id
+    assert existing_datasource_expense.total_expenses == Decimal("123.45")
+    assert existing_datasource_expense.expenses == Decimal("0.0000")
+
+    # the notification is the only request made: Optscale was never contacted
+    assert not [
+        request
+        for request in httpx_mock.get_requests()
+        if str(request.url).startswith(test_settings.optscale_rest_api_base_url)
+    ]
+    notification = httpx_mock.get_request(method="POST", url=webhook_url)
+    assert notification is not None
+    assert "Datasource expenses updated for 0 organizations" in notification.content.decode()
 
 
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_datasource_expenses_are_updated_for_current_month(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
-    datasource_expense_factory: ModelFactory[DatasourceExpense],
-):
-    mocker.patch(
-        "app.commands.fetch_datasource_expenses.send_info",
+    httpx_mock: HTTPXMock,
+) -> None:
+    """Only rows for the current month are updated; previous months are left untouched.
+
+    Four rows exist up front: the monthly total for today, a total for the *previous* month,
+    and yesterday's daily rows for both datasources. The run must update today's total for
+    the first datasource, create the missing total for the second, fill in yesterday's daily
+    expenses, and leave the February row exactly as it was.
+    """
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
     )
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization = await organization_factory(linked_organization_id=str(uuid.uuid4()))
+    linked_organization_id = str(uuid.uuid4())
+    organization = await OrganizationHandler(db_session).create(
+        Organization(
+            name="ACME Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="AGR-1234-5678-9012",
+            linked_organization_id=linked_organization_id,
+            status=OrganizationStatus.ACTIVE,
+        )
+    )
 
     datasource_id1 = str(uuid.uuid4())
     datasource_id2 = str(uuid.uuid4())
-
-    existing_datasource_expense1 = await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_name="First cloud account",
-        datasource_id="11111111",
-        year=2025,
-        month=3,  # NOTE: This is for the current month, so it should be updated
-        day=20,
-        total_expenses=Decimal("123.45"),
+    existing_datasource_expense1 = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="First cloud account",
+            datasource_id="11111111",
+            year=2025,
+            month=3,  # NOTE: This is for the current month, so it should be updated
+            day=20,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    existing_datasource_expense2 = await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id2,
-        linked_datasource_type=DatasourceType.AZURE_CNR,
-        datasource_name="Second cloud account",
-        datasource_id="22222222",
-        year=2025,
-        month=2,  # NOTE: this is for the previous month, so it should NOT be updated
-        day=20,
-        expenses=Decimal("56.78"),
-        total_expenses=Decimal("567.89"),
+    existing_datasource_expense2 = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=datasource_id2,
+            linked_datasource_type=DatasourceType.AZURE_CNR,
+            datasource_name="Second cloud account",
+            datasource_id="22222222",
+            year=2025,
+            month=2,  # NOTE: this is for the previous month, so it should NOT be updated
+            day=20,
+            expenses=Decimal("56.78"),
+            total_expenses=Decimal("567.89"),
+        )
     )
 
-    existing_datasource_expense3 = await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_name="First cloud account",
-        datasource_id="11111111",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    existing_datasource_expense3 = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="First cloud account",
+            datasource_id="11111111",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    existing_datasource_expense4 = await datasource_expense_factory(
-        organization=organization,
-        linked_datasource_id=datasource_id2,
-        linked_datasource_type=DatasourceType.AZURE_CNR,
-        datasource_name="Second cloud account",
-        datasource_id="22222222",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    existing_datasource_expense4 = await DatasourceExpenseHandler(db_session).create(
+        DatasourceExpense(
+            organization=organization,
+            linked_datasource_id=datasource_id2,
+            linked_datasource_type=DatasourceType.AZURE_CNR,
+            datasource_name="Second cloud account",
+            datasource_id="22222222",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        organization,
-        [
-            {
-                "id": datasource_id1,
-                "account_id": "11111111",
-                "type": "aws_cnr",
-                "name": "First cloud account",
-                "details": {"cost": 234.56},
-            },
-            {
-                "id": datasource_id2,
-                "account_id": "22222222",
-                "type": "azure_cnr",
-                "name": "Second cloud account",
-                "details": {"cost": 678.90},
-            },
-        ],
+    organization_url = (
+        f"{test_settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
     )
-
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {
-            datasource_id1: {
-                "total": 12.34,
-                "id": datasource_id1,
-                "name": "First cloud account",
-                "account_id": "11111111",
-                "type": "aws_cnr",
-            },
-            datasource_id2: {
-                "total": 56.78,
-                "id": datasource_id2,
-                "name": "Second cloud account",
-                "type": "azure_cnr",
-                "account_id": "22222222",
-            },
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{organization_url}/cloud_accounts",
+        match_params={"details": "true"},
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "cloud_accounts": [
+                {
+                    "id": datasource_id1,
+                    "account_id": "11111111",
+                    "type": DatasourceType.AWS_CNR.value,
+                    "name": "First cloud account",
+                    "details": {"cost": 234.56},
+                },
+                {
+                    "id": datasource_id2,
+                    "account_id": "22222222",
+                    "type": DatasourceType.AZURE_CNR.value,
+                    "name": "Second cloud account",
+                    "details": {"cost": 678.90},
+                },
+            ]
         },
     )
 
-    existing_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{organization_url}/breakdown_expenses",
+        match_params={
+            "start_date": str(day_start),
+            "end_date": str(day_end),
+            "breakdown_by": "cloud_account_id",
+        },
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "counts": {
+                datasource_id1: {
+                    "total": 12.34,
+                    "id": datasource_id1,
+                    "account_id": "11111111",
+                    "type": DatasourceType.AWS_CNR.value,
+                    "name": "First cloud account",
+                },
+                datasource_id2: {
+                    "total": 56.78,
+                    "id": datasource_id2,
+                    "account_id": "22222222",
+                    "type": DatasourceType.AZURE_CNR.value,
+                    "name": "Second cloud account",
+                },
+            },
+            "start_date": day_start,
+            "end_date": day_end,
+            "breakdown_by": "cloud_account_id",
+        },
+    )
+
+    existing_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(existing_datasource_expenses) == 4
 
     await fetch_datasource_expenses.main(test_settings)
 
-    new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    new_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(new_datasource_expenses) == 5
 
-    ds_exp1 = next(
+    ds_exp1_total = next(
         ds_exp
         for ds_exp in new_datasource_expenses
-        if ds_exp.linked_datasource_id == datasource_id1 and ds_exp.day == 20
+        if ds_exp.linked_datasource_id == datasource_id1 and ds_exp.month == 3 and ds_exp.day == 20
     )
-    ds_exp2_current_month = next(
+    ds_exp2_previous_month = next(
         ds_exp
         for ds_exp in new_datasource_expenses
-        if (ds_exp.linked_datasource_id == datasource_id2 and ds_exp.month == 2)
+        if ds_exp.linked_datasource_id == datasource_id2 and ds_exp.month == 2
     )
-
-    ds_exp2_this_month = next(
+    ds_exp2_total = next(
         ds_exp
         for ds_exp in new_datasource_expenses
-        if (
-            ds_exp.linked_datasource_id == datasource_id2 and ds_exp.month == 3 and ds_exp.day == 20
-        )
+        if ds_exp.linked_datasource_id == datasource_id2 and ds_exp.month == 3 and ds_exp.day == 20
     )
-
-    ds_exp3_this_month = next(
+    ds_exp1_daily = next(
         ds_exp
         for ds_exp in new_datasource_expenses
         if ds_exp.linked_datasource_id == datasource_id1 and ds_exp.day == 19
     )
-
-    ds_exp4_this_month = next(
+    ds_exp2_daily = next(
         ds_exp
         for ds_exp in new_datasource_expenses
-        if ds_exp.linked_datasource_id == datasource_id2 and ds_exp.day == 19
+        if ds_exp.linked_datasource_id == datasource_id2 and ds_exp.month == 3 and ds_exp.day == 19
     )
 
     await db_session.refresh(existing_datasource_expense1)
+    await db_session.refresh(existing_datasource_expense2)
     await db_session.refresh(existing_datasource_expense3)
     await db_session.refresh(existing_datasource_expense4)
 
-    assert ds_exp1.id == existing_datasource_expense1.id
-    assert ds_exp1.datasource_name == "First cloud account"
-    assert ds_exp1.organization_id == organization.id
-    assert ds_exp1.year == 2025
-    assert ds_exp1.month == 3
-    assert ds_exp1.day == 20
-    assert ds_exp1.total_expenses == Decimal("234.56")
-    assert ds_exp1.expenses == Decimal("0.0000")
+    # the pre-existing total for the current month is updated in place
+    assert ds_exp1_total.id == existing_datasource_expense1.id
+    assert ds_exp1_total.datasource_name == "First cloud account"
+    assert ds_exp1_total.organization_id == organization.id
+    assert ds_exp1_total.year == 2025
+    assert ds_exp1_total.month == 3
+    assert ds_exp1_total.day == 20
+    assert ds_exp1_total.total_expenses == Decimal("234.56")
+    assert ds_exp1_total.expenses == Decimal("0.0000")
 
-    assert ds_exp2_current_month.id == existing_datasource_expense2.id
-    assert ds_exp2_current_month.datasource_name == "Second cloud account"
-    assert ds_exp2_current_month.organization_id == organization.id
-    assert ds_exp2_current_month.year == 2025
-    assert ds_exp2_current_month.month == 2
-    assert ds_exp2_current_month.day == 20
-    assert ds_exp2_current_month.total_expenses == Decimal("567.89")
-    assert ds_exp2_current_month.expenses == Decimal("56.78")
+    # the previous month is left untouched
+    assert ds_exp2_previous_month.id == existing_datasource_expense2.id
+    assert ds_exp2_previous_month.datasource_name == "Second cloud account"
+    assert ds_exp2_previous_month.organization_id == organization.id
+    assert ds_exp2_previous_month.year == 2025
+    assert ds_exp2_previous_month.month == 2
+    assert ds_exp2_previous_month.day == 20
+    assert ds_exp2_previous_month.total_expenses == Decimal("567.89")
+    assert ds_exp2_previous_month.expenses == Decimal("56.78")
 
-    assert ds_exp2_this_month.id not in (
+    # the missing total for the current month is created
+    assert ds_exp2_total.id not in {
         existing_datasource_expense1.id,
         existing_datasource_expense2.id,
-    )
-    assert ds_exp2_this_month.datasource_name == "Second cloud account"
-    assert ds_exp2_this_month.organization_id == organization.id
-    assert ds_exp2_this_month.year == 2025
-    assert ds_exp2_this_month.month == 3
-    assert ds_exp2_this_month.day == 20
-    assert ds_exp2_this_month.total_expenses == Decimal("678.90")
-    assert ds_exp2_this_month.expenses == Decimal("0.0000")
+        existing_datasource_expense3.id,
+        existing_datasource_expense4.id,
+    }
+    assert ds_exp2_total.datasource_name == "Second cloud account"
+    assert ds_exp2_total.organization_id == organization.id
+    assert ds_exp2_total.year == 2025
+    assert ds_exp2_total.month == 3
+    assert ds_exp2_total.day == 20
+    assert ds_exp2_total.total_expenses == Decimal("678.90")
+    assert ds_exp2_total.expenses == Decimal("0.0000")
 
-    assert ds_exp3_this_month.id == existing_datasource_expense3.id
-    assert ds_exp3_this_month.month == 3
-    assert ds_exp3_this_month.day == 19
-    assert ds_exp3_this_month.total_expenses == Decimal("123.45")
-    assert ds_exp3_this_month.expenses == Decimal("12.34")
+    # yesterday's daily figures update the pre-existing rows
+    assert ds_exp1_daily.id == existing_datasource_expense3.id
+    assert ds_exp1_daily.month == 3
+    assert ds_exp1_daily.day == 19
+    assert ds_exp1_daily.total_expenses == Decimal("123.45")
+    assert ds_exp1_daily.expenses == Decimal("12.34")
 
-    assert ds_exp4_this_month.datasource_name == "Second cloud account"
-    assert ds_exp4_this_month.month == 3
-    assert ds_exp4_this_month.day == 19
-    assert ds_exp4_this_month.total_expenses == Decimal("123.45")
-    assert ds_exp4_this_month.expenses == Decimal("56.78")
+    assert ds_exp2_daily.id == existing_datasource_expense4.id
+    assert ds_exp2_daily.datasource_name == "Second cloud account"
+    assert ds_exp2_daily.month == 3
+    assert ds_exp2_daily.day == 19
+    assert ds_exp2_daily.total_expenses == Decimal("123.45")
+    assert ds_exp2_daily.expenses == Decimal("56.78")
+
+    notifications = httpx_mock.get_requests(method="POST", url=webhook_url)
+    assert len(notifications) == 1
+    assert "Datasource expenses updated for 1 organizations" in notifications[0].content.decode()
 
 
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_organization_with_no_linked_organization_id(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    organization_factory: ModelFactory[Organization],
     caplog: pytest.LogCaptureFixture,
     httpx_mock: HTTPXMock,
-):
-    mocker.patch(
-        "app.commands.fetch_datasource_expenses.send_info",
+) -> None:
+    """An organization without a linked Optscale organization is logged and skipped."""
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
     )
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization = await organization_factory(linked_organization_id=None)
+
+    organization = await OrganizationHandler(db_session).create(
+        Organization(
+            name="ACME Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="AGR-1234-5678-9012",
+            linked_organization_id=None,
+            status=OrganizationStatus.ACTIVE,
+        )
+    )
 
     with caplog.at_level(logging.WARNING):
         await fetch_datasource_expenses.main(test_settings)
@@ -446,16 +605,23 @@ async def test_organization_with_no_linked_organization_id(
     assert "1 organizations without linked organization ID" in caplog.text
     assert organization.id in caplog.text
 
-    new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    new_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(new_datasource_expenses) == 0
 
-    assert not httpx_mock.get_request()
+    assert not [
+        request
+        for request in httpx_mock.get_requests()
+        if str(request.url).startswith(test_settings.optscale_rest_api_base_url)
+    ]
+    notification = httpx_mock.get_request(method="POST", url=webhook_url)
+    assert notification is not None
+    assert "Datasource expenses updated for 0 organizations" in notification.content.decode()
 
 
 @pytest.mark.parametrize(
-    ("status_code", "expected_log_level", "expected_log_format"),
+    ("status_code", "expected_log_level", "expected_log_format", "expected_error_notifications"),
     [
-        (
+        pytest.param(
             status.HTTP_404_NOT_FOUND,
             logging.WARNING,
             [
@@ -465,49 +631,76 @@ async def test_organization_with_no_linked_organization_id(
                     "any cloud accounts connected in Optscale."
                 ),
             ],
+            0,
+            id="404-not-found",
         ),
-        (
+        pytest.param(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             logging.ERROR,
             [
                 "Unexpected error occurred fetching datasources for organization %s",
                 "Unexpected error occurred fetching daily expenses for organization %s",
             ],
+            2,
+            id="500-server-error",
         ),
     ],
 )
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_optscale_api_returns_exception(
-    mocker: MockerFixture,
     caplog: pytest.LogCaptureFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    organization_factory: ModelFactory[Organization],
-    mock_optscale_client: MockOptscaleClient,
+    httpx_mock: HTTPXMock,
     status_code: int,
     expected_log_level: int,
     expected_log_format: list[str],
-):
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization = await organization_factory(linked_organization_id=str(uuid.uuid4()))
-
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        organization, status_code=status_code
+    expected_error_notifications: int,
+) -> None:
+    """Optscale failures are logged and store nothing; only a 500 notifies an exception."""
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
     )
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {},
+
+    linked_organization_id = str(uuid.uuid4())
+    organization = await OrganizationHandler(db_session).create(
+        Organization(
+            name="ACME Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="AGR-1234-5678-9012",
+            linked_organization_id=linked_organization_id,
+            status=OrganizationStatus.ACTIVE,
+        )
+    )
+
+    organization_url = (
+        f"{test_settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{organization_url}/cloud_accounts",
+        match_params={"details": "true"},
         status_code=status_code,
     )
 
-    mocker.patch(
-        "app.commands.fetch_datasource_expenses.send_exception",
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{organization_url}/breakdown_expenses",
+        match_params={
+            "start_date": str(day_start),
+            "end_date": str(day_end),
+            "breakdown_by": "cloud_account_id",
+        },
+        status_code=status_code,
     )
-    mocker.patch(
-        "app.commands.fetch_datasource_expenses.send_info",
-    )
+
     with caplog.at_level(logging.WARNING):
         await fetch_datasource_expenses.main(test_settings)
 
@@ -518,39 +711,109 @@ async def test_optscale_api_returns_exception(
             expected_log % organization.id,
         ) in caplog.record_tuples
 
-    new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
+    new_datasource_expenses = await DatasourceExpenseHandler(db_session).query_db(unique=True)
     assert len(new_datasource_expenses) == 0
+
+    optscale_paths = [
+        str(request.url).split("?")[0] for request in httpx_mock.get_requests(method="GET")
+    ]
+    assert optscale_paths.count(f"{organization_url}/cloud_accounts") == 1
+    assert optscale_paths.count(f"{organization_url}/breakdown_expenses") == 1
+
+    notifications = httpx_mock.get_requests(method="POST", url=webhook_url)
+    assert len(notifications) == expected_error_notifications + 1
+
+    error_notifications = [
+        notification
+        for notification in notifications
+        if "Datasource Expenses Update Error" in notification.content.decode()
+    ]
+    assert len(error_notifications) == expected_error_notifications
+
+    summary = notifications[-1].content.decode()
+    assert "Datasource expenses updated for 1 organizations" in summary
+    assert "0 data sources expenses processed" in summary
 
 
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_multiple_datasources_are_handled_correctly(
-    mocker: MockerFixture,
     caplog: pytest.LogCaptureFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
-    datasource_expense_factory: ModelFactory[DatasourceExpense],
-):
-    mocker.patch(
-        "app.commands.fetch_datasource_expenses.send_exception",
+    httpx_mock: HTTPXMock,
+) -> None:
+    """Four organizations are processed in one run, each with its own datasource mix.
+
+    Covers, in a single run: monthly totals updated in place, monthly totals created for
+    unseen datasources, previous-month rows left alone, yesterday's daily expenses applied,
+    child datasources (``azure_tenant`` / ``gcp_tenant``) skipped, and an organization whose
+    Optscale endpoints fail being skipped without aborting the others.
+
+    Optscale and the MSTeams webhook are stubbed at the HTTP level with ``httpx_mock``, so the
+    real ``OptscaleClient``, the real notification code and the real DB handlers run.
+    """
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
     )
-    mocker.patch(
-        "app.commands.fetch_datasource_expenses.send_info",
-    )
-    datasource_expense_handler = DatasourceExpenseHandler(db_session)
-    organization1 = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_1_external_id"
-    )
-    organization2 = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_2_external_id"
-    )
-    organization3 = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_3_external_id"
-    )
-    organization4 = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_4_external_id"
-    )
+
+    day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
+    day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
+
+    def stub_optscale(
+        linked_organization_id: str,
+        cloud_accounts: list[dict] | None = None,
+        daily_counts: dict[str, dict] | None = None,
+        cloud_accounts_status_code: int = status.HTTP_200_OK,
+        daily_expenses_status_code: int = status.HTTP_200_OK,
+    ) -> None:
+        """Stub both Optscale endpoints for one organization."""
+        organization_url = (
+            f"{test_settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/cloud_accounts",
+            match_params={"details": "true"},
+            match_headers={"Secret": test_settings.optscale_cluster_secret},
+            status_code=cloud_accounts_status_code,
+            json={"cloud_accounts": cloud_accounts or []},
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/breakdown_expenses",
+            match_params={
+                "start_date": str(day_start),
+                "end_date": str(day_end),
+                "breakdown_by": "cloud_account_id",
+            },
+            match_headers={"Secret": test_settings.optscale_cluster_secret},
+            status_code=daily_expenses_status_code,
+            json={
+                "counts": daily_counts or {},
+                "start_date": day_start,
+                "end_date": day_end,
+                "breakdown_by": "cloud_account_id",
+            },
+        )
+
+    organization_handler = OrganizationHandler(db_session)
+    linked_organization_ids = [str(uuid.uuid4()) for _ in range(4)]
+    organization1, organization2, organization3, organization4 = [
+        await organization_handler.create(
+            Organization(
+                name=f"ACME Inc {index}",
+                currency="USD",
+                billing_currency="USD",
+                operations_external_id=f"org_{index}_external_id",
+                linked_organization_id=linked_organization_id,
+                status=OrganizationStatus.ACTIVE,
+            )
+        )
+        for index, linked_organization_id in enumerate(linked_organization_ids, start=1)
+    ]
 
     org1_datasource_id1 = str(uuid.uuid4())
     org1_datasource_id2 = str(uuid.uuid4())
@@ -562,207 +825,226 @@ async def test_multiple_datasources_are_handled_correctly(
 
     org3_datasource_id1 = str(uuid.uuid4())
 
-    await datasource_expense_factory(
-        organization=organization1,
-        linked_datasource_id=org1_datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_id="11111111",
-        year=2025,
-        month=2,
-        day=20,
-        total_expenses=Decimal("123.45"),
+    datasource_expense_handler = DatasourceExpenseHandler(db_session)
+
+    # previous month: must be left untouched
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization1,
+            linked_datasource_id=org1_datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 1 first cloud account",
+            datasource_id="11111111",
+            year=2025,
+            month=2,
+            day=20,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    await datasource_expense_factory(
-        organization=organization1,
-        linked_datasource_id=org1_datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_id="11111111",
-        year=2025,
-        month=3,
-        day=20,
-        total_expenses=Decimal("234.56"),
+    # current month totals: must be updated with the figures returned by Optscale
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization1,
+            linked_datasource_id=org1_datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 1 first cloud account",
+            datasource_id="11111111",
+            year=2025,
+            month=3,
+            day=20,
+            total_expenses=Decimal("234.56"),
+        )
     )
 
-    await datasource_expense_factory(
-        organization=organization1,
-        linked_datasource_id=org1_datasource_id2,
-        datasource_id="12222222",
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        year=2025,
-        month=3,
-        day=20,
-        total_expenses=Decimal("567.89"),
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization1,
+            linked_datasource_id=org1_datasource_id2,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 1 second cloud account",
+            datasource_id="12222222",
+            year=2025,
+            month=3,
+            day=20,
+            total_expenses=Decimal("567.89"),
+        )
     )
 
-    await datasource_expense_factory(
-        organization=organization2,
-        linked_datasource_id=org2_datasource_id1,
-        datasource_id="21111111",
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        year=2025,
-        month=3,
-        day=20,
-        total_expenses=Decimal("999.88"),
-        expenses=Decimal("56.78"),
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization2,
+            linked_datasource_id=org2_datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 2 first cloud account",
+            datasource_id="21111111",
+            year=2025,
+            month=3,
+            day=20,
+            total_expenses=Decimal("999.88"),
+            expenses=Decimal("56.78"),
+        )
     )
 
-    existing_datasource_expense1 = await datasource_expense_factory(
-        organization=organization1,
-        linked_datasource_id=org1_datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_id="11111111",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    # yesterday: must receive the daily expenses
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization1,
+            linked_datasource_id=org1_datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 1 first cloud account",
+            datasource_id="11111111",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    existing_datasource_expense2 = await datasource_expense_factory(
-        organization=organization2,
-        linked_datasource_id=org2_datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_id="21111111",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization2,
+            linked_datasource_id=org2_datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 2 first cloud account",
+            datasource_id="21111111",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
-    existing_datasource_expense3 = await datasource_expense_factory(
-        organization=organization3,
-        linked_datasource_id=org3_datasource_id1,
-        linked_datasource_type=DatasourceType.AWS_CNR,
-        datasource_id="31111111",
-        year=2025,
-        month=3,
-        day=19,
-        total_expenses=Decimal("123.45"),
+    await datasource_expense_handler.create(
+        DatasourceExpense(
+            organization=organization3,
+            linked_datasource_id=org3_datasource_id1,
+            linked_datasource_type=DatasourceType.AWS_CNR,
+            datasource_name="Org 3 first cloud account",
+            datasource_id="31111111",
+            year=2025,
+            month=3,
+            day=19,
+            total_expenses=Decimal("123.45"),
+        )
     )
 
     existing_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
     assert len(existing_datasource_expenses) == 7
 
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        organization1,
-        [
+    stub_optscale(
+        linked_organization_ids[0],
+        cloud_accounts=[
             {
                 "id": org1_datasource_id1,
                 "account_id": "11111111",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 1 first cloud account",
                 "details": {"cost": 789.01},
             },
             {
                 "id": org1_datasource_id2,
                 "account_id": "12222222",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 1 second cloud account",
                 "details": {"cost": 678.90},
             },
-            {"id": org1_datasource_id3, "account_id": "13333333", "type": "azure_tenant"},
-            {"id": org1_datasource_id4, "account_id": "14444444", "type": "gcp_tenant"},
+            # child datasources: skipped before their expenses are ever read
+            {
+                "id": org1_datasource_id3,
+                "account_id": "13333333",
+                "type": "azure_tenant",
+                "name": "Org 1 azure tenant",
+            },
+            {
+                "id": org1_datasource_id4,
+                "account_id": "14444444",
+                "type": "gcp_tenant",
+                "name": "Org 1 gcp tenant",
+            },
         ],
-    )
-
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization1,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {
+        daily_counts={
             org1_datasource_id1: {
-                "total": 12.34,
                 "id": org1_datasource_id1,
-                "name": "First cloud account",
                 "account_id": "11111111",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 1 first cloud account",
+                "total": 12.34,
             },
         },
     )
 
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        organization2,
-        [
+    stub_optscale(
+        linked_organization_ids[1],
+        cloud_accounts=[
             {
                 "id": org2_datasource_id1,
                 "account_id": "21111111",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 2 first cloud account",
                 "details": {"cost": 234.56},
             },
             {
                 "id": org2_datasource_id2,
                 "account_id": "22222222",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 2 second cloud account",
                 "details": {"cost": 654.32},
             },
         ],
-    )
-
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization2,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {
+        daily_counts={
             org2_datasource_id1: {
-                "total": 12.34,
                 "id": org2_datasource_id1,
-                "name": "First cloud account",
                 "account_id": "21111111",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 2 first cloud account",
+                "total": 12.34,
             },
         },
     )
 
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        organization3,
-        [
+    stub_optscale(
+        linked_organization_ids[2],
+        cloud_accounts=[
             {
                 "id": org3_datasource_id1,
                 "account_id": "31111111",
-                "type": "azure_cnr",
+                "type": DatasourceType.AZURE_CNR.value,
+                "name": "Org 3 first cloud account",
                 "details": {"cost": 777.88},
             }
         ],
-    )
-
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization3,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {
+        daily_counts={
             org3_datasource_id1: {
-                "total": 12.34,
                 "id": org3_datasource_id1,
-                "name": "First cloud account",
                 "account_id": "31111111",
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
+                "name": "Org 3 first cloud account",
+                "total": 12.34,
             },
         },
     )
 
-    mock_optscale_client.mock_fetch_datasources_for_organization(organization4, status_code=404)
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        organization4,
-        int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp()),
-        int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp()),
-        {},
-        status_code=424,
+    # the fourth organization is unknown to Optscale: warnings only, nothing stored
+    stub_optscale(
+        linked_organization_ids[3],
+        cloud_accounts_status_code=status.HTTP_404_NOT_FOUND,
+        daily_expenses_status_code=status.HTTP_424_FAILED_DEPENDENCY,
     )
 
     with caplog.at_level(logging.WARNING):
         await fetch_datasource_expenses.main(test_settings)
-        assert (
-            f"Skipping child datasource {org1_datasource_id3} of type azure_tenant" in caplog.text
-        )
-        assert f"Skipping child datasource {org1_datasource_id4} of type gcp_tenant" in caplog.text
-        assert (
-            f"Organization {organization4.id} not found or "
-            "organization doesn't have any cloud accounts connected in Optscale."
-        ) in caplog.text
 
+    assert f"Skipping child datasource {org1_datasource_id3} of type azure_tenant" in caplog.text
+    assert f"Skipping child datasource {org1_datasource_id4} of type gcp_tenant" in caplog.text
+    assert (
+        f"Organization {organization4.id} not found or "
+        "organization doesn't have any cloud accounts connected in Optscale."
+    ) in caplog.text
+
+    # the organizations are processed in their own sessions, so drop what this one has cached
+    db_session.expire_all()
     new_datasource_expenses = await datasource_expense_handler.query_db(unique=True)
-
-    await db_session.refresh(existing_datasource_expense1)
-    await db_session.refresh(existing_datasource_expense2)
-    await db_session.refresh(existing_datasource_expense3)
 
     expenses_data = {
         (
@@ -779,6 +1061,7 @@ async def test_multiple_datasources_are_handled_correctly(
     }
 
     assert expenses_data == {
+        # organization 1: previous month untouched
         (
             organization1.id,
             org1_datasource_id1,
@@ -789,6 +1072,7 @@ async def test_multiple_datasources_are_handled_correctly(
             Decimal("123.4500"),
             Decimal("0.0000"),
         ),
+        # organization 1: current month totals updated
         (
             organization1.id,
             org1_datasource_id1,
@@ -796,7 +1080,7 @@ async def test_multiple_datasources_are_handled_correctly(
             2025,
             3,
             20,
-            Decimal("234.5600"),
+            Decimal("789.0100"),
             Decimal("0.0000"),
         ),
         (
@@ -806,9 +1090,10 @@ async def test_multiple_datasources_are_handled_correctly(
             2025,
             3,
             20,
-            Decimal("567.8900"),
+            Decimal("678.9000"),
             Decimal("0.0000"),
         ),
+        # organization 2: existing total updated, daily expenses preserved
         (
             organization2.id,
             org2_datasource_id1,
@@ -816,9 +1101,10 @@ async def test_multiple_datasources_are_handled_correctly(
             2025,
             3,
             20,
-            Decimal("999.8800"),
+            Decimal("234.5600"),
             Decimal("56.7800"),
         ),
+        # organization 2: total created for the datasource seen for the first time
         (
             organization2.id,
             org2_datasource_id2,
@@ -829,6 +1115,7 @@ async def test_multiple_datasources_are_handled_correctly(
             Decimal("654.3200"),
             Decimal("0.0000"),
         ),
+        # organization 3: total created for the current month
         (
             organization3.id,
             org3_datasource_id1,
@@ -839,6 +1126,7 @@ async def test_multiple_datasources_are_handled_correctly(
             Decimal("777.8800"),
             Decimal("0.0000"),
         ),
+        # yesterday's daily expenses applied to the pre-existing rows
         (
             organization1.id,
             org1_datasource_id1,
@@ -871,85 +1159,161 @@ async def test_multiple_datasources_are_handled_correctly(
         ),
     }
 
+    # organization 4 stored nothing but is still reported as processed
+    notifications = httpx_mock.get_requests(method="POST", url=webhook_url)
+    assert len(notifications) == 1
+    assert "Datasource expenses updated for 4 organizations" in notifications[0].content.decode()
+
 
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_main_sends_one_success_notification_for_all_organizations(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
 ) -> None:
-    send_info = mocker.patch("app.commands.fetch_datasource_expenses.send_info")
-    send_exception = mocker.patch("app.commands.fetch_datasource_expenses.send_exception")
+    """A run over several organizations sends a single summary notification, not one per org."""
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
+    )
 
     day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
     day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
-    for i in range(2):
-        organization = await organization_factory(
-            linked_organization_id=str(uuid.uuid4()), operations_external_id=f"NOTIFY_{i}"
+    for index in range(2):
+        linked_organization_id = str(uuid.uuid4())
+        await OrganizationHandler(db_session).create(
+            Organization(
+                name=f"ACME Inc {index}",
+                currency="USD",
+                billing_currency="USD",
+                operations_external_id=f"NOTIFY_{index}",
+                linked_organization_id=linked_organization_id,
+                status=OrganizationStatus.ACTIVE,
+            )
         )
-        mock_optscale_client.mock_fetch_datasources_for_organization(
-            organization,
-            [
-                {
-                    "id": str(uuid.uuid4()),
-                    "account_id": str(uuid.uuid4()),
-                    "type": "aws_cnr",
-                    "name": "cloud account",
-                    "details": {"cost": 10.0},
-                }
-            ],
+        organization_url = (
+            f"{test_settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
         )
-        mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-            organization, day_start, day_end, {}
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/cloud_accounts",
+            match_params={"details": "true"},
+            match_headers={"Secret": test_settings.optscale_cluster_secret},
+            json={
+                "cloud_accounts": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "account_id": str(uuid.uuid4()),
+                        "type": DatasourceType.AWS_CNR.value,
+                        "name": "cloud account",
+                        "details": {"cost": 10.0},
+                    }
+                ]
+            },
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/breakdown_expenses",
+            match_params={
+                "start_date": str(day_start),
+                "end_date": str(day_end),
+                "breakdown_by": "cloud_account_id",
+            },
+            match_headers={"Secret": test_settings.optscale_cluster_secret},
+            json={
+                "counts": {},
+                "start_date": day_start,
+                "end_date": day_end,
+                "breakdown_by": "cloud_account_id",
+            },
         )
 
     await fetch_datasource_expenses.main(test_settings)
 
-    send_info.assert_awaited_once()
-    send_exception.assert_not_awaited()
-    _title, message = send_info.await_args.args
+    notifications = httpx_mock.get_requests(method="POST", url=webhook_url)
+    assert len(notifications) == 1
+    message = notifications[0].content.decode()
     assert "2 organizations" in message
+    assert "Datasource Expenses Update Success" in message
+    assert "Datasource Expenses Update Partial Failure" not in message
 
 
 @pytest.mark.transactional_db
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_each_organization_commits_in_its_own_transaction(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
 ) -> None:
-    mocker.patch("app.commands.fetch_datasource_expenses.send_info")
-    mocker.patch.object(test_settings, "max_parallel_tasks", 5)
+    """Every organization's expenses are committed by its own session, in parallel."""
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
+    )
+    settings = test_settings.model_copy(update={"max_parallel_tasks": 5})
 
     day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
     day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
     organizations = []
-    for i in range(5):
-        organization = await organization_factory(
-            linked_organization_id=str(uuid.uuid4()), operations_external_id=f"org_{i}_ext_id"
+    for index in range(5):
+        linked_organization_id = str(uuid.uuid4())
+        organizations.append(
+            await OrganizationHandler(db_session).create(
+                Organization(
+                    name=f"ACME Inc {index}",
+                    currency="USD",
+                    billing_currency="USD",
+                    operations_external_id=f"org_{index}_ext_id",
+                    linked_organization_id=linked_organization_id,
+                    status=OrganizationStatus.ACTIVE,
+                )
+            )
         )
-        organizations.append(organization)
-        mock_optscale_client.mock_fetch_datasources_for_organization(
-            organization,
-            [
-                {
-                    "id": str(uuid.uuid4()),
-                    "account_id": str(uuid.uuid4()),
-                    "type": "aws_cnr",
-                    "name": "cloud account",
-                    "details": {"cost": 10.0},
-                }
-            ],
+        organization_url = (
+            f"{settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
         )
-        mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-            organization, day_start, day_end, {}
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/cloud_accounts",
+            match_params={"details": "true"},
+            match_headers={"Secret": settings.optscale_cluster_secret},
+            json={
+                "cloud_accounts": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "account_id": str(uuid.uuid4()),
+                        "type": DatasourceType.AWS_CNR.value,
+                        "name": "cloud account",
+                        "details": {"cost": 10.0},
+                    }
+                ]
+            },
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/breakdown_expenses",
+            match_params={
+                "start_date": str(day_start),
+                "end_date": str(day_end),
+                "breakdown_by": "cloud_account_id",
+            },
+            match_headers={"Secret": settings.optscale_cluster_secret},
+            json={
+                "counts": {},
+                "start_date": day_start,
+                "end_date": day_end,
+                "breakdown_by": "cloud_account_id",
+            },
         )
 
-    await fetch_datasource_expenses.main(test_settings)
+    # the organizations must be visible to the sessions the run opens on other connections
+    await db_session.commit()
+
+    await fetch_datasource_expenses.main(settings)
 
     async with session_factory() as verify_session:
         rows = await DatasourceExpenseHandler(verify_session).query_db(unique=True)
@@ -959,67 +1323,107 @@ async def test_each_organization_commits_in_its_own_transaction(
 @pytest.mark.transactional_db
 @time_machine.travel("2025-03-20T10:00:00Z", tick=False)
 async def test_one_organization_failure(
-    mocker: MockerFixture,
     test_settings: Settings,
     db_session: AsyncSession,
-    mock_optscale_client: MockOptscaleClient,
-    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
 ) -> None:
-    send_info = mocker.patch("app.commands.fetch_datasource_expenses.send_info")
-    send_exception = mocker.patch("app.commands.fetch_datasource_expenses.send_exception")
-    mocker.patch.object(test_settings, "max_parallel_tasks", 5)
+    """One organization failing rolls back only its own transaction and is reported as failed.
+
+    The broken organization's daily expenses come back without the ``name`` Optscale always
+    sends, which makes storing them raise inside that organization's transaction.
+    """
+    webhook_url = get_settings().msteams_notifications_webhook_url
+    httpx_mock.add_response(
+        method="POST",
+        url=webhook_url,
+        status_code=status.HTTP_202_ACCEPTED,
+    )
+    settings = test_settings.model_copy(update={"max_parallel_tasks": 5})
 
     day_start = int(datetime(2025, 3, 19, 0, 0, 0, tzinfo=UTC).timestamp())
     day_end = int(datetime(2025, 3, 19, 23, 59, 59, tzinfo=UTC).timestamp())
 
-    healthy = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_1_ext_id"
-    )
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        healthy,
-        [
-            {
-                "id": str(uuid.uuid4()),
-                "account_id": str(uuid.uuid4()),
-                "type": "aws_cnr",
-                "name": "cloud account",
-                "details": {"cost": 10.0},
-            }
-        ],
-    )
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(healthy, day_start, day_end, {})
+    def stub_optscale(linked_organization_id: str, daily_counts: dict[str, dict]) -> None:
+        """Stub both Optscale endpoints for one organization."""
+        organization_url = (
+            f"{settings.optscale_rest_api_base_url}/organizations/{linked_organization_id}"
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/cloud_accounts",
+            match_params={"details": "true"},
+            match_headers={"Secret": settings.optscale_cluster_secret},
+            json={
+                "cloud_accounts": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "account_id": str(uuid.uuid4()),
+                        "type": DatasourceType.AWS_CNR.value,
+                        "name": "cloud account",
+                        "details": {"cost": 10.0},
+                    }
+                ]
+            },
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{organization_url}/breakdown_expenses",
+            match_params={
+                "start_date": str(day_start),
+                "end_date": str(day_end),
+                "breakdown_by": "cloud_account_id",
+            },
+            match_headers={"Secret": settings.optscale_cluster_secret},
+            json={
+                "counts": daily_counts,
+                "start_date": day_start,
+                "end_date": day_end,
+                "breakdown_by": "cloud_account_id",
+            },
+        )
 
-    broken = await organization_factory(
-        linked_organization_id=str(uuid.uuid4()), operations_external_id="org_2_ext_id"
+    healthy_linked_organization_id = str(uuid.uuid4())
+    healthy = await OrganizationHandler(db_session).create(
+        Organization(
+            name="Healthy Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="org_1_ext_id",
+            linked_organization_id=healthy_linked_organization_id,
+            status=OrganizationStatus.ACTIVE,
+        )
     )
-    mock_optscale_client.mock_fetch_datasources_for_organization(
-        broken,
-        [
-            {
-                "id": str(uuid.uuid4()),
-                "account_id": str(uuid.uuid4()),
-                "type": "aws_cnr",
-                "name": "cloud account",
-                "details": {"cost": 10.0},
-            }
-        ],
+    stub_optscale(healthy_linked_organization_id, daily_counts={})
+
+    broken_linked_organization_id = str(uuid.uuid4())
+    broken = await OrganizationHandler(db_session).create(
+        Organization(
+            name="Broken Inc",
+            currency="USD",
+            billing_currency="USD",
+            operations_external_id="org_2_ext_id",
+            linked_organization_id=broken_linked_organization_id,
+            status=OrganizationStatus.ACTIVE,
+        )
     )
-    broken_ds_id = str(uuid.uuid4())
-    mock_optscale_client.mock_fetch_daily_expenses_for_organization(
-        broken,
-        day_start,
-        day_end,
-        {
-            broken_ds_id: {
-                "id": broken_ds_id,
+    broken_datasource_id = str(uuid.uuid4())
+    stub_optscale(
+        broken_linked_organization_id,
+        daily_counts={
+            broken_datasource_id: {
+                "id": broken_datasource_id,
                 "account_id": str(uuid.uuid4()),
-                "type": "aws_cnr",
+                "type": DatasourceType.AWS_CNR.value,
                 "total": 5.0,
+                # NOTE: no "name", which is what makes storing this organization fail
             }
         },
     )
 
-    await fetch_datasource_expenses.main(test_settings)
+    # the organizations must be visible to the sessions the run opens on other connections
+    await db_session.commit()
+
+    await fetch_datasource_expenses.main(settings)
 
     async with session_factory() as verify_session:
         rows = await DatasourceExpenseHandler(verify_session).query_db(unique=True)
@@ -1027,11 +1431,12 @@ async def test_one_organization_failure(
     assert healthy.id in committed_org_ids
     assert broken.id not in committed_org_ids
 
-    send_info.assert_not_awaited()
-    send_exception.assert_awaited_once()
-    _title, message = send_exception.await_args.args
-    assert _title == "Datasource Expenses Update Partial Failure"
+    notification = httpx_mock.get_request(method="POST", url=webhook_url)
+    assert notification is not None
+    message = notification.content.decode()
+    assert "Datasource Expenses Update Partial Failure" in message
     assert "1 failed" in message
+    assert "Datasource expenses updated for 1 organizations" in message
 
 
 def test_cli_command(mocker: MockerFixture):

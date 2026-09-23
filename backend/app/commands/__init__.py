@@ -9,6 +9,7 @@ from app.commands import (
     serve,
     set_entitlements_tag,
     shell,
+    sync_subscriptions,
 )
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "calculate_accounts_stats",
     "fetch_datasource_expenses",
     "cleanup_obsolete_datasource_expenses",
+    "sync_subscriptions",
 ]

@@ -319,9 +319,14 @@ class ModelHandler[M: BaseModel]:
         self,
         base_query: Select | None = None,
         where_clauses: Sequence[ColumnExpressionArgument] | None = None,
+        order_by: Sequence[ColumnExpressionArgument] | None = None,
     ) -> M | None:
         query = select(self.model_cls) if base_query is None else base_query
-        query = self._apply_conditions_to_the_query(query=query, where_clauses=where_clauses)
+        query = self._apply_conditions_to_the_query(
+            query=query,
+            where_clauses=where_clauses,
+            order_by=order_by,
+        )
 
         result = await self.session.execute(query)
         return result.scalars().first()

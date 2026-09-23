@@ -1,7 +1,7 @@
 import base64
 import secrets
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import httpx
 import jwt
@@ -9,18 +9,25 @@ import pytest
 from fastapi import HTTPException, status
 from pytest_mock import MockerFixture
 
+from app.conf import Settings
+from app.db.models import Account
+from app.enums import AccountStatus, AccountType
 from app.utils import (
+    _fetch_affiliate_products,
     async_groupby,
     compute_daily_expenses,
     find_first,
+    get_affiliate_products,
     get_instance_external_id,
     get_jwt_token_claims,
     get_jwt_token_expires,
     get_meta,
+    get_organization_deletable_at,
     wrap_exc_in_http_response,
     wrap_http_error_in_502,
     wrap_http_not_found_in_400,
 )
+from tests.types import ModelFactory
 
 
 def _make_jwt(claims: dict) -> str:
@@ -36,6 +43,44 @@ def test_find_first_returns_first_match() -> None:
 def test_find_first_returns_default_when_no_match() -> None:
     """`find_first` returns the provided default when nothing matches."""
     assert find_first(lambda x: x > 9, [1, 2], default="none") == "none"
+
+
+@pytest.mark.parametrize(
+    ("terminated_at", "expected"),
+    [
+        pytest.param(
+            datetime(2026, 7, 1, tzinfo=UTC),
+            datetime(2026, 9, 1, tzinfo=UTC),
+            id="first-day-of-the-month",
+        ),
+        pytest.param(
+            datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
+            datetime(2026, 9, 1, tzinfo=UTC),
+            id="mid-month-time-is-truncated",
+        ),
+        pytest.param(
+            datetime(2026, 11, 30, 23, 59, 59, tzinfo=UTC),
+            datetime(2027, 1, 1, tzinfo=UTC),
+            id="rolls-over-the-year",
+        ),
+        pytest.param(
+            datetime(2026, 12, 31, tzinfo=UTC),
+            datetime(2027, 2, 1, tzinfo=UTC),
+            id="rolls-over-the-year-into-a-shorter-month",
+        ),
+    ],
+)
+def test_get_organization_deletable_at(terminated_at: datetime, expected: datetime) -> None:
+    """The deletion is available at midnight UTC of the 1st day, 2 months after the termination."""
+    assert get_organization_deletable_at(terminated_at) == expected
+
+
+def test_get_organization_deletable_at_normalizes_non_utc_timezones() -> None:
+    """A termination that already falls on the next day in UTC is shifted accordingly."""
+    # 2026-07-31 22:30 UTC-3 is 2026-08-01 01:30 UTC, so 2 months later is October, not September
+    terminated_at = datetime(2026, 7, 31, 22, 30, tzinfo=timezone(-timedelta(hours=3)))
+
+    assert get_organization_deletable_at(terminated_at) == datetime(2026, 10, 1, tzinfo=UTC)
 
 
 def test_compute_daily_expenses_fills_missing_days() -> None:
@@ -233,3 +278,62 @@ def test_get_instance_external_id_hashes_when_no_container_found(
     )
     expected = hashlib.sha256(b"not-hex-host").hexdigest()[:12]
     assert get_instance_external_id() == expected
+
+
+async def test_fetch_affiliate_products_collects_unique_sorted_products(
+    mocker: MockerFixture,
+    test_settings: Settings,
+    account_factory: ModelFactory[Account],
+) -> None:
+    """Only active affiliate accounts contribute, and each product id appears once."""
+    engine = mocker.AsyncMock()
+    mocker.patch("app.utils.configure_db_engine", return_value=engine)
+    await account_factory(
+        type=AccountType.AFFILIATE,
+        status=AccountStatus.ACTIVE,
+        products="PRD-2222-2222, PRD-1111-1111",
+    )
+    await account_factory(
+        type=AccountType.AFFILIATE, status=AccountStatus.ACTIVE, products="PRD-1111-1111"
+    )
+    await account_factory(type=AccountType.AFFILIATE, status=AccountStatus.ACTIVE, products=None)
+    await account_factory(
+        type=AccountType.AFFILIATE, status=AccountStatus.DISABLED, products="PRD-8888-8888"
+    )
+    await account_factory(
+        type=AccountType.OPERATIONS, status=AccountStatus.ACTIVE, products="PRD-9999-9999"
+    )
+
+    products = await _fetch_affiliate_products(test_settings)
+
+    assert products == ["PRD-1111-1111", "PRD-2222-2222"]
+    engine.dispose.assert_awaited_once()
+
+
+async def test_fetch_affiliate_products_disposes_the_engine_on_failure(
+    mocker: MockerFixture,
+    test_settings: Settings,
+) -> None:
+    """The engine the bootstrap opened is always closed, so the workers fork cleanly."""
+    engine = mocker.AsyncMock()
+    mocker.patch("app.utils.configure_db_engine", return_value=engine)
+    mocker.patch("app.utils.AccountHandler", side_effect=RuntimeError("no database"))
+
+    with pytest.raises(RuntimeError, match="no database"):
+        await _fetch_affiliate_products(test_settings)
+
+    engine.dispose.assert_awaited_once()
+
+
+def test_get_affiliate_products_runs_the_fetch_outside_an_event_loop(
+    mocker: MockerFixture,
+    test_settings: Settings,
+) -> None:
+    """`bootstrap` is synchronous, so the products are fetched through `asyncio.run`."""
+    fetch = mocker.patch(
+        "app.utils._fetch_affiliate_products",
+        new=mocker.AsyncMock(return_value=["PRD-1111-1111"]),
+    )
+
+    assert get_affiliate_products(test_settings) == ["PRD-1111-1111"]
+    fetch.assert_awaited_once_with(test_settings)

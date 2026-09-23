@@ -3,8 +3,8 @@ import { useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { EntityReference } from "@swo/design-system/entity-reference";
-import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
+  GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
@@ -13,6 +13,7 @@ import {
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
+import { NO_VALUE } from "@swo/design-system/utils";
 import { getStatusLabel } from "@swo/mp-status-chip";
 import { Paths } from "@swo/rql-client";
 
@@ -20,12 +21,14 @@ import { useEntitlementsApi } from "~entitlements/api";
 import CustomIcon from "~shared/components/custom-icons/CustomIcon";
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { GridCellDynamicActions } from "~shared/components/grid/GridCellDynamicActions";
-import { useDefaultView } from "~shared/hooks/useDefaultView";
 import { useFixedT } from "~shared/hooks/useFixedT";
+import { useGridIdentity } from "~shared/hooks/useGridIdentity";
+import { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { useReactQueryRqlGrid } from "~shared/hooks/useReactQueryRqlGrid";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 
 import { Entitlement, EntitlementAction } from "../api/model";
+import { DataSourceEntityReference } from "../components/DataSourceEntityReference";
 import { useActionOptions } from "./hooks/useActionOptions";
 
 type Columns = Array<
@@ -50,18 +53,12 @@ export function useColumns(): Columns {
             subtitle={item.id}
           />
         ),
-        initialWidth: 350,
+        initialWidth: 250,
       },
       {
         name: "affiliate",
         title: tColumns("affiliate"),
-        fields: [
-          "owner.id",
-          "owner.name",
-          "owner.external_id",
-          "owner.integration",
-          "affiliate_external_id",
-        ],
+        fields: ["owner.id", "owner.name", "owner.external_id", "owner.integration"],
         cell: (item: Entitlement) => (
           <GridCellSimple>
             <EntityReference
@@ -72,23 +69,15 @@ export function useColumns(): Columns {
             />
           </GridCellSimple>
         ),
-        initialWidth: 150,
+        initialWidth: 250,
       },
-
       {
         name: "data_source",
         title: tColumns("data_source"),
-        fields: ["linked_datasource_name", "linked_datasource_id", "linked_datasource_type"],
+        fields: ["linked_datasource_name", "linked_datasource_type", "datasource_id"],
         cell: (item: Entitlement) => (
           <GridCellSimple>
-            {item.linked_datasource_id && (
-              <EntityReferenceCell
-                primaryContent={item.linked_datasource_name as string}
-                secondaryContent={item.linked_datasource_id as string}
-                secondaryContentMaxHeight={50}
-                icon={<CustomIcon name={item.linked_datasource_type as string} size={44} />}
-              />
-            )}
+            <DataSourceEntityReference entity={item} />
           </GridCellSimple>
         ),
         initialWidth: 250,
@@ -96,18 +85,80 @@ export function useColumns(): Columns {
       {
         name: "organization",
         title: tColumns("organization"),
-        fields: [],
+        fields: ["events.redeemed.by.id", "events.redeemed.by.name"],
         cell: (item: Entitlement) => (
           <>
-            {item.events.redeemed && (
+            {item.events.redeemed ? (
               <GridCellTitleSubtitle
                 title={item.events.redeemed?.by.name}
                 subtitle={item.events.redeemed?.by.id}
               />
+            ) : (
+              <GridCellSimple>{NO_VALUE}</GridCellSimple>
             )}
           </>
         ),
+        initialWidth: 250,
+      },
+      {
+        name: "linked_datasource_id",
+        title: tColumns("linked_datasource_id"),
+        fields: ["linked_datasource_id"],
+        cell: (item: Entitlement) => (
+          <GridCellSimple>{item.linked_datasource_id || NO_VALUE}</GridCellSimple>
+        ),
+        isHidden: true,
         initialWidth: 150,
+      },
+      {
+        name: "affiliate_external_id",
+        title: tColumns("affiliate_external_id"),
+        fields: ["affiliate_external_id"],
+        cell: (item: Entitlement) => (
+          <GridCellSimple>{item.affiliate_external_id || NO_VALUE}</GridCellSimple>
+        ),
+        isHidden: true,
+        initialWidth: 150,
+      },
+      {
+        name: "updated_at",
+        title: tColumns("updated_at"),
+        fields: ["events.updated.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.updated?.at} />,
+        initialWidth: 100,
+      },
+      {
+        name: "created_at",
+        title: tColumns("created_at"),
+        fields: ["events.created.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.created?.at} />,
+        initialWidth: 100,
+        isHidden: true,
+      },
+      {
+        name: "redeemed_at",
+        title: tColumns("redeemed_at"),
+        fields: ["events.redeemed.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.redeemed?.at} />,
+        initialWidth: 100,
+        isHidden: true,
+      },
+
+      {
+        name: "terminated_at",
+        title: tColumns("terminated_at"),
+        fields: ["events.terminated.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.terminated?.at} />,
+        initialWidth: 100,
+        isHidden: true,
+      },
+      {
+        name: "deleted_at",
+        title: tColumns("deleted_at"),
+        fields: ["events.deleted.at"],
+        cell: (item: Entitlement) => <GridCellDateTime date={item.events?.deleted?.at} />,
+        initialWidth: 100,
+        isHidden: true,
       },
       {
         name: "status",
@@ -137,6 +188,7 @@ export function useColumns(): Columns {
 
 export function useFields() {
   const tFields = useFixedT("shared:grid:fields");
+  const tDataSourceType = useFixedT("shared:grid:dataSourceType");
 
   return useMemo(
     (): GridFieldDefinition[] => [
@@ -152,8 +204,58 @@ export function useFields() {
         name: "affiliate_external_id",
       },
       {
+        title: tFields("datasourceId"),
+        name: "datasource_id",
+      },
+      {
+        title: tFields("linked_datasource_id"),
+        name: "linked_datasource_id",
+      },
+      {
+        title: tFields("linked_datasource_name"),
+        name: "linked_datasource_name",
+      },
+      {
+        title: tFields("linked_datasource_type"),
+        name: "linked_datasource_type",
+        type: "list",
+        options: [
+          { value: "azure_cnr", label: tDataSourceType("azure_cnr") },
+          { value: "aws_cnr", label: tDataSourceType("aws_cnr") },
+        ],
+      },
+      {
+        title: tFields("organization_id"),
+        name: "events.redeemed.by.id",
+      },
+      {
+        title: tFields("organization_name"),
+        name: "events.redeemed.by.name",
+      },
+      {
         title: tFields("created_at"),
         name: "events.created.at",
+        type: "date",
+      },
+      {
+        title: tFields("updated_at"),
+        name: "events.updated.at",
+        type: "date",
+      },
+      {
+        title: tFields("redeemed_at"),
+        name: "events.redeemed.at",
+        type: "date",
+      },
+      {
+        title: tFields("terminated_at"),
+        name: "events.terminated.at",
+        type: "date",
+      },
+      {
+        title: tFields("deleted_at"),
+        name: "events.deleted.at",
+        type: "date",
       },
       {
         name: "status",
@@ -167,7 +269,7 @@ export function useFields() {
         ],
       },
     ],
-    [tFields],
+    [tFields, tDataSourceType],
   );
 }
 
@@ -177,15 +279,23 @@ export function useViews() {
   return useMemo(() => {
     return [
       {
+        name: "main",
+        title: tView("mainEntitlements"),
+        configuration: {
+          filters: {
+            operator: "or",
+            value: [{ operator: "neq", field: "status", value: "deleted" }],
+          },
+          sort: [{ field: "events.updated.at", direction: "desc" }],
+        },
+      },
+      {
         name: "active",
         title: tView("activeEntitlements"),
         configuration: {
           filters: {
             operator: "or",
-            value: [
-              { operator: "eq", field: "status", value: "active" },
-              { operator: "eq", field: "status", value: "new" },
-            ],
+            value: [{ operator: "eq", field: "status", value: "active" }],
           },
           sort: [
             { field: "events.created.at", direction: "desc" },
@@ -242,7 +352,8 @@ export function useGridConfig(
   const fields = useFields();
   const views = useViews();
   const asyncOptions = useAsyncOptions();
-  const defaultView = useDefaultView();
+  const gridInfoDialogConfig = useGridInfoDialogConfiguration();
+  const identity = useGridIdentity("entitlements-list");
 
   const onGridActionEvent = useCallback(
     (event: GridEvents) => {
@@ -260,15 +371,17 @@ export function useGridConfig(
   const config = useMemo(
     () =>
       ({
-        id: "grid__entitlements-list",
+        ...identity,
         columns,
         fields,
         views,
-        ...defaultView,
+        isDefaultView: false,
+        selectedView: "main",
+        ...gridInfoDialogConfig,
         ...asyncOptions,
         onEvent: onGridActionEvent,
       }) as UseAsyncGridConfig<Entitlement>,
-    [columns, fields, asyncOptions, onGridActionEvent],
+    [identity, columns, fields, views, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 
   const gridProps = useGridAsync(config);

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { ListOption } from "@swo/dropdown";
+import { ListOption } from "@swo/design-system/dropdown";
 
 import { Employee, EmployeeActions } from "~features/organizations/api/model";
 import { RoleAwareAction, useActionsByRole } from "~shared/hooks/useActionsByRole";

@@ -30,6 +30,11 @@ const OrganizationUsers = lazy(() =>
     default: m.OrganizationUsers,
   })),
 );
+const OrganizationEventsDetails = lazy(() =>
+  import("~features/organizations/details/events/Events").then((m) => ({
+    default: m.OrganizationEventsDetails,
+  })),
+);
 
 const allowedRoles = ["admin", "operations"] as const;
 
@@ -43,6 +48,7 @@ export function Organizations() {
           <Route path={SEGMENTS.general} element={<OrganizationGeneralDetails />} />
           <Route path={SEGMENTS.dataSources} element={<OrganizationDataSources />} />
           <Route path={SEGMENTS.users} element={<OrganizationUsers />} />
+          <Route path={SEGMENTS.events} element={<OrganizationEventsDetails />} />
         </Route>
       </Routes>
     </RouteGuard>

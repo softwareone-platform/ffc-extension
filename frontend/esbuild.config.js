@@ -9,6 +9,7 @@ const srcDir = (sub) => path.resolve(__dirname, 'src', sub);
 
 const watch = process.argv.includes("--watch");
 const env = process?.env?.NODE_ENV ?? JSON.stringify("production");
+const extensionVersion = process?.env?.FFC_EXT_EXTENSION_VERSION ?? "0.0.0-dev";
 
 const RELOAD_URL_MATCH = 'portal.s1.show';
 
@@ -18,6 +19,7 @@ const ctx = await context({
   ],
   outdir: '../static',
   outbase: './src/entries',
+  entryNames: `[dir]/[name]-${extensionVersion}`,
   bundle: true,
   platform: 'browser',
   mainFields: ["browser", "module", "main"],
@@ -29,6 +31,7 @@ const ctx = await context({
     '~api': srcDir('api'),
     '~app': srcDir('app'),
     '~features': srcDir('features'),
+    '~fixes': srcDir('fixes'),
     '~organizations': srcDir('features/organizations'),
     '~entitlements': srcDir('features/entitlements'),
     '~shared': srcDir('shared'),
@@ -36,6 +39,7 @@ const ctx = await context({
   },
   define: {
     "process.env.NODE_ENV": env,
+    "process.env.FFC_EXT_EXTENSION_VERSION": JSON.stringify(extensionVersion),
   },
   plugins: [
     sassPlugin({

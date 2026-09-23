@@ -1,7 +1,29 @@
 .step {
+  h4 {
+    margin: 0 0 var(--spacing-3);
+  }
+
+  &__error {
+    p {
+      margin: 0;
+    }
+  }
+
   &.summary-step {
     .step__notification {
       margin-bottom: var(--spacing-3);
+    }
+  }
+
+  &__content {
+    p {
+      margin: 0 0 var(--spacing-3);
+    }
+    .step-input {
+      margin-bottom: 20px;
+      p {
+        margin: var(--spacing-1) 0 0;
+      }
     }
   }
 }

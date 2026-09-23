@@ -86,7 +86,7 @@ async def fetch_daily_organization_expenses(
     try:
         logger.info("Fetching daily expenses for organization %s", organization.id)
         response = await optscale_client.fetch_daily_expenses_for_organization(
-            organization.linked_organization_id,  # type: ignore[arg-type]
+            organization.linked_organization_id,  # ty: ignore[invalid-argument-type]
             day_start,
             day_end,
         )
@@ -129,7 +129,7 @@ async def fetch_total_monthly_organization_expenses(
     try:
         logger.info("Fetching monthly expenses for organization %s", organization.id)
         response = await optscale_client.fetch_datasources_for_organization(
-            organization.linked_organization_id,  # type: ignore[arg-type]
+            organization.linked_organization_id,  # ty: ignore[invalid-argument-type]
         )
 
         response_datasources = response.json()["cloud_accounts"]

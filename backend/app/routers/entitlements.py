@@ -1,11 +1,12 @@
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import ColumnExpressionArgument, Select
 
 from app.db.handlers import NotFoundError
 from app.db.models import Account, Entitlement
-from app.dependencies.api_clients import OptscaleClient
+from app.dependencies.api_clients import FFCAPIClient, OptscaleClient
 from app.dependencies.auth import AuthorizedAccountTypes, CurrentAuthContext
 from app.dependencies.db import (
     AccountRepository,
@@ -111,6 +112,22 @@ async def create_entitlement(
                 detail=f"No Active Affiliate Account has been found with ID {data.owner.id}.",
             )
 
+    existing_entitlement = await entitlement_repo.first(
+        where_clauses=[
+            Entitlement.datasource_id == data.datasource_id,
+            Entitlement.owner_id == owner.id,
+            Entitlement.status.in_([EntitlementStatus.NEW, EntitlementStatus.ACTIVE]),
+        ]
+    )
+    if existing_entitlement:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"An Entitlement in status '{existing_entitlement.status.value}' "
+                f"already exist for the data source {data.datasource_id}"
+            ),
+        )
+
     entitlement = convert_schema_to_model(data, Entitlement)
     entitlement.owner = owner
     db_entitlement = await entitlement_repo.create(entitlement)
@@ -127,11 +144,12 @@ async def get_entitlement_by_id(
 @router.post(
     "/{id}/terminate",
     response_model=EntitlementRead,
-    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.AFFILIATE))],
 )
 async def terminate_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
     entitlement_repo: EntitlementRepository,
+    ffcapi_client: FFCAPIClient,
 ):
     if entitlement.status == EntitlementStatus.TERMINATED:
         raise HTTPException(
@@ -148,6 +166,20 @@ async def terminate_entitlement(
         )
 
     entitlement = await entitlement_repo.terminate(entitlement)
+    with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
+        tag_data = None
+        try:
+            response = await ffcapi_client.get_tag_by_datasource_name(
+                str(entitlement.linked_datasource_id),
+                "entitlement",
+            )
+            tag_data = response.json()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != 404:
+                raise e
+
+        if tag_data:
+            await ffcapi_client.delete_tag(tag_data["id"])
 
     return convert_model_to_schema(EntitlementRead, entitlement)
 

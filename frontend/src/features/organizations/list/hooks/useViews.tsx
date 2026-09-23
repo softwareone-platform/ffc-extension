@@ -8,6 +8,17 @@ export function useViews() {
   return useMemo(() => {
     return [
       {
+        name: "main",
+        title: tView("mainOrganizations"),
+        configuration: {
+          filters: {
+            operator: "or",
+            value: [{ operator: "neq", field: "status", value: "deleted" }],
+          },
+          sort: [{ field: "events.updated.at", direction: "desc" }],
+        },
+      },
+      {
         name: "active",
         title: tView("activeOrganizations"),
         configuration: {

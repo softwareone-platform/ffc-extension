@@ -81,6 +81,63 @@ async def test_create_entitlement_with_incomplete_data(api_client: AsyncClient, 
     assert detail["loc"] == ["body", "datasource_id"]
 
 
+async def test_whitespaces_stripped_on_creation(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    db_session: AsyncSession,
+):
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "  SPONSOR_CONTAINER_ID_1234  ",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+
+    assert data["id"] is not None
+    assert data["name"] == "AWS"
+    assert data["affiliate_external_id"] == "EXTERNAL_ID_987123"
+    assert data["datasource_id"] == "SPONSOR_CONTAINER_ID_1234"
+    assert data["status"] == "new"
+    assert data["events"]["created"]["at"] is not None
+    assert data["events"]["created"]["by"]["id"] == str(gcp_extension.id)
+    assert data["events"]["created"]["by"]["type"] == gcp_extension.type
+    assert data["events"]["created"]["by"]["name"] == gcp_extension.name
+    assert data["events"]["updated"]["at"] is not None
+    assert data["events"]["updated"]["by"]["id"] == str(gcp_extension.id)
+    assert data["events"]["updated"]["by"]["type"] == gcp_extension.type
+    assert data["events"]["updated"]["by"]["name"] == gcp_extension.name
+
+    result = await db_session.execute(select(Entitlement).where(Entitlement.id == data["id"]))
+    assert result.one_or_none() is not None
+
+
+@pytest.mark.parametrize("ds_name", ["", "   "])
+async def test_create_entitlement_with_empty_datasource_id(
+    api_client: AsyncClient, gcp_jwt_token: str, ds_name: str
+):
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": ds_name,
+        },
+    )
+
+    assert response.status_code == 422
+    [detail] = response.json()["detail"]
+
+    assert detail["type"] == "string_too_short"
+    assert detail["loc"] == ["body", "datasource_id"]
+
+
 async def test_create_entitlement_by_affiliate_with_owner(
     api_client: AsyncClient,
     gcp_jwt_token: str,
@@ -214,6 +271,42 @@ async def test_create_entitlement_by_admin_with_owner_not_affiliate(
     assert response.status_code == 400
     error = response.json()["detail"]
     assert error == (f"No Active Affiliate Account has been found with ID {admin_account.id}.")
+
+
+@pytest.mark.parametrize(
+    "existing_status",
+    [EntitlementStatus.NEW, EntitlementStatus.ACTIVE],
+)
+async def test_create_entitlement_already_existing_for_datasource(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_account: Account,
+    entitlement_factory: ModelFactory[Entitlement],
+    existing_status: EntitlementStatus,
+):
+    await entitlement_factory(
+        name="AWS",
+        affiliate_external_id="EXTERNAL_ID_987123",
+        datasource_id="SPONSOR_CONTAINER_ID_1234",
+        owner=gcp_account,
+        status=existing_status,
+    )
+
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "SPONSOR_CONTAINER_ID_1234",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        f"An Entitlement in status '{existing_status.value}' already exist "
+        "for the data source SPONSOR_CONTAINER_ID_1234"
+    )
 
 
 # ================
@@ -511,9 +604,27 @@ async def test_terminate_entitlement_success(
     admin_client: AsyncClient,
     admin_user_token: str,
     admin_user: User,
-    gcp_extension: System,
     db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
 ):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+
     assert entitlement_gcp.terminated_at is None
     assert entitlement_gcp.terminated_by is None
     assert entitlement_gcp.status == EntitlementStatus.NEW
@@ -550,6 +661,70 @@ async def test_terminate_entitlement_success(
     assert data["events"]["terminated"]["by"]["id"] == admin_user.id
     assert data["events"]["terminated"]["by"]["type"] == admin_user.type._value_
     assert data["events"]["terminated"]["by"]["name"] == admin_user.name
+
+
+async def test_terminate_entitlement_by_affiliate_success(
+    entitlement_gcp: Entitlement,
+    affiliate_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    request_start_dt = datetime.now(UTC)
+    response = await affiliate_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+    )
+    request_end_dt = datetime.now(UTC)
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["id"] == str(entitlement_gcp.id)
+    assert data["status"] == "terminated"
+
+    await db_session.refresh(entitlement_gcp)
+
+    assert entitlement_gcp.status == EntitlementStatus.TERMINATED
+    assert entitlement_gcp.terminated_at is not None
+    assert request_start_dt < entitlement_gcp.terminated_at < request_end_dt
+    assert entitlement_gcp.terminated_by_id == gcp_extension.id
+
+    assert (
+        datetime.fromisoformat(data["events"]["terminated"]["at"]) == entitlement_gcp.terminated_at
+    )
+    assert data["events"]["terminated"]["by"]["id"] == gcp_extension.id
+    assert data["events"]["terminated"]["by"]["type"] == gcp_extension.type._value_
+    assert data["events"]["terminated"]["by"]["name"] == gcp_extension.name
 
 
 async def test_terminate_new_entitlement(
@@ -609,17 +784,128 @@ async def test_terminate_non_existing_entitlement(
     assert error_msg == f"Entitlement with ID `{entitlement_id}` wasn't found."
 
 
-async def test_terminate_entitlement_by_affiliate(
-    affiliate_client: AsyncClient,
+async def test_terminate_entitlement_untag_error(
     entitlement_gcp: Entitlement,
-    gcp_jwt_token: str,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
 ):
-    response = await affiliate_client.post(
-        f"/entitlements/{entitlement_gcp.id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
     )
 
-    assert response.status_code == 403
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 502
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
+
+
+async def test_terminate_entitlement_get_tag_error(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 502
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
+
+
+async def test_terminate_entitlement_tag_not_found(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=404,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 200
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.TERMINATED
 
 
 # ==================

@@ -4,6 +4,16 @@
       "general": {
         "title": "General",
         "properties": {
+          "name": "Name",
+          "operations_external_id": "Operations external ID",
+          "linked_organization_id": "Linked organization ID",
+          "currency": "Currency",
+          "billing_currency": "Billing currency"
+        }
+      },
+      "expenses": {
+        "title": "Expenses",
+        "properties": {
           "limit": "Limit",
           "forecastThisMonth": "Expenses this month forecast",
           "expensesThisMonth": "Expenses this month",
@@ -16,11 +26,36 @@
       },
       "users": {
         "title": "Users"
+      },
+      "events": {
+        "title": "Events"
+      }
+    },
+    "dataSources": {
+      "force_import": {
+        "title": "Force data import",
+        "submit": "Force import",
+        "confirm_line1": "Are you sure you want to force a data import for:",
+        "properties": {
+          "id": "Id",
+          "name": "Name",
+          "linked_datasource_id": "Linked datasource ID:"
+        },
+        "confirm_line2": "*If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
+        "confirm_line3": "The import is queued with high priority and takes time to complete.",
+        "use_last_import_at": "Import from a specific date*",
+        "last_import_at": "Import expenses from",
+        "last_import_at_placeholder": "Select a date",
+        "last_import_at_description": "Expenses are reimported starting from this date."
+      },
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to force import."
       }
     },
     "users": {
       "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
       "errors": {
+        "failed_with_code": "Error {{code}}: Failed to add user.",
         "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
         "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
         "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
@@ -41,13 +76,17 @@
       "title": "Make user admin",
       "promote_to_admin": "Promote to admin",
       "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
-      "make_admin_warning_line2": "This action cannot be undone."
+      "make_admin_warning_line2": "This action cannot be undone.",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to make user an admin."
+      }
     },
     "edit": {
       "title": "Edit organization",
       "edit_organization_info": "Update the details for the organization",
       "save": "Save",
       "errors": {
+        "failed_with_code": "Error {{code}}: Failed to edit organization.",
         "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
         "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
         "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
@@ -57,10 +96,14 @@
     },
     "delete_organization": {
       "title": "Delete organization",
+      "not_deletable": "This organization cannot be deleted before {{date}}.",
       "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
       "delete_organization_warning_line2": "This action cannot be undone.",
       "delete": "Delete",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to delete organization."
+      }
     }
   },
   "entitlements": {
@@ -119,6 +162,9 @@
             "required": "Affiliate external ID is required"
           }
         }
+      },
+      "error": {
+        "failed_with_code": "Error {{code}}: Failed to add entitlement."
       }
     },
     "terminate_entitlement": {
@@ -128,6 +174,11 @@
       "terminate_entitlement_warning_line3": "This process cannot be reversed.",
       "terminate": "Terminate",
       "cancel": "Cancel"
+    },
+    "entitlement_action": {
+      "errors": {
+        "failed_with_code": "Error {{code}}: Action failed."
+      }
     },
     "delete_entitlement": {
       "title": "Delete entitlement",
@@ -166,7 +217,8 @@
       "redeem": "Redeem",
       "terminate": "Terminate",
       "delete": "Delete",
-      "make_admin": "Make Admin"
+      "make_admin": "Make Admin",
+      "force_import": "Force import"
     },
     "grid": {
       "views": {
@@ -174,7 +226,9 @@
         "deletedOrganizations": "Deleted Organizations",
         "activeEntitlements": "Active Entitlements",
         "inactiveEntitlements": "Inactive Entitlements",
-        "allEntitlements": "All Entitlements"
+        "allEntitlements": "All Entitlements",
+        "mainEntitlements": "Default",
+        "mainOrganizations": "Default"
       },
       "columns": {
         "actions": "Actions",
@@ -196,12 +250,23 @@
         "resources_charged_this_month": "Resources Charged (this month)",
         "expenses_so_far_this_month": "Expenses to date (this month)",
         "expenses_forecast_this_month": "Expenses forecast (this month)",
+        "last_import_at": "Last import at",
         "lastLogin": "Last login",
         "createdAt": "Created",
-        "affiliate_external_id": "Affiliate",
+        "affiliate_external_id": "Affiliate External ID",
+        "linked_datasource_id": "Linked Data Source ID",
         "data_source": "Data Source",
         "status": "Status",
-        "userType": "User Type"
+        "userType": "User Type",
+        "created_at": "Created",
+        "terminated_at": "Terminated",
+        "updated_at": "Updated",
+        "redeemed_at": "Activated",
+        "deleted_at": "Deleted",
+        "operations_external_id": "Operations Additional ID",
+        "billing_currency": "Billing Currency",
+        "linked_organization_id": "Linked Organization ID",
+        "deletable_at": "Deletable Since"
       },
       "fields": {
         "id": "ID",
@@ -209,12 +274,14 @@
         "currency": "Currency",
         "billingCurrency": "Billing Currency",
         "operationsAdditionalId": "Operations Additional ID",
+        "linkedOrganizationId": "Linked Organization ID",
         "status": "Status",
         "type": "Type",
         "displayName": "Display Name",
         "email": "Email",
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
+        "datasourceId": "Data Source ID",
         "entitlement": {
           "name": "Entitlement Name",
           "id": "Entitlement ID"
@@ -223,22 +290,52 @@
           "name": "Affiliate Name",
           "id": "Affiliate ID"
         },
+        "is_admin": "User Type",
         "lastLogin": "Last Login",
         "createdAt": "Created At",
-        "created_at": "Created At"
+        "created_at": "Created",
+        "redeemed_at": "Activated",
+        "terminated_at": "Terminated",
+        "updated_at": "Updated",
+        "deleted_at": "Deleted",
+        "userName": "User Name",
+        "userId": "User ID",
+        "linked_datasource_id": "Linked Data Source ID",
+        "linked_datasource_name": "Linked Data Source Name",
+        "linked_datasource_type": "Linked Data Source Type",
+        "organization_id": "Organization ID",
+        "organization_name": "Organization Name"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
+        "azure_tenant": "Azure tenant",
         "aws_cnr": "AWS subscription",
-        "gcp_cnr": "GCP subscription"
+        "gcp_cnr": "GCP project",
+        "gcp_tenant": "GCP tenant",
+        "unknown": "Unknown"
+      },
+      "userTypes": {
+        "admin": "Admin",
+        "user": "User"
+      },
+      "infoDialog": {
+        "noData": {
+          "description": "There is no data available to display."
+        }
       },
       "actions": {
         "add": "Add"
       }
     },
-    "details": { "additionalIds": "Additional IDs", "references": "References" },
+    "details": {
+      "additionalIds": "Additional IDs",
+      "references": "References",
+      "system": "System",
+      "events": "Events"
+    },
     "properties": {
-      "linkedDataSource": "Linked data source",
+      "linkedDataSource": "Linked data source ID",
+      "dataSource": "Data source",
       "affiliate_external_id": "Affiliate external ID",
       "created": "Created",
       "updated": "Updated",
@@ -264,6 +361,9 @@
     "details": {
       "general": {
         "title": "General"
+      },
+      "events": {
+        "title": "Events"
       }
     },
     "create_info": "Provide the details for the new entitlement.",
