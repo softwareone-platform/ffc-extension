@@ -35,7 +35,6 @@ from app.schemas.organizations import (
     AdditionalAdminRequestRead,
     DatasourceForceReimport,
     DatasourceRead,
-    OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
 )
@@ -74,67 +73,6 @@ async def get_organizations(
     base_query: Select = Depends(RQLQuery(OrganizationRules())),
 ):
     return await paginate(organization_repo, OrganizationRead, base_query=base_query)
-
-
-@router.post(
-    "",
-    response_model=OrganizationRead,
-    responses={
-        201: {
-            "description": "Organization",
-            "content": {
-                "application/json": {
-                    "example": examples.ORGANIZATION_RESPONSE,
-                }
-            },
-        },
-    },
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
-)
-async def create_organization(
-    data: OrganizationCreate,
-    organization_repo: OrganizationRepository,
-    api_modifier_client: APIModifierClient,
-):
-    defaults = data.model_dump(exclude_unset=True, exclude={"user_id"})
-    db_organization, created = await organization_repo.get_or_create(
-        defaults=defaults,
-        operations_external_id=data.operations_external_id,
-    )
-
-    if not created:
-        if db_organization.linked_organization_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    "An Organization with external ID "
-                    f"`{data.operations_external_id}` already exists."
-                ),
-            )
-        if db_organization.name != data.name:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    f"The name of a partially created Organization with "
-                    f"external ID {data.operations_external_id}  doesn't match the "
-                    f"current request: {db_organization.name}."
-                ),
-            )
-
-    with wrap_http_error_in_502("Error creating organization in FinOps for Cloud"):
-        response = await api_modifier_client.create_organization(
-            org_name=db_organization.name, user_id=data.user_id, currency=data.currency
-        )
-
-        ffc_organization = response.json()
-        db_organization = await organization_repo.update(
-            db_organization.id,
-            {
-                "linked_organization_id": ffc_organization["id"],
-            },
-        )
-        return convert_model_to_schema(OrganizationRead, db_organization)
 
 
 def validate_linked_organization_id(organization: Organization) -> str:
