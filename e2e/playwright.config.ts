@@ -1,68 +1,46 @@
 import { defineConfig, devices } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
-import { loadEnvVariables } from './dotenv/config';
-import {getCurrentEnv} from "./utils/utils";
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+import TestUsers from './test-data/test-users';
+// Importing env first loads the .env files before anything reads process.env.
+import { TIMEOUTS } from './utils/config';
+import { env } from './utils/env';
 
-const useDotEnv = process.env.LOCAL_TEST_ENV !== undefined;
-if (useDotEnv) {
-  const ENV = process.env.LOCAL_TEST_ENV;
-  loadEnvVariables(ENV!);
-} else {
-  console.log('Skipping loading of .env environment variables');
-}
+const VIEWPORT = { width: 1920, height: 1080 };
 
-/**
- * Extended timeout (ms) for operations that load large amounts of data,
- * such as reports, exports, or pages with many resources.
- * Use this with the wait helpers in `utils/wait-utils.ts`.
- */
-export const LARGE_DATA_TIMEOUT = 30000;
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
 export default defineConfig({
-  globalSetup: './setup/global-setup.ts',
   globalTeardown: './setup/global-teardown.ts',
-  testDir: '../e2e',
-  /* Run tests in files in parallel */
+  testDir: './tests',
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : 3,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  forbidOnly: env.isCI,
+  retries: env.isCI ? 2 : 0,
+  workers: env.isCI ? 1 : env.workers,
+  timeout: TIMEOUTS.test,
+  expect: { timeout: TIMEOUTS.expect },
   reporter: [['list'], ['json', { outputFile: 'results.json' }], ['html', { open: 'never' }]],
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    actionTimeout: 10000,
-    baseURL: getCurrentEnv().baseUrl,
+    actionTimeout: TIMEOUTS.action,
+    baseURL: env.baseUrl,
     headless: true,
+    viewport: VIEWPORT,
+    ignoreHTTPSErrors: env.ignoreHttpsErrors,
+    // The app's own attribute, so getByTestId() matches what the UI renders.
+    testIdAttribute: 'data-testid',
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
-    screenshot: {
-      mode: 'only-on-failure',
-      fullPage: true,
-    },
-    contextOptions: {
-      ignoreHTTPSErrors: process.env.IGNORE_HTTPS_ERRORS === 'true',
-      viewport: { width: 1920, height: 1080 },
-    },
+    screenshot: { mode: 'only-on-failure', fullPage: true },
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'setup',
+      testDir: './setup',
+      testMatch: /.*\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: VIEWPORT },
+    },
+    {
+      name: 'FFC Admin Panel',
+      use: { ...devices['Desktop Chrome'], viewport: VIEWPORT, storageState: TestUsers.Admin.sessionStoragePath },
+      dependencies: ['setup'],
     },
   ],
 });

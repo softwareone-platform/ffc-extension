@@ -1,7 +1,9 @@
 import { FrameLocator, Locator, Page } from '@playwright/test';
-import { PlatformPage } from './platform-page';
+
+import { LARGE_DATA_TIMEOUT } from '../utils/config';
 import { debugLog, errorLog } from '../utils/debug-logging';
-import { LARGE_DATA_TIMEOUT } from '../playwright.config';
+import { getCurrentEnv } from '../utils/env';
+import { PlatformPage } from './platform-page';
 
 export abstract class ExtensionPage extends PlatformPage {
   readonly url: string;
@@ -19,11 +21,14 @@ export abstract class ExtensionPage extends PlatformPage {
 
   readonly filteredByButton: Locator;
   readonly filterPopover: Locator;
+  readonly filterPopoverCloseButton: Locator;
   readonly resetFilters: Locator;
   readonly addAnotherCondition: Locator;
+  readonly conditionRemoveButtons: Locator;
   readonly fieldSelectInput: Locator;
   readonly conditionalOperatorSelectInput: Locator;
   readonly valueInput: Locator;
+  readonly valueSelectInput: Locator;
 
   readonly gridTable: Locator;
   readonly toolbarDropdown: Locator;
@@ -34,32 +39,51 @@ export abstract class ExtensionPage extends PlatformPage {
   protected constructor(page: Page, url: string) {
     super(page, '');
     this.url = url;
-    this.extensionFrame = this.main.frameLocator('(//iframe)[1]');
+    // The host serves every plug from https://<extension-id>.<extensions-domain>/bootstrap/,
+    // so matching the src pins us to this extension rather than whichever iframe renders first.
+    // Case-insensitive because the id becomes a hostname, which the browser may lower-case.
+    this.extensionFrame = this.main.locator(`iframe[src*="${getCurrentEnv().extensionId}" i]`).contentFrame();
     this.dataRefreshSpinner = this.extensionFrame.getByTestId('grid__info-dialog__refresh');
 
     this.navigationHeaderBar = this.extensionFrame.getByTestId('navigation__header-bar');
     this.navigationHeaderBarSubtitle = this.navigationHeaderBar.getByTestId('navigation__header-bar__subtitle');
-    this.navHeaderBarList = this.page.getByTestId('navigation__header-bar__list');
+    // The extension renders its own nav inside the iframe, so these must be
+    // frame-scoped: page.getByTestId() does not pierce iframes.
+    this.navHeaderBarList = this.extensionFrame.getByTestId('navigation__header-bar__list');
     this.activeNavLink = this.navHeaderBarList.locator('a[aria-current="page"]');
 
-    this.tabsNavItems = this.extensionFrame.getByTestId('tabs-nav__items');
-    this.generalTab = this.tabsNavItems.getByTestId('tab-general');
+    // Per-entity tabs are router links in the top bar, marked with aria-current.
+    this.tabsNavItems = this.extensionFrame.getByTestId('navigation__top-bar__list');
+    this.generalTab = this.tabsNavItems.getByRole('link', { name: 'General', exact: true });
     this.addBtn = this.extensionFrame.getByRole('button', { name: 'Add' });
 
     //Filters
     this.filteredByButton = this.extensionFrame.getByTestId('filter-selector__selector-button');
     this.filterPopover = this.extensionFrame.getByTestId('filter-selector__popover__content');
+    // Lives in the popover header, outside __content.
+    this.filterPopoverCloseButton = this.extensionFrame.getByTestId('filter-selector__popover__close-button');
     this.resetFilters = this.extensionFrame.getByTestId('filter-selector__popover__reset-filters');
     this.addAnotherCondition = this.extensionFrame.getByTestId('filter-selector__popover__add-another-condition');
-    this.fieldSelectInput = this.extensionFrame.getByTestId('expression-row__field-select__input__input-text');
-    this.conditionalOperatorSelectInput = this.extensionFrame.getByTestId('expression-row__conditional-operator-select__input__input-text');
-    this.valueInput = this.extensionFrame.getByTestId('expression-row__value-input__input-text');
+    this.conditionRemoveButtons = this.filterPopover.getByTestId(/^expression-row--\d+__remove-condition$/);
+    // A view can arrive with conditions already applied, and every row repeats the same
+    // test ids, so the fields must be scoped to the row `addAnotherCondition` appended.
+    // Anchored: `expression-row--0001__remove-condition` and the logical-operator select
+    // share the row's prefix, and a loose match makes `last()` the trash button.
+    const newestCondition = this.filterPopover.getByTestId(/^expression-row--\d+$/).last();
+    this.fieldSelectInput = newestCondition.getByTestId('expression-row__field-select__input__input-text');
+    this.conditionalOperatorSelectInput = newestCondition.getByTestId('expression-row__conditional-operator-select__input__input-text');
+    this.valueInput = newestCondition.getByTestId('expression-row__value-input__input-text');
+    // `list` fields render a select here, which nests one testid level deeper than a text box.
+    this.valueSelectInput = newestCondition.getByTestId('expression-row__value-input__input__input-text');
 
     this.gridTable = this.extensionFrame.getByTestId('grid__table');
     this.toolbarDropdown = this.extensionFrame.getByTestId('grid__toolbar__view-selector__dropdown');
 
-    this.wizardModalHeaderTitle = this.wizardFrame.locator('//div[@class="modal-header-title"]');
-    this.wizardModalSaveBtn = this.wizardFrame.getByRole('button', { name: 'Save' });
+    // Modals render inside the extension iframe (not a separate wizard iframe). The
+    // design-system Modal.Header tags its title with data-testid="modal-header-title",
+    // which is stable across the hashed CSS-module class name.
+    this.wizardModalHeaderTitle = this.extensionFrame.getByTestId('modal-header-title');
+    this.wizardModalSaveBtn = this.extensionFrame.getByRole('button', { name: 'Save' });
   }
 
   /**
@@ -90,6 +114,13 @@ export abstract class ExtensionPage extends PlatformPage {
     await this.extensionFrame.locator('body').waitFor({ timeout: timeout });
   }
 
+  /** Extension-internal routes — not portal menu entries. */
+  async openNavTab(name: string): Promise<void> {
+    debugLog(`Opening extension nav tab: ${name}`);
+    await this.navHeaderBarList.getByRole('link', { name, exact: true }).click();
+    await this.waitForExtensionIframeLoading();
+  }
+
   /**
    * Waits for the data-refreshing spinner/dialog to disappear from the grid.
    *
@@ -116,57 +147,63 @@ export abstract class ExtensionPage extends PlatformPage {
    */
   async waitForDataRefreshingMessageToDetach(timeout: number = LARGE_DATA_TIMEOUT): Promise<void> {
     await this.gridTable.waitFor();
-    try {
-      await this.dataRefreshSpinner.first().waitFor({ timeout: 1000 });
-    } catch (_error) {
-      return; // Exit the method if the loading image is not present.
-    }
+
+    if (!(await this.probeVisible(this.dataRefreshSpinner))) return;
+
     try {
       debugLog('Waiting for data refreshing dialog to disappear...');
       await this.dataRefreshSpinner.waitFor({ state: 'hidden', timeout: timeout });
     } catch (_error) {
-      errorLog('[ERROR] Loading data refreshing did not disappear within the timeout.'); // Log a warning if the image remains visible after the timeout.
+      errorLog('Data refresh spinner did not disappear within the timeout.');
     }
   }
 
   /**
-   * Resets grid filters when a filtered state is currently applied.
-   *
-   * The method checks for the "Filtered by:" indicator, opens the filter popover,
-   * clicks reset, waits for the popover to close, and waits for any data refresh
-   * message to disappear.
-   *
-   * @returns {Promise<void>} Resolves when filters are reset or no reset is needed.
+   * The popover has no apply button: conditions take effect as you edit it, and it
+   * stays open until explicitly dismissed. Every filter interaction must end here.
    */
+  async closeFilterPopover(): Promise<void> {
+    await this.filterPopoverCloseButton.click();
+    await this.filterPopover.waitFor({ state: 'hidden' });
+    await this.waitForDataRefreshingMessageToDetach();
+  }
+
+  /**
+   * Empties the open popover of conditions. `resetFilters` is not a substitute: it
+   * restores the view's own defaults, which is where the stray Status condition comes
+   * from. Rows re-index on every delete, so the first button is clicked repeatedly.
+   */
+  async removeAllConditions(): Promise<void> {
+    const conditions = await this.conditionRemoveButtons.count();
+
+    for (let removed = 0; removed < conditions; removed++) {
+      await this.conditionRemoveButtons.first().click();
+    }
+  }
+
+  /** Appends a condition and points it at a field and operator; the caller sets the value. */
+  async addCondition(field: string, operator: string): Promise<void> {
+    await this.addAnotherCondition.click();
+    await this.fieldSelectInput.click();
+    await this.filterPopover.getByRole('option', { name: field, exact: true }).click();
+    await this.conditionalOperatorSelectInput.click();
+    await this.filterPopover.getByRole('option', { name: operator, exact: true }).click();
+  }
+
+  /** For `list` fields, whose value is picked from a dropdown rather than typed. */
+  async selectConditionValue(value: string): Promise<void> {
+    await this.valueSelectInput.click();
+    await this.filterPopover.getByRole('option', { name: value, exact: true }).click();
+  }
+
+  /** No-op when the grid is unfiltered, so specs can call it as a precondition. */
   async resetFiltersIfFiltered(): Promise<void> {
     await this.filteredByButton.waitFor();
-    if (await this.filteredByButton.filter({ hasText: 'Filtered by:' }).isVisible()) {
-      await this.filteredByButton.click();
-      await this.filterPopover.waitFor();
-      await this.resetFilters.click();
-      await this.filterPopover.waitFor({ state: 'hidden' });
-      await this.waitForDataRefreshingMessageToDetach();
-    }
-  }
+    if (!(await this.filteredByButton.filter({ hasText: 'Filtered by:' }).isVisible())) return;
 
-  /**
-   * Evaluates whether a tab element is currently active.
-   *
-   * Inspects the tab's CSS class list in the browser context and returns `true`
-   * if any class name starts with `_tab__active`, which is the convention used
-   * in this codebase to mark the selected tab.
-   *
-   * @param {Locator} tab - The locator for the tab element to evaluate.
-   * @returns {Promise<boolean>} Resolves to `true` if the tab has the active class, `false` otherwise.
-   *
-   * @remarks
-   * - The check relies on the CSS class prefix `_tab__active`. If the component
-   *   library or CSS modules naming changes, this detection logic may need updating.
-   * - This method evaluates in the browser context via `element.evaluate`.
-   */
-  async evaluateActiveTab(tab: Locator): Promise<boolean> {
-    return await tab.evaluate(el => {
-      return Array.from(el.classList).some(className => className.startsWith('_tab__active'));
-    });
+    await this.filteredByButton.click();
+    await this.filterPopover.waitFor();
+    await this.resetFilters.click();
+    await this.closeFilterPopover();
   }
 }

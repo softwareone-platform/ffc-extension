@@ -1,53 +1,40 @@
 import { test as base } from '@playwright/test';
-import { HomePage } from '../pages/home-page';
-import { Header } from '../pages/header';
-import { PlatformUsersPage } from '../pages/platform-users-page';
-import { OrganizationsPage } from '../pages/organizations-page';
-import { EntitlementsPage } from '../pages/entitlements-page';
-import { OrganizationDetailsPage } from '../pages/organization-details-page';
+
+import * as Pages from '../pages';
+import { logBrowserConsoleErrors } from '../utils/debug-logging';
 
 /**
  * Extends the base test with custom fixtures for page objects.
  */
 export const test = base.extend<{
   _browserConsoleErrorLogging: void;
-  homePage: HomePage;
-  header: Header;
-  usersPage: PlatformUsersPage;
-  organizationsPage: OrganizationsPage;
-  organizationDetailsPage: OrganizationDetailsPage;
-  entitlementsPage: EntitlementsPage;
+  homePage: Pages.HomePage;
+  header: Pages.Header;
+  organizationsPage: Pages.OrganizationsPage;
+  organizationDetailsPage: Pages.OrganizationDetailsPage;
+  entitlementsPage: Pages.EntitlementsPage;
 }>({
   _browserConsoleErrorLogging: [
     async ({ page }, use) => {
-      if (process.env.BROWSER_ERROR_LOGGING === 'true') {
-        page.on('console', msg => {
-          if (msg.type() === 'error') {
-            console.error(`[Browser Console Error] ${msg.text()}`);
-          }
-        });
-      }
+      logBrowserConsoleErrors(page);
       await use();
     },
     { auto: true },
   ],
   homePage: async ({ page }, use) => {
-    await use(new HomePage(page));
+    await use(new Pages.HomePage(page));
   },
   header: async ({ page }, use) => {
-    await use(new Header(page));
-  },
-  usersPage: async ({ page }, use) => {
-    await use(new PlatformUsersPage(page));
+    await use(new Pages.Header(page));
   },
   organizationsPage: async ({ page }, use) => {
-    await use(new OrganizationsPage(page));
+    await use(new Pages.OrganizationsPage(page));
   },
   organizationDetailsPage: async ({ page }, use) => {
-    await use(new OrganizationDetailsPage(page));
+    await use(new Pages.OrganizationDetailsPage(page));
   },
   entitlementsPage: async ({ page }, use) => {
-    await use(new EntitlementsPage(page));
+    await use(new Pages.EntitlementsPage(page));
   },
 });
 

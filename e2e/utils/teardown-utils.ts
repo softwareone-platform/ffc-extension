@@ -1,8 +1,8 @@
 import { FfcClientRequest } from '../api-request/ffc-client-request';
-import { debugLog } from './debug-logging';
-import { ERequestMethod } from '../types/enums';
-import { getCurrentEnv } from './utils';
 import { EmployeesResponse } from '../types/employees-response';
+import { ERequestMethod } from '../types/enums';
+import { debugLog } from './debug-logging';
+import { env as config, getCurrentEnv } from './env';
 
 /**
  * Generates a headers object with a Bearer token for authorization.
@@ -44,13 +44,12 @@ export function getBearerTokenHeader(token: string): { [key: string]: string } {
  * - Ownership is always reassigned to `DEFAULT_USER_ID` before deletion.
  */
 export async function deleteTestUsers(request: FfcClientRequest, token: string): Promise<void> {
-  if (process.env.CLEAN_UP !== 'true') {
-    return;
-  }
+  // Redundant with the caller, but this deletes users — keep the local guard.
+  if (!config.cleanUp) return;
   const env = getCurrentEnv();
   const ffcClientBaseUrl = env.ffcClientBaseUrl;
-  const reassignToUserId = env.clientAPI_userId;
-  const organisationId = env.clientAPI_orgId;
+  const reassignToUserId = env.clientApiUserId;
+  const organisationId = env.clientApiOrgId;
   const usersEndpoint = `${ffcClientBaseUrl}/restapi/v2/organizations/${organisationId}/employees?exclude_myself=false&roles=true`;
 
   debugLog(`Fetching employees from endpoint: ${usersEndpoint}`);
