@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
-
 import { render } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
 import { mockControlledInput, mockSharedControlledInput } from "~test-utils/mocks/controlledInput";
+import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
+import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
 import { DataSourceStep } from "./DataSourceStep";
@@ -18,15 +18,9 @@ jest.mock("@swo/design-system/wizard", () => ({
 
 jest.mock("~shared/components/form/ControlledInput", () => mockSharedControlledInput);
 
-jest.mock("~shared/components/wizard/WizardStep", () => ({
-  WizardStep: ({ children }: { children?: ReactNode }) => (
-    <div data-testid="wizard-step">{children}</div>
-  ),
-}));
+jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
-jest.mock("@swo/design-system/text", () => ({
-  RegularText: ({ children }: { children?: ReactNode }) => <>{children}</>,
-}));
+jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
 function renderStep() {
   const triggerSpy = jest.fn().mockResolvedValue(true);

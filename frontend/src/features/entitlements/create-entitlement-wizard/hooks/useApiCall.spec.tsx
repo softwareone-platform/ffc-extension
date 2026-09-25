@@ -6,21 +6,19 @@ import type { Account } from "~features/entitlements/api/model";
 import type { useAccountsApi } from "~features/entitlements/api/useAccountsApi";
 import type { useUserRole } from "~shared/hooks/useUserRole";
 import { makeAccount } from "~test-utils";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { useApiCall } from "./useApiCall";
 
 type AccountsApi = ReturnType<typeof useAccountsApi>;
 
 const mockList = jest.fn() as jest.MockedFunction<AccountsApi["list"]>;
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 
 jest.mock("~features/entitlements/api/useAccountsApi", () => ({
   useAccountsApi: () => ({ list: mockList }),
 }));
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 const columns: Column<Account>[] = [
   { name: "id", filterable: true, hide: true },

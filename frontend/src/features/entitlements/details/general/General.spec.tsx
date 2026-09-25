@@ -1,20 +1,14 @@
-import type { ComponentProps, ReactNode } from "react";
-
 import { screen, within } from "@testing-library/react";
 
 import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
 import { renderWithRouter } from "~test-utils";
+import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
+import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
 import { EntitlementsGeneralDetails } from "./General";
 
 type ApiResult = ReturnType<typeof useEntitlementsDetailsApi>;
-type MockInPageHighlightProps = ComponentProps<
-  typeof import("@swo/design-system/in-page-highlight").InPageHighlight
->;
-type MockInPageHighlightItemProps = ComponentProps<
-  typeof import("@swo/design-system/in-page-highlight").InPageHighlight.Item
->;
 
 const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
   typeof useEntitlementsDetailsApi
@@ -24,23 +18,9 @@ jest.mock("~entitlements/api", () => ({
   useEntitlementsDetailsApi: (id: string | undefined) => mockUseEntitlementsDetailsApi(id),
 }));
 
-jest.mock("@swo/design-system/in-page-highlight", () => {
-  const InPageHighlight = ({ children }: MockInPageHighlightProps) => (
-    <div data-testid="in-page-highlight">{children}</div>
-  );
-  InPageHighlight.Item = ({ children, title }: MockInPageHighlightItemProps) => (
-    <div data-testid="highlight-item">
-      <span data-testid="highlight-title">{title as ReactNode}</span>
-      <span data-testid="highlight-value">{children}</span>
-    </div>
-  );
-  return { InPageHighlight };
-});
+jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
 
-jest.mock("@swo/design-system/text", () => ({
-  BoldText: ({ children }: { children?: ReactNode }) => <>{children}</>,
-  MediumText: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
-}));
+jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
 jest.mock("@swo/design-system/utils", () => ({
   NO_VALUE: "—",

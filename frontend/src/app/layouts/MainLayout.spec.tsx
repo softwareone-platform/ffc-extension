@@ -5,13 +5,12 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import type { AccountType } from "~api/ffc-api-model";
 import type { PageShell } from "~shared/components/page-shell";
-import type { useUserRole } from "~shared/hooks/useUserRole";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { MainLayout } from "./MainLayout";
 
 type MockHeaderProps = ComponentProps<typeof PageShell.Header>;
 
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 const mockHeader = jest.fn() as jest.MockedFunction<(props: MockHeaderProps) => void>;
 const mockOrganizationDetailsHeader = jest.fn() as jest.MockedFunction<
   (props: { organizationId: string; backUrl: string }) => void
@@ -20,9 +19,7 @@ const mockEntitlementDetailsHeader = jest.fn() as jest.MockedFunction<
   (props: { entitlementId: string; backUrl: string }) => void
 >;
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock("~shared/components/page-shell", () => ({
   PageShell: Object.assign(

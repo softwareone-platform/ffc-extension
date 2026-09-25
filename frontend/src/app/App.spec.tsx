@@ -2,15 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import type { AccountType } from "~api/ffc-api-model";
-import type { useUserRole } from "~shared/hooks/useUserRole";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { App } from "./App";
 
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
-
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock("~app/layouts", () => ({
   MainLayout: () => (

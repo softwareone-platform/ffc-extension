@@ -1,14 +1,9 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import type { useOrganizationDetailsApi } from "~organizations/api";
 import type { useFormatMoney } from "~shared/utils/NumberUtils";
+import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
-type MockInPageHighlightProps = ComponentProps<
-  typeof import("@swo/design-system/in-page-highlight").InPageHighlight
->;
-type MockInPageHighlightItemProps = ComponentProps<
-  typeof import("@swo/design-system/in-page-highlight").InPageHighlight.Item
->;
 type MockNavigationHighlightsProps = ComponentProps<
   typeof import("@swo/design-system/navigation").Navigation.Highlights
 >;
@@ -40,18 +35,7 @@ jest.mock("@swo/design-system/navigation", () => ({
   },
 }));
 
-jest.mock("@swo/design-system/in-page-highlight", () => {
-  const InPageHighlight = ({ children }: MockInPageHighlightProps) => (
-    <div data-testid="highlights">{children}</div>
-  );
-  InPageHighlight.Item = ({ children, title }: MockInPageHighlightItemProps) => (
-    <div data-testid="highlight-item">
-      <span data-testid="highlight-title">{title as ReactNode}</span>
-      <span data-testid="highlight-value">{children}</span>
-    </div>
-  );
-  return { InPageHighlight };
-});
+jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
 
 jest.mock("@swo/design-system/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,

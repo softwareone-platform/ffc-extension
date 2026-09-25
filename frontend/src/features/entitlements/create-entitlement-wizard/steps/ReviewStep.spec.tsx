@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
-
 import { render, screen } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
+
+import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
+import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
 import { ReviewStep } from "./ReviewStep";
@@ -17,27 +18,9 @@ jest.mock("~shared/components/EntityProperties", () => ({
   },
 }));
 
-jest.mock("~shared/components/wizard/WizardStep", () => ({
-  WizardStep: ({
-    title,
-    error,
-    children,
-  }: {
-    title: ReactNode;
-    error?: string;
-    children?: ReactNode;
-  }) => (
-    <div data-testid="wizard-step">
-      <span data-testid="wizard-step-title">{title}</span>
-      {error && <span data-testid="wizard-step-error">{error}</span>}
-      {children}
-    </div>
-  ),
-}));
+jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
-jest.mock("@swo/design-system/text", () => ({
-  RegularText: ({ children }: { children?: ReactNode }) => <>{children}</>,
-}));
+jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
 function renderStep(error?: string, defaults?: Partial<AddWizardForm>) {
   function Wrapper() {

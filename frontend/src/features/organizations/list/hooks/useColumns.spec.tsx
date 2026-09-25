@@ -3,15 +3,14 @@ import type { ReactNode } from "react";
 import { renderHook, screen } from "@testing-library/react";
 
 import type { AccountType } from "~api/ffc-api-model";
-import type { useUserRole } from "~shared/hooks/useUserRole";
 import { columnByName, makeOrganization, renderColumnCell } from "~test-utils";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockGridCellDynamicActions } from "~test-utils/mocks/sharedGridCells";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import type { useActionOptions } from "./useActionOptions";
 import { useColumns } from "./useColumns";
 
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
 const mockStatus = jest.fn() as jest.MockedFunction<(props: { item: unknown }) => void>;
 
@@ -37,9 +36,7 @@ jest.mock("~shared/components/entity-status-chip/EntityStatusChip", () => ({
 
 jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock("react-router-dom", () => {
   const actual = jest.requireActual("react-router-dom");

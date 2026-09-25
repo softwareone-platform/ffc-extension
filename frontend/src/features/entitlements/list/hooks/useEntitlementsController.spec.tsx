@@ -2,13 +2,12 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AxiosError } from "axios";
 
 import type { useEntitlementsApi } from "~features/entitlements/api/useEntitlementsApi";
-import type { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { createQueryClientWrapper, makeEntitlement } from "~test-utils";
+import { mockErrorDetailsModule, mockGetErrorMessage } from "~test-utils/mocks/errorDetails";
 
 import { useEntitlementController } from "./useEntitlementsController";
 
 type EntitlementsApi = ReturnType<typeof useEntitlementsApi>;
-type ErrorDetails = ReturnType<typeof useErrorDetails>;
 type TerminateResult = Awaited<ReturnType<EntitlementsApi["terminateEntitlement"]>>;
 type DeleteResult = Awaited<ReturnType<EntitlementsApi["deleteEntitlement"]>>;
 const OK_TERMINATE = undefined as unknown as TerminateResult;
@@ -16,7 +15,6 @@ const OK_DELETE = undefined as unknown as DeleteResult;
 
 const mockTerminate = jest.fn() as jest.MockedFunction<EntitlementsApi["terminateEntitlement"]>;
 const mockDelete = jest.fn() as jest.MockedFunction<EntitlementsApi["deleteEntitlement"]>;
-const mockGetErrorMessage = jest.fn() as jest.MockedFunction<ErrorDetails["getErrorMessage"]>;
 
 jest.mock("~features/entitlements/api/useEntitlementsApi", () => ({
   useEntitlementsApi: () => ({
@@ -25,9 +23,7 @@ jest.mock("~features/entitlements/api/useEntitlementsApi", () => ({
   }),
 }));
 
-jest.mock("~shared/hooks/useErrorDetails", () => ({
-  useErrorDetails: () => ({ getErrorMessage: mockGetErrorMessage }),
-}));
+jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 
 function renderController(onClose?: (result?: { success?: boolean }) => void) {
   return renderHook(() => useEntitlementController({ onClose }), {

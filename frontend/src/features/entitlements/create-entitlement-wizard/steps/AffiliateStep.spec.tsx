@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 import { render } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -7,6 +5,7 @@ import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
 import type { Account } from "~features/entitlements/api/model";
 import { makeAccount } from "~test-utils";
+import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
 import { AffiliateStep } from "./AffiliateStep";
@@ -27,14 +26,7 @@ jest.mock("~shared/components/SelectAffiliateList", () => ({
   },
 }));
 
-jest.mock("~shared/components/wizard/WizardStep", () => ({
-  WizardStep: ({ error, children }: { error?: string; children?: ReactNode }) => (
-    <div data-testid="wizard-step">
-      {error && <span data-testid="wizard-step-error">{error}</span>}
-      {children}
-    </div>
-  ),
-}));
+jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
 function renderStep(triggerImpl?: () => Promise<boolean>) {
   const trigger = jest.fn().mockResolvedValue(true);

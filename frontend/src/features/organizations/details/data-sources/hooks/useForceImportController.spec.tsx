@@ -2,18 +2,16 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AxiosError } from "axios";
 
 import type { useOrganizationsApi } from "~organizations/api";
-import type { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { createQueryClientWrapper, makeDatasource } from "~test-utils";
+import { mockErrorDetailsModule, mockGetErrorMessage } from "~test-utils/mocks/errorDetails";
 
 import { useForceImportController } from "./useForceImportController";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
-type ErrorDetails = ReturnType<typeof useErrorDetails>;
 
 const mockForceReimportDatasource = jest.fn() as jest.MockedFunction<
   OrganizationsApi["forceReimportDatasource"]
 >;
-const mockGetErrorMessage = jest.fn() as jest.MockedFunction<ErrorDetails["getErrorMessage"]>;
 
 // The controller ignores the mutation's return value; give the typed mock a body-less
 // stand-in rather than build a real AxiosResponse per test.
@@ -24,9 +22,7 @@ jest.mock("~organizations/api", () => ({
   useOrganizationsApi: () => ({ forceReimportDatasource: mockForceReimportDatasource }),
 }));
 
-jest.mock("~shared/hooks/useErrorDetails", () => ({
-  useErrorDetails: () => ({ getErrorMessage: mockGetErrorMessage }),
-}));
+jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 
 function renderController(onClose?: (result?: { success?: boolean }) => void) {
   return renderHook(() => useForceImportController({ onClose }), {

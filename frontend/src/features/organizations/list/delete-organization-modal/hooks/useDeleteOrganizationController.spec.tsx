@@ -2,13 +2,12 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AxiosError } from "axios";
 
 import type { useOrganizationsApi } from "~features/organizations/api/useOrganizationsApi";
-import type { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { createQueryClientWrapper, makeOrganization } from "~test-utils";
+import { mockErrorDetailsModule, mockGetErrorMessage } from "~test-utils/mocks/errorDetails";
 
 import { useDeleteOrganizationController } from "./useDeleteOrganizationController";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
-type ErrorDetails = ReturnType<typeof useErrorDetails>;
 type DeleteResult = Awaited<ReturnType<OrganizationsApi["deleteOrganization"]>>;
 
 const OK_RESPONSE = undefined as unknown as DeleteResult;
@@ -16,15 +15,12 @@ const OK_RESPONSE = undefined as unknown as DeleteResult;
 const mockDeleteOrganization = jest.fn() as jest.MockedFunction<
   OrganizationsApi["deleteOrganization"]
 >;
-const mockGetErrorMessage = jest.fn() as jest.MockedFunction<ErrorDetails["getErrorMessage"]>;
 
 jest.mock("~features/organizations/api/useOrganizationsApi", () => ({
   useOrganizationsApi: () => ({ deleteOrganization: mockDeleteOrganization }),
 }));
 
-jest.mock("~shared/hooks/useErrorDetails", () => ({
-  useErrorDetails: () => ({ getErrorMessage: mockGetErrorMessage }),
-}));
+jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 
 function renderController(onClose?: (result?: { success?: boolean }) => void) {
   return renderHook(() => useDeleteOrganizationController({ onClose }), {

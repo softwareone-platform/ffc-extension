@@ -7,7 +7,6 @@ import type { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import type { AccountType } from "~api/ffc-api-model";
 import type { useOrganizationsApi } from "~organizations/api";
 import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
-import type { useUserRole } from "~shared/hooks/useUserRole";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeEmployee, renderColumnCell } from "~test-utils";
 import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
@@ -18,13 +17,13 @@ import {
   mockUseGridInfoDialogConfiguration,
   mockUseReactQueryRqlGrid,
 } from "~test-utils/mocks/sharedGridHooks";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./UsersGrid.config";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
 
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
 const mockListOrganizationEmployees = jest.fn() as jest.MockedFunction<
   OrganizationsApi["listOrganizationEmployees"]
@@ -51,9 +50,7 @@ jest.mock("@swo/mp-status-chip", () => ({
 jest.mock("~shared/components/grid/GridCellDate", () => mockGridCellDate);
 jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock(
   "~shared/hooks/useGridInfoDialogConfiguration",

@@ -2,21 +2,19 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AxiosError } from "axios";
 
 import type { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
-import type { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { createQueryClientWrapper } from "~test-utils";
+import { mockErrorDetailsModule, mockGetErrorMessage } from "~test-utils/mocks/errorDetails";
 
 import type { AddUserForm } from "../AddUserForm.Schema";
 import type { useAddUserForm } from "./useAddUserForm";
 import { useUserFormController } from "./useUserFormController";
 
 type EmployeesApi = ReturnType<typeof useEmployeesApi>;
-type ErrorDetails = ReturnType<typeof useErrorDetails>;
 type AddResult = Awaited<ReturnType<EmployeesApi["addAdmin"]>>;
 type FormReturn = ReturnType<typeof useAddUserForm>;
 const OK_RESPONSE = undefined as unknown as AddResult;
 
 const mockAddAdmin = jest.fn() as jest.MockedFunction<EmployeesApi["addAdmin"]>;
-const mockGetErrorMessage = jest.fn() as jest.MockedFunction<ErrorDetails["getErrorMessage"]>;
 const mockReset = jest.fn();
 // handleSubmit(cb) returns () => Promise; simulate by immediately invoking cb with a valid payload.
 const validPayload: AddUserForm = { email: "user@example.com", display_name: "User" };
@@ -28,9 +26,7 @@ jest.mock("~features/organizations/api/useEmployeesApi", () => ({
   useEmployeesApi: () => ({ addAdmin: mockAddAdmin }),
 }));
 
-jest.mock("~shared/hooks/useErrorDetails", () => ({
-  useErrorDetails: () => ({ getErrorMessage: mockGetErrorMessage }),
-}));
+jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 
 jest.mock("./useAddUserForm", () => ({
   useAddUserForm: () => ({

@@ -2,26 +2,22 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AxiosError } from "axios";
 
 import type { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
-import type { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { createQueryClientWrapper, makeEmployee } from "~test-utils";
+import { mockErrorDetailsModule, mockGetErrorMessage } from "~test-utils/mocks/errorDetails";
 
 import { useEmployeeController } from "./useEmployeeController";
 
 type EmployeesApi = ReturnType<typeof useEmployeesApi>;
-type ErrorDetails = ReturnType<typeof useErrorDetails>;
 type PromoteResult = Awaited<ReturnType<EmployeesApi["promoteToAdmin"]>>;
 const OK_RESPONSE = undefined as unknown as PromoteResult;
 
 const mockPromoteToAdmin = jest.fn() as jest.MockedFunction<EmployeesApi["promoteToAdmin"]>;
-const mockGetErrorMessage = jest.fn() as jest.MockedFunction<ErrorDetails["getErrorMessage"]>;
 
 jest.mock("~features/organizations/api/useEmployeesApi", () => ({
   useEmployeesApi: () => ({ promoteToAdmin: mockPromoteToAdmin }),
 }));
 
-jest.mock("~shared/hooks/useErrorDetails", () => ({
-  useErrorDetails: () => ({ getErrorMessage: mockGetErrorMessage }),
-}));
+jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 
 function renderController(onClose?: (result?: { success?: boolean }) => void) {
   return renderHook(() => useEmployeeController({ onClose }), {

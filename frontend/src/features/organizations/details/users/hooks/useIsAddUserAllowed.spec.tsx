@@ -2,20 +2,17 @@ import { renderHook } from "@testing-library/react";
 
 import type { AccountType, OrganizationRead, OrganizationStatus } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~features/organizations/api/useOrganizationDetailsApi";
-import type { useUserRole } from "~shared/hooks/useUserRole";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { useIsUserAddAllowed } from "./useIsAddUserAllowed";
 
 type ApiResult = ReturnType<typeof useOrganizationDetailsApi>;
 
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 const mockUseOrganizationDetailsApi = jest.fn() as jest.MockedFunction<
   typeof useOrganizationDetailsApi
 >;
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock("~features/organizations/api/useOrganizationDetailsApi", () => ({
   useOrganizationDetailsApi: (id: string | undefined) => mockUseOrganizationDetailsApi(id),

@@ -4,18 +4,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
 
 import type { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
-import type { useErrorDetails } from "~shared/hooks/useErrorDetails";
-import type { useUserRole } from "~shared/hooks/useUserRole";
+import { mockErrorDetailsModule } from "~test-utils/mocks/errorDetails";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { CreateEntitlementWizard } from "./CreateEntitlementWizard";
 
 type EntitlementsApi = ReturnType<typeof useEntitlementsApi>;
-type ErrorDetails = ReturnType<typeof useErrorDetails>;
 type MockWizardProps = ComponentProps<typeof import("@swo/design-system/wizard").Wizard>;
 
 const mockSave = jest.fn() as jest.MockedFunction<EntitlementsApi["save"]>;
-const mockGetErrorMessage = jest.fn() as jest.MockedFunction<ErrorDetails["getErrorMessage"]>;
-const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
 const mockWizard = jest.fn() as jest.MockedFunction<(props: MockWizardProps) => void>;
 const mockUseSteps = jest.fn();
 
@@ -25,13 +22,9 @@ jest.mock("~entitlements/api/useEntitlementsApi", () => ({
   useEntitlementsApi: () => ({ save: mockSave }),
 }));
 
-jest.mock("~shared/hooks/useErrorDetails", () => ({
-  useErrorDetails: () => ({ getErrorMessage: mockGetErrorMessage }),
-}));
+jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => mockUseUserRole(),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock("@swo/design-system/modal", () => ({
   Modal: ({ children }: { children?: ReactNode }) => <div data-testid="modal">{children}</div>,

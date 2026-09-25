@@ -9,6 +9,7 @@ import {
   mockGridInfoDialogConfigurationModule,
   mockUseGridInfoDialogConfiguration,
 } from "~test-utils/mocks/sharedGridHooks";
+import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { useGridConfig } from "./OrganizationsGrid.config";
 
@@ -39,15 +40,14 @@ jest.mock(
 
 jest.mock("~shared/hooks/useGridIdentity", () => mockGridIdentityModule);
 
-jest.mock("~shared/hooks/useUserRole", () => ({
-  useUserRole: () => ({ user: null, role: "admin" }),
-}));
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 describe("useGridConfig (organizations list)", () => {
   const silentRefresh = jest.fn();
   const refresh = jest.fn();
 
   beforeEach(() => {
+    mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
     mockUseColumns.mockReturnValue([{ name: "name", fields: ["name"] }]);
     mockUseFields.mockReturnValue([{ name: "id", title: "id" }]);
     mockUseViews.mockReturnValue([{ name: "main", title: "main", configuration: {} }]);

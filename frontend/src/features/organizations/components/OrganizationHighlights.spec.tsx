@@ -44,7 +44,7 @@ describe("OrganizationHighlights", () => {
     render(<OrganizationHighlights organizationId="org-1" />);
 
     expect(screen.getByTestId("skeleton")).toBeInTheDocument();
-    expect(screen.queryByTestId("highlights")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("in-page-highlight")).not.toBeInTheDocument();
   });
 
   it("renders four highlight items in fixed order when the entity has an id", () => {
