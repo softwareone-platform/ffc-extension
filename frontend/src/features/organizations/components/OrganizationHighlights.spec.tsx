@@ -65,7 +65,7 @@ describe("OrganizationHighlights", () => {
     expect(titles).toEqual([...HIGHLIGHT_TITLES]);
   });
 
-  it("initialises useFormatMoney with the entity currency and non-symbol mode", () => {
+  it("passes entity.currency and non-symbol mode to useFormatMoney", () => {
     primeEntity({ id: "org-1", currency: "EUR" });
 
     render(<OrganizationHighlights organizationId="org-1" />);

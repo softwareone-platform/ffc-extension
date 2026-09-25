@@ -30,6 +30,7 @@ export default {
     '~api(.*)$': '<rootDir>/api/$1',
     '~app(.*)$': '<rootDir>/app/$1',
     '~features(.*)$': '<rootDir>/features/$1',
+    '~fixes(.*)$': '<rootDir>/fixes/$1',
     '~organizations(.*)$': '<rootDir>/features/organizations/$1',
     '~entitlements(.*)$': '<rootDir>/features/entitlements/$1',
     '~shared(.*)$': '<rootDir>/shared/$1',

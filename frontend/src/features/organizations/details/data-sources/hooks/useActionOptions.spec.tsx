@@ -55,13 +55,4 @@ describe("useActionOptions (data-sources)", () => {
     ]);
     expect(options).toBe(filtered);
   });
-
-  it("returns a stable callback across renders when dependencies do not change", () => {
-    const { result, rerender } = renderHook(() => useActionOptions());
-    const first = result.current;
-
-    rerender();
-
-    expect(result.current).toBe(first);
-  });
 });

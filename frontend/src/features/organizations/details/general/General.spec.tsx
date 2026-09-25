@@ -1,0 +1,98 @@
+import type { ComponentProps, ReactNode } from "react";
+
+import { screen, within } from "@testing-library/react";
+
+import type { OrganizationRead } from "~api/ffc-api-model";
+import type { useOrganizationDetailsApi } from "~organizations/api";
+import { renderWithRouter } from "~test-utils";
+
+import { OrganizationGeneralDetails } from "./General";
+
+type ApiResult = ReturnType<typeof useOrganizationDetailsApi>;
+type MockInPageHighlightProps = ComponentProps<
+  typeof import("@swo/design-system/in-page-highlight").InPageHighlight
+>;
+type MockInPageHighlightItemProps = ComponentProps<
+  typeof import("@swo/design-system/in-page-highlight").InPageHighlight.Item
+>;
+
+const mockUseOrganizationDetailsApi = jest.fn() as jest.MockedFunction<
+  typeof useOrganizationDetailsApi
+>;
+
+jest.mock("~organizations/api", () => ({
+  useOrganizationDetailsApi: (id: string | undefined) => mockUseOrganizationDetailsApi(id),
+}));
+
+jest.mock("@swo/design-system/in-page-highlight", () => {
+  const InPageHighlight = ({ children }: MockInPageHighlightProps) => (
+    <div data-testid="in-page-highlight">{children}</div>
+  );
+  InPageHighlight.Item = ({ children, title }: MockInPageHighlightItemProps) => (
+    <div data-testid="highlight-item">
+      <span data-testid="highlight-title">{title as ReactNode}</span>
+      <span data-testid="highlight-value">{children}</span>
+    </div>
+  );
+  return { InPageHighlight };
+});
+
+jest.mock("@swo/design-system/text", () => ({
+  BoldText: ({ children }: { children?: ReactNode }) => <>{children}</>,
+  MediumText: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+}));
+
+jest.mock("@swo/design-system/utils", () => ({
+  DisplayValue: ({ value }: { value: unknown }) => <>{value == null ? "" : String(value)}</>,
+}));
+
+function primeEntity(entity: Partial<OrganizationRead> | undefined) {
+  mockUseOrganizationDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);
+}
+
+function renderGeneral(url = "/organizations/org-1") {
+  return renderWithRouter(<OrganizationGeneralDetails />, {
+    initialUrl: url,
+    routePath: "/organizations/:organizationId",
+  });
+}
+
+describe("OrganizationGeneralDetails", () => {
+  it("queries organization details using the organizationId route param", () => {
+    primeEntity(undefined);
+
+    renderGeneral();
+
+    expect(mockUseOrganizationDetailsApi).toHaveBeenCalledWith("org-1");
+  });
+
+  it("renders four highlight items in fixed order", () => {
+    primeEntity({ id: "org-1" });
+
+    renderGeneral();
+
+    const titles = screen.getAllByTestId("highlight-title").map((el) => el.textContent);
+    expect(titles).toEqual([
+      "operations_external_id",
+      "linked_organization_id",
+      "currency",
+      "billing_currency",
+    ]);
+  });
+
+  it("renders each highlight value pulled from the entity", () => {
+    primeEntity({
+      id: "org-1",
+      operations_external_id: "ext-1",
+      linked_organization_id: "linked-1",
+      currency: "USD",
+      billing_currency: "EUR",
+    });
+
+    renderGeneral();
+
+    const items = screen.getAllByTestId("highlight-item");
+    const values = items.map((item) => within(item).getByTestId("highlight-value").textContent);
+    expect(values).toEqual(["ext-1", "linked-1", "USD", "EUR"]);
+  });
+});

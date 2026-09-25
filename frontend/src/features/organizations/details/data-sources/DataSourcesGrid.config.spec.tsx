@@ -42,7 +42,7 @@ describe("DataSourcesGrid.config", () => {
   });
 
   describe("useColumns", () => {
-    it("returns columns in the expected order", () => {
+    it("returns columns in fixed order", () => {
       const { result } = renderHook(() => useColumns());
 
       expect(result.current.map((c) => c.name)).toEqual(COLUMN_FIELDS.map(([name]) => name));
