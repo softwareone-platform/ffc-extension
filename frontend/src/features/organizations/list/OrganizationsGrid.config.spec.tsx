@@ -4,6 +4,11 @@ import type { GridEvents } from "@swo/design-system/grid";
 
 import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
+import {
+  mockGridIdentityModule,
+  mockGridInfoDialogConfigurationModule,
+  mockUseGridInfoDialogConfiguration,
+} from "~test-utils/mocks/sharedGridHooks";
 
 import { useGridConfig } from "./OrganizationsGrid.config";
 
@@ -11,9 +16,6 @@ const mockUseColumns = jest.fn();
 const mockUseFields = jest.fn();
 const mockUseViews = jest.fn();
 const mockUseAsyncOptions = jest.fn();
-const mockUseGridInfoDialogConfiguration = jest.fn() as jest.MockedFunction<
-  typeof useGridInfoDialogConfiguration
->;
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
@@ -30,13 +32,12 @@ jest.mock("./hooks/useAsyncOptions", () => ({
   useAsyncOptions: () => mockUseAsyncOptions(),
 }));
 
-jest.mock("~shared/hooks/useGridInfoDialogConfiguration", () => ({
-  useGridInfoDialogConfiguration: () => mockUseGridInfoDialogConfiguration(),
-}));
+jest.mock(
+  "~shared/hooks/useGridInfoDialogConfiguration",
+  () => mockGridInfoDialogConfigurationModule,
+);
 
-jest.mock("~shared/hooks/useGridIdentity", () => ({
-  useGridIdentity: (id: string) => ({ id, memoizeId: id, storageParameters: ["unknown"] }),
-}));
+jest.mock("~shared/hooks/useGridIdentity", () => mockGridIdentityModule);
 
 jest.mock("~shared/hooks/useUserRole", () => ({
   useUserRole: () => ({ user: null, role: "admin" }),

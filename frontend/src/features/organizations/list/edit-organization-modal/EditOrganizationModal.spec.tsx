@@ -1,32 +1,25 @@
 import type { ComponentProps } from "react";
 
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import type { Control } from "react-hook-form";
 
-import type { Modal } from "~shared/components/modal/Modal";
-import { makeOrganization } from "~test-utils";
+import { makeOrganization, triggerModalCancel, triggerModalSubmit } from "~test-utils";
+import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { EditOrganizationForm } from "./EditOrganization.Schema";
 import type { EditOrganizationFormFields } from "./EditOrganizationFormFields";
 import { EditOrganizationModal } from "./EditOrganizationModal";
 import type { useOrganizationsController } from "./hooks/useOrganizationsController";
 
-type MockModalProps = ComponentProps<typeof Modal>;
 type MockFormFieldsProps = ComponentProps<typeof EditOrganizationFormFields>;
 type Controller = ReturnType<typeof useOrganizationsController>;
 
-const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
 const mockFormFields = jest.fn() as jest.MockedFunction<(props: MockFormFieldsProps) => void>;
 const mockUseOrganizationsController = jest.fn() as jest.MockedFunction<
   typeof useOrganizationsController
 >;
 
-jest.mock("~shared/components/modal/Modal", () => ({
-  Modal: (props: MockModalProps) => {
-    mockModal(props);
-    return <div data-testid="modal">{props.children}</div>;
-  },
-}));
+jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
 
 jest.mock("./EditOrganizationFormFields", () => ({
   EditOrganizationFormFields: (props: MockFormFieldsProps) => {
@@ -76,18 +69,16 @@ describe("EditOrganizationModal", () => {
     const controller = primeController();
 
     render(<EditOrganizationModal isOpen onClose={jest.fn()} organization={makeOrganization()} />);
-    act(() => mockModal.mock.lastCall![0].onCancel?.());
+    triggerModalCancel(mockModal);
 
     expect(controller.handleCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("wires Modal onSubmit to controller.submit", () => {
+  it("wires Modal onSubmit to controller.submit", async () => {
     const controller = primeController();
 
     render(<EditOrganizationModal isOpen onClose={jest.fn()} organization={makeOrganization()} />);
-    act(() => {
-      mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(controller.submit).toHaveBeenCalledTimes(1);
   });

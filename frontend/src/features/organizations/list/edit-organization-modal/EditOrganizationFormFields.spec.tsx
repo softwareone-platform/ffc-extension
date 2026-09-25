@@ -1,25 +1,14 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { render, screen } from "@testing-library/react";
 import type { Control } from "react-hook-form";
 
-import type { ControlledInput } from "~shared/components/form/ControlledInput";
+import { mockControlledInput, mockSharedControlledInput } from "~test-utils/mocks/controlledInput";
 
 import type { EditOrganizationForm } from "./EditOrganization.Schema";
 import { EditOrganizationFormFields } from "./EditOrganizationFormFields";
 
-type MockControlledInputProps = ComponentProps<typeof ControlledInput>;
-
-const mockControlledInput = jest.fn() as jest.MockedFunction<
-  (props: MockControlledInputProps) => void
->;
-
-jest.mock("~shared/components/form/ControlledInput", () => ({
-  ControlledInput: (props: MockControlledInputProps) => {
-    mockControlledInput(props);
-    return <input data-testid={`input-${props.name}`} disabled={props.isDisabled} />;
-  },
-}));
+jest.mock("~shared/components/form/ControlledInput", () => mockSharedControlledInput);
 
 jest.mock("@swo/design-system/notification", () => ({
   InlineNotification: ({ children }: { children?: ReactNode }) => (

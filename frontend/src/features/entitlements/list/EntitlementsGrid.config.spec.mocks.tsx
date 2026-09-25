@@ -1,22 +1,26 @@
 import type { ReactNode } from "react";
 
 import type { useEntitlementsApi } from "~entitlements/api";
-import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import { mockCustomIcon, mockGridCellDynamicActions } from "~test-utils/mocks/sharedGridCells";
+import {
+  mockGridIdentityModule,
+  mockGridInfoDialogConfigurationModule,
+  mockReactQueryRqlGridModule,
+} from "~test-utils/mocks/sharedGridHooks";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 
 export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
+export {
+  mockUseGridInfoDialogConfiguration,
+  mockUseReactQueryRqlGrid,
+} from "~test-utils/mocks/sharedGridHooks";
 
 type EntitlementsApi = ReturnType<typeof useEntitlementsApi>;
 
 export const mockListEntitlements = jest.fn() as jest.MockedFunction<EntitlementsApi["list"]>;
-export const mockUseReactQueryRqlGrid = jest.fn();
-export const mockUseGridInfoDialogConfiguration = jest.fn() as jest.MockedFunction<
-  typeof useGridInfoDialogConfiguration
->;
 export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
 export const mockStatus = jest.fn() as jest.MockedFunction<(props: { item: unknown }) => void>;
 
@@ -75,17 +79,14 @@ jest.mock("~entitlements/api", () => ({
   useEntitlementsApi: () => ({ list: mockListEntitlements }),
 }));
 
-jest.mock("~shared/hooks/useReactQueryRqlGrid", () => ({
-  useReactQueryRqlGrid: (...args: unknown[]) => mockUseReactQueryRqlGrid(...args),
-}));
+jest.mock("~shared/hooks/useReactQueryRqlGrid", () => mockReactQueryRqlGridModule);
 
-jest.mock("~shared/hooks/useGridInfoDialogConfiguration", () => ({
-  useGridInfoDialogConfiguration: () => mockUseGridInfoDialogConfiguration(),
-}));
+jest.mock(
+  "~shared/hooks/useGridInfoDialogConfiguration",
+  () => mockGridInfoDialogConfigurationModule,
+);
 
-jest.mock("~shared/hooks/useGridIdentity", () => ({
-  useGridIdentity: (id: string) => ({ id, memoizeId: id, storageParameters: ["unknown"] }),
-}));
+jest.mock("~shared/hooks/useGridIdentity", () => mockGridIdentityModule);
 
 jest.mock("./hooks/useActionOptions", () => ({
   useActionOptions: () => mockGetActions,

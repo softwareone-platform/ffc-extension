@@ -183,9 +183,58 @@ Keep environment-wide fixes in `frontend/jest.setup.js`; don't patch jsdom gaps 
 - Keep root manual mocks for third-party modules that should be shared by every spec.
 - Keep shared mock helpers source-typed (`import type`, `Pick<>`, `ComponentProps<typeof ...>`) so they stay aligned with app code.
 
+### Mirror tsconfig aliases in `jest.config.js` `moduleNameMapper`
+
+`tsconfig.json` `paths` and `jest.config.js` `moduleNameMapper` are two separate resolvers — a new alias in tsconfig does not automatically resolve at test time. When you add or rename an alias, mirror it in both places or specs importing through the alias will fail with `Cannot find module '~foo/…'`.
+
+Currently mapped in both: `~api`, `~app`, `~features`, `~fixes`, `~organizations`, `~entitlements`, `~shared`, `~i18n`, `~test-utils`.
+
 ### Never Mock
-- `react` or `react-dom`
+- `react` or `react-dom` (or `react-dom/client`) — bootstrap files that call `createRoot` don't belong in unit tests; cover them via e2e.
 - The full `react-router-dom` module in a spec-specific factory (use `MemoryRouter` + `Routes` + `Route` for route params — don't stub `useParams`)
+
+## Gotchas
+
+### Grid column cells with `<Link>` need a router mock
+
+`renderColumnCell` from `~test-utils` wraps `render(...)` without a router. Grid columns whose `cell` renders `<Link>` (e.g. an entity name that links to a detail page) crash with `Cannot destructure property 'basename' of React.useContext(...) as it is null.`
+
+Fix: opt into the root `__mocks__/react-router-dom.tsx` mock's `Link` override in the spec (or the `.spec.mocks` sibling):
+
+```text
+jest.mock("react-router-dom", () => {
+  const actual = jest.requireActual("react-router-dom");
+  return { ...actual, Link: ({ children }: { children?: ReactNode }) => <>{children}</> };
+});
+```
+
+The root `__mocks__/react-router-dom.tsx` is intentionally NOT globally applied so route-param tests keep the real router runtime; opt in per-spec when the code-under-test uses `<Link />` in isolation.
+
+Applied examples: `frontend/src/features/organizations/list/hooks/useColumns.spec.tsx`, `frontend/src/features/entitlements/list/EntitlementsGrid.config.spec.mocks.tsx`.
+
+### Overriding the global `@swo/design-system/utils` mock **replaces** it
+
+The global manual mock at `__mocks__/@swo/design-system/utils.tsx` spreads `...actual` and overrides `DisplayValue` / `useLocalisation` / `useDesignSystemOptions`. If a spec adds its own `jest.mock("@swo/design-system/utils", () => ({ … }))`, it fully **replaces** the global mock — `NO_VALUE` becomes `undefined`, `useLocalisation` is gone, and unrelated tests break with empty text content or undefined-destructure errors.
+
+Two safe patterns:
+
+1. **Re-supply every export the code-under-test touches** (simplest for scoped mocks):
+   ```text
+   jest.mock("@swo/design-system/utils", () => ({
+     NO_VALUE: "—",
+     DisplayValue: ({ value }: { value?: unknown }) => <>{value ?? ""}</>,
+   }));
+   ```
+
+2. **Extend the global mock via `requireActual`** (best when you want everything the global exposes plus one override):
+   ```text
+   jest.mock("@swo/design-system/utils", () => {
+     const actual = jest.requireActual("@swo/design-system/utils");
+     return { ...actual, DisplayValue: ({ value }) => <>{value}</> };
+   });
+   ```
+
+Symptoms of a silent override: highlight-value spans render empty, or `NO_VALUE` fallbacks appear as literal `undefined` in text content.
 
 ## Test File Placement
 
@@ -421,6 +470,127 @@ Only reach for **Option A** (`~test-utils/mocks/`) when the mock will be importe
 - Use `userEvent.click()` for interactions
 - `await waitFor(...)` for async assertions
 
+### Modals (callback-capture pattern)
+
+Modal specs mock the shared `Modal` component with a capture spy, then invoke the captured `onSubmit`/`onCancel` inside `act(...)` to drive the modal's flow:
+
+```text
+type MockModalProps = ComponentProps<typeof Modal>;
+const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
+
+jest.mock("~shared/components/modal/Modal", () => ({
+  Modal: (props: MockModalProps) => {
+    mockModal(props);
+    return <div data-testid="modal">{props.children}</div>;
+  },
+}));
+
+// Drive submit — await when the source chains .then(() => onSuccess?.())
+await act(async () => {
+  await mockModal.mock.lastCall![0].onSubmit();
+});
+
+// Drive cancel — optional-chain the callback since Modal treats onCancel as optional
+act(() => mockModal.mock.lastCall![0].onCancel?.());
+```
+
+Rules of thumb:
+- Assert only the props with real behavioral meaning: `isOpen`, `isSubmitting`, `isSubmitDisabled`, the entity payload, the wired callbacks. Don't over-assert every forwarded prop.
+- One test per guard-clause: `"submit is a noop when entitlement is null"`, `"submit is a noop when organizationId is null"`.
+- Use `mockModal.mock.lastCall![0]` for "final render" state (cleaner than `.calls[len-1]`).
+
+Canonical examples: `DeleteEntitlementModal.spec.tsx`, `TerminateEntitlementModal.spec.tsx`, `UserMakeAdminModal.spec.tsx`, `DeleteOrganizationModal.spec.tsx`, `EditOrganizationModal.spec.tsx`, `CreateUserModal.spec.tsx`.
+
+### React Query mutation controllers
+
+Controllers built on `useMutation` need the real query client (`createQueryClientWrapper()`) so `useMutation`'s state transitions fire. Mock the API method the mutation calls, mock `useErrorDetails.getErrorMessage`, then drive:
+
+```text
+async () => {
+  mockDeleteEntitlement.mockResolvedValueOnce(OK_RESPONSE);
+  const onClose = jest.fn();
+  const { result } = renderController(onClose);
+
+  await act(async () => {
+    await result.current.remove(entitlement);
+  });
+
+  await waitFor(() => expect(onClose).toHaveBeenCalledWith({ success: true }));
+};
+```
+
+Rejection path — `mutateAsync` **re-throws** even though `onError` handles it, so wrap the invocation:
+
+```text
+async () => {
+  const failure = new Error("boom") as AxiosError;
+  mockGetErrorMessage.mockReturnValue("readable failure");
+  mockDeleteEntitlement.mockRejectedValueOnce(failure);
+  const { result } = renderController();
+
+  await act(async () => {
+    await expect(result.current.remove(entitlement)).rejects.toBeDefined();
+  });
+
+  await waitFor(() => expect(result.current.error).toBe("readable failure"));
+  expect(mockGetErrorMessage).toHaveBeenCalledWith(failure);
+};
+```
+
+Without the `rejects.toBeDefined()` wrapper (or `.catch(() => undefined)`), the test still passes but Node prints an unhandled-promise warning that pollutes the run.
+
+Canonical examples: `useEntitlementController.spec.tsx`, `useDeleteOrganizationController.spec.tsx`, `useForceImportController.spec.tsx`.
+
+### Wizard steps vs. form controllers — two patterns
+
+These look similar but split cleanly:
+
+**Wizard steps** (`AffiliateStep`, `DataSourceStep`, `ReviewStep`, `SummaryStep`) read live form state via `useWatch` / `useFormState` / `getValues`. Render them inside a real `<FormProvider {...useForm()}>` and inject stub `trigger` / `setValue` when needed:
+
+```text
+function renderStep() {
+  const trigger = jest.fn().mockResolvedValue(true);
+  function Wrapper() {
+    const methods = useForm<AddWizardForm>();
+    methods.trigger = trigger as unknown as typeof methods.trigger;
+    return (
+      <FormProvider {...methods}>
+        <AffiliateStep />
+      </FormProvider>
+    );
+  }
+  render(<Wrapper />);
+  return { trigger };
+}
+```
+
+**Form controllers** (`useUserFormController`, `useOrganizationsController`) wire `handleSubmit(onSubmit)` into a mutation. Mock `useXForm` entirely and inject a fake `handleSubmit` that immediately calls the callback with a valid payload — that way the spec drives the mutation without needing to satisfy zod validation:
+
+```text
+const validPayload: AddUserForm = { email: "user@example.com", display_name: "User" };
+const mockHandleSubmit = jest.fn(
+  (cb: (data: AddUserForm) => Promise<void> | void) => () => Promise.resolve(cb(validPayload)),
+) as unknown as FormReturn["handleSubmit"];
+
+jest.mock("./useAddUserForm", () => ({
+  useAddUserForm: () => ({ handleSubmit: mockHandleSubmit, control: {}, reset: mockReset }),
+}));
+```
+
+Canonical examples: `AffiliateStep.spec.tsx` (real FormProvider), `useUserFormController.spec.tsx` (mocked `useAddUserForm`).
+
+## When NOT to write a unit test
+
+Some files don't earn a spec. Skipping them keeps the suite lean and honest.
+
+- **Bootstrap glue** (`entries/StandaloneRoot.tsx`): calling `createRoot` and rendering the app tree is the file's whole job. Testing it requires mocking `react-dom/client`, which violates the "never mock React/React DOM" rule. E2e covers this instead.
+- **Barrel files** (`api/index.ts`, `app/layouts/index.ts`): re-exports only. TypeScript already enforces the surface.
+- **Type-only modules** (`api/model.ts`): no runtime behaviour to exercise.
+- **Path aggregators that only re-export** (`app/paths.ts` used to be a re-export of feature paths): identity checks are change-detectors — if the re-export breaks, the compile does too.
+- **Path constant *literals*** (`PARAMS.entitlementId = "entitlementId"`): the assertion just repeats the source string. Keep the URL *builders* (`PATHS.detail("x") === "/x/..."`) — those protect the URL contract with the backend.
+
+If you're tempted to add a spec, ask: *would a plausible bug in this file survive a passing test?* If the failure mode is only "the source string changed", the test is a change-detector — delete it.
+
 ## Scope of a unit test
 
 ### Test in unit tests
@@ -459,6 +629,41 @@ Keep test names short, specific, and behavior-focused.
 - Use `describe` for the subject under test and `it` for the behavior being verified.
 - If a test name needs multiple `and`s, split it into separate tests.
 
+### Test name anti-patterns
+
+Grep for these regularly — if any hit, the name is a candidate for rewrite:
+
+```bash
+grep -rEn "successfully|correctly|properly|works fine|should |verifies|ensures|makes sure|the correct|the right|the expected|handles|processes|test case" src/**/*.spec.{ts,tsx}
+```
+
+Common rewrites:
+
+| Anti-pattern | Rewrite |
+|---|---|
+| `"renders the correct X"` | `"renders %s at index=%i"` with a named parameterized column |
+| `"notifies parent about X"` | `"passes X to useNotifyParentChildModal"` |
+| `"initialises Y with Z"` | `"passes Z to Y"` |
+| `"returns X in the expected order"` | `"returns X in fixed order"` |
+| `"exposes X as a list with the expected options"` | `"exposes X as a list with a, b, c options"` |
+| Internal handler in `it()` (`"closeWizard calls onClose"`) | Observable trigger (`"Wizard onClose reports success=false"`) |
+| `"successfully X"` / `"correctly X"` | Just `"X"` — no filler |
+
+Rule of thumb: **subject → verb → observable outcome**. If you can't describe the outcome, the test may not be worth keeping.
+
+## Tests to delete on sight
+
+Some spec patterns test framework internals or repeat source literals — deleting them costs no coverage. Grep for these during review:
+
+- **`"returns a memoized … stable across re-renders"`** / **`"returns a stable callback across renders"`** — tests React's `useMemo` / `useCallback` internals. If they broke, the app would still work; only perf profiling would notice. Delete.
+- **Change-detector path literal assertions** (`expect(PARAMS.x).toBe("x")`, `expect(SEGMENTS.idParam).toBe(":x")`) — the assertion repeats a literal in the source. Change one, change both. Delete; keep the URL *builder* tests.
+- **Re-export identity checks** (`expect(PATHS.organizations).toBe(organizations)`) — TypeScript's job.
+- **"Not called by default" negative assertions** where the trigger isn't wired in the test — mirrors the source shape without proving anything about behaviour. Especially common in wizard/controller specs that admit via comment: *"can't drive this from the outside"*.
+- **Duplicated modal wiring tests** — one `"Modal onClose bridges to onClose prop"` and one `"closeWizard calls onClose"` in the same file usually exercise the same code path. Keep the one framed in user terms.
+- **Docstrings above `it(...)`** — `it("…")` is the docstring; JSDoc above it is noise that drifts.
+
+If a test doesn't protect a user-visible behaviour, a business rule, a regression, an edge case, or an integration boundary — reconsider whether it should exist.
+
 ## Canonical spec file layout
 
 Every spec should follow the same top-to-bottom order — makes scanning across specs frictionless.
@@ -472,6 +677,22 @@ Every spec should follow the same top-to-bottom order — makes scanning across 
 ```
 
 If the prelude at step 3 grows past ~20-30 lines, spans more than 2-3 mocked modules, or reads like a "mock wall", extract it to a `<file>.spec.mocks.ts[x]` sibling (Option B). The spec then keeps only steps 1, 2, 4, 5 — which reads like actual test code, not "mock wall then tests".
+
+## Final refactor pass after finishing test work
+
+Once the spec is green, review the **whole touched frontend unit-test surface** before considering the job done.
+
+Look across the edited `*.spec.tsx` / `*.spec.ts` files, sibling `.spec.mocks` files, and `frontend/src/test-utils/` to find patterns that should be shared instead of copied.
+
+Typical extraction candidates:
+
+- repeated render wrappers or provider setup
+- repeated typed mock factories / prop-capture spies
+- repeated domain test data builders / factories
+- repeated callback-invocation helpers or assertion helpers
+- the same module mock shape copied across multiple specs
+
+Prefer extracting only patterns that appear in two or more places or clearly improve readability. Keep one-off setup inline when extraction would hide the behavior under test or make the spec harder to read.
 
 ## Reference Example
 

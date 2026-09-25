@@ -12,6 +12,12 @@ import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList
 import { columnByName, makeEmployee, renderColumnCell } from "~test-utils";
 import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 import { mockGridCellDate, mockGridCellDynamicActions } from "~test-utils/mocks/sharedGridCells";
+import {
+  mockGridInfoDialogConfigurationModule,
+  mockReactQueryRqlGridModule,
+  mockUseGridInfoDialogConfiguration,
+  mockUseReactQueryRqlGrid,
+} from "~test-utils/mocks/sharedGridHooks";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./UsersGrid.config";
@@ -19,11 +25,7 @@ import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./UsersGr
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
 
 const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
-const mockUseGridInfoDialogConfiguration = jest.fn() as jest.MockedFunction<
-  typeof useGridInfoDialogConfiguration
->;
 const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
-const mockUseReactQueryRqlGrid = jest.fn();
 const mockListOrganizationEmployees = jest.fn() as jest.MockedFunction<
   OrganizationsApi["listOrganizationEmployees"]
 >;
@@ -53,13 +55,12 @@ jest.mock("~shared/hooks/useUserRole", () => ({
   useUserRole: () => mockUseUserRole(),
 }));
 
-jest.mock("~shared/hooks/useGridInfoDialogConfiguration", () => ({
-  useGridInfoDialogConfiguration: () => mockUseGridInfoDialogConfiguration(),
-}));
+jest.mock(
+  "~shared/hooks/useGridInfoDialogConfiguration",
+  () => mockGridInfoDialogConfigurationModule,
+);
 
-jest.mock("~shared/hooks/useReactQueryRqlGrid", () => ({
-  useReactQueryRqlGrid: (...args: unknown[]) => mockUseReactQueryRqlGrid(...args),
-}));
+jest.mock("~shared/hooks/useReactQueryRqlGrid", () => mockReactQueryRqlGridModule);
 
 jest.mock("~organizations/api", () => ({
   useOrganizationsApi: () => ({

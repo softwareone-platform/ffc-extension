@@ -2,21 +2,22 @@ import { renderHook } from "@testing-library/react";
 
 import type { useOrganizationsApi } from "~organizations/api";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
+import {
+  mockReactQueryRqlGridModule,
+  mockUseReactQueryRqlGrid,
+} from "~test-utils/mocks/sharedGridHooks";
 
 import { useAsyncOptions } from "./useAsyncOptions";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
 
 const mockList = jest.fn() as jest.MockedFunction<OrganizationsApi["list"]>;
-const mockUseReactQueryRqlGrid = jest.fn();
 
 jest.mock("~organizations/api", () => ({
   useOrganizationsApi: () => ({ list: mockList }),
 }));
 
-jest.mock("~shared/hooks/useReactQueryRqlGrid", () => ({
-  useReactQueryRqlGrid: (...args: unknown[]) => mockUseReactQueryRqlGrid(...args),
-}));
+jest.mock("~shared/hooks/useReactQueryRqlGrid", () => mockReactQueryRqlGridModule);
 
 describe("useAsyncOptions (organizations list)", () => {
   it("initializes useReactQueryRqlGrid with the Organizations base query key", () => {

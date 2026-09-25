@@ -1,29 +1,23 @@
 import type { ComponentProps } from "react";
 
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import type { Control } from "react-hook-form";
 
-import type { Modal } from "~shared/components/modal/Modal";
+import { triggerModalCancel, triggerModalSubmit } from "~test-utils";
+import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { AddUserForm } from "./AddUserForm.Schema";
 import { CreateUserModal } from "./CreateUserModal";
 import type { useUserFormController } from "./hooks/useUserFormController";
 import type { UserFormFields } from "./UserFormFields";
 
-type MockModalProps = ComponentProps<typeof Modal>;
 type MockFormFieldsProps = ComponentProps<typeof UserFormFields>;
 type Controller = ReturnType<typeof useUserFormController>;
 
-const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
 const mockFormFields = jest.fn() as jest.MockedFunction<(props: MockFormFieldsProps) => void>;
 const mockUseUserFormController = jest.fn() as jest.MockedFunction<typeof useUserFormController>;
 
-jest.mock("~shared/components/modal/Modal", () => ({
-  Modal: (props: MockModalProps) => {
-    mockModal(props);
-    return <div data-testid="modal">{props.children}</div>;
-  },
-}));
+jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
 
 jest.mock("./UserFormFields", () => ({
   UserFormFields: (props: MockFormFieldsProps) => {
@@ -72,18 +66,16 @@ describe("CreateUserModal", () => {
     const controller = primeController();
 
     render(<CreateUserModal isOpen onClose={jest.fn()} organizationId="org-1" />);
-    act(() => mockModal.mock.lastCall![0].onCancel?.());
+    triggerModalCancel(mockModal);
 
     expect(controller.handleCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("wires Modal onSubmit to controller.submit", () => {
+  it("wires Modal onSubmit to controller.submit", async () => {
     const controller = primeController();
 
     render(<CreateUserModal isOpen onClose={jest.fn()} organizationId="org-1" />);
-    act(() => {
-      mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(controller.submit).toHaveBeenCalledTimes(1);
   });

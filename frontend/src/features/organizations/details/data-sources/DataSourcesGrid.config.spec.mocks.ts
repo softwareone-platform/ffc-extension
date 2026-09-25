@@ -1,6 +1,5 @@
 import type { useOrganizationsApi } from "~organizations/api";
 import type { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
-import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import type { useUserRole } from "~shared/hooks/useUserRole";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
@@ -10,10 +9,18 @@ import {
   mockGridCellDate,
   mockGridCellDynamicActions,
 } from "~test-utils/mocks/sharedGridCells";
+import {
+  mockGridInfoDialogConfigurationModule,
+  mockReactQueryRqlGridModule,
+} from "~test-utils/mocks/sharedGridHooks";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 
 export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
+export {
+  mockUseGridInfoDialogConfiguration,
+  mockUseReactQueryRqlGrid,
+} from "~test-utils/mocks/sharedGridHooks";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
 
@@ -23,11 +30,7 @@ export const mockUseOrganizationContext = jest.fn() as jest.MockedFunction<
 export const mockListOrganizationDataSources = jest.fn() as jest.MockedFunction<
   OrganizationsApi["listOrganizationDataSources"]
 >;
-export const mockUseReactQueryRqlGrid = jest.fn();
 export const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
-export const mockUseGridInfoDialogConfiguration = jest.fn() as jest.MockedFunction<
-  typeof useGridInfoDialogConfiguration
->;
 export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
@@ -47,17 +50,16 @@ jest.mock("~organizations/api", () => ({
   }),
 }));
 
-jest.mock("~shared/hooks/useReactQueryRqlGrid", () => ({
-  useReactQueryRqlGrid: (...args: unknown[]) => mockUseReactQueryRqlGrid(...args),
-}));
+jest.mock("~shared/hooks/useReactQueryRqlGrid", () => mockReactQueryRqlGridModule);
 
 jest.mock("~shared/hooks/useUserRole", () => ({
   useUserRole: () => mockUseUserRole(),
 }));
 
-jest.mock("~shared/hooks/useGridInfoDialogConfiguration", () => ({
-  useGridInfoDialogConfiguration: () => mockUseGridInfoDialogConfiguration(),
-}));
+jest.mock(
+  "~shared/hooks/useGridInfoDialogConfiguration",
+  () => mockGridInfoDialogConfigurationModule,
+);
 
 jest.mock("./hooks/useActionOptions", () => ({
   useActionOptions: () => mockGetActions,

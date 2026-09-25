@@ -1,41 +1,31 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
-import type { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
-import type { Modal } from "~shared/components/modal/Modal";
-import { makeOrganization } from "~test-utils";
+import { makeOrganization, triggerModalCancel, triggerModalSubmit } from "~test-utils";
+import {
+  mockInlineErrorNotification,
+  mockSharedInlineErrorNotification,
+} from "~test-utils/mocks/inlineErrorNotification";
+import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import { DeleteOrganizationModal } from "./DeleteOrganizationModal";
 import type { useDeleteOrganizationController } from "./hooks/useDeleteOrganizationController";
 
-type MockModalProps = ComponentProps<typeof Modal>;
-type MockInlineErrorProps = ComponentProps<typeof InlineErrorNotification>;
 type Controller = ReturnType<typeof useDeleteOrganizationController>;
 
-const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
-const mockInlineErrorNotification = jest.fn() as jest.MockedFunction<
-  (props: MockInlineErrorProps) => void
->;
 const mockUseDeleteController = jest.fn() as jest.MockedFunction<
   typeof useDeleteOrganizationController
 >;
 const mockFormatDate = jest.fn((v: unknown) => `date(${String(v)})`);
 const mockUseFormatDate = jest.fn(() => mockFormatDate);
 
-jest.mock("~shared/components/modal/Modal", () => ({
-  Modal: (props: MockModalProps) => {
-    mockModal(props);
-    return <div data-testid="modal">{props.children}</div>;
-  },
-}));
+jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
 
-jest.mock("~shared/components/error/InlineErrorNotification", () => ({
-  InlineErrorNotification: (props: MockInlineErrorProps) => {
-    mockInlineErrorNotification(props);
-    return <div data-testid="inline-error" />;
-  },
-}));
+jest.mock(
+  "~shared/components/error/InlineErrorNotification",
+  () => mockSharedInlineErrorNotification,
+);
 
 jest.mock("@swo/design-system/notification", () => ({
   InlineNotification: ({ children }: { children?: ReactNode }) => (
@@ -146,22 +136,18 @@ describe("DeleteOrganizationModal", () => {
         onSuccess={onSuccess}
       />,
     );
-    await act(async () => {
-      await mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(remove).toHaveBeenCalledWith(organization);
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when the organization is null", () => {
+  it("submit is a noop when the organization is null", async () => {
     const remove = jest.fn();
     primeController({ remove });
 
     render(<DeleteOrganizationModal isOpen onClose={jest.fn()} organization={null} />);
-    act(() => {
-      mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(remove).not.toHaveBeenCalled();
   });
@@ -172,7 +158,7 @@ describe("DeleteOrganizationModal", () => {
     render(
       <DeleteOrganizationModal isOpen onClose={jest.fn()} organization={makeOrganization()} />,
     );
-    act(() => mockModal.mock.lastCall![0].onCancel?.());
+    triggerModalCancel(mockModal);
 
     expect(controller.handleCancel).toHaveBeenCalledTimes(1);
   });

@@ -1,37 +1,25 @@
-import type { ComponentProps } from "react";
+import { render } from "@testing-library/react";
 
-import { act, render } from "@testing-library/react";
-
-import type { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
-import type { Modal } from "~shared/components/modal/Modal";
-import { makeEmployee } from "~test-utils";
+import { makeEmployee, triggerModalCancel, triggerModalSubmit } from "~test-utils";
+import {
+  mockInlineErrorNotification,
+  mockSharedInlineErrorNotification,
+} from "~test-utils/mocks/inlineErrorNotification";
+import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { useEmployeeController } from "../hooks/useEmployeeController";
 import { UserMakeAdminModal } from "./UserMakeAdminModal";
 
-type MockModalProps = ComponentProps<typeof Modal>;
-type MockInlineErrorProps = ComponentProps<typeof InlineErrorNotification>;
 type Controller = ReturnType<typeof useEmployeeController>;
 
-const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
-const mockInlineErrorNotification = jest.fn() as jest.MockedFunction<
-  (props: MockInlineErrorProps) => void
->;
 const mockUseEmployeeController = jest.fn() as jest.MockedFunction<typeof useEmployeeController>;
 
-jest.mock("~shared/components/modal/Modal", () => ({
-  Modal: (props: MockModalProps) => {
-    mockModal(props);
-    return <div data-testid="modal">{props.children}</div>;
-  },
-}));
+jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
 
-jest.mock("~shared/components/error/InlineErrorNotification", () => ({
-  InlineErrorNotification: (props: MockInlineErrorProps) => {
-    mockInlineErrorNotification(props);
-    return <div data-testid="inline-error" />;
-  },
-}));
+jest.mock(
+  "~shared/components/error/InlineErrorNotification",
+  () => mockSharedInlineErrorNotification,
+);
 
 jest.mock("../hooks/useEmployeeController", () => ({
   useEmployeeController: (...args: Parameters<typeof useEmployeeController>) =>
@@ -88,38 +76,32 @@ describe("UserMakeAdminModal", () => {
         onSuccess={onSuccess}
       />,
     );
-    await act(async () => {
-      await mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(makeAdmin).toHaveBeenCalledWith({ organizationId: "org-1", employee });
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when employee is null", () => {
+  it("submit is a noop when employee is null", async () => {
     const makeAdmin = jest.fn();
     primeController({ makeAdmin });
 
     render(
       <UserMakeAdminModal isOpen onClose={jest.fn()} employee={null} organizationId="org-1" />,
     );
-    act(() => {
-      mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(makeAdmin).not.toHaveBeenCalled();
   });
 
-  it("submit is a noop when organizationId is null", () => {
+  it("submit is a noop when organizationId is null", async () => {
     const makeAdmin = jest.fn();
     primeController({ makeAdmin });
 
     render(
       <UserMakeAdminModal isOpen onClose={jest.fn()} employee={employee} organizationId={null} />,
     );
-    act(() => {
-      mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(makeAdmin).not.toHaveBeenCalled();
   });
@@ -130,7 +112,7 @@ describe("UserMakeAdminModal", () => {
     render(
       <UserMakeAdminModal isOpen onClose={jest.fn()} employee={employee} organizationId="org-1" />,
     );
-    act(() => mockModal.mock.lastCall![0].onCancel?.());
+    triggerModalCancel(mockModal);
 
     expect(controller.cancel).toHaveBeenCalledTimes(1);
   });

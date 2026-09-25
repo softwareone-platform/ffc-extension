@@ -1,32 +1,22 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { render } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
-import type { ControlledInput } from "~shared/components/form/ControlledInput";
+import { mockControlledInput, mockSharedControlledInput } from "~test-utils/mocks/controlledInput";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
 import { DataSourceStep } from "./DataSourceStep";
 
-type MockControlledInputProps = ComponentProps<typeof ControlledInput>;
-
 const mockRegisterOnNextCallback = jest.fn();
-const mockControlledInput = jest.fn() as jest.MockedFunction<
-  (props: MockControlledInputProps) => void
->;
 
 jest.mock("@swo/design-system/wizard", () => ({
   useStepActions: () => ({ registerOnNextCallback: mockRegisterOnNextCallback }),
 }));
 
-jest.mock("~shared/components/form/ControlledInput", () => ({
-  ControlledInput: (props: MockControlledInputProps) => {
-    mockControlledInput(props);
-    return <input data-testid={`input-${props.name}`} />;
-  },
-}));
+jest.mock("~shared/components/form/ControlledInput", () => mockSharedControlledInput);
 
 jest.mock("~shared/components/wizard/WizardStep", () => ({
   WizardStep: ({ children }: { children?: ReactNode }) => (

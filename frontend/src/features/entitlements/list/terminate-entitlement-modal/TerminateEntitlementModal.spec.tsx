@@ -1,39 +1,27 @@
-import type { ComponentProps } from "react";
+import { render } from "@testing-library/react";
 
-import { act, render } from "@testing-library/react";
-
-import type { InlineErrorNotification } from "~shared/components/error/InlineErrorNotification";
-import type { Modal } from "~shared/components/modal/Modal";
-import { makeEntitlement } from "~test-utils";
+import { makeEntitlement, triggerModalCancel, triggerModalSubmit } from "~test-utils";
+import {
+  mockInlineErrorNotification,
+  mockSharedInlineErrorNotification,
+} from "~test-utils/mocks/inlineErrorNotification";
+import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { useEntitlementController } from "../hooks/useEntitlementsController";
 import { TerminateEntitlementModal } from "./TerminateEntitlementModal";
 
-type MockModalProps = ComponentProps<typeof Modal>;
-type MockInlineErrorProps = ComponentProps<typeof InlineErrorNotification>;
 type Controller = ReturnType<typeof useEntitlementController>;
 
-const mockModal = jest.fn() as jest.MockedFunction<(props: MockModalProps) => void>;
-const mockInlineErrorNotification = jest.fn() as jest.MockedFunction<
-  (props: MockInlineErrorProps) => void
->;
 const mockUseEntitlementController = jest.fn() as jest.MockedFunction<
   typeof useEntitlementController
 >;
 
-jest.mock("~shared/components/modal/Modal", () => ({
-  Modal: (props: MockModalProps) => {
-    mockModal(props);
-    return <div data-testid="modal">{props.children}</div>;
-  },
-}));
+jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
 
-jest.mock("~shared/components/error/InlineErrorNotification", () => ({
-  InlineErrorNotification: (props: MockInlineErrorProps) => {
-    mockInlineErrorNotification(props);
-    return <div data-testid="inline-error" />;
-  },
-}));
+jest.mock(
+  "~shared/components/error/InlineErrorNotification",
+  () => mockSharedInlineErrorNotification,
+);
 
 jest.mock("../hooks/useEntitlementsController", () => ({
   useEntitlementController: (...args: Parameters<typeof useEntitlementController>) =>
@@ -95,22 +83,18 @@ describe("TerminateEntitlementModal", () => {
         onSuccess={onSuccess}
       />,
     );
-    await act(async () => {
-      await mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(terminate).toHaveBeenCalledWith(entitlement);
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when entitlement is null", () => {
+  it("submit is a noop when entitlement is null", async () => {
     const terminate = jest.fn();
     primeController({ terminate });
 
     render(<TerminateEntitlementModal isOpen onClose={jest.fn()} entitlement={null} />);
-    act(() => {
-      mockModal.mock.lastCall![0].onSubmit();
-    });
+    await triggerModalSubmit(mockModal);
 
     expect(terminate).not.toHaveBeenCalled();
   });
@@ -119,7 +103,7 @@ describe("TerminateEntitlementModal", () => {
     const controller = primeController();
 
     render(<TerminateEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);
-    act(() => mockModal.mock.lastCall![0].onCancel?.());
+    triggerModalCancel(mockModal);
 
     expect(controller.cancel).toHaveBeenCalledTimes(1);
   });
