@@ -1,19 +1,17 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useForm, useWatch } from "react-hook-form";
 
+import type { Input } from "@swo/design-system/input";
+
 import { ControlledInput } from "./ControlledInput";
 
-type MockInputProps = {
-  name?: string;
-  value?: string;
-  variant?: string;
-  errorMessage?: string;
-  onChange?: (value: string) => void;
-  placeholder?: string;
-};
+type MockInputProps = Pick<
+  ComponentProps<typeof Input>,
+  "name" | "value" | "variant" | "errorMessage" | "onChange" | "placeholder"
+>;
 
 type FormValues = {
   name?: string;
@@ -32,7 +30,7 @@ jest.mock("@swo/design-system/input", () => ({
           name={name}
           value={value}
           placeholder={placeholder}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => onChange?.(event.target.value)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onChange?.(event)}
         />
         <div data-testid="variant">{variant ?? ""}</div>
         <div data-testid="current-value">{value}</div>

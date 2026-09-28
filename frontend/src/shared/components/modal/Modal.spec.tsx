@@ -1,43 +1,17 @@
-import type { MouseEventHandler, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import { mockButton, mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
+
 import { Modal } from "./Modal";
+import { ModalCancelButton } from "./ModalCancelButton";
 
-type DSModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
-  width?: number | string;
-  closeOnEsc?: boolean;
-  isToCloseOnClickOutside?: boolean;
-  isFullScreen?: boolean;
-  isToShowCloseButton?: boolean;
-  isToHidePadding?: boolean;
-  isToShowWarningModal?: boolean;
-  testId?: string;
-  className?: string;
-  actions?: ReactNode;
-  children?: ReactNode;
-};
-
-type ButtonProps = {
-  children?: ReactNode;
-  onClick?: MouseEventHandler<HTMLButtonElement> | (() => void);
-  isDisabled?: boolean;
-  isBusy?: boolean;
-  color?: string;
-  type?: string;
-};
-
-type CancelButtonProps = {
-  onClick: () => void;
-  isDisabled?: boolean;
-};
+type DSModalProps = ComponentProps<typeof import("@swo/design-system/modal").Modal>;
+type CancelButtonProps = ComponentProps<typeof ModalCancelButton>;
 
 const mockDSModal = jest.fn() as jest.MockedFunction<(props: DSModalProps) => void>;
-const mockButton = jest.fn() as jest.MockedFunction<(props: ButtonProps) => void>;
 const mockModalCancelButton = jest.fn() as jest.MockedFunction<(props: CancelButtonProps) => void>;
 
 jest.mock("@swo/design-system/modal", () => ({
@@ -52,24 +26,7 @@ jest.mock("@swo/design-system/modal", () => ({
   },
 }));
 
-jest.mock("@swo/design-system/button", () => ({
-  Button: ({ children, onClick, isDisabled, isBusy, color, type }: ButtonProps) => {
-    mockButton({ children, onClick, isDisabled, isBusy, color, type });
-    return (
-      <button
-        data-testid="submit-button"
-        onClick={onClick as MouseEventHandler<HTMLButtonElement> | undefined}
-        disabled={isDisabled}
-        data-busy={String(Boolean(isBusy))}
-        data-color={color}
-        data-type={type}
-      >
-        {children}
-      </button>
-    );
-  },
-  ButtonColor: {},
-}));
+jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
 
 jest.mock("./ModalCancelButton", () => ({
   ModalCancelButton: ({ onClick, isDisabled }: CancelButtonProps) => {
@@ -172,7 +129,7 @@ describe("Modal", () => {
     );
 
     await user.click(screen.getByTestId("cancel-button"));
-    await user.click(screen.getByTestId("submit-button"));
+    await user.click(screen.getByRole("button", { name: "save" }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -201,11 +158,11 @@ describe("Modal", () => {
 
     expect(mockModalCancelButton).toHaveBeenCalledWith({ onClick: onCancel, isDisabled: true });
     expect(screen.getByTestId("cancel-button")).toBeDisabled();
-    expect(screen.getByTestId("submit-button")).toBeDisabled();
-    expect(screen.getByTestId("submit-button")).toHaveAttribute("data-busy", "true");
-    expect(screen.getByTestId("submit-button")).toHaveAttribute("data-color", "danger");
+    expect(screen.getByRole("button", { name: "save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "save" })).toHaveAttribute("data-busy", "true");
+    expect(screen.getByRole("button", { name: "save" })).toHaveAttribute("data-color", "danger");
 
-    await user.click(screen.getByTestId("submit-button"));
+    await user.click(screen.getByRole("button", { name: "save" }));
 
     expect(onCancel).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();

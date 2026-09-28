@@ -48,7 +48,7 @@ describe("EntitlementsGrid", () => {
   it("opens the create-entitlement wizard when the add button is clicked", async () => {
     render(<EntitlementsGrid />);
 
-    await userEvent.click(screen.getByTestId("add-entitlement-button"));
+    await userEvent.click(screen.getByRole("button", { name: "add" }));
 
     expect(mockCreateWizard.mock.lastCall![0]).toMatchObject({ isOpen: true });
   });

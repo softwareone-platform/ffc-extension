@@ -1,29 +1,28 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
 import type { AddWizardForm } from "~entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
+import type { Status } from "~shared/components/entity-status-chip";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 import { EntityProps } from "./EntityProperties";
 
-type EntityReferenceProps = {
-  primaryContent?: ReactNode;
-  secondaryContent?: ReactNode;
-  isPrimaryContentBold?: boolean;
-  icon?: ReactNode;
-};
+type EntityReferenceProps = ComponentProps<
+  typeof import("@swo/design-system/entity-reference").EntityReference
+>;
+type StatusProps = ComponentProps<typeof Status<{ status: string }>>;
 
 const mockEntityReference = jest.fn() as jest.MockedFunction<(props: EntityReferenceProps) => void>;
-const mockStatus = jest.fn() as jest.MockedFunction<(props: { item: { status: string } }) => void>;
+const mockStatus = jest.fn() as jest.MockedFunction<(props: StatusProps) => void>;
 
 jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 jest.mock("./custom-icons/CustomIcon", () => mockCustomIcon);
 jest.mock("./entity-status-chip", () => ({
-  Status: ({ item }: { item: { status: string } }) => {
+  Status: ({ item }: StatusProps) => {
     mockStatus({ item });
     return <span data-testid="status">{item.status}</span>;
   },

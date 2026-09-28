@@ -4,6 +4,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { makeEmployee } from "~test-utils";
+import { mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 
 import type { useIsUserAddAllowed } from "./hooks/useIsAddUserAllowed";
@@ -37,21 +38,7 @@ jest.mock("@swo/design-system/grid", () => ({
   ),
 }));
 
-jest.mock("@swo/design-system/button", () => ({
-  Button: ({
-    children,
-    onClick,
-    testId,
-  }: {
-    children?: ReactNode;
-    onClick?: () => void;
-    testId?: string;
-  }) => (
-    <button data-testid={testId} onClick={onClick} type="button">
-      {children}
-    </button>
-  ),
-}));
+jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
 
 jest.mock("./UsersGrid.config", () => ({
   useGridConfig: (...args: Parameters<typeof useGridConfig>) => mockUseGridConfig(...args),

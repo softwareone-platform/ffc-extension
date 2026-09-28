@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 
 import type { OrganizationRead } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~features/organizations/api/useOrganizationDetailsApi";
-import { renderWithRouter } from "~test-utils";
+import { renderWithOrganizationRoute } from "~test-utils";
 
 import { OrganizationEventsDetails } from "./Events";
 
@@ -34,10 +34,7 @@ describe("OrganizationEventsDetails", () => {
   it("queries organization details using the organizationId route param", () => {
     primeEntity(undefined);
 
-    renderWithRouter(<OrganizationEventsDetails />, {
-      initialUrl: "/organizations/org-1",
-      routePath: "/organizations/:organizationId",
-    });
+    renderWithOrganizationRoute(<OrganizationEventsDetails />);
 
     expect(mockUseOrganizationDetailsApi).toHaveBeenCalledWith("org-1");
   });
@@ -45,10 +42,7 @@ describe("OrganizationEventsDetails", () => {
   it("renders EntityEvents with the loaded entity", () => {
     primeEntity({ id: "org-1", name: "Acme" });
 
-    renderWithRouter(<OrganizationEventsDetails />, {
-      initialUrl: "/organizations/org-1",
-      routePath: "/organizations/:organizationId",
-    });
+    renderWithOrganizationRoute(<OrganizationEventsDetails />);
 
     expect(screen.getByTestId("entity-events")).toHaveTextContent("org-1");
   });
@@ -56,10 +50,7 @@ describe("OrganizationEventsDetails", () => {
   it("renders nothing until the entity is loaded", () => {
     primeEntity(undefined);
 
-    renderWithRouter(<OrganizationEventsDetails />, {
-      initialUrl: "/organizations/org-1",
-      routePath: "/organizations/:organizationId",
-    });
+    renderWithOrganizationRoute(<OrganizationEventsDetails />);
 
     expect(screen.queryByTestId("entity-events")).not.toBeInTheDocument();
   });

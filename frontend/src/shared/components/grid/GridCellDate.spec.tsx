@@ -1,22 +1,17 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
+import type { GridCellTitleSubtitle } from "@swo/design-system/grid";
+import type { DisplayValue } from "@swo/design-system/utils";
 import { useFormatDate } from "@swo/design-system/utils";
 
 import { useFormatTime } from "~shared/hooks/useFormatTime";
 
 import { GridCellDate } from "./GridCellDate";
 
-type TitleSubtitleProps = {
-  title: ReactNode;
-  subtitle: ReactNode;
-};
-
-type DisplayValueProps = {
-  value?: Date | string | null;
-  transform?: (value: Date | string | null | undefined) => ReactNode;
-};
+type TitleSubtitleProps = Pick<ComponentProps<typeof GridCellTitleSubtitle>, "title" | "subtitle">;
+type DisplayValueProps = Pick<ComponentProps<typeof DisplayValue>, "value" | "transform">;
 
 const mockGridCellTitleSubtitle = jest.fn() as jest.MockedFunction<
   (props: TitleSubtitleProps) => void

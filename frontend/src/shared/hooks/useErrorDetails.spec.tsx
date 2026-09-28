@@ -1,6 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { AxiosError } from "axios";
 
+import { mockFixedT } from "~test-utils/mocks/fixedT";
+
 import { useErrorDetails } from "./useErrorDetails";
 import { useFixedT } from "./useFixedT";
 
@@ -10,10 +12,11 @@ jest.mock("./useFixedT", () => ({
 
 describe("useErrorDetails", () => {
   beforeEach(() => {
-    jest.mocked(useFixedT).mockReturnValue(((key: string, params?: { code?: string | number }) => {
+    mockFixedT(jest.mocked(useFixedT), (key, params) => {
       const code = params?.code;
+
       return code ? `failed:${key}:${code}` : `failed:${key}`;
-    }) as unknown as ReturnType<typeof useFixedT>);
+    });
   });
 
   it("returns the translated status code when the response body is missing", () => {

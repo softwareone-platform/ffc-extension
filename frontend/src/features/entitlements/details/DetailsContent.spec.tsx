@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { screen } from "@testing-library/react";
 
-import { renderWithRouter } from "~test-utils";
+import { renderWithEntitlementRoute, renderWithRouter } from "~test-utils";
 
 import { EntitlementDetailsContent } from "./DetailsContent";
 
@@ -35,8 +35,7 @@ jest.mock("@swo/design-system/navigation", () => ({
 
 describe("EntitlementDetailsContent", () => {
   it("renders EntitlementHighlights with the entitlementId when the param is present", () => {
-    renderWithRouter(<EntitlementDetailsContent />, {
-      initialUrl: "/entitlements/ent-1",
+    renderWithEntitlementRoute(<EntitlementDetailsContent />, {
       routePath: "/entitlements/:entitlementId/*",
     });
 
@@ -54,8 +53,7 @@ describe("EntitlementDetailsContent", () => {
   });
 
   it("renders the top bar with items for general and events in fixed order", () => {
-    renderWithRouter(<EntitlementDetailsContent />, {
-      initialUrl: "/entitlements/ent-1",
+    renderWithEntitlementRoute(<EntitlementDetailsContent />, {
       routePath: "/entitlements/:entitlementId/*",
     });
 

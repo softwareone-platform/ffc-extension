@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 
 import type { OrganizationRead } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~organizations/api";
-import { renderWithRouter } from "~test-utils";
+import { renderWithOrganizationRoute } from "~test-utils";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
@@ -29,18 +29,11 @@ function primeEntity(entity: Partial<OrganizationRead> | undefined) {
   mockUseOrganizationDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);
 }
 
-function renderGeneral(url = "/organizations/org-1") {
-  return renderWithRouter(<OrganizationGeneralDetails />, {
-    initialUrl: url,
-    routePath: "/organizations/:organizationId",
-  });
-}
-
 describe("OrganizationGeneralDetails", () => {
   it("queries organization details using the organizationId route param", () => {
     primeEntity(undefined);
 
-    renderGeneral();
+    renderWithOrganizationRoute(<OrganizationGeneralDetails />);
 
     expect(mockUseOrganizationDetailsApi).toHaveBeenCalledWith("org-1");
   });
@@ -48,7 +41,7 @@ describe("OrganizationGeneralDetails", () => {
   it("renders four highlight items in fixed order", () => {
     primeEntity({ id: "org-1" });
 
-    renderGeneral();
+    renderWithOrganizationRoute(<OrganizationGeneralDetails />);
 
     const titles = screen.getAllByTestId("highlight-title").map((el) => el.textContent);
     expect(titles).toEqual([
@@ -68,7 +61,7 @@ describe("OrganizationGeneralDetails", () => {
       billing_currency: "EUR",
     });
 
-    renderGeneral();
+    renderWithOrganizationRoute(<OrganizationGeneralDetails />);
 
     const items = screen.getAllByTestId("highlight-item");
     const values = items.map((item) => within(item).getByTestId("highlight-value").textContent);

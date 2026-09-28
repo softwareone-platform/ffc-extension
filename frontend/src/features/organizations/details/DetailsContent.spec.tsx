@@ -4,12 +4,14 @@ import { screen } from "@testing-library/react";
 
 import type { OrganizationRead } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~organizations/api";
-import { renderWithRouter } from "~test-utils";
+import type { OrganizationHighlights } from "~organizations/components/OrganizationHighlights";
+import type { OrganizationsProvider } from "~organizations/providers/OrganizationsProvider";
+import { renderWithOrganizationRoute, renderWithRouter } from "~test-utils";
 
 import { OrganizationDetailsContent } from "./DetailsContent";
 
 type ApiResult = ReturnType<typeof useOrganizationDetailsApi>;
-type MockOrganizationHighlightsProps = { organizationId: string };
+type MockOrganizationHighlightsProps = ComponentProps<typeof OrganizationHighlights>;
 type MockNavigationTopBarProps = ComponentProps<
   typeof import("@swo/design-system/navigation").Navigation.TopBar
 >;
@@ -22,7 +24,7 @@ const mockOrganizationHighlights = jest.fn() as jest.MockedFunction<
 >;
 const mockTopBar = jest.fn() as jest.MockedFunction<(props: MockNavigationTopBarProps) => void>;
 const mockOrganizationsProvider = jest.fn() as jest.MockedFunction<
-  (props: { organization: OrganizationRead; children: ReactNode }) => void
+  (props: ComponentProps<typeof OrganizationsProvider>) => void
 >;
 
 jest.mock("~organizations/api", () => ({
@@ -37,7 +39,7 @@ jest.mock("../components/OrganizationHighlights", () => ({
 }));
 
 jest.mock("../providers/OrganizationsProvider", () => ({
-  OrganizationsProvider: (props: { organization: OrganizationRead; children: ReactNode }) => {
+  OrganizationsProvider: (props: ComponentProps<typeof OrganizationsProvider>) => {
     mockOrganizationsProvider(props);
     return <div data-testid="organizations-provider">{props.children}</div>;
   },
@@ -64,8 +66,7 @@ describe("OrganizationDetailsContent", () => {
   it("queries organization details using the organizationId route param", () => {
     primeEntity({ id: "org-1" });
 
-    renderWithRouter(<OrganizationDetailsContent />, {
-      initialUrl: "/organizations/org-1",
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
       routePath: "/organizations/:organizationId/*",
     });
 
@@ -75,8 +76,7 @@ describe("OrganizationDetailsContent", () => {
   it("renders OrganizationHighlights with the organizationId when the param is present", () => {
     primeEntity({ id: "org-1" });
 
-    renderWithRouter(<OrganizationDetailsContent />, {
-      initialUrl: "/organizations/org-1",
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
       routePath: "/organizations/:organizationId/*",
     });
 
@@ -98,8 +98,7 @@ describe("OrganizationDetailsContent", () => {
   it("renders the top bar with items for general, dataSources, users, and events in order", () => {
     primeEntity({ id: "org-1" });
 
-    renderWithRouter(<OrganizationDetailsContent />, {
-      initialUrl: "/organizations/org-1",
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
       routePath: "/organizations/:organizationId/*",
     });
 
@@ -111,8 +110,7 @@ describe("OrganizationDetailsContent", () => {
     const entity = { id: "org-1", name: "Acme" } as OrganizationRead;
     primeEntity(entity);
 
-    renderWithRouter(<OrganizationDetailsContent />, {
-      initialUrl: "/organizations/org-1",
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
       routePath: "/organizations/:organizationId/*",
     });
 

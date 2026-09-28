@@ -14,6 +14,9 @@ Key runtime facts: `clearMocks: true` (no manual resets needed), `testTimeout: 1
 ### File extension
 Always `.spec.tsx` (or `.spec.ts` for utilities without JSX). Never `.test.tsx`.
 
+### Coverage floor
+Unit-test coverage must always stay above **85%**. If a change drops coverage below that threshold, add meaningful tests or remove low-value assertions before finishing. Prefer behaviour-finding tests over shallow change-detectors when raising coverage.
+
 ### Design system: mock the FULL import path
 Source imports from `@swo/design-system/[component]`. Mock **that exact path** — `@swo/[component]` (the shortened form from `mpt-vikings-ui`) does not match anything and the mock silently no-ops.
 
@@ -76,6 +79,8 @@ Global stubs also in `jest.setup.js`: `TextEncoder` / `TextDecoder` (needed at `
 ### `npm test` runs jest + tsc + prettier + eslint in parallel
 SWC skips type-checking, so typed-spy drift only surfaces at the tsc step. `npm test` runs all four via `npm-run-all --parallel --continue-on-error` so every failure class shows on one run.
 
+Run coverage when your change touches branching logic, route composition, or shared test infrastructure. Treat `<85%` as a failed outcome even if the Jest run itself passes.
+
 ### Spec-scoped ESLint
 `eslint.config.mjs` enables `eslint-plugin-jest` / `-testing-library` / `-jest-dom` on spec globs. Two consequences worth internalising:
 
@@ -98,6 +103,21 @@ renderWithRouter(componentUnderTest, {
 });
 ```
 
+**Entity detail route helpers:**
+```text
+renderWithEntitlementRoute(componentUnderTest, {
+  id: "ent-123",
+  routePath: "/entitlements/:entitlementId/*",
+});
+
+renderWithOrganizationRoute(componentUnderTest, {
+  id: "org-123",
+  routePath: "/organizations/:organizationId/*",
+});
+```
+
+Use these helpers for entitlement/organization detail shells and leaf routes instead of repeating IDs and route strings inline.
+
 **React Query:**
 ```text
 const wrapper = createQueryClientWrapper(); // uses { queries: { retry: false } }
@@ -108,7 +128,7 @@ const { result } = renderHook(() => useMyHook(), { wrapper });
 
 `frontend/src/test-utils/` (exported via `~test-utils`):
 
-- `renderWithRouter`, `createQueryClientWrapper` — provider wrappers
+- `renderWithRouter`, `renderWithEntitlementRoute`, `renderWithOrganizationRoute`, `createQueryClientWrapper` — provider wrappers
 - `renderCell(column, item)` — invoke a Grid column's `cell` function safely (`Pick<GridColumnDefinition<T>, "cell" | "name">`)
 - `columnByName(columns, name)` — column lookup
 - `triggerModalSubmit(mockModal)` / `triggerModalCancel(mockModal)` — invoke captured Modal callbacks inside `act(...)` (see Modals below)
@@ -122,7 +142,31 @@ import { mockDesignSystemGrid, mockGridProps, mockUseGridAsync } from "~test-uti
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 ```
 
-Current inventory (browse `src/test-utils/mocks/` for exact shapes): `controlledInput`, `designSystemGrid`, `designSystemText`, `entityReferenceCell`, `errorDetails`, `inPageHighlight`, `inlineErrorNotification`, `modal`, `sharedGridCells`, `sharedGridHooks`, `userRole`, `wizardStep`.
+Current inventory (browse `src/test-utils/mocks/` for exact shapes): `controlledInput`, `designSystemButton`, `designSystemGrid`, `designSystemText`, `entityReferenceCell`, `errorDetails`, `fixedT`, `inPageHighlight`, `inlineErrorNotification`, `modal`, `sharedGridCells`, `sharedGridHooks`, `userRole`, `wizardStep`.
+
+### `useFixedT` mocking
+`~shared/hooks/useFixedT` is globally mocked to an identity translator in `jest.setup.js`. When a spec needs deterministic translated output, prefer the shared helper from `~test-utils/mocks/fixedT` instead of hand-writing local translation factories.
+
+```text
+import { mockFixedT } from "~test-utils/mocks/fixedT";
+import { useFixedT } from "~shared/hooks/useFixedT";
+
+mockFixedT(jest.mocked(useFixedT));
+mockFixedT(jest.mocked(useFixedT), (key, params) => `${key}:${params?.code}`);
+```
+
+If the code under test imports `./useFixedT` relatively rather than through `~shared/...`, locally mock that module to `jest.fn()` first, then drive it with `mockFixedT(...)`.
+
+### Shared Button mock
+Prefer `~test-utils/mocks/designSystemButton` for `@swo/design-system/button` instead of hand-writing a `<button>` factory in each spec.
+
+```text
+import { mockButton, mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
+
+jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
+```
+
+Assert only behaviourally relevant props (`children`, `type`, `color`, `isDisabled`, `isBusy`, click wiring) and interact through the rendered `<button>` where possible.
 
 ### Type shared mocks from source
 When a shared mock or utility mirrors an app component/hook, prefer the source-exported types over handwritten prop shapes.
@@ -211,6 +255,7 @@ Symptoms of a silent override: highlight-value spans render empty; `NO_VALUE` fa
 ### Actions
 - Mock API hooks, entity hooks, and `useConfirm` from `@swo/design-system/modal`
 - `userEvent.click()` for interactions; `await waitFor(...)` for async assertions
+- When multiple tests in a file repeat the same `const user = userEvent.setup()` arrange step, extract a tiny local helper or shared test util instead of duplicating the setup ceremony.
 
 ### Modals (callback capture)
 Mock the shared `Modal` with a capture spy, drive its callbacks:
@@ -245,6 +290,7 @@ Rejection path: `mutateAsync` **re-throws** even though `onError` handles it. Wr
 - **Barrel files** — TS enforces the surface.
 - **Type-only modules** — no runtime behaviour.
 - **Path constant literals** (`PARAMS.entitlementId === "entitlementId"`) — assertion repeats the source string. Keep URL *builder* tests.
+- **Exhaustive router smoke coverage** that only proves static React Router wiring — keep tests for meaningful behaviour (`RouteGuard` wiring, default redirects, route-param extraction, component-owned branching), not one assertion per path string.
 
 Rule of thumb: *would a plausible bug in this file survive a passing test?* If the only failure mode is "the source string changed", it's a change-detector — delete it.
 
@@ -252,7 +298,7 @@ Rule of thumb: *would a plausible bug in this file survive a passing test?* If t
 
 **Test:** the code's own branching (`null`, role, feature flag); error paths it owns; non-trivial memoization boundaries; callback wiring.
 
-**Don't test:** empty-list rendering when Grid is mocked (mock HTML is identical); translation keys (`useFixedT` is identity-mocked); third-party internals; every forwarded prop.
+**Don't test:** empty-list rendering when Grid is mocked (mock HTML is identical); translation keys (`useFixedT` is identity-mocked); third-party internals; every forwarded prop; duplicated route-path smoke assertions that only restate static config.
 
 **Null / missing input coverage:** for any input that can be `null`/`undefined` at runtime, add one test with the missing value (nullable relations in column cells, context hooks that can return `undefined`, absent route params).
 
@@ -282,6 +328,8 @@ Rule of thumb: **subject → verb → observable outcome**.
 - Re-export identity checks — TS's job
 - "Not called by default" assertions where the trigger isn't wired in the test — mirrors source shape without proving anything
 - Duplicated modal-wiring tests exercising the same code path from two angles
+- Inline snapshots for simple structure / attributes when targeted assertions on role, text, classes, props, or SVG attributes would be clearer
+- Duplicate router smoke tests where one case already proves the redirect or child-route selection behaviour
 - JSDoc above `it("…")` — `it("…")` is the docstring
 
 ## Canonical spec file layout

@@ -1,16 +1,15 @@
-import type { PropsWithChildren, ReactNode } from "react";
+import type { ComponentProps, PropsWithChildren } from "react";
 
 import { render, screen } from "@testing-library/react";
+
+import type { GridCellTitleSubtitle } from "@swo/design-system/grid";
 
 import { useFormatMoney } from "~shared/utils/NumberUtils";
 import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 
 import { GridCellCurrency } from "./GridCellCurrency";
 
-type TitleSubtitleProps = {
-  title: ReactNode;
-  subtitle: ReactNode;
-};
+type TitleSubtitleProps = Pick<ComponentProps<typeof GridCellTitleSubtitle>, "title" | "subtitle">;
 
 const mockUseFormatMoney = jest.mocked(useFormatMoney);
 const mockGridCellTitleSubtitle = jest.fn() as jest.MockedFunction<

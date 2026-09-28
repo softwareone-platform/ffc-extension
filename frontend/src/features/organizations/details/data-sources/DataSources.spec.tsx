@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 
 import { screen } from "@testing-library/react";
 
-import { renderWithRouter } from "~test-utils";
+import { renderWithOrganizationRoute, renderWithRouter } from "~test-utils";
 
 import { OrganizationDataSources } from "./DataSources";
 import { DataSourcesGrid } from "./DataSourcesGrid";
@@ -15,10 +15,7 @@ jest.mock("./DataSourcesGrid", () => ({
 
 describe("OrganizationDataSources route component", () => {
   it("renders DataSourcesGrid with organizationId from route params", () => {
-    renderWithRouter(<OrganizationDataSources />, {
-      initialUrl: "/organizations/org-123",
-      routePath: "/organizations/:organizationId",
-    });
+    renderWithOrganizationRoute(<OrganizationDataSources />, { id: "org-123" });
 
     expect(screen.getByTestId("data-sources-grid")).toHaveTextContent("org-123");
   });

@@ -1,17 +1,16 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { render, screen } from "@testing-library/react";
 
+import type { PageShellNavItem } from "./PageShell";
 import { PageShell } from "./PageShell";
 
-type HeaderBarProps = {
-  title?: ReactNode;
-  subtitle?: ReactNode;
-  backUrl?: string;
-  avatar?: unknown;
-  items?: Array<{ path: string; label: string }>;
-  children?: ReactNode;
-};
+type HeaderBarProps = ComponentProps<
+  typeof import("@swo/design-system/navigation").Navigation.HeaderBar
+>;
+type HeaderBarActionsProps = ComponentProps<
+  typeof import("@swo/design-system/navigation").Navigation.HeaderBar.Actions
+>;
 
 const mockNavigation = jest.fn() as jest.MockedFunction<(props: { children?: ReactNode }) => void>;
 const mockHeaderBar = jest.fn() as jest.MockedFunction<(props: HeaderBarProps) => void>;
@@ -26,16 +25,18 @@ jest.mock("@swo/design-system/navigation", () => {
     return <div data-testid="navigation">{children}</div>;
   };
 
-  const HeaderBar = ({ children, ...props }: HeaderBarProps) => {
-    mockHeaderBar({ ...props, children });
-    return <div data-testid="header-bar">{children}</div>;
-  };
-
-  HeaderBar.Actions = ({ children }: { children?: ReactNode }) => {
-    mockHeaderBarActions({ children });
-    return <div data-testid="header-bar-actions">{children}</div>;
-  };
-  Navigation.HeaderBar = HeaderBar as typeof Navigation.HeaderBar;
+  Navigation.HeaderBar = Object.assign(
+    ({ children, ...props }: HeaderBarProps) => {
+      mockHeaderBar({ ...props, children });
+      return <div data-testid="header-bar">{children}</div>;
+    },
+    {
+      Actions: ({ children }: HeaderBarActionsProps) => {
+        mockHeaderBarActions({ children });
+        return <div data-testid="header-bar-actions">{children}</div>;
+      },
+    },
+  ) as typeof import("@swo/design-system/navigation").Navigation.HeaderBar;
 
   Navigation.Content = ({ children }: { children?: ReactNode }) => {
     mockContent({ children });
@@ -86,7 +87,7 @@ describe("PageShell", () => {
   });
 
   it("renders items-mode headers without actions when none are provided", () => {
-    const items = [{ path: "/general", label: "General" }];
+    const items: PageShellNavItem[] = [{ path: "/general", label: "General" }];
 
     render(<PageShell.Header items={items} />);
 

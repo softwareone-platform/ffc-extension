@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
@@ -8,11 +8,9 @@ import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlig
 
 import { EntityEvents } from "./EntityEvents";
 
-type EntityReferenceProps = {
-  primaryContent?: ReactNode;
-  secondaryContent?: ReactNode;
-  isPrimaryContentBold?: boolean;
-};
+type EntityReferenceProps = ComponentProps<
+  typeof import("@swo/design-system/entity-reference").EntityReference
+>;
 
 const mockEntityReference = jest.fn() as jest.MockedFunction<(props: EntityReferenceProps) => void>;
 

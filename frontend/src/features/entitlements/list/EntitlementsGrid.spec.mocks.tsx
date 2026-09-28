@@ -1,10 +1,11 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
+import { mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 
 import type { CreateEntitlementWizard } from "../create-entitlement-wizard/CreateEntitlementWizard";
-import type { useGridConfig } from "./EntitlementsGrid.config";
 import type { DeleteEntitlementModal } from "./delete-entitlement-modal/DeleteEntitlementModal";
+import type { useGridConfig } from "./EntitlementsGrid.config";
 import type { TerminateEntitlementModal } from "./terminate-entitlement-modal/TerminateEntitlementModal";
 
 export type MockCreateWizardProps = ComponentProps<typeof CreateEntitlementWizard>;
@@ -23,29 +24,22 @@ export const mockDeleteModal = jest.fn() as jest.MockedFunction<
 >;
 export const mockUseNotifyParentChildModal = jest.fn();
 
+type GridProps = ComponentProps<typeof import("@swo/design-system/grid").Grid>;
+type GridActionsProps = ComponentProps<typeof import("@swo/design-system/grid").Grid.Actions>;
+type CardProps = ComponentProps<typeof import("@swo/design-system/card").Card>;
+
 jest.mock("@swo/design-system/grid", () => ({
   ...mockDesignSystemGrid,
-  Grid: Object.assign(
-    ({ children }: { children?: ReactNode }) => <div data-testid="grid">{children}</div>,
-    {
-      Actions: ({ children }: { children?: ReactNode }) => (
-        <div data-testid="grid-actions">{children}</div>
-      ),
-    },
-  ),
+  Grid: Object.assign(({ children }: GridProps) => <div data-testid="grid">{children}</div>, {
+    Actions: ({ children }: GridActionsProps) => <div data-testid="grid-actions">{children}</div>,
+  }),
 }));
 
 jest.mock("@swo/design-system/card", () => ({
-  Card: ({ children }: { children?: ReactNode }) => <div data-testid="card">{children}</div>,
+  Card: ({ children }: CardProps) => <div data-testid="card">{children}</div>,
 }));
 
-jest.mock("@swo/design-system/button", () => ({
-  Button: ({ children, onClick }: { children?: ReactNode; onClick?: () => void }) => (
-    <button data-testid="add-entitlement-button" onClick={onClick} type="button">
-      {children}
-    </button>
-  ),
-}));
+jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
 
 jest.mock("./EntitlementsGrid.config", () => ({
   useGridConfig: (...args: Parameters<typeof useGridConfig>) => mockUseGridConfig(...args),
@@ -75,4 +69,3 @@ jest.mock("./delete-entitlement-modal/DeleteEntitlementModal", () => ({
 jest.mock("~shared/hooks/useNotifyParentChildModal", () => ({
   useNotifyParentChildModal: (open: boolean) => mockUseNotifyParentChildModal(open),
 }));
-

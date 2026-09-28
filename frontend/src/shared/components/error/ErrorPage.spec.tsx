@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
 
+import { mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
+
+import { ErrorPage } from "./ErrorPage";
+
 const mockNavigate = jest.fn();
 
 jest.mock("react-router-dom", () => {
@@ -20,11 +24,7 @@ jest.mock("@swo/design-system/icon", () => ({
   Icon: ({ name }: { name: string }) => <div data-testid="icon">{name}</div>,
 }));
 
-jest.mock("@swo/design-system/button", () => ({
-  Button: ({ children }: { children?: ReactNode }) => <button type="button">{children}</button>,
-}));
-
-import { ErrorPage } from "./ErrorPage";
+jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
 
 describe("ErrorPage", () => {
   beforeEach(() => {
@@ -40,7 +40,9 @@ describe("ErrorPage", () => {
     expect(screen.getByText("Try again")).toBeInTheDocument();
     expect(screen.getByText("Details")).toBeInTheDocument();
     expect(screen.getByTestId("icon")).toHaveTextContent("release_alert");
-    expect(screen.getByRole("button", { name: "error-handler:errorPageCard:home" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "error-handler:errorPageCard:home" }),
+    ).toBeInTheDocument();
   });
 
   it("navigates home when the home action is clicked", () => {
@@ -51,4 +53,3 @@ describe("ErrorPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 });
-

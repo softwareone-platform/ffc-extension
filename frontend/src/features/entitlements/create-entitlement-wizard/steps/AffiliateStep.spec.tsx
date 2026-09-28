@@ -1,15 +1,19 @@
+import type { ComponentProps } from "react";
+
 import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
-import type { Account } from "~features/entitlements/api/model";
+import type { SelectAffiliateList } from "~shared/components/SelectAffiliateList";
 import { makeAccount } from "~test-utils";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
-import { renderWizardStep } from "./wizardStepTestUtils";
 import { AffiliateStep } from "./AffiliateStep";
+import { renderWizardStep } from "./wizardStepTestUtils";
 
 const mockRegisterOnNextCallback = jest.fn();
+type MockSelectAffiliateListProps = ComponentProps<typeof SelectAffiliateList>;
+
 const mockSelectAffiliateList = jest.fn() as jest.MockedFunction<
-  (props: { entity: Account; onSelected: (a: Account) => void }) => void
+  (props: MockSelectAffiliateListProps) => void
 >;
 
 jest.mock("@swo/design-system/wizard", () => ({
@@ -17,7 +21,7 @@ jest.mock("@swo/design-system/wizard", () => ({
 }));
 
 jest.mock("~shared/components/SelectAffiliateList", () => ({
-  SelectAffiliateList: (props: { entity: Account; onSelected: (a: Account) => void }) => {
+  SelectAffiliateList: (props: MockSelectAffiliateListProps) => {
     mockSelectAffiliateList(props);
     return <div data-testid="select-affiliate-list" />;
   },

@@ -1,15 +1,19 @@
 import type { ComponentProps, ReactNode } from "react";
 
+import type { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
+import type { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import type { PageShell } from "~shared/components/page-shell";
 
 export type MockHeaderProps = ComponentProps<typeof PageShell.Header>;
+type MockOrganizationDetailsHeaderProps = ComponentProps<typeof OrganizationDetailsHeader>;
+type MockEntitlementDetailsHeaderProps = ComponentProps<typeof EntitlementDetailsHeader>;
 
 export const mockHeader = jest.fn() as jest.MockedFunction<(props: MockHeaderProps) => void>;
 export const mockOrganizationDetailsHeader = jest.fn() as jest.MockedFunction<
-  (props: { organizationId: string; backUrl: string }) => void
+  (props: MockOrganizationDetailsHeaderProps) => void
 >;
 export const mockEntitlementDetailsHeader = jest.fn() as jest.MockedFunction<
-  (props: { entitlementId: string; backUrl: string }) => void
+  (props: MockEntitlementDetailsHeaderProps) => void
 >;
 
 jest.mock("~shared/components/page-shell", () => ({
@@ -28,16 +32,15 @@ jest.mock("~shared/components/page-shell", () => ({
 }));
 
 jest.mock("~features/organizations/components/OrganizationDetailsHeader", () => ({
-  OrganizationDetailsHeader: (props: { organizationId: string; backUrl: string }) => {
+  OrganizationDetailsHeader: (props: MockOrganizationDetailsHeaderProps) => {
     mockOrganizationDetailsHeader(props);
     return <div data-testid="organization-header" />;
   },
 }));
 
 jest.mock("~features/entitlements/components/EntitlementDetailsHeader", () => ({
-  EntitlementDetailsHeader: (props: { entitlementId: string; backUrl: string }) => {
+  EntitlementDetailsHeader: (props: MockEntitlementDetailsHeaderProps) => {
     mockEntitlementDetailsHeader(props);
     return <div data-testid="entitlement-header" />;
   },
 }));
-

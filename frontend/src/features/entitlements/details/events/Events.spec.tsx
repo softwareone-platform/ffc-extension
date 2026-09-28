@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 
 import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~features/entitlements/api/useEntitlementsDetailsApi";
-import { renderWithRouter } from "~test-utils";
+import { renderWithEntitlementRoute } from "~test-utils";
 
 import { EntitlementEventsDetails } from "./Events";
 
@@ -34,10 +34,7 @@ describe("EntitlementEventsDetails", () => {
   it("queries entitlement details using the entitlementId route param", () => {
     primeEntity(undefined);
 
-    renderWithRouter(<EntitlementEventsDetails />, {
-      initialUrl: "/entitlements/ent-1",
-      routePath: "/entitlements/:entitlementId",
-    });
+    renderWithEntitlementRoute(<EntitlementEventsDetails />);
 
     expect(mockUseEntitlementsDetailsApi).toHaveBeenCalledWith("ent-1");
   });
@@ -45,10 +42,7 @@ describe("EntitlementEventsDetails", () => {
   it("renders EntityEvents with the loaded entity", () => {
     primeEntity({ id: "ent-1", name: "One" });
 
-    renderWithRouter(<EntitlementEventsDetails />, {
-      initialUrl: "/entitlements/ent-1",
-      routePath: "/entitlements/:entitlementId",
-    });
+    renderWithEntitlementRoute(<EntitlementEventsDetails />);
 
     expect(screen.getByTestId("entity-events")).toHaveTextContent("ent-1");
   });
@@ -56,10 +50,7 @@ describe("EntitlementEventsDetails", () => {
   it("renders nothing until the entity is loaded", () => {
     primeEntity(undefined);
 
-    renderWithRouter(<EntitlementEventsDetails />, {
-      initialUrl: "/entitlements/ent-1",
-      routePath: "/entitlements/:entitlementId",
-    });
+    renderWithEntitlementRoute(<EntitlementEventsDetails />);
 
     expect(screen.queryByTestId("entity-events")).not.toBeInTheDocument();
   });

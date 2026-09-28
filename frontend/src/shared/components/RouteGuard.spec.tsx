@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 
+import { useFixedT } from "~shared/hooks/useFixedT";
+import { mockFixedT } from "~test-utils/mocks/fixedT";
 import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
 import { RouteGuard } from "./RouteGuard";
@@ -12,13 +14,10 @@ jest.mock("~shared/providers/ErrorHandlerProvider", () => ({
   useErrorHandler: () => ({ handleError: mockHandleError }),
 }));
 
-jest.mock("~shared/hooks/useFixedT", () => ({
-  useFixedT: () => (key: string) => `translated:${key}`,
-}));
-
 describe("RouteGuard", () => {
   beforeEach(() => {
     mockHandleError.mockReset();
+    mockFixedT(jest.mocked(useFixedT));
   });
 
   it("renders children and allows an explicitly allowed single role", async () => {

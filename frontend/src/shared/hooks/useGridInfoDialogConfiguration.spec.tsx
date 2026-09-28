@@ -2,6 +2,8 @@ import { renderHook } from "@testing-library/react";
 
 import { useDefaultInfoDialogConfiguration } from "@swo/design-system/grid";
 
+import { mockFixedT } from "~test-utils/mocks/fixedT";
+
 import { useFixedT } from "./useFixedT";
 import { useGridInfoDialogConfiguration } from "./useGridInfoDialogConfiguration";
 
@@ -20,9 +22,7 @@ describe("useGridInfoDialogConfiguration", () => {
         title: "Default title",
       },
     } as never);
-    jest.mocked(useFixedT).mockReturnValue(
-      ((key: string) => `t:${key}`) as unknown as ReturnType<typeof useFixedT>,
-    );
+    mockFixedT(jest.mocked(useFixedT), (key) => `t:${key}`);
 
     const { result } = renderHook(() => useGridInfoDialogConfiguration());
 
@@ -33,4 +33,3 @@ describe("useGridInfoDialogConfiguration", () => {
     });
   });
 });
-

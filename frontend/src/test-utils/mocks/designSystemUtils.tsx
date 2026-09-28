@@ -1,3 +1,7 @@
+import type { ComponentProps } from "react";
+
+import type { DisplayValue } from "@swo/design-system/utils";
+
 // The root manual mock at `__mocks__/@swo/design-system/utils.tsx` spreads
 // `...jest.requireActual(...)` and overrides `NO_VALUE` / `useDesignSystemOptions` /
 // `useLocalisation` / `DisplayValue`. Any spec-level `jest.mock("@swo/design-system/utils",
@@ -25,10 +29,7 @@ export const mockDesignSystemUtilsGlobals = {
   }),
 };
 
-type MockDisplayValueProps = {
-  value?: unknown;
-  transform?: (value: never) => unknown;
-};
+type MockDisplayValueProps = Pick<ComponentProps<typeof DisplayValue>, "value" | "transform">;
 
 export const mockDesignSystemUtils = {
   ...mockDesignSystemUtilsGlobals,

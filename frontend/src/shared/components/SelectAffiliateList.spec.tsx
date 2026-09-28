@@ -1,29 +1,17 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+
+import type { List, Row } from "@swo/design-system/list";
 
 import type { Account } from "~features/entitlements/api/model";
 import { makeAccount } from "~test-utils";
 
 import { SelectAffiliateList } from "./SelectAffiliateList";
 
-type MockRow = {
-  data: Account;
-  selected: boolean;
-};
-
-type MockListProps = {
-  columns: unknown[];
-  data: Account[];
-  showFilterBar: boolean;
-  trackBy: string;
-  selectionType: string;
-  selectedRows: MockRow[];
-  setSelectedRows: (rows: MockRow[]) => void;
-  showSelectedNumber: boolean;
-  children?: ReactNode;
-};
+type MockListProps = ComponentProps<typeof List>;
+type AccountRow = Row<Account>;
 
 const mockUseColumns = jest.fn();
 const mockUseApiCall = jest.fn();
@@ -51,12 +39,12 @@ jest.mock("@swo/design-system/list", () => ({
     return (
       <div data-testid="affiliate-list">
         <button
-          onClick={() => props.setSelectedRows([{ data: nextSelectedAccount, selected: true }])}
+          onClick={() => props.setSelectedRows?.([{ data: nextSelectedAccount, selected: true }])}
         >
           choose next
         </button>
-        <div data-testid="selected-count">{props.selectedRows.length}</div>
-        <div data-testid="data-count">{props.data.length}</div>
+        <div data-testid="selected-count">{props.selectedRows?.length ?? 0}</div>
+        <div data-testid="data-count">{props.data?.length ?? 0}</div>
       </div>
     );
   },
@@ -103,7 +91,7 @@ describe("SelectAffiliateList", () => {
         trackBy: "id",
         selectionType: "radio",
         showSelectedNumber: false,
-        selectedRows: [{ data: entity, selected: true }],
+        selectedRows: [{ data: entity, selected: true }] satisfies AccountRow[],
       }),
     );
     expect(onSelected).toHaveBeenCalledWith(entity);
@@ -135,7 +123,7 @@ describe("SelectAffiliateList", () => {
 
     expect(onSelected).toHaveBeenCalledWith(nextSelectedAccount);
     expect(mockList.mock.lastCall?.[0].selectedRows).toEqual([
-      { data: nextSelectedAccount, selected: true },
+      { data: nextSelectedAccount, selected: true } satisfies AccountRow,
     ]);
     expect(screen.getByTestId("selected-count")).toHaveTextContent("1");
   });

@@ -15,6 +15,10 @@ jest.mock("./icons/aws.tsx", () => ({
 describe("CustomIcon", () => {
   let mockConsoleError: jest.SpiedFunction<typeof console.error>;
 
+  function getRenderedSvg() {
+    return (screen.getByTestId("unknown-imported-icon") as unknown as SVGGElement).ownerSVGElement;
+  }
+
   beforeEach(() => {
     mockConsoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
   });
@@ -24,65 +28,31 @@ describe("CustomIcon", () => {
   });
 
   it("uses the default dimensions and static unknown icon when the name is empty", () => {
-    const { asFragment } = render(<CustomIcon name="" />);
+    render(<CustomIcon name="" />);
 
-    expect(asFragment()).toMatchInlineSnapshot(`
-      <DocumentFragment>
-        <svg
-          class=""
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g
-            data-testid="unknown-imported-icon"
-          />
-        </svg>
-      </DocumentFragment>
-    `);
+    expect(getRenderedSvg()).toHaveAttribute("width", "24");
+    expect(getRenderedSvg()).toHaveAttribute("height", "24");
+    expect(getRenderedSvg()).toHaveAttribute("viewBox", "0 0 24 24");
+    expect(getRenderedSvg()).toHaveAttribute("class", "");
   });
 
   it("uses explicit width and height when size is not provided", () => {
-    const { asFragment } = render(
+    render(
       <CustomIcon name="" width={16} height={18} boxWidth={30} boxHeight={32} className="x" />,
     );
 
-    expect(asFragment()).toMatchInlineSnapshot(`
-      <DocumentFragment>
-        <svg
-          class="x"
-          height="18"
-          viewBox="0 0 30 32"
-          width="16"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g
-            data-testid="unknown-imported-icon"
-          />
-        </svg>
-      </DocumentFragment>
-    `);
+    expect(getRenderedSvg()).toHaveAttribute("width", "16");
+    expect(getRenderedSvg()).toHaveAttribute("height", "18");
+    expect(getRenderedSvg()).toHaveAttribute("viewBox", "0 0 30 32");
+    expect(getRenderedSvg()).toHaveClass("x");
   });
 
   it("overrides width and height with size when size is provided", () => {
-    const { asFragment } = render(<CustomIcon name="" width={16} height={18} size={40} />);
+    render(<CustomIcon name="" width={16} height={18} size={40} />);
 
-    expect(asFragment()).toMatchInlineSnapshot(`
-      <DocumentFragment>
-        <svg
-          class=""
-          height="40"
-          viewBox="0 0 24 24"
-          width="40"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g
-            data-testid="unknown-imported-icon"
-          />
-        </svg>
-      </DocumentFragment>
-    `);
+    expect(getRenderedSvg()).toHaveAttribute("width", "40");
+    expect(getRenderedSvg()).toHaveAttribute("height", "40");
+    expect(getRenderedSvg()).toHaveAttribute("viewBox", "0 0 24 24");
   });
 
   it("renders the static unknown icon before asynchronously loading a supported icon", async () => {

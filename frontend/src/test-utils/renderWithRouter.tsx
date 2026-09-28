@@ -8,6 +8,12 @@ type Options = {
   routePath: string;
 };
 
+type EntityRouteOptions = {
+  id?: string;
+  initialUrl?: string;
+  routePath?: string;
+};
+
 export function renderWithRouter(ui: ReactElement, { initialUrl, routePath }: Options) {
   return render(
     <MemoryRouter initialEntries={[initialUrl]}>
@@ -16,4 +22,28 @@ export function renderWithRouter(ui: ReactElement, { initialUrl, routePath }: Op
       </Routes>
     </MemoryRouter>,
   );
+}
+
+export function renderWithEntitlementRoute(
+  ui: ReactElement,
+  { id = "ent-1", initialUrl, routePath = "/entitlements/:entitlementId" }: EntityRouteOptions = {},
+) {
+  return renderWithRouter(ui, {
+    initialUrl: initialUrl ?? `/entitlements/${id}`,
+    routePath,
+  });
+}
+
+export function renderWithOrganizationRoute(
+  ui: ReactElement,
+  {
+    id = "org-1",
+    initialUrl,
+    routePath = "/organizations/:organizationId",
+  }: EntityRouteOptions = {},
+) {
+  return renderWithRouter(ui, {
+    initialUrl: initialUrl ?? `/organizations/${id}`,
+    routePath,
+  });
 }

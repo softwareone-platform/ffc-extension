@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 
-import { renderWithRouter } from "~test-utils";
+import { renderWithOrganizationRoute, renderWithRouter } from "~test-utils";
 
 import { OrganizationUsers } from "./Users";
 import type { UsersGrid } from "./UsersGrid";
@@ -15,10 +15,7 @@ jest.mock("./UsersGrid", () => ({
 
 describe("OrganizationUsers route component", () => {
   it("renders UsersGrid with organizationId from route params", () => {
-    renderWithRouter(<OrganizationUsers />, {
-      initialUrl: "/organizations/org-123",
-      routePath: "/organizations/:organizationId",
-    });
+    renderWithOrganizationRoute(<OrganizationUsers />, { id: "org-123" });
 
     expect(screen.getByTestId("users-grid")).toHaveTextContent("org-123");
   });

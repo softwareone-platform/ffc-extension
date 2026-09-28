@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 
 import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
-import { renderWithRouter } from "~test-utils";
+import { renderWithEntitlementRoute } from "~test-utils";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
@@ -29,18 +29,11 @@ function primeEntity(entity: Partial<EntitlementRead> | undefined) {
   mockUseEntitlementsDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);
 }
 
-function renderGeneral(url = "/entitlements/ent-1") {
-  return renderWithRouter(<EntitlementsGeneralDetails />, {
-    initialUrl: url,
-    routePath: "/entitlements/:entitlementId",
-  });
-}
-
 describe("EntitlementsGeneralDetails", () => {
   it("queries entitlement details using the entitlementId route param", () => {
     primeEntity(undefined);
 
-    renderGeneral();
+    renderWithEntitlementRoute(<EntitlementsGeneralDetails />);
 
     expect(mockUseEntitlementsDetailsApi).toHaveBeenCalledWith("ent-1");
   });
@@ -48,7 +41,7 @@ describe("EntitlementsGeneralDetails", () => {
   it("renders linkedDataSource and affiliate_external_id highlights in order", () => {
     primeEntity({ id: "ent-1" });
 
-    renderGeneral();
+    renderWithEntitlementRoute(<EntitlementsGeneralDetails />);
 
     const titles = screen.getAllByTestId("highlight-title").map((el) => el.textContent);
     expect(titles).toEqual(["linkedDataSource", "affiliate_external_id"]);
@@ -61,7 +54,7 @@ describe("EntitlementsGeneralDetails", () => {
       affiliate_external_id: "aff-ext-1",
     });
 
-    renderGeneral();
+    renderWithEntitlementRoute(<EntitlementsGeneralDetails />);
 
     const items = screen.getAllByTestId("highlight-item");
     expect(within(items[0]).getByTestId("highlight-value")).toHaveTextContent("linked-ds-1");
@@ -71,7 +64,7 @@ describe("EntitlementsGeneralDetails", () => {
   it("falls back to NO_VALUE for missing fields", () => {
     primeEntity({ id: "ent-1" });
 
-    renderGeneral();
+    renderWithEntitlementRoute(<EntitlementsGeneralDetails />);
 
     const values = screen.getAllByTestId("highlight-value").map((el) => el.textContent);
     expect(values).toEqual(["—", "—"]);
