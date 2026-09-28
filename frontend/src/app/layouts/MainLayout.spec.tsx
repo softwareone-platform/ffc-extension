@@ -11,7 +11,7 @@ import {
 import { MainLayout } from "./MainLayout";
 
 describe("MainLayout", () => {
-  it("renders the OrganizationDetailsHeader when on an organization detail URL", () => {
+  it("renders the organization details header on an organization details page", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 
     renderWithRouter(<MainLayout />, {
@@ -25,7 +25,7 @@ describe("MainLayout", () => {
     });
   });
 
-  it("renders the EntitlementDetailsHeader when on an entitlement detail URL", () => {
+  it("renders the entitlement details header on an entitlement details page", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 
     renderWithRouter(<MainLayout />, {

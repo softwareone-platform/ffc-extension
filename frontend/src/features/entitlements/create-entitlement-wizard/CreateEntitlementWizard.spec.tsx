@@ -22,19 +22,19 @@ describe("CreateEntitlementWizard", () => {
     mockStepContext.activeStepIndex = 0;
   });
 
-  it("initialises useSteps with isPending=false", () => {
+  it("passes the initial saving state to useSteps", () => {
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(mockUseSteps).toHaveBeenLastCalledWith(false);
   });
 
-  it("passes the useSteps result to the Wizard as stepsProps", () => {
+  it("passes the configured steps to the Wizard", () => {
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(lastWizardProps().stepsProps).toHaveLength(4);
   });
 
-  it("starts at activeStepIndex=0", () => {
+  it("opens on the first step", () => {
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(lastWizardProps().activeStepIndex).toBe(0);
@@ -42,10 +42,10 @@ describe("CreateEntitlementWizard", () => {
 
   it.each([
     ["affiliate", 0, "step-affiliate"],
-    ["dataSource", 1, "step-datasource"],
+    ["data source", 1, "step-datasource"],
     ["review", 2, "step-review"],
     ["summary", 3, "step-summary"],
-  ] as const)("renders %s step at activeStepIndex=%i", (_name, index, testId) => {
+  ] as const)("renders the %s step when it is active", (_name, index, testId) => {
     mockStepContext.activeStepIndex = index;
 
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
@@ -53,7 +53,7 @@ describe("CreateEntitlementWizard", () => {
     expect(screen.getByTestId(testId)).toBeInTheDocument();
   });
 
-  it("Wizard onClose reports success=false when no entitlement was created", () => {
+  it("closing the wizard reports an unsuccessful result when nothing was created", () => {
     const onClose = jest.fn();
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />);
 
@@ -64,7 +64,7 @@ describe("CreateEntitlementWizard", () => {
     expect(onClose).toHaveBeenCalledWith({ success: false });
   });
 
-  it("Wizard onSave reports success=false when no entitlement was created", () => {
+  it("saving the wizard reports an unsuccessful result when nothing was created", () => {
     const onClose = jest.fn();
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />);
 

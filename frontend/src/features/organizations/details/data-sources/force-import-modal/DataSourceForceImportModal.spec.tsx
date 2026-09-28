@@ -81,11 +81,11 @@ describe("DataSourceForceImportModal", () => {
   });
 
   describe("submit", () => {
-    it("invokes forceImport with organizationId and datasource when the modal submits with a datasource", () => {
+    it("submits the selected datasource for force import", () => {
       const controller = primeController();
       renderModal({ datasource, organizationId });
 
-      act(() => mockModal.mock.lastCall![0].onSubmit());
+      act(() => mockModal.mock.lastCall![0].onSubmit!());
 
       expect(controller.forceImport).toHaveBeenCalledWith({ organizationId, datasource });
     });
@@ -94,7 +94,7 @@ describe("DataSourceForceImportModal", () => {
       const controller = primeController();
       renderModal({ datasource: null, organizationId });
 
-      act(() => mockModal.mock.lastCall![0].onSubmit());
+      act(() => mockModal.mock.lastCall![0].onSubmit!());
 
       expect(controller.forceImport).not.toHaveBeenCalled();
     });
@@ -109,7 +109,7 @@ describe("DataSourceForceImportModal", () => {
       secondary: "aws-prod-123",
       icon: "aws_cnr",
     },
-  ])("renders EntityReferenceCell for $scenario", ({ input, primary, secondary, icon }) => {
+  ])("renders datasource identity details for $scenario", ({ input, primary, secondary, icon }) => {
     primeController();
     renderModal({ datasource: input, organizationId });
 
@@ -119,7 +119,7 @@ describe("DataSourceForceImportModal", () => {
   });
 
   describe("Modal / DatePicker wiring", () => {
-    it("forwards controller state to Modal and DatePicker", () => {
+    it("reflects the controller state in the modal and date picker", () => {
       const lastImportAt = new Date("2026-01-15T00:00:00Z");
       primeController({ isPending: true, lastImportAt });
       renderModal({ datasource, organizationId, className: "force-import-modal" });
@@ -138,13 +138,13 @@ describe("DataSourceForceImportModal", () => {
       });
     });
 
-    it("wires Modal onCancel to controller.cancel and DatePicker onChange to controller.setLastImportAt", () => {
+    it("cancels the modal and updates the selected import date", () => {
       const controller = primeController();
       renderModal({ datasource, organizationId });
 
-      mockModal.mock.lastCall![0].onCancel();
+      mockModal.mock.lastCall![0].onCancel!();
       const picked = new Date("2026-02-01T00:00:00Z");
-      mockDatePicker.mock.lastCall![0].onChange(picked);
+      mockDatePicker.mock.lastCall![0].onChange!(picked);
 
       expect(controller.cancel).toHaveBeenCalledTimes(1);
       expect(controller.setLastImportAt).toHaveBeenCalledWith(picked);
@@ -152,7 +152,7 @@ describe("DataSourceForceImportModal", () => {
   });
 
   describe("error surface", () => {
-    it("forwards the controller's error to InlineErrorNotification", () => {
+    it("shows the controller error in the inline notification", () => {
       primeController({ error: "boom" });
       renderModal({ datasource, organizationId });
 
@@ -160,7 +160,7 @@ describe("DataSourceForceImportModal", () => {
     });
   });
 
-  it("passes onClose from props to the controller", () => {
+  it("passes onClose to the force-import controller", () => {
     const onClose = jest.fn();
     primeController();
 

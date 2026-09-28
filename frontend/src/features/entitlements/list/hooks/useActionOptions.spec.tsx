@@ -46,23 +46,20 @@ describe("useActionOptions (entitlements list)", () => {
     ["new", true],
     ["terminated", true],
     ["deleted", true],
-  ])(
-    "enables terminate only for status='active' — for '%s' → isDisabled=%s",
-    (status, expected) => {
-      const { result } = renderHook(() => useActionOptions());
+  ])("sets the terminate action disabled state for status '%s'", (status, expected) => {
+    const { result } = renderHook(() => useActionOptions());
 
-      const { terminate } = getActions(result.current, status);
+    const { terminate } = getActions(result.current, status);
 
-      expect(terminate.isDisabled).toBe(expected);
-    },
-  );
+    expect(terminate.isDisabled).toBe(expected);
+  });
 
   it.each<[EntitlementStatus, boolean]>([
     ["active", true],
     ["new", false],
     ["terminated", true],
     ["deleted", true],
-  ])("enables delete only for status='new' — for '%s' → isDisabled=%s", (status, expected) => {
+  ])("sets the delete action disabled state for status '%s'", (status, expected) => {
     const { result } = renderHook(() => useActionOptions());
 
     const { deleteAction } = getActions(result.current, status);

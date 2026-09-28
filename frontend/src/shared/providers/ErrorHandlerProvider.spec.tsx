@@ -135,7 +135,7 @@ describe("ErrorHandlerProvider", () => {
     );
   });
 
-  it("returns a noop error handler outside the provider", async () => {
+  it("returns a default error handler outside the provider that does nothing", async () => {
     render(<UnwrappedErrorTrigger />);
 
     await user.click(screen.getByRole("button", { name: "show default handler" }));

@@ -65,7 +65,7 @@ describe("DataSourcesGrid.config", () => {
     it.each<[AccountType, boolean]>([
       ["operations", true],
       ["admin", false],
-    ])("hides the actions column for role '%s' → isHidden=%s", (role, isHidden) => {
+    ])("sets the actions column visibility for role '%s'", (role, isHidden) => {
       mockUseUserRole.mockReturnValue({ user: null, role });
       const { result } = renderHook(() => useColumns());
       const actionsColumn = columnByName(result.current, "actions");
@@ -220,7 +220,7 @@ describe("DataSourcesGrid.config", () => {
       );
     });
 
-    it("builds query options that scope the queryKey by organizationId and delegate to listOrganizationDataSources", () => {
+    it("builds organization-scoped query options for listing data sources", () => {
       renderHook(() => useAsyncOptions("org-123"));
       const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
       const query = { toString: () => "rql-string" };
@@ -330,7 +330,7 @@ describe("DataSourcesGrid.config", () => {
       expect(onAction).not.toHaveBeenCalled();
     });
 
-    it("safely no-ops on RowActionTriggered when no onAction is provided", () => {
+    it("does not throw when a row action is triggered without an onAction handler", () => {
       mockUseGridAsync.mockReturnValue({});
 
       renderHook(() => useGridConfig("org-123"));

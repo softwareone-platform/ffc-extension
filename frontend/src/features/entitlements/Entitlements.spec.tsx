@@ -38,12 +38,15 @@ describe("Entitlements router", () => {
   });
 
   it.each([
-    ["/entitlements/ent-1/general", "general"],
-    ["/entitlements/ent-1/events", "events"],
-  ] as const)("renders %s inside the details shell", async (url, testId) => {
-    renderEntitlements(url);
+    ["general", "/entitlements/ent-1/general", "general"],
+    ["events", "/entitlements/ent-1/events", "events"],
+  ] as const)(
+    "renders the %s tab inside the entitlement details shell",
+    async (_tab, url, testId) => {
+      renderEntitlements(url);
 
-    expect(await screen.findByTestId("details-content")).toBeInTheDocument();
-    expect(await screen.findByTestId(testId)).toBeInTheDocument();
-  });
+      expect(await screen.findByTestId("details-content")).toBeInTheDocument();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
+    },
+  );
 });

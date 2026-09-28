@@ -45,7 +45,7 @@ function primeController(overrides: Partial<Controller> = {}): Controller {
 describe("TerminateEntitlementModal", () => {
   const entitlement = makeEntitlement({ id: "ent-1" });
 
-  it("passes onClose into the controller", () => {
+  it("passes onClose to the entitlement controller", () => {
     primeController();
     const onClose = jest.fn();
 
@@ -54,7 +54,7 @@ describe("TerminateEntitlementModal", () => {
     expect(mockUseEntitlementController).toHaveBeenCalledWith({ onClose });
   });
 
-  it("forwards controller.error to InlineErrorNotification", () => {
+  it("shows the controller error in the inline notification", () => {
     primeController({ error: "boom" });
 
     render(<TerminateEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);
@@ -62,7 +62,7 @@ describe("TerminateEntitlementModal", () => {
     expect(mockInlineErrorNotification).toHaveBeenLastCalledWith({ error: "boom" });
   });
 
-  it("forwards isPendingTerminate to Modal isSubmitting", () => {
+  it("shows the submitting state while terminate is pending", () => {
     primeController({ isPendingTerminate: true });
 
     render(<TerminateEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);
@@ -70,7 +70,7 @@ describe("TerminateEntitlementModal", () => {
     expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitting: true });
   });
 
-  it("submit invokes controller.terminate with the entitlement then onSuccess", async () => {
+  it("terminates the entitlement and calls onSuccess after submit", async () => {
     const terminate = jest.fn().mockResolvedValue(undefined);
     primeController({ terminate });
     const onSuccess = jest.fn();
@@ -89,7 +89,7 @@ describe("TerminateEntitlementModal", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when entitlement is null", async () => {
+  it("does not call terminate when no entitlement is provided", async () => {
     const terminate = jest.fn();
     primeController({ terminate });
 
@@ -99,7 +99,7 @@ describe("TerminateEntitlementModal", () => {
     expect(terminate).not.toHaveBeenCalled();
   });
 
-  it("wires Modal onCancel to controller.cancel", () => {
+  it("cancels through the entitlement controller when the modal is closed", () => {
     const controller = primeController();
 
     render(<TerminateEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);

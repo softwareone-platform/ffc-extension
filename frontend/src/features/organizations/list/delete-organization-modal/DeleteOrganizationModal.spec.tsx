@@ -125,7 +125,7 @@ describe("DeleteOrganizationModal", () => {
     expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitDisabled: true });
   });
 
-  it("submit invokes controller.remove with the organization then onSuccess", async () => {
+  it("removes the organization and calls onSuccess after submit", async () => {
     const remove = jest.fn().mockResolvedValue(undefined);
     primeController({ remove });
     const onSuccess = jest.fn();
@@ -146,7 +146,7 @@ describe("DeleteOrganizationModal", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when the organization is null", async () => {
+  it("submit does nothing when no organization is provided", async () => {
     const remove = jest.fn();
     primeController({ remove });
 
@@ -156,7 +156,7 @@ describe("DeleteOrganizationModal", () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
-  it("wires Modal onCancel to controller.handleCancel", () => {
+  it("cancels through the organization controller when the modal is closed", () => {
     const controller = primeController();
 
     render(

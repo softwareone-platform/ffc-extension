@@ -11,7 +11,7 @@ describe("useEntitlementsApi", () => {
     httpMock.mockResolvedValue({ data: undefined } as unknown as ReturnType<typeof http>);
   });
 
-  it("issues GET /ops/v1/entitlements with a query string when list is called", async () => {
+  it("lists entitlements using the provided query", async () => {
     const { result } = renderHook(() => useEntitlementsApi());
 
     await result.current.list({ toString: () => "limit=10" } as never);
@@ -22,7 +22,7 @@ describe("useEntitlementsApi", () => {
     });
   });
 
-  it("issues GET /ops/v1/entitlements/{id} when get is called", async () => {
+  it("fetches an entitlement by id", async () => {
     const { result } = renderHook(() => useEntitlementsApi());
 
     await result.current.get("ent-1");
@@ -33,7 +33,7 @@ describe("useEntitlementsApi", () => {
     });
   });
 
-  it("issues POST /ops/v1/entitlements when save is called without an id (create)", async () => {
+  it("creates an entitlement when no id is provided", async () => {
     const { result } = renderHook(() => useEntitlementsApi());
     const body = {
       name: "New",
@@ -50,7 +50,7 @@ describe("useEntitlementsApi", () => {
     });
   });
 
-  it("issues PUT /ops/v1/entitlements/{id} when save is called with an id (update)", async () => {
+  it("updates an entitlement when an id is provided", async () => {
     const { result } = renderHook(() => useEntitlementsApi());
     const body = {
       id: "ent-1",
@@ -68,7 +68,7 @@ describe("useEntitlementsApi", () => {
     });
   });
 
-  it("issues POST /ops/v1/entitlements/{id}/terminate when terminateEntitlement is called", async () => {
+  it("terminates an entitlement", async () => {
     const { result } = renderHook(() => useEntitlementsApi());
 
     await result.current.terminateEntitlement("ent-1");
@@ -79,7 +79,7 @@ describe("useEntitlementsApi", () => {
     });
   });
 
-  it("issues DELETE /ops/v1/entitlements/{id} when deleteEntitlement is called", async () => {
+  it("deletes an entitlement", async () => {
     const { result } = renderHook(() => useEntitlementsApi());
 
     await result.current.deleteEntitlement("ent-1");

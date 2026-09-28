@@ -1,11 +1,8 @@
 import { render } from "@testing-library/react";
 
 import { makeEmployee, triggerModalCancel, triggerModalSubmit } from "~test-utils";
-import {
-  mockInlineErrorNotification,
-  mockSharedInlineErrorNotification,
-} from "~test-utils/mocks/inlineErrorNotification";
-import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
+import { mockInlineErrorNotification } from "~test-utils/mocks/inlineErrorNotification";
+import { mockModal } from "~test-utils/mocks/modal";
 
 import type { useEmployeeController } from "../hooks/useEmployeeController";
 import { UserMakeAdminModal } from "./UserMakeAdminModal";
@@ -13,13 +10,6 @@ import { UserMakeAdminModal } from "./UserMakeAdminModal";
 type Controller = ReturnType<typeof useEmployeeController>;
 
 const mockUseEmployeeController = jest.fn() as jest.MockedFunction<typeof useEmployeeController>;
-
-jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
-
-jest.mock(
-  "~shared/components/error/InlineErrorNotification",
-  () => mockSharedInlineErrorNotification,
-);
 
 jest.mock("../hooks/useEmployeeController", () => ({
   useEmployeeController: (...args: Parameters<typeof useEmployeeController>) =>
@@ -41,7 +31,7 @@ function primeController(overrides: Partial<Controller> = {}): Controller {
 describe("UserMakeAdminModal", () => {
   const employee = makeEmployee({ id: "emp-1" });
 
-  it("passes onClose into the controller", () => {
+  it("passes onClose to the employee controller", () => {
     primeController();
     const onClose = jest.fn();
 
@@ -52,7 +42,7 @@ describe("UserMakeAdminModal", () => {
     expect(mockUseEmployeeController).toHaveBeenCalledWith({ onClose });
   });
 
-  it("forwards controller.error to InlineErrorNotification", () => {
+  it("shows the controller error in the inline notification", () => {
     primeController({ error: "boom" });
 
     render(
@@ -62,7 +52,7 @@ describe("UserMakeAdminModal", () => {
     expect(mockInlineErrorNotification).toHaveBeenLastCalledWith({ error: "boom" });
   });
 
-  it("submit invokes makeAdmin with organizationId and employee, then onSuccess", async () => {
+  it("makes the employee an admin and calls onSuccess after submit", async () => {
     const makeAdmin = jest.fn().mockResolvedValue(undefined);
     primeController({ makeAdmin });
     const onSuccess = jest.fn();
@@ -82,7 +72,7 @@ describe("UserMakeAdminModal", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when employee is null", async () => {
+  it("does not call makeAdmin when no employee is provided", async () => {
     const makeAdmin = jest.fn();
     primeController({ makeAdmin });
 
@@ -94,7 +84,7 @@ describe("UserMakeAdminModal", () => {
     expect(makeAdmin).not.toHaveBeenCalled();
   });
 
-  it("submit is a noop when organizationId is null", async () => {
+  it("does not call makeAdmin when organizationId is missing", async () => {
     const makeAdmin = jest.fn();
     primeController({ makeAdmin });
 
@@ -106,7 +96,7 @@ describe("UserMakeAdminModal", () => {
     expect(makeAdmin).not.toHaveBeenCalled();
   });
 
-  it("wires Modal onCancel to controller.cancel", () => {
+  it("cancels through the employee controller when the modal is closed", () => {
     const controller = primeController();
 
     render(

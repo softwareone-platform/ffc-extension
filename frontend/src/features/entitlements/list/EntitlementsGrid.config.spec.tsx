@@ -259,7 +259,7 @@ describe("EntitlementsGrid.config", () => {
       );
     });
 
-    it("builds query options that add the query string to the queryKey and delegate to list()", () => {
+    it("builds query options that include the query string and list callback", () => {
       renderHook(() => useAsyncOptions());
       const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
       const query = { toString: () => "rql-string" };

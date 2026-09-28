@@ -44,7 +44,7 @@ describe("AffiliateStep", () => {
     expect(setValue).toHaveBeenCalledWith("affiliate", account, { shouldValidate: true });
   });
 
-  it("registers an onNext callback that validates affiliate and advances on success", async () => {
+  it("validates the affiliate selection before advancing", async () => {
     const { trigger } = renderStep();
 
     const onNext = mockRegisterOnNextCallback.mock.lastCall![0] as (

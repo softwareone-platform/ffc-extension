@@ -12,12 +12,15 @@ Key runtime facts: `clearMocks: true` (no manual resets needed), `testTimeout: 1
 ## Critical Rules
 
 ### File extension
+
 Always `.spec.tsx` (or `.spec.ts` for utilities without JSX). Never `.test.tsx`.
 
 ### Coverage floor
+
 Unit-test coverage must always stay above **85%**. If a change drops coverage below that threshold, add meaningful tests or remove low-value assertions before finishing. Prefer behaviour-finding tests over shallow change-detectors when raising coverage.
 
 ### Design system: mock the FULL import path
+
 Source imports from `@swo/design-system/[component]`. Mock **that exact path** — `@swo/[component]` (the shortened form from `mpt-vikings-ui`) does not match anything and the mock silently no-ops.
 
 ```text
@@ -31,20 +34,22 @@ jest.mock("@swo/design-system/grid", () => ({
 Return only the runtime exports the code under test uses. Type-only exports are erased by SWC.
 
 ### Never spread the real design-system module
+
 `...jest.requireActual("@swo/design-system/grid")` blows the heap. Design-system subpaths pull enormous dependency graphs; the 512MB worker limit will trip. Enumerate the exports you need instead.
 
 ### Type `jest.fn()` spies with the real signature
+
 Untyped `jest.fn()` returns `jest.Mock<any, any>` — `mockReturnValue({...})` and `.mock.lastCall![0]` accept anything and drift silently.
 
 Do **not** handwrite component prop contracts in specs or mock helpers when the real source type is available. Prefer `ComponentProps<typeof X>`, `Pick<ComponentProps<typeof X>, ...>`, exported app prop types, or `ReturnType<typeof useHook>` over `type FooProps = { ... }` copies.
 
-| Spy target | Typing |
-|---|---|
-| Hook | `jest.MockedFunction<typeof realHook>` |
-| Method on hook's returned object | `jest.MockedFunction<ReturnType<typeof useApi>["method"]>` |
-| Function returned FROM a hook | `jest.MockedFunction<ReturnType<typeof useHook>>` |
-| Component prop-capture spy | `jest.MockedFunction<(props: ComponentProps<typeof C>) => void>` |
-| Generic hook (e.g. `useReactQueryRqlGrid`) | leave untyped — `MockedFunction` collapses generics to defaults |
+| Spy target                                 | Typing                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| Hook                                       | `jest.MockedFunction<typeof realHook>`                           |
+| Method on hook's returned object           | `jest.MockedFunction<ReturnType<typeof useApi>["method"]>`       |
+| Function returned FROM a hook              | `jest.MockedFunction<ReturnType<typeof useHook>>`                |
+| Component prop-capture spy                 | `jest.MockedFunction<(props: ComponentProps<typeof C>) => void>` |
+| Generic hook (e.g. `useReactQueryRqlGrid`) | leave untyped — `MockedFunction` collapses generics to defaults  |
 
 When the mock factory wraps a spy with a spreader, use `Parameters<typeof realFn>` (not `...args: unknown[]`) so the call site drifts too:
 
@@ -75,29 +80,35 @@ Global stubs also in `jest.setup.js`: `TextEncoder` / `TextDecoder` (needed at `
 - `__mocks__/react-i18next.tsx` — identity `useTranslation`; `Trans` renders `i18nKey`.
 
 ### Never mock
+
 - `react`, `react-dom`, `react-dom/client` — bootstrap files (`createRoot`) are covered by e2e.
 - Full `react-router-dom` in a spec-specific factory. Use `MemoryRouter` + `Routes` + `Route` for `useParams`.
 
 ### `npm test` runs jest + tsc + prettier + eslint in parallel
+
 SWC skips type-checking, so typed-spy drift only surfaces at the tsc step. `npm test` runs all four via `npm-run-all --parallel --continue-on-error` so every failure class shows on one run.
 
 Run coverage when your change touches branching logic, route composition, or shared test infrastructure. Treat `<85%` as a failed outcome even if the Jest run itself passes.
 
 ### Spec-scoped ESLint
+
 `eslint.config.mjs` enables `eslint-plugin-jest` / `-testing-library` / `-jest-dom` on spec globs. Two consequences worth internalising:
 
 - Use `screen.getBy*` — do not destructure from `render()`.
 - Use `toHaveTextContent(...)` — not `expect(el.textContent).toBe(...)`.
 
 ### `.spec.mocks` siblings must sort before the source under test
+
 `jest.mock(...)` in a `.spec.mocks` sibling fires only when the sibling is imported. If the source-under-test import lands first, real modules resolve before mocks apply. `frontend/.prettierrc.json` has a dedicated import-order group for `.spec.mocks` before the general `^[./]` group — do not reorder.
 
 ### Aliases live in two places
+
 `tsconfig.json` `paths` and `jest.config.js` `moduleNameMapper` are separate resolvers. New aliases must be added to both or specs fail with `Cannot find module '~foo/…'`.
 
 ## Test wrappers
 
 **Router (for `useParams` — don't mock it):**
+
 ```text
 renderWithRouter(componentUnderTest, {
   initialUrl: "/organizations/org-123",
@@ -106,6 +117,7 @@ renderWithRouter(componentUnderTest, {
 ```
 
 **Entity detail route helpers:**
+
 ```text
 renderWithEntitlementRoute(componentUnderTest, {
   id: "ent-123",
@@ -121,6 +133,7 @@ renderWithOrganizationRoute(componentUnderTest, {
 Use these helpers for entitlement/organization detail shells and leaf routes instead of repeating IDs and route strings inline.
 
 **React Query:**
+
 ```text
 const wrapper = createQueryClientWrapper(); // uses { queries: { retry: false } }
 const { result } = renderHook(() => useMyHook(), { wrapper });
@@ -147,6 +160,7 @@ jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 Current inventory (browse `src/test-utils/mocks/` for exact shapes): `controlledInput`, `designSystemButton`, `designSystemGrid`, `designSystemText`, `entityReferenceCell`, `errorDetails`, `fixedT`, `inPageHighlight`, `inlineErrorNotification`, `modal`, `sharedGridCells`, `sharedGridHooks`, `userRole`, `wizardStep`.
 
 ### `useFixedT` mocking
+
 `~shared/hooks/useFixedT` is globally mocked to an identity translator in `jest.setup.js`. When a spec needs deterministic translated output, prefer the shared helper from `~test-utils/mocks/fixedT` instead of hand-writing local translation factories.
 
 ```text
@@ -160,6 +174,7 @@ mockFixedT(jest.mocked(useFixedT), (key, params) => `${key}:${params?.code}`);
 If the code under test imports `./useFixedT` relatively rather than through `~shared/...`, locally mock that module to `jest.fn()` first, then drive it with `mockFixedT(...)`.
 
 ### Shared Button mock
+
 Prefer `~test-utils/mocks/designSystemButton` for `@swo/design-system/button` instead of hand-writing a `<button>` factory in each spec.
 
 ```text
@@ -171,6 +186,7 @@ jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
 Assert only behaviourally relevant props (`children`, `type`, `color`, `isDisabled`, `isBusy`, click wiring) and interact through the rendered `<button>` where possible.
 
 ### Type shared mocks from source
+
 When a shared mock or utility mirrors an app component/hook, prefer the source-exported types over handwritten prop shapes.
 
 - `import type` — compile-time only
@@ -197,6 +213,7 @@ export const mockGridProps = jest.fn() as jest.MockedFunction<(props: MockGridPr
 **Keep inline** when the prelude is small (<20 lines) and stays close to the assertions.
 
 Canonical example set: `frontend/src/features/organizations/details/data-sources/`
+
 - `DataSources.spec.tsx` — container + `MemoryRouter` + child mock; small inline prelude
 - `DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx` — thin Grid wrapper with extracted sibling helper
 - `DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts` — large prelude extracted; spec imports spies
@@ -204,6 +221,7 @@ Canonical example set: `frontend/src/features/organizations/details/data-sources
 ## Gotchas
 
 ### Grid column cells with `<Link>` need a router mock
+
 `renderCell` from `~test-utils` renders without a router. Columns whose `cell` uses `<Link>` crash: `Cannot destructure property 'basename' of React.useContext(...) as it is null.`
 
 Opt into the root `react-router-dom` mock's `Link` override:
@@ -218,6 +236,7 @@ jest.mock("react-router-dom", () => {
 The root mock is intentionally NOT global so route-param tests keep the real runtime.
 
 ### Overriding the global `@swo/design-system/utils` mock replaces it entirely
+
 The global manual mock spreads `...actual` and overrides `DisplayValue` / `useLocalisation` / `useDesignSystemOptions`. A spec-level `jest.mock("@swo/design-system/utils", () => ({ ... }))` **fully replaces** it — `NO_VALUE` becomes `undefined`, `useLocalisation` disappears.
 
 Two safe patterns:
@@ -236,31 +255,37 @@ Symptoms of a silent override: highlight-value spans render empty; `NO_VALUE` fa
 ## Testing patterns
 
 ### Grid components (thin wrappers)
+
 - Mock `@swo/design-system/grid` (`Grid`, `useGridAsync`, `GridCellSimple`) — use `~test-utils/mocks/designSystemGrid`
 - Mock the co-located `*.config` and stub `useGridConfig` return with the props the wrapper spreads (`silentRefresh`, `refresh`, `onEvent`). Typed spies need `as unknown as ReturnType<typeof useGridConfig>` for partial fixtures
 - Row-action wiring: capture the `onAction` callback via `mockUseGridConfig.mock.calls[0][1]`, invoke inside `act(...)`, assert modal props changed
 
 ### Container components
+
 - Mock the child Details component
 - Mock the API hook with `get` returning a resolved value
 - Provide `QueryClientProvider` + `MemoryRouter` with route params
 - Two tests: happy path + missing-param path
 
 ### Grid config hooks (`useColumns`, `useFields`, `useAsyncOptions`, `useGridConfig`)
+
 - Mock every peer hook and rendered leaf component
 - Test column order + `fields` mapping (`it.each` is a great fit) and rendered cell output (invoke `column.cell` via `renderCell`)
 
 ### Hooks
+
 - `renderHook(() => useHook())` from `@testing-library/react`
 - Context-dependent hooks: pass a `wrapper`
 - Factory hooks returning functions: capture the returned function, assert output for representative inputs
 
 ### Actions
+
 - Mock API hooks, entity hooks, and `useConfirm` from `@swo/design-system/modal`
 - `userEvent.click()` for interactions; `await waitFor(...)` for async assertions
 - When multiple tests in a file repeat the same `const user = userEvent.setup()` arrange step, extract a tiny local helper or shared test util instead of duplicating the setup ceremony.
 
 ### Modals (callback capture)
+
 Mock the shared `Modal` with a capture spy, drive its callbacks:
 
 ```text
@@ -275,27 +300,31 @@ triggerModalCancel(mockModal);
 ```
 
 Rules of thumb:
+
 - Assert only props with behavioural meaning: `isOpen`, `isSubmitting`, `isSubmitDisabled`, the entity payload, wired callbacks
-- One test per guard clause (`"submit is a noop when entitlement is null"`)
+- One test per guard clause (`"does not call remove when no entitlement is provided"`)
 - Use `mockModal.mock.lastCall![0]` for "final render" state
 
 ### React Query mutation controllers
+
 Need the real query client (`createQueryClientWrapper()`) so `useMutation` state transitions fire. Mock the API method, mock `useErrorDetails.getErrorMessage`, drive via `act(async () => await result.current.remove(entity))`.
 
 Rejection path: `mutateAsync` **re-throws** even though `onError` handles it. Wrap invocation in `await expect(...).rejects.toBeDefined()` (or `.catch(() => undefined)`) or Node prints an unhandled-rejection warning that pollutes the run.
 
 ### Wizard steps vs. form controllers — two patterns
+
 - **Wizard steps** read live form state via `useWatch`/`useFormState`/`getValues`. Render inside a real `<FormProvider {...useForm()}>` and inject stub `trigger`/`setValue` when needed.
 - **Form controllers** wire `handleSubmit(onSubmit)` into a mutation. Mock the form hook entirely and inject a fake `handleSubmit` that immediately calls the callback with a valid payload — bypasses zod validation so the spec drives the mutation directly.
 
 ## When NOT to write a unit test
+
 - **Bootstrap glue** (`entries/StandaloneRoot.tsx`) — requires mocking React DOM. E2e covers it.
 - **Barrel files** — TS enforces the surface.
 - **Type-only modules** — no runtime behaviour.
-- **Path constant literals** (`PARAMS.entitlementId === "entitlementId"`) — assertion repeats the source string. Keep URL *builder* tests.
+- **Path constant literals** (`PARAMS.entitlementId === "entitlementId"`) — assertion repeats the source string. Keep URL _builder_ tests.
 - **Exhaustive router smoke coverage** that only proves static React Router wiring — keep tests for meaningful behaviour (`RouteGuard` wiring, default redirects, route-param extraction, component-owned branching), not one assertion per path string.
 
-Rule of thumb: *would a plausible bug in this file survive a passing test?* If the only failure mode is "the source string changed", it's a change-detector — delete it.
+Rule of thumb: _would a plausible bug in this file survive a passing test?_ If the only failure mode is "the source string changed", it's a change-detector — delete it.
 
 ## Scope of a unit test
 
@@ -306,26 +335,37 @@ Rule of thumb: *would a plausible bug in this file survive a passing test?* If t
 **Null / missing input coverage:** for any input that can be `null`/`undefined` at runtime, add one test with the missing value (nullable relations in column cells, context hooks that can return `undefined`, absent route params).
 
 ## AAA pattern
+
 - No `if` statements or branching in tests
 - `it.each` / `describe.each` for parameterised tests
 - Prefer setup functions / `beforeEach` over inline mocks
 - `mockFn.mock.lastCall![0]` for last-invocation assertions
 
 ## Test names
+
 Short, specific, behaviour-focused. `describe` for the subject; `it` for the observable behaviour. If the name needs multiple `and`s, split.
+
+Prefer scenario language over raw assertion output or internal implementation details:
+
+- **Avoid assertion-shaped suffixes** like `→ isHidden=%s` / `→ isDisabled=%s`; describe the rule instead (`"sets the actions column visibility for role '%s'"`)
+- **Avoid raw URL-heavy titles** when a scenario name is clearer; prefer tab/entity labels over `/organizations/org-1/...` in the description
+- **Avoid `noop` jargon**; describe the blocked behaviour (`"does not call X when Y is missing"`)
+- **Avoid `passes` / `wires` / `forwards` when a visible effect exists**; prefer the observed result (`"reflects the controller state in the modal"`, `"cancels the modal and updates the selected import date"`)
+- **Avoid endpoint-shaped API test titles** like `"issues GET /foo/{id}"`; prefer the business behaviour (`"fetches X by id"`, `"lists X using the provided query"`, `"updates only the organization's name"`)
 
 Common rewrites:
 
-| Anti-pattern | Rewrite |
-|---|---|
-| `"renders the correct X"` | `"renders %s at index=%i"` (parameterised) |
-| `"notifies parent about X"` | `"passes X to useNotifyParentChildModal"` |
-| `"successfully X"` / `"correctly X"` | `"X"` — drop the filler |
+| Anti-pattern                                               | Rewrite                                                       |
+| ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `"renders the correct X"`                                  | `"renders %s at index=%i"` (parameterised)                    |
+| `"notifies parent about X"`                                | `"passes X to useNotifyParentChildModal"`                     |
+| `"successfully X"` / `"correctly X"`                       | `"X"` — drop the filler                                       |
 | Internal handler in `it()` (`"closeWizard calls onClose"`) | Observable trigger (`"Wizard onClose reports success=false"`) |
 
 Rule of thumb: **subject → verb → observable outcome**.
 
 ## Tests to delete on sight
+
 - `"returns a memoized … stable across re-renders"` — tests React internals
 - Path literal assertions (`expect(PARAMS.x).toBe("x")`) — change-detectors
 - Re-export identity checks — TS's job

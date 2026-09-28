@@ -17,7 +17,7 @@ describe("useOrganizationsApi", () => {
     httpMock.mockResolvedValue({ data: undefined } as unknown as ReturnType<typeof http>);
   });
 
-  it("issues GET /ops/v1/organizations with a query string when list is called", async () => {
+  it("lists organizations using the provided query", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
 
     await result.current.list(withQuery("limit=10"));
@@ -28,7 +28,7 @@ describe("useOrganizationsApi", () => {
     });
   });
 
-  it("forwards axios config overrides to http() for list", async () => {
+  it("passes request options through when listing organizations", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
     const signal = new AbortController().signal;
 
@@ -37,7 +37,7 @@ describe("useOrganizationsApi", () => {
     expect(httpMock).toHaveBeenCalledWith({ method: "GET", url: "/ops/v1/organizations?", signal });
   });
 
-  it("issues GET /ops/v1/organizations/{id} when get is called", async () => {
+  it("fetches an organization by id", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
 
     await result.current.get("org-1");
@@ -48,7 +48,7 @@ describe("useOrganizationsApi", () => {
     });
   });
 
-  it("issues DELETE /ops/v1/organizations/{id} when deleteOrganization is called", async () => {
+  it("deletes an organization", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
 
     await result.current.deleteOrganization("org-1");
@@ -59,7 +59,7 @@ describe("useOrganizationsApi", () => {
     });
   });
 
-  it("issues PUT /ops/v1/organizations/{id} with only the name field when editOrganization is called", async () => {
+  it("updates only the organization's name", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
 
     await result.current.editOrganization("org-1", {
@@ -75,7 +75,7 @@ describe("useOrganizationsApi", () => {
     });
   });
 
-  it("issues GET /ops/v1/organizations/{id}/employees when listOrganizationEmployees is called", async () => {
+  it("lists employees for an organization", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
 
     await result.current.listOrganizationEmployees("org-1");
@@ -86,7 +86,7 @@ describe("useOrganizationsApi", () => {
     });
   });
 
-  it("issues GET /ops/v1/organizations/{id}/datasources when listOrganizationDataSources is called", async () => {
+  it("lists data sources for an organization", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
 
     await result.current.listOrganizationDataSources("org-1");
@@ -97,7 +97,7 @@ describe("useOrganizationsApi", () => {
     });
   });
 
-  it("issues POST /ops/v1/organizations/{id}/datasources/{dsId}/force-reimport with body when forceReimportDatasource is called", async () => {
+  it("requests a data-source reimport with the provided payload", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
     const body = { last_import_at: "2026-03-15" };
 

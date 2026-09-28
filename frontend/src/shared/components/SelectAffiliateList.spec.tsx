@@ -36,7 +36,7 @@ describe("SelectAffiliateList", () => {
     mockUseListDataWithSelectedEntity.mockReturnValue(mergedData);
   });
 
-  it("seeds the selected row from the current entity and wires the list hooks", () => {
+  it("preselects the current entity and configures the list with merged affiliate data", () => {
     const entity = makeAccount({ id: "acc-1", name: "Selected" }) as Account;
     const onSelected = jest.fn();
 

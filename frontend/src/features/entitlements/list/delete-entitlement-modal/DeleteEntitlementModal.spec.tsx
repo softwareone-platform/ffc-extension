@@ -45,7 +45,7 @@ function primeController(overrides: Partial<Controller> = {}): Controller {
 describe("DeleteEntitlementModal", () => {
   const entitlement = makeEntitlement({ id: "ent-1" });
 
-  it("passes onClose into the controller", () => {
+  it("passes onClose to the entitlement controller", () => {
     primeController();
     const onClose = jest.fn();
 
@@ -54,7 +54,7 @@ describe("DeleteEntitlementModal", () => {
     expect(mockUseEntitlementController).toHaveBeenCalledWith({ onClose });
   });
 
-  it("forwards controller.error to InlineErrorNotification", () => {
+  it("shows the controller error in the inline notification", () => {
     primeController({ error: "boom" });
 
     render(<DeleteEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);
@@ -62,7 +62,7 @@ describe("DeleteEntitlementModal", () => {
     expect(mockInlineErrorNotification).toHaveBeenLastCalledWith({ error: "boom" });
   });
 
-  it("forwards isPendingRemove to Modal isSubmitting", () => {
+  it("shows the submitting state while remove is pending", () => {
     primeController({ isPendingRemove: true });
 
     render(<DeleteEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);
@@ -70,7 +70,7 @@ describe("DeleteEntitlementModal", () => {
     expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitting: true });
   });
 
-  it("submit invokes controller.remove with the entitlement then onSuccess", async () => {
+  it("removes the entitlement and calls onSuccess after submit", async () => {
     const remove = jest.fn().mockResolvedValue(undefined);
     primeController({ remove });
     const onSuccess = jest.fn();
@@ -89,7 +89,7 @@ describe("DeleteEntitlementModal", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("submit is a noop when entitlement is null", async () => {
+  it("does not call remove when no entitlement is provided", async () => {
     const remove = jest.fn();
     primeController({ remove });
 
@@ -99,7 +99,7 @@ describe("DeleteEntitlementModal", () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
-  it("wires Modal onCancel to controller.cancel", () => {
+  it("cancels through the entitlement controller when the modal is closed", () => {
     const controller = primeController();
 
     render(<DeleteEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);

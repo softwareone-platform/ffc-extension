@@ -49,7 +49,7 @@ Key rules Copilot should apply directly:
 - Use real source types in specs and mocks: prefer
   `ComponentProps<typeof X>`, `Pick<ComponentProps<typeof X>, ...>`, exported
   app prop types, and `ReturnType<typeof useHook>` over handwritten `type
-  FooProps = { ... }` copies.
+FooProps = { ... }` copies.
 - Prefer existing shared test utilities and mocks from `~test-utils`,
   especially `renderWithRouter`, `renderWithEntitlementRoute`,
   `renderWithOrganizationRoute`, `renderCell`, modal trigger helpers,
@@ -59,6 +59,11 @@ Key rules Copilot should apply directly:
 - Avoid low-value tests: path literal assertions, exhaustive router smoke
   coverage that only restates route wiring, and inline snapshots for simple DOM
   structure or attributes.
+- Keep test names behaviour-focused: avoid `noop`, raw assertion fragments like
+  `-> isHidden=%s` / `-> isDisabled=%s`, and URL-heavy route names when a tab
+  or scenario label is clearer.
+- For API-hook specs, prefer behaviour-focused titles like `fetches X by id`
+  or `lists X using the provided query` over raw HTTP verb/path descriptions.
 - Prefer explicit behavioural assertions over snapshots; assert text, roles,
   classes, callback wiring, and meaningful props.
 

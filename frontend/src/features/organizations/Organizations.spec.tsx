@@ -36,14 +36,17 @@ describe("Organizations router", () => {
   });
 
   it.each([
-    ["/organizations/org-1/general", "general"],
-    ["/organizations/org-1/data-sources", "data-sources"],
-    ["/organizations/org-1/users", "users"],
-    ["/organizations/org-1/events", "events"],
-  ] as const)("renders %s inside the details shell", async (url, testId) => {
-    renderOrganizations(url);
+    ["general", "/organizations/org-1/general", "general"],
+    ["data sources", "/organizations/org-1/data-sources", "data-sources"],
+    ["users", "/organizations/org-1/users", "users"],
+    ["events", "/organizations/org-1/events", "events"],
+  ] as const)(
+    "renders the %s tab inside the organization details shell",
+    async (_tab, url, testId) => {
+      renderOrganizations(url);
 
-    expect(await screen.findByTestId("details-content")).toBeInTheDocument();
-    expect(await screen.findByTestId(testId)).toBeInTheDocument();
-  });
+      expect(await screen.findByTestId("details-content")).toBeInTheDocument();
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
+    },
+  );
 });

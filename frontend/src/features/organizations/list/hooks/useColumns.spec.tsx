@@ -42,7 +42,7 @@ describe("useColumns (organizations list)", () => {
   it.each<[AccountType, boolean]>([
     ["operations", true],
     ["admin", false],
-  ])("hides the actions column for role '%s' → isHidden=%s", (role, isHidden) => {
+  ])("sets the actions column visibility for role '%s'", (role, isHidden) => {
     mockUseUserRole.mockReturnValue({ user: null, role });
     const { result } = renderHook(() => useColumns());
 

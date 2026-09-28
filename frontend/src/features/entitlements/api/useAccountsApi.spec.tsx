@@ -17,7 +17,7 @@ describe("useAccountsApi", () => {
     httpMock.mockResolvedValue({ data: undefined } as unknown as ReturnType<typeof http>);
   });
 
-  it("issues GET /ops/v1/accounts with a query string when list is called", async () => {
+  it("lists accounts using the provided query", async () => {
     const { result } = renderHook(() => useAccountsApi());
 
     await result.current.list(withQuery("limit=10"));
@@ -28,7 +28,7 @@ describe("useAccountsApi", () => {
     });
   });
 
-  it("forwards axios config overrides to http() for list", async () => {
+  it("passes request options through when listing accounts", async () => {
     const { result } = renderHook(() => useAccountsApi());
     const signal = new AbortController().signal;
 

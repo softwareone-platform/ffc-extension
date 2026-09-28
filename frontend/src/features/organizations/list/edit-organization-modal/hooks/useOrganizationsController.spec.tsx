@@ -122,7 +122,7 @@ describe("useOrganizationsController", () => {
     expect(onClose).toHaveBeenCalledWith();
   });
 
-  it("handleCancel is a noop when onClose is not provided", () => {
+  it("handleCancel does nothing when onClose is not provided", () => {
     const { result } = renderController(organization);
 
     expect(() => {

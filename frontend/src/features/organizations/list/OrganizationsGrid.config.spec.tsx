@@ -84,7 +84,7 @@ describe("useGridConfig (organizations list)", () => {
     expect(onAction).not.toHaveBeenCalled();
   });
 
-  it("safely no-ops on RowActionTriggered when no onAction is provided", () => {
+  it("does not throw when a row action is triggered without an onAction handler", () => {
     mockUseGridAsync.mockReturnValue({});
 
     renderHook(() => useGridConfig());

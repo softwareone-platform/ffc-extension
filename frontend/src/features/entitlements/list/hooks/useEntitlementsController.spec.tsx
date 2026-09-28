@@ -146,7 +146,7 @@ describe("useEntitlementController", () => {
     expect(onClose).toHaveBeenCalledWith();
   });
 
-  it("cancel is a noop when onClose is not provided", () => {
+  it("cancel does nothing when onClose is not provided", () => {
     const { result } = renderController();
 
     expect(() => act(() => result.current.cancel())).not.toThrow();

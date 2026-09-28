@@ -11,7 +11,7 @@ describe("useEmployeesApi", () => {
     httpMock.mockResolvedValue({ data: undefined } as unknown as ReturnType<typeof http>);
   });
 
-  it("issues GET /ops/v1/organizations/{id}/employees without a query string when list is called with no query", async () => {
+  it("lists an organization's employees without query parameters when no query is provided", async () => {
     const { result } = renderHook(() => useEmployeesApi());
 
     await result.current.list("org-1");
@@ -22,7 +22,7 @@ describe("useEmployeesApi", () => {
     });
   });
 
-  it("forwards axios config overrides to http() for list", async () => {
+  it("passes request options through when listing employees", async () => {
     const { result } = renderHook(() => useEmployeesApi());
     const signal = new AbortController().signal;
 
@@ -35,7 +35,7 @@ describe("useEmployeesApi", () => {
     });
   });
 
-  it("issues POST /ops/v1/organizations/{id}/add-admin with the form body plus admin note when addAdmin is called", async () => {
+  it("adds an organization admin and includes the default admin note", async () => {
     const { result } = renderHook(() => useEmployeesApi());
 
     await result.current.addAdmin("org-1", { email: "user@example.com", display_name: "User" });
@@ -51,7 +51,7 @@ describe("useEmployeesApi", () => {
     });
   });
 
-  it("issues POST /ops/v1/organizations/{id}/employees/{empId}/make-admin when promoteToAdmin is called", async () => {
+  it("promotes an employee to organization admin", async () => {
     const { result } = renderHook(() => useEmployeesApi());
 
     await result.current.promoteToAdmin("org-1", "emp-1");

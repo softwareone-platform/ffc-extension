@@ -7,13 +7,9 @@ import { mockUseUserRole } from "./App.spec.mocks";
 
 import { App } from "./App";
 
-function primeRole(role: AccountType | undefined) {
-  mockUseUserRole.mockReturnValue({ user: null, role });
-}
-
 describe("App", () => {
   it("redirects the index route to entitlements for affiliate users", async () => {
-    primeRole("affiliate");
+    mockUseUserRole.mockReturnValue({ user: null, role: "affiliate" });
 
     renderWithRouter(<App />, { initialUrl: "/", routePath: "/*" });
 
@@ -25,7 +21,7 @@ describe("App", () => {
   it.each<AccountType>(["admin", "operations"])(
     "redirects the index route to organizations for role '%s'",
     async (role) => {
-      primeRole(role);
+      mockUseUserRole.mockReturnValue({ user: null, role });
 
       renderWithRouter(<App />, { initialUrl: "/", routePath: "/*" });
 
@@ -36,7 +32,7 @@ describe("App", () => {
   );
 
   it("redirects the index route to organizations when the role is missing", async () => {
-    primeRole(undefined);
+    mockUseUserRole.mockReturnValue({ user: null, role: undefined });
 
     renderWithRouter(<App />, { initialUrl: "/", routePath: "/*" });
 
@@ -44,7 +40,7 @@ describe("App", () => {
   });
 
   it("renders nested organizations routes under MainLayout", async () => {
-    primeRole("admin");
+    mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 
     renderWithRouter(<App />, {
       initialUrl: "/organizations/anything",

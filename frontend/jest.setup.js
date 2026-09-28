@@ -1,6 +1,10 @@
 import {jest} from '@jest/globals';
 import {TextEncoder, TextDecoder} from 'node:util';
 
+import { mockSharedModal } from './src/test-utils/mocks/modal';
+import { mockSharedInlineErrorNotification } from './src/test-utils/mocks/inlineErrorNotification';
+import { mockUserRoleModule } from './src/test-utils/mocks/userRole';
+
 // jsdom lacks TextEncoder/TextDecoder; react-router-dom needs them at import time.
 Object.assign(globalThis, {TextEncoder, TextDecoder});
 
@@ -11,6 +15,12 @@ jest.mock('@mpt-extension/sdk', () => ({
   http: jest.fn(),
 }), { virtual: true });
 jest.mock('@swo/design-system/utils');
+jest.mock('~shared/components/modal/Modal', () => mockSharedModal);
+jest.mock(
+  '~shared/components/error/InlineErrorNotification',
+  () => mockSharedInlineErrorNotification,
+);
+jest.mock('~shared/hooks/useUserRole', () => mockUserRoleModule);
 
 // jsdom does not implement ResizeObserver, but some design-system components expect it during render.
 if (!globalThis.ResizeObserver) {

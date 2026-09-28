@@ -32,7 +32,7 @@ describe("DataSourceStep", () => {
     expect(names).toEqual(["name", "dataSource.id", "dataSource.affiliate_external_id"]);
   });
 
-  it("registers an onNext callback that validates name and dataSource fields", async () => {
+  it("validates the name and data source fields before advancing", async () => {
     const { triggerSpy } = renderStep();
 
     const onNext = mockRegisterOnNextCallback.mock.lastCall![0] as (

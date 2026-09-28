@@ -52,7 +52,7 @@ describe("UsersGrid.config", () => {
     it.each<[AccountType, boolean]>([
       ["operations", true],
       ["admin", false],
-    ])("hides the actions column for role '%s' → isHidden=%s", (role, isHidden) => {
+    ])("sets the actions column visibility for role '%s'", (role, isHidden) => {
       mockUseUserRole.mockReturnValue({ user: null, role });
       const { result } = renderHook(() => useColumns());
 
@@ -163,7 +163,7 @@ describe("UsersGrid.config", () => {
       );
     });
 
-    it("builds query options that scope queryKey by organizationId and delegate to listOrganizationEmployees", () => {
+    it("builds organization-scoped query options for listing employees", () => {
       renderHook(() => useAsyncOptions("org-1"));
       const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
       const query = { toString: () => "rql-string" };
@@ -245,7 +245,7 @@ describe("UsersGrid.config", () => {
       expect(onAction).not.toHaveBeenCalled();
     });
 
-    it("safely no-ops on RowActionTriggered when no onAction is provided", () => {
+    it("does not throw when a row action is triggered without an onAction handler", () => {
       mockUseGridAsync.mockReturnValue({});
 
       renderHook(() => useGridConfig("org-1"));
