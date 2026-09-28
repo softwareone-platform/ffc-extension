@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 
 import { makeOrganization, triggerModalCancel, triggerModalSubmit } from "~test-utils";
+import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import {
   mockInlineErrorNotification,
   mockSharedInlineErrorNotification,
@@ -34,7 +35,7 @@ jest.mock("@swo/design-system/notification", () => ({
 }));
 
 jest.mock("@swo/design-system/utils", () => ({
-  NO_VALUE: "—",
+  ...mockDesignSystemUtils,
   useFormatDate: () => mockUseFormatDate(),
 }));
 

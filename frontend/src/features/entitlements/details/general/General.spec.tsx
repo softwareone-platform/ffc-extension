@@ -4,6 +4,7 @@ import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
 import { renderWithRouter } from "~test-utils";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
+import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
 import { EntitlementsGeneralDetails } from "./General";
@@ -22,10 +23,7 @@ jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHi
 
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
-jest.mock("@swo/design-system/utils", () => ({
-  NO_VALUE: "—",
-  DisplayValue: ({ value }: { value?: unknown }) => <>{value ?? ""}</>,
-}));
+jest.mock("@swo/design-system/utils", () => mockDesignSystemUtils);
 
 function primeEntity(entity: Partial<EntitlementRead> | undefined) {
   mockUseEntitlementsDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);

@@ -1,4 +1,4 @@
-import { PATHS, SEGMENTS } from "./paths";
+import { PATHS } from "./paths";
 
 describe("entitlements paths", () => {
   it.each([
@@ -10,7 +10,7 @@ describe("entitlements paths", () => {
     expect(builder("ent-1")).toBe(expected);
   });
 
-  it("exposes a detailMatch pattern with a wildcard suffix for nested routes", () => {
-    expect(PATHS.detailMatch).toBe(`/${SEGMENTS.root}/${SEGMENTS.idParam}/*`);
+  it("detailMatch is the react-router pattern for the detail route", () => {
+    expect(PATHS.detailMatch).toBe("/entitlements/:entitlementId/*");
   });
 });

@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 
 import type { useOrganizationDetailsApi } from "~organizations/api";
 import type { useFormatMoney } from "~shared/utils/NumberUtils";
+import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
 type MockNavigationHighlightsProps = ComponentProps<
@@ -21,11 +22,7 @@ jest.mock("~shared/utils/NumberUtils", () => ({
   useFormatMoney: (...args: Parameters<typeof useFormatMoney>) => mockUseFormatMoney(...args),
 }));
 
-jest.mock("@swo/design-system/utils", () => ({
-  DisplayValue: ({ value, transform }: { value: number; transform?: (v: number) => unknown }) => (
-    <>{transform ? transform(value) : value}</>
-  ),
-}));
+jest.mock("@swo/design-system/utils", () => mockDesignSystemUtils);
 
 jest.mock("@swo/design-system/navigation", () => ({
   Navigation: {

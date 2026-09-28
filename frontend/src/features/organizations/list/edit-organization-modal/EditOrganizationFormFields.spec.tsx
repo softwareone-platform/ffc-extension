@@ -1,20 +1,14 @@
-import type { ReactNode } from "react";
-
 import { render, screen } from "@testing-library/react";
 import type { Control } from "react-hook-form";
 
 import { mockControlledInput, mockSharedControlledInput } from "~test-utils/mocks/controlledInput";
+import { mockDesignSystemNotification } from "~test-utils/mocks/designSystemNotification";
 
 import type { EditOrganizationForm } from "./EditOrganization.Schema";
 import { EditOrganizationFormFields } from "./EditOrganizationFormFields";
 
 jest.mock("~shared/components/form/ControlledInput", () => mockSharedControlledInput);
-
-jest.mock("@swo/design-system/notification", () => ({
-  InlineNotification: ({ children }: { children?: ReactNode }) => (
-    <div data-testid="inline-notification">{children}</div>
-  ),
-}));
+jest.mock("@swo/design-system/notification", () => mockDesignSystemNotification);
 
 function renderFields(error: string | null = null) {
   return render(

@@ -4,6 +4,7 @@ import type { OrganizationRead } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~organizations/api";
 import { renderWithRouter } from "~test-utils";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
+import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
 import { OrganizationGeneralDetails } from "./General";
@@ -22,9 +23,7 @@ jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHi
 
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
-jest.mock("@swo/design-system/utils", () => ({
-  DisplayValue: ({ value }: { value: unknown }) => <>{value == null ? "" : String(value)}</>,
-}));
+jest.mock("@swo/design-system/utils", () => mockDesignSystemUtils);
 
 function primeEntity(entity: Partial<OrganizationRead> | undefined) {
   mockUseOrganizationDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);

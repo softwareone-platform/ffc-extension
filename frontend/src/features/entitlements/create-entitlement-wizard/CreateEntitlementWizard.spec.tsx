@@ -1,84 +1,16 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
 
-import type { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
-import { mockErrorDetailsModule } from "~test-utils/mocks/errorDetails";
-import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
+import {
+  mockStepContext,
+  mockUseSteps,
+  mockUseUserRole,
+  mockWizard,
+} from "./CreateEntitlementWizard.spec.mocks";
 
 import { CreateEntitlementWizard } from "./CreateEntitlementWizard";
-
-type EntitlementsApi = ReturnType<typeof useEntitlementsApi>;
-type MockWizardProps = ComponentProps<typeof import("@swo/design-system/wizard").Wizard>;
-
-const mockSave = jest.fn() as jest.MockedFunction<EntitlementsApi["save"]>;
-const mockWizard = jest.fn() as jest.MockedFunction<(props: MockWizardProps) => void>;
-const mockUseSteps = jest.fn();
-
-let stepContentActiveIndex = 0;
-
-jest.mock("~entitlements/api/useEntitlementsApi", () => ({
-  useEntitlementsApi: () => ({ save: mockSave }),
-}));
-
-jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
-
-jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
-
-jest.mock("@swo/design-system/modal", () => ({
-  Modal: ({ children }: { children?: ReactNode }) => <div data-testid="modal">{children}</div>,
-}));
-
-jest.mock("@swo/design-system/wizard", () => {
-  const Wizard = (props: MockWizardProps) => {
-    mockWizard(props);
-    return <div data-testid="wizard">{props.children}</div>;
-  };
-  Wizard.Header = ({ children }: { children?: ReactNode }) => (
-    <div data-testid="wizard-header">{children}</div>
-  );
-  const Content = ({ children }: { children?: ReactNode }) => (
-    <div data-testid="wizard-content">{children}</div>
-  );
-  Content.Steps = () => <div data-testid="wizard-steps" />;
-  Content.StepContent = ({
-    children,
-  }: {
-    children: (ctx: { activeStepIndex: number }) => ReactNode;
-  }) => (
-    <div data-testid="wizard-step-content">
-      {children({ activeStepIndex: stepContentActiveIndex })}
-    </div>
-  );
-  Wizard.Content = Content;
-  Wizard.Actions = () => <div data-testid="wizard-actions" />;
-  return { Wizard };
-});
-
-jest.mock("./steps/AffiliateStep", () => ({
-  AffiliateStep: () => <div data-testid="step-affiliate" />,
-}));
-
-jest.mock("./steps/DataSourceStep", () => ({
-  DataSourceStep: () => <div data-testid="step-datasource" />,
-}));
-
-jest.mock("./steps/ReviewStep", () => ({
-  ReviewStep: ({ error }: { error?: string }) => (
-    <div data-testid="step-review" data-error={error} />
-  ),
-}));
-
-jest.mock("./steps/SummaryStep", () => ({
-  SummaryStep: ({ error }: { error?: string }) => (
-    <div data-testid="step-summary" data-error={error} />
-  ),
-}));
-
-jest.mock("./useSteps", () => ({
-  useSteps: (...args: unknown[]) => mockUseSteps(...args),
-}));
 
 function withQueryClient(ui: ReactNode) {
   const client = new QueryClient({
@@ -99,7 +31,7 @@ describe("CreateEntitlementWizard", () => {
   beforeEach(() => {
     primeOperations();
     mockUseSteps.mockReturnValue([{ title: "1" }, { title: "2" }, { title: "3" }, { title: "4" }]);
-    stepContentActiveIndex = 0;
+    mockStepContext.activeStepIndex = 0;
   });
 
   it("initialises useSteps with isPending=false", () => {
@@ -126,7 +58,7 @@ describe("CreateEntitlementWizard", () => {
     ["review", 2, "step-review"],
     ["summary", 3, "step-summary"],
   ] as const)("renders %s step at activeStepIndex=%i", (_name, index, testId) => {
-    stepContentActiveIndex = index;
+    mockStepContext.activeStepIndex = index;
 
     render(withQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />));
 
