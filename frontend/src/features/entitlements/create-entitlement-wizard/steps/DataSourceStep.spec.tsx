@@ -24,6 +24,12 @@ function renderStep() {
   return { triggerSpy };
 }
 
+function getRegisteredOnNextCallback() {
+  return mockRegisterOnNextCallback.mock.lastCall![0] as (
+    props: StepNavigationProperties,
+  ) => Promise<number>;
+}
+
 describe("DataSourceStep", () => {
   it("renders the name, dataSource.id, and dataSource.affiliate_external_id inputs", () => {
     renderStep();
@@ -35,9 +41,7 @@ describe("DataSourceStep", () => {
   it("validates the name and data source fields before advancing", async () => {
     const { triggerSpy } = renderStep();
 
-    const onNext = mockRegisterOnNextCallback.mock.lastCall![0] as (
-      props: StepNavigationProperties,
-    ) => Promise<number>;
+    const onNext = getRegisteredOnNextCallback();
 
     const nextIndex = await onNext({
       targetStepIndex: 2,
@@ -53,9 +57,7 @@ describe("DataSourceStep", () => {
       triggerResolvedValue: false,
     });
 
-    const onNext = mockRegisterOnNextCallback.mock.lastCall![0] as (
-      props: StepNavigationProperties,
-    ) => Promise<number>;
+    const onNext = getRegisteredOnNextCallback();
     const nextIndex = await onNext({
       targetStepIndex: 2,
       currentStepIndex: 1,

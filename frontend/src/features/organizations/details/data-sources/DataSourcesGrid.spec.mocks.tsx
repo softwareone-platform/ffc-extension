@@ -22,6 +22,18 @@ jest.mock("./DataSourcesGrid.config", () => ({
 jest.mock("./force-import-modal/DataSourceForceImportModal", () => ({
   DataSourceForceImportModal: (props: MockDataSourceForceImportModalProps) => {
     mockForceImportModal(props);
-    return <div data-testid="force-import-modal" />;
+    return (
+      <div
+        data-testid="force-import-modal"
+        data-open={String(props.isOpen)}
+        data-datasource-id={props.datasource?.id ?? ""}
+        data-organization-id={props.organizationId}
+        data-class-name={props.className ?? ""}
+      >
+        <button onClick={() => props.onClose()} type="button">
+          close force import modal
+        </button>
+      </div>
+    );
   },
 }));

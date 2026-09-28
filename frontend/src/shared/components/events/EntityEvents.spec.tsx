@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
-import type { AuditEventsSchema } from "~api/ffc-api-model/types.gen";
+import type { AuditEventsSchema } from "~api/ffc-api-model";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 

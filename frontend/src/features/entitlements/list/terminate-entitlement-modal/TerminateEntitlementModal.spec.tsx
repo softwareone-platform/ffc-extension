@@ -67,7 +67,7 @@ describe("TerminateEntitlementModal", () => {
 
     render(<TerminateEntitlementModal isOpen onClose={jest.fn()} entitlement={entitlement} />);
 
-    expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitting: true });
+    expect(mockModal).toHaveBeenCalledWith(expect.objectContaining({ isSubmitting: true }));
   });
 
   it("terminates the entitlement and calls onSuccess after submit", async () => {

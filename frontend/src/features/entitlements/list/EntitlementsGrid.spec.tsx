@@ -34,15 +34,13 @@ describe("EntitlementsGrid", () => {
   it("opens no modal until an action fires", () => {
     render(<EntitlementsGrid />);
 
-    expect(mockCreateWizard.mock.lastCall![0]).toMatchObject({ isOpen: false });
-    expect(mockTerminateModal.mock.lastCall![0]).toMatchObject({
-      isOpen: false,
-      entitlement: null,
-    });
-    expect(mockDeleteModal.mock.lastCall![0]).toMatchObject({
-      isOpen: false,
-      entitlement: null,
-    });
+    expect(screen.getByTestId("create-entitlement-wizard")).toHaveAttribute("data-open", "false");
+    expect(mockTerminateModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: false, entitlement: null }),
+    );
+    expect(mockDeleteModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: false, entitlement: null }),
+    );
   });
 
   it("opens the create-entitlement wizard when the add button is clicked", async () => {
@@ -50,31 +48,31 @@ describe("EntitlementsGrid", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "add" }));
 
-    expect(mockCreateWizard.mock.lastCall![0]).toMatchObject({ isOpen: true });
+    expect(screen.getByTestId("create-entitlement-wizard")).toHaveAttribute("data-open", "true");
   });
 
+  // eslint-disable-next-line jest/expect-expect
   it("opens the terminate modal with the selected item when onAction fires 'terminate'", () => {
     render(<EntitlementsGrid />);
     const item = makeEntitlement({ id: "ent-t" });
 
     act(() => getOnAction()("terminate", item, jest.fn()));
 
-    expect(mockTerminateModal.mock.lastCall![0]).toMatchObject({
-      isOpen: true,
-      entitlement: item,
-    });
+    expect(mockTerminateModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: true, entitlement: item }),
+    );
   });
 
+  // eslint-disable-next-line jest/expect-expect
   it("opens the delete modal with the selected item when onAction fires 'delete'", () => {
     render(<EntitlementsGrid />);
     const item = makeEntitlement({ id: "ent-d" });
 
     act(() => getOnAction()("delete", item, jest.fn()));
 
-    expect(mockDeleteModal.mock.lastCall![0]).toMatchObject({
-      isOpen: true,
-      entitlement: item,
-    });
+    expect(mockDeleteModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: true, entitlement: item }),
+    );
   });
 
   it("ignores unknown actions", () => {
@@ -82,8 +80,12 @@ describe("EntitlementsGrid", () => {
 
     act(() => getOnAction()("redeem", makeEntitlement(), jest.fn()));
 
-    expect(mockTerminateModal.mock.lastCall![0].isOpen).toBe(false);
-    expect(mockDeleteModal.mock.lastCall![0].isOpen).toBe(false);
+    expect(mockTerminateModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: false, entitlement: null }),
+    );
+    expect(mockDeleteModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: false, entitlement: null }),
+    );
   });
 
   it("passes createEntitlementModal.isOpen to useNotifyParentChildModal", () => {

@@ -48,21 +48,33 @@ jest.mock("./EntitlementsGrid.config", () => ({
 jest.mock("../create-entitlement-wizard/CreateEntitlementWizard", () => ({
   CreateEntitlementWizard: (props: MockCreateWizardProps) => {
     mockCreateWizard(props);
-    return <div data-testid="create-entitlement-wizard" />;
+    return <div data-testid="create-entitlement-wizard" data-open={String(props.isOpen)} />;
   },
 }));
 
 jest.mock("./terminate-entitlement-modal/TerminateEntitlementModal", () => ({
   TerminateEntitlementModal: (props: MockTerminateModalProps) => {
     mockTerminateModal(props);
-    return <div data-testid="terminate-modal" />;
+    return (
+      <div
+        data-testid="terminate-modal"
+        data-open={String(props.isOpen)}
+        data-entitlement-id={props.entitlement?.id ?? ""}
+      />
+    );
   },
 }));
 
 jest.mock("./delete-entitlement-modal/DeleteEntitlementModal", () => ({
   DeleteEntitlementModal: (props: MockDeleteModalProps) => {
     mockDeleteModal(props);
-    return <div data-testid="delete-modal" />;
+    return (
+      <div
+        data-testid="delete-modal"
+        data-open={String(props.isOpen)}
+        data-entitlement-id={props.entitlement?.id ?? ""}
+      />
+    );
   },
 }));
 

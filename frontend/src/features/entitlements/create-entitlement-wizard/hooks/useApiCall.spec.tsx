@@ -11,6 +11,7 @@ import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole"
 import { useApiCall } from "./useApiCall";
 
 type AccountsApi = ReturnType<typeof useAccountsApi>;
+type ApiCallResponse = Awaited<ReturnType<ReturnType<typeof useApiCall>>>;
 
 const mockList = jest.fn() as jest.MockedFunction<AccountsApi["list"]>;
 
@@ -42,7 +43,7 @@ describe("useApiCall", () => {
     primeAffiliate(own);
     const { result } = renderHook(() => useApiCall(columns));
 
-    let response: { data: Account[]; total: number } | undefined;
+    let response: ApiCallResponse | undefined;
     await act(async () => {
       response = await result.current("", 0, 20);
     });
@@ -59,7 +60,7 @@ describe("useApiCall", () => {
     } as unknown as Awaited<ReturnType<AccountsApi["list"]>>);
     const { result } = renderHook(() => useApiCall(columns));
 
-    let response: { data: Account[]; total: number } | undefined;
+    let response: ApiCallResponse | undefined;
     await act(async () => {
       response = await result.current("name==x", 0, 20);
     });

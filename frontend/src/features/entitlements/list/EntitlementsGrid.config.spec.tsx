@@ -40,6 +40,26 @@ const COLUMN_FIELDS = [
   ["actions", []],
 ] as const;
 
+function getColumns() {
+  return renderHook(() => useColumns()).result.current;
+}
+
+function getFields() {
+  return renderHook(() => useFields()).result.current;
+}
+
+function getViews() {
+  return renderHook(() => useViews()).result.current;
+}
+
+function getLatestOptionsFactory() {
+  return mockUseReactQueryRqlGrid.mock.lastCall![1];
+}
+
+function getLatestGridAsyncArg() {
+  return mockUseGridAsync.mock.lastCall![0];
+}
+
 describe("EntitlementsGrid.config", () => {
   beforeEach(() => {
     mockUseGridInfoDialogConfiguration.mockReturnValue({
@@ -49,31 +69,31 @@ describe("EntitlementsGrid.config", () => {
 
   describe("useColumns", () => {
     it("returns columns in fixed order", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
 
-      expect(result.current.map((c) => c.name)).toEqual(COLUMN_FIELDS.map(([n]) => n));
+      expect(columns.map((c) => c.name)).toEqual(COLUMN_FIELDS.map(([n]) => n));
     });
 
     it.each(COLUMN_FIELDS)("column '%s' maps to fields %j", (name, expectedFields) => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
 
-      expect(columnByName(result.current, name).fields).toEqual(expectedFields);
+      expect(columnByName(columns, name).fields).toEqual(expectedFields);
     });
 
     it("renders 'name' column with a link title and id subtitle", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
 
-      renderColumnCell(result.current, "name", makeEntitlement({ id: "ent-1", name: "One" }));
+      renderColumnCell(columns, "name", makeEntitlement({ id: "ent-1", name: "One" }));
 
       expect(screen.getByTestId("title")).toHaveTextContent("One");
       expect(screen.getByTestId("subtitle")).toHaveTextContent("ent-1");
     });
 
     it("renders 'affiliate' column via EntityReference with owner details", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
 
       renderColumnCell(
-        result.current,
+        columns,
         "affiliate",
         makeEntitlement({
           owner: {
@@ -92,10 +112,10 @@ describe("EntitlementsGrid.config", () => {
     });
 
     it("renders 'data_source' column via DataSourceEntityReference with the item", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
       const item = makeEntitlement({ id: "ent-42" });
 
-      renderColumnCell(result.current, "data_source", item);
+      renderColumnCell(columns, "data_source", item);
 
       expect(screen.getByTestId("datasource-entity-reference")).toHaveAttribute(
         "data-entity-id",
@@ -104,10 +124,10 @@ describe("EntitlementsGrid.config", () => {
     });
 
     it("renders NO_VALUE for the 'organization' column when the entitlement has not been redeemed", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
 
       renderColumnCell(
-        result.current,
+        columns,
         "organization",
         makeEntitlement({
           events: { redeemed: null } as unknown as Entitlement["events"],
@@ -118,10 +138,10 @@ describe("EntitlementsGrid.config", () => {
     });
 
     it("renders 'organization' column with title/subtitle when redeemed", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
 
       renderColumnCell(
-        result.current,
+        columns,
         "organization",
         makeEntitlement({
           events: {
@@ -143,11 +163,11 @@ describe("EntitlementsGrid.config", () => {
     ] as const)(
       "renders '%s' column with GridCellDateTime from events.%s.at",
       (columnName, key) => {
-        const { result } = renderHook(() => useColumns());
+        const columns = getColumns();
         const events = { [key]: { at: "2026-01-15T10:00:00Z" } };
 
         renderColumnCell(
-          result.current,
+          columns,
           columnName,
           makeEntitlement({ events: events as unknown as Entitlement["events"] }),
         );
@@ -157,20 +177,20 @@ describe("EntitlementsGrid.config", () => {
     );
 
     it("renders 'status' column with the Status chip", () => {
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
       const item = makeEntitlement({ status: "active" });
 
-      renderColumnCell(result.current, "status", item);
+      renderColumnCell(columns, "status", item);
 
       expect(mockStatus).toHaveBeenCalledWith({ item });
     });
 
     it("renders 'actions' column with dynamic actions for the item", () => {
       mockGetActions.mockReturnValue([{ value: "terminate", label: "terminate" }]);
-      const { result } = renderHook(() => useColumns());
+      const columns = getColumns();
       const item = makeEntitlement({ id: "ent-1" });
 
-      renderColumnCell(result.current, "actions", item);
+      renderColumnCell(columns, "actions", item);
 
       expect(screen.getByTestId("actions-item-id")).toHaveTextContent("ent-1");
       expect(screen.getByTestId("actions-count")).toHaveTextContent("1");
@@ -180,8 +200,8 @@ describe("EntitlementsGrid.config", () => {
 
   describe("useFields", () => {
     it("exposes linked_datasource_type as a list field with azure_cnr and aws_cnr options", () => {
-      const { result } = renderHook(() => useFields());
-      const field = result.current.find(
+      const fields = getFields();
+      const field = fields.find(
         (f) => f.name === "linked_datasource_type",
       ) as GridFieldDefinition;
 
@@ -190,8 +210,8 @@ describe("EntitlementsGrid.config", () => {
     });
 
     it("exposes status as a list field with all four options", () => {
-      const { result } = renderHook(() => useFields());
-      const field = result.current.find((f) => f.name === "status") as GridFieldDefinition;
+      const fields = getFields();
+      const field = fields.find((f) => f.name === "status") as GridFieldDefinition;
 
       expect(field).toMatchObject({ type: "list" });
       expect(field.options!.map((o) => o.value)).toEqual([
@@ -209,22 +229,21 @@ describe("EntitlementsGrid.config", () => {
       "events.terminated.at",
       "events.deleted.at",
     ])("marks '%s' as a date field", (name) => {
-      const { result } = renderHook(() => useFields());
+      const fields = getFields();
 
-      expect(result.current.find((f) => f.name === name)).toMatchObject({ type: "date" });
+      expect(fields.find((f) => f.name === name)).toMatchObject({ type: "date" });
     });
   });
 
   describe("useViews", () => {
     it("returns main, active, inactive, and all views in fixed order", () => {
-      const { result } = renderHook(() => useViews());
+      const views = getViews();
 
-      expect(result.current.map((v) => v.name)).toEqual(["main", "active", "inactive", "all"]);
+      expect(views.map((v) => v.name)).toEqual(["main", "active", "inactive", "all"]);
     });
 
     it("scopes the main view to non-deleted entitlements sorted by updated desc", () => {
-      const { result } = renderHook(() => useViews());
-      const main = result.current.find((v) => v.name === "main")!;
+      const main = getViews().find((v) => v.name === "main")!;
 
       expect(main.configuration).toMatchObject({
         filters: {
@@ -236,8 +255,7 @@ describe("EntitlementsGrid.config", () => {
     });
 
     it("scopes the inactive view to deleted or terminated statuses", () => {
-      const { result } = renderHook(() => useViews());
-      const inactive = result.current.find((v) => v.name === "inactive")!;
+      const inactive = getViews().find((v) => v.name === "inactive")!;
 
       expect(inactive.configuration.filters).toEqual({
         operator: "or",
@@ -261,7 +279,7 @@ describe("EntitlementsGrid.config", () => {
 
     it("builds query options that include the query string and list callback", () => {
       renderHook(() => useAsyncOptions());
-      const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
+      const optionsFactory = getLatestOptionsFactory();
       const query = { toString: () => "rql-string" };
 
       const options = optionsFactory(query);
@@ -273,7 +291,7 @@ describe("EntitlementsGrid.config", () => {
 
     it("wires mapAxiosResponseDataList as the select transform", () => {
       renderHook(() => useAsyncOptions());
-      const optionsFactory = mockUseReactQueryRqlGrid.mock.lastCall![1];
+      const optionsFactory = getLatestOptionsFactory();
 
       const options = optionsFactory({ toString: () => "rql" });
 
@@ -294,7 +312,7 @@ describe("EntitlementsGrid.config", () => {
 
       renderHook(() => useGridConfig());
 
-      const arg = mockUseGridAsync.mock.lastCall![0];
+      const arg = getLatestGridAsyncArg();
       expect(arg).toEqual(
         expect.objectContaining({
           id: "entitlements-list",
@@ -323,7 +341,7 @@ describe("EntitlementsGrid.config", () => {
       const onAction = jest.fn();
 
       renderHook(() => useGridConfig(onAction));
-      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
+      const onEvent = getLatestGridAsyncArg().onEvent!;
 
       onEvent({ type: "RowActionTriggered", data: { action: "terminate", item: { id: "e-1" } } });
 
@@ -335,7 +353,7 @@ describe("EntitlementsGrid.config", () => {
       const onAction = jest.fn();
 
       renderHook(() => useGridConfig(onAction));
-      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
+      const onEvent = getLatestGridAsyncArg().onEvent!;
 
       onEvent({ type: "SomethingElse", data: {} } as unknown as GridEvents);
 

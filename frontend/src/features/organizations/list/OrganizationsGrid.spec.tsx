@@ -30,14 +30,26 @@ jest.mock("./OrganizationsGrid.config", () => ({
 jest.mock("./edit-organization-modal/EditOrganizationModal", () => ({
   EditOrganizationModal: (props: MockEditModalProps) => {
     mockEditModal(props);
-    return <div data-testid="edit-modal" />;
+    return (
+      <div
+        data-testid="edit-modal"
+        data-open={String(props.isOpen)}
+        data-organization-id={props.organization?.id ?? ""}
+      />
+    );
   },
 }));
 
 jest.mock("./delete-organization-modal/DeleteOrganizationModal", () => ({
   DeleteOrganizationModal: (props: MockDeleteModalProps) => {
     mockDeleteModal(props);
-    return <div data-testid="delete-modal" />;
+    return (
+      <div
+        data-testid="delete-modal"
+        data-open={String(props.isOpen)}
+        data-organization-id={props.organization?.id ?? ""}
+      />
+    );
   },
 }));
 
@@ -68,8 +80,10 @@ describe("OrganizationsGrid", () => {
   it("initially renders both modals closed with null data", () => {
     render(<OrganizationsGrid />);
 
-    expect(mockEditModal.mock.lastCall![0]).toMatchObject({ isOpen: false, organization: null });
-    expect(mockDeleteModal.mock.lastCall![0]).toMatchObject({ isOpen: false, organization: null });
+    expect(screen.getByTestId("edit-modal")).toHaveAttribute("data-open", "false");
+    expect(screen.getByTestId("edit-modal")).toHaveAttribute("data-organization-id", "");
+    expect(screen.getByTestId("delete-modal")).toHaveAttribute("data-open", "false");
+    expect(screen.getByTestId("delete-modal")).toHaveAttribute("data-organization-id", "");
   });
 
   it("opens the edit modal with the selected organization when onAction fires 'edit'", () => {
@@ -78,8 +92,9 @@ describe("OrganizationsGrid", () => {
 
     act(() => getOnAction()("edit", item, jest.fn()));
 
-    expect(mockEditModal.mock.lastCall![0]).toMatchObject({ isOpen: true, organization: item });
-    expect(mockDeleteModal.mock.lastCall![0].isOpen).toBe(false);
+    expect(screen.getByTestId("edit-modal")).toHaveAttribute("data-open", "true");
+    expect(screen.getByTestId("edit-modal")).toHaveAttribute("data-organization-id", item.id);
+    expect(screen.getByTestId("delete-modal")).toHaveAttribute("data-open", "false");
   });
 
   it("opens the delete modal with the selected organization when onAction fires 'delete'", () => {
@@ -88,8 +103,9 @@ describe("OrganizationsGrid", () => {
 
     act(() => getOnAction()("delete", item, jest.fn()));
 
-    expect(mockDeleteModal.mock.lastCall![0]).toMatchObject({ isOpen: true, organization: item });
-    expect(mockEditModal.mock.lastCall![0].isOpen).toBe(false);
+    expect(screen.getByTestId("delete-modal")).toHaveAttribute("data-open", "true");
+    expect(screen.getByTestId("delete-modal")).toHaveAttribute("data-organization-id", item.id);
+    expect(screen.getByTestId("edit-modal")).toHaveAttribute("data-open", "false");
   });
 
   it("ignores unknown actions", () => {
@@ -97,7 +113,7 @@ describe("OrganizationsGrid", () => {
 
     act(() => getOnAction()("activate", makeOrganization(), jest.fn()));
 
-    expect(mockEditModal.mock.lastCall![0].isOpen).toBe(false);
-    expect(mockDeleteModal.mock.lastCall![0].isOpen).toBe(false);
+    expect(screen.getByTestId("edit-modal")).toHaveAttribute("data-open", "false");
+    expect(screen.getByTestId("delete-modal")).toHaveAttribute("data-open", "false");
   });
 });

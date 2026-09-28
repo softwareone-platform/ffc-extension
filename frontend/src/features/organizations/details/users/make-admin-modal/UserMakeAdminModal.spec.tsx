@@ -1,8 +1,8 @@
 import { render } from "@testing-library/react";
 
 import { makeEmployee, triggerModalCancel, triggerModalSubmit } from "~test-utils";
-import { mockInlineErrorNotification } from "~test-utils/mocks/inlineErrorNotification";
-import { mockModal } from "~test-utils/mocks/modal";
+import { mockInlineErrorNotification, mockSharedInlineErrorNotification } from "~test-utils/mocks/inlineErrorNotification";
+import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { useEmployeeController } from "../hooks/useEmployeeController";
 import { UserMakeAdminModal } from "./UserMakeAdminModal";
@@ -10,6 +10,9 @@ import { UserMakeAdminModal } from "./UserMakeAdminModal";
 type Controller = ReturnType<typeof useEmployeeController>;
 
 const mockUseEmployeeController = jest.fn() as jest.MockedFunction<typeof useEmployeeController>;
+
+jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
+jest.mock("~shared/components/error/InlineErrorNotification", () => mockSharedInlineErrorNotification);
 
 jest.mock("../hooks/useEmployeeController", () => ({
   useEmployeeController: (...args: Parameters<typeof useEmployeeController>) =>
@@ -30,6 +33,12 @@ function primeController(overrides: Partial<Controller> = {}): Controller {
 
 describe("UserMakeAdminModal", () => {
   const employee = makeEmployee({ id: "emp-1" });
+
+  beforeEach(() => {
+    mockModal.mockClear();
+    mockInlineErrorNotification.mockClear();
+    mockUseEmployeeController.mockClear();
+  });
 
   it("passes onClose to the employee controller", () => {
     primeController();

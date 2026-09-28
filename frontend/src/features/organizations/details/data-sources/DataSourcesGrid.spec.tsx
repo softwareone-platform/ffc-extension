@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { mockForceImportModal, mockUseGridConfig } from "./DataSourcesGrid.spec.mocks";
 
@@ -32,13 +33,15 @@ describe("DataSourcesGrid", () => {
     render(<DataSourcesGrid organizationId={organizationId} />);
 
     expect(screen.getByTestId("force-import-modal")).toBeInTheDocument();
-    expect(mockForceImportModal).toHaveBeenCalledWith(
-      expect.objectContaining({
-        isOpen: false,
-        datasource: null,
-        organizationId,
-        className: "force-import-modal",
-      }),
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-open", "false");
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-datasource-id", "");
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute(
+      "data-organization-id",
+      organizationId,
+    );
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute(
+      "data-class-name",
+      "force-import-modal",
     );
   });
 
@@ -51,24 +54,25 @@ describe("DataSourcesGrid", () => {
       onAction("force_import", item);
     });
 
-    expect(mockForceImportModal.mock.lastCall![0]).toMatchObject({
-      isOpen: true,
-      datasource: item,
-      organizationId,
-    });
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-open", "true");
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-datasource-id", "ds-1");
+    expect(mockForceImportModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ organizationId }),
+    );
   });
 
-  it("closes the force-import modal when its onClose fires", () => {
+  it("closes the force-import modal when its onClose fires", async () => {
+    const user = userEvent.setup();
+
     render(<DataSourcesGrid organizationId={organizationId} />);
     const onAction = getOnAction();
     const item = { id: "ds-1", name: "AWS", type: "aws" };
     act(() => onAction("force_import", item));
-    expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(true);
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-open", "true");
 
-    const onClose = mockForceImportModal.mock.lastCall![0].onClose;
-    act(() => onClose());
+    await user.click(screen.getByRole("button", { name: "close force import modal" }));
 
-    expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(false);
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-open", "false");
   });
 
   it("ignores unknown actions", () => {
@@ -79,6 +83,6 @@ describe("DataSourcesGrid", () => {
       onAction("unsupported_action", { id: "ds-2" });
     });
 
-    expect(mockForceImportModal.mock.lastCall![0].isOpen).toBe(false);
+    expect(screen.getByTestId("force-import-modal")).toHaveAttribute("data-open", "false");
   });
 });

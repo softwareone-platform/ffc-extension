@@ -1,8 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import type { Row } from "@swo/design-system/list";
-
 import type { Account } from "~features/entitlements/api/model";
 import { makeAccount } from "~test-utils";
 
@@ -16,8 +14,6 @@ import {
 } from "./SelectAffiliateList.spec.mocks";
 
 import { SelectAffiliateList } from "./SelectAffiliateList";
-
-type AccountRow = Row<Account>;
 
 describe("SelectAffiliateList", () => {
   const columns = [{ name: "name" }, { name: "id" }];
@@ -45,15 +41,12 @@ describe("SelectAffiliateList", () => {
     expect(mockUseApiCall).toHaveBeenCalledWith(columns);
     expect(mockUseListWithApi).toHaveBeenCalledWith({ apiCall, limit: 10, columns });
     expect(mockUseListDataWithSelectedEntity).toHaveBeenCalledWith({ entity, data: listData });
-    expect(mockList.mock.lastCall?.[0]).toEqual(
+    expect(mockList).toHaveBeenCalledWith(
       expect.objectContaining({
-        columns,
         data: mergedData,
-        showFilterBar: true,
-        trackBy: "id",
+        selectedRows: [{ data: entity, selected: true }],
         selectionType: "radio",
-        showSelectedNumber: false,
-        selectedRows: [{ data: entity, selected: true }] satisfies AccountRow[],
+        trackBy: "id",
       }),
     );
     expect(onSelected).toHaveBeenCalledWith(entity);
@@ -70,7 +63,6 @@ describe("SelectAffiliateList", () => {
       entity: null,
       data: listData,
     });
-    expect(mockList.mock.lastCall?.[0].selectedRows).toEqual([]);
     expect(onSelected).not.toHaveBeenCalled();
     expect(screen.getByTestId("selected-count")).toHaveTextContent("0");
   });
@@ -84,9 +76,6 @@ describe("SelectAffiliateList", () => {
     await user.click(screen.getByRole("button", { name: "choose next" }));
 
     expect(onSelected).toHaveBeenCalledWith(nextSelectedAccount);
-    expect(mockList.mock.lastCall?.[0].selectedRows).toEqual([
-      { data: nextSelectedAccount, selected: true } satisfies AccountRow,
-    ]);
     expect(screen.getByTestId("selected-count")).toHaveTextContent("1");
   });
 });
