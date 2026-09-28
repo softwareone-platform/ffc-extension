@@ -1,12 +1,10 @@
-import type { ReactNode } from "react";
-
-import { render, screen } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
+import { screen } from "@testing-library/react";
 
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
+import { renderWizardStep } from "./wizardStepTestUtils";
 import { SummaryStep } from "./SummaryStep";
 
 jest.mock("~shared/components/EntityProperties", () => ({
@@ -16,7 +14,7 @@ jest.mock("~shared/components/EntityProperties", () => ({
 jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
 jest.mock("@swo/design-system/notification", () => ({
-  InlineNotification: ({ children }: { children?: ReactNode }) => (
+  InlineNotification: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="success-notification">{children}</div>
   ),
 }));
@@ -24,15 +22,7 @@ jest.mock("@swo/design-system/notification", () => ({
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
 function renderStep(error?: string, defaults?: Partial<AddWizardForm>) {
-  function Wrapper() {
-    const methods = useForm<AddWizardForm>({ defaultValues: defaults as AddWizardForm });
-    return (
-      <FormProvider {...methods}>
-        <SummaryStep error={error} />
-      </FormProvider>
-    );
-  }
-  return render(<Wrapper />);
+  return renderWizardStep(<SummaryStep error={error} />, { defaultValues: defaults });
 }
 
 describe("SummaryStep", () => {

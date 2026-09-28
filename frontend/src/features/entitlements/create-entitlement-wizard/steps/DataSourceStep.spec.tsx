@@ -1,13 +1,10 @@
-import { render } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
-
 import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
 import { mockControlledInput, mockSharedControlledInput } from "~test-utils/mocks/controlledInput";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
-import type { AddWizardForm } from "../CreateEntitlement.Schema";
+import { renderWizardStep } from "./wizardStepTestUtils";
 import { DataSourceStep } from "./DataSourceStep";
 
 const mockRegisterOnNextCallback = jest.fn();
@@ -23,17 +20,7 @@ jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
 function renderStep() {
-  const triggerSpy = jest.fn().mockResolvedValue(true);
-  function Wrapper() {
-    const methods = useForm<AddWizardForm>();
-    methods.trigger = triggerSpy as unknown as typeof methods.trigger;
-    return (
-      <FormProvider {...methods}>
-        <DataSourceStep />
-      </FormProvider>
-    );
-  }
-  render(<Wrapper />);
+  const { trigger: triggerSpy } = renderWizardStep(<DataSourceStep />);
   return { triggerSpy };
 }
 
@@ -62,17 +49,9 @@ describe("DataSourceStep", () => {
   });
 
   it("keeps the current step when validation fails", async () => {
-    const triggerSpy = jest.fn().mockResolvedValue(false);
-    function Wrapper() {
-      const methods = useForm<AddWizardForm>();
-      methods.trigger = triggerSpy as unknown as typeof methods.trigger;
-      return (
-        <FormProvider {...methods}>
-          <DataSourceStep />
-        </FormProvider>
-      );
-    }
-    render(<Wrapper />);
+    renderWizardStep(<DataSourceStep />, {
+      triggerResolvedValue: false,
+    });
 
     const onNext = mockRegisterOnNextCallback.mock.lastCall![0] as (
       props: StepNavigationProperties,

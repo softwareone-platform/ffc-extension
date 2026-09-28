@@ -1,13 +1,10 @@
-import { render } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
-
 import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
 import type { Account } from "~features/entitlements/api/model";
 import { makeAccount } from "~test-utils";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
-import type { AddWizardForm } from "../CreateEntitlement.Schema";
+import { renderWizardStep } from "./wizardStepTestUtils";
 import { AffiliateStep } from "./AffiliateStep";
 
 const mockRegisterOnNextCallback = jest.fn();
@@ -28,22 +25,8 @@ jest.mock("~shared/components/SelectAffiliateList", () => ({
 
 jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
-function renderStep(triggerImpl?: () => Promise<boolean>) {
-  const trigger = jest.fn().mockResolvedValue(true);
-  if (triggerImpl) trigger.mockImplementation(triggerImpl);
-  const setValue = jest.fn();
-  function Wrapper() {
-    const methods = useForm<AddWizardForm>();
-    methods.trigger = trigger as unknown as typeof methods.trigger;
-    methods.setValue = setValue as unknown as typeof methods.setValue;
-    return (
-      <FormProvider {...methods}>
-        <AffiliateStep />
-      </FormProvider>
-    );
-  }
-  render(<Wrapper />);
-  return { trigger, setValue };
+function renderStep(triggerResolvedValue = true) {
+  return renderWizardStep(<AffiliateStep />, { triggerResolvedValue });
 }
 
 describe("AffiliateStep", () => {
@@ -73,7 +56,7 @@ describe("AffiliateStep", () => {
   });
 
   it("stays on the current step when validation fails", async () => {
-    renderStep(() => Promise.resolve(false));
+    renderStep(false);
 
     const onNext = mockRegisterOnNextCallback.mock.lastCall![0] as (
       p: StepNavigationProperties,
