@@ -5,14 +5,15 @@ import type { Link } from "react-router-dom";
 import type { useEntitlementsApi } from "~entitlements/api";
 import type { DataSourceEntityReference } from "~features/entitlements/components/DataSourceEntityReference";
 import type { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
-import { mockCustomIcon, mockGridCellDynamicActions } from "~test-utils/mocks/sharedGridCells";
+import { mockGridCellDynamicActions } from "~test-utils/mocks/gridCellDynamicActions";
 import {
   mockGridIdentityModule,
   mockGridInfoDialogConfigurationModule,
   mockReactQueryRqlGridModule,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 
@@ -20,17 +21,9 @@ export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 export {
   mockUseGridInfoDialogConfiguration,
   mockUseReactQueryRqlGrid,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 
 type EntitlementsApi = ReturnType<typeof useEntitlementsApi>;
-type GridCellDateTimeProps = Pick<
-  ComponentProps<typeof import("@swo/design-system/grid").GridCellDateTime>,
-  "date"
->;
-type GridCellTitleSubtitleProps = Pick<
-  ComponentProps<typeof import("@swo/design-system/grid").GridCellTitleSubtitle>,
-  "title" | "subtitle"
->;
 type EntityReferenceProps = Pick<
   ComponentProps<typeof import("@swo/design-system/entity-reference").EntityReference>,
   "primaryContent" | "secondaryContent" | "icon"
@@ -42,18 +35,7 @@ export const mockListEntitlements = jest.fn() as jest.MockedFunction<Entitlement
 export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
 export const mockStatus = jest.fn() as jest.MockedFunction<(props: StatusProps) => void>;
 
-jest.mock("@swo/design-system/grid", () => ({
-  ...mockDesignSystemGrid,
-  GridCellDateTime: ({ date }: GridCellDateTimeProps) => (
-    <span data-testid="grid-cell-date-time">{date ?? "no-date"}</span>
-  ),
-  GridCellTitleSubtitle: ({ title, subtitle }: GridCellTitleSubtitleProps) => (
-    <div>
-      <span data-testid="title">{title}</span>
-      <span data-testid="subtitle">{subtitle}</span>
-    </div>
-  ),
-}));
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
 jest.mock("@swo/design-system/entity-reference", () => ({
   EntityReference: ({ primaryContent, secondaryContent, icon }: EntityReferenceProps) => (

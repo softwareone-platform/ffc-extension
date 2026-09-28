@@ -13,37 +13,41 @@ function renderAppAt(initialUrl: string, role: AccountType | undefined) {
   renderWithRouter(<App />, { initialUrl, routePath: "/*" });
 }
 
-async function expectShellAndPage(pageTestId: string) {
-  expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
-  expect(await screen.findByTestId("main-layout")).toBeInTheDocument();
-  expect(await screen.findByTestId(pageTestId)).toBeInTheDocument();
-}
-
 describe("App", () => {
   it("redirects the index route to entitlements for affiliate users", async () => {
+    expect.assertions(3);
     renderAppAt("/", "affiliate");
 
-    await expectShellAndPage("entitlements");
+    expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
+    expect(await screen.findByTestId("main-layout")).toBeInTheDocument();
+    expect(await screen.findByTestId("entitlements")).toBeInTheDocument();
   });
 
   it.each<AccountType>(["admin", "operations"])(
     "redirects the index route to organizations for role '%s'",
     async (role) => {
+      expect.assertions(3);
       renderAppAt("/", role);
 
-      await expectShellAndPage("organizations");
+      expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
+      expect(await screen.findByTestId("main-layout")).toBeInTheDocument();
+      expect(await screen.findByTestId("organizations")).toBeInTheDocument();
     },
   );
 
   it("redirects the index route to organizations when the role is missing", async () => {
+    expect.assertions(1);
     renderAppAt("/", undefined);
 
     expect(await screen.findByTestId("organizations")).toBeInTheDocument();
   });
 
   it("renders nested organizations routes under MainLayout", async () => {
+    expect.assertions(3);
     renderAppAt("/organizations/anything", "admin");
 
-    await expectShellAndPage("organizations");
+    expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
+    expect(await screen.findByTestId("main-layout")).toBeInTheDocument();
+    expect(await screen.findByTestId("organizations")).toBeInTheDocument();
   });
 });

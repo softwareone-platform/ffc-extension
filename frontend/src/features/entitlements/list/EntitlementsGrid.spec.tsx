@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { makeEntitlement } from "~test-utils";
 
 import {
-  mockCreateWizard,
   mockDeleteModal,
   mockTerminateModal,
   mockUseGridConfig,
@@ -51,7 +50,6 @@ describe("EntitlementsGrid", () => {
     expect(screen.getByTestId("create-entitlement-wizard")).toHaveAttribute("data-open", "true");
   });
 
-  // eslint-disable-next-line jest/expect-expect
   it("opens the terminate modal with the selected item when onAction fires 'terminate'", () => {
     render(<EntitlementsGrid />);
     const item = makeEntitlement({ id: "ent-t" });
@@ -63,7 +61,6 @@ describe("EntitlementsGrid", () => {
     );
   });
 
-  // eslint-disable-next-line jest/expect-expect
   it("opens the delete modal with the selected item when onAction fires 'delete'", () => {
     render(<EntitlementsGrid />);
     const item = makeEntitlement({ id: "ent-d" });

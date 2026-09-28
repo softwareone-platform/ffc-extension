@@ -3,8 +3,8 @@ import type { ComponentProps } from "react";
 import { render, screen } from "@testing-library/react";
 
 import { makeEntitlement } from "~test-utils";
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
-import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 import { DataSourceEntityReference } from "./DataSourceEntityReference";
 

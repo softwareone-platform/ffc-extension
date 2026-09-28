@@ -4,9 +4,9 @@ import { render, screen } from "@testing-library/react";
 
 import type { AddWizardForm } from "~entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
 import type { Status } from "~shared/components/entity-status-chip";
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
-import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 import { EntityProps } from "./EntityProperties";
 

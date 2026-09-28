@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+
 import type { StepNavigationProperties } from "@swo/design-system/wizard";
 
 import type { SelectAffiliateList } from "~shared/components/SelectAffiliateList";

@@ -2,11 +2,12 @@ import type { ComponentProps } from "react";
 
 import type { useOrganizationsApi } from "~organizations/api";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
-import { mockGridCellDate, mockGridCellDynamicActions } from "~test-utils/mocks/sharedGridCells";
+import { mockGridCellDate } from "~test-utils/mocks/gridCellDate";
+import { mockGridCellDynamicActions } from "~test-utils/mocks/gridCellDynamicActions";
 import {
   mockGridInfoDialogConfigurationModule,
   mockReactQueryRqlGridModule,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 import { mockUserRoleModule } from "~test-utils/mocks/userRole";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
@@ -15,13 +16,10 @@ export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 export {
   mockUseGridInfoDialogConfiguration,
   mockUseReactQueryRqlGrid,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 export { mockUseUserRole } from "~test-utils/mocks/userRole";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
-type MockGridCellTitleSubtitleProps = ComponentProps<
-  typeof import("@swo/design-system/grid").GridCellTitleSubtitle
->;
 type MockStatusChipProps = ComponentProps<typeof import("@swo/mp-status-chip").StatusChip>;
 
 export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
@@ -29,15 +27,7 @@ export const mockListOrganizationEmployees = jest.fn() as jest.MockedFunction<
   OrganizationsApi["listOrganizationEmployees"]
 >;
 
-jest.mock("@swo/design-system/grid", () => ({
-  ...mockDesignSystemGrid,
-  GridCellTitleSubtitle: ({ title, subtitle }: MockGridCellTitleSubtitleProps) => (
-    <div>
-      <span data-testid="title">{title}</span>
-      <span data-testid="subtitle">{subtitle}</span>
-    </div>
-  ),
-}));
+jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
 jest.mock("@swo/mp-status-chip", () => ({
   StatusChip: ({ status, color }: MockStatusChipProps) => (

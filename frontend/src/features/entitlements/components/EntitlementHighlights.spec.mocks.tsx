@@ -1,15 +1,14 @@
 import type { ComponentProps } from "react";
 
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
+import { mockDesignSystemNavigation } from "~test-utils/mocks/designSystemNavigation";
+import { mockDesignSystemSkeleton } from "~test-utils/mocks/designSystemSkeleton";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
-import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 import type { DataSourceEntityReference } from "./DataSourceEntityReference";
 
-type MockNavigationHighlightsProps = ComponentProps<
-  typeof import("@swo/design-system/navigation").Navigation.Highlights
->;
 type MockDataSourceEntityReferenceProps = ComponentProps<typeof DataSourceEntityReference>;
 
 export const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
@@ -33,16 +32,6 @@ jest.mock("./DataSourceEntityReference", () => ({
   },
 }));
 
-jest.mock("@swo/design-system/navigation", () => ({
-  Navigation: {
-    Highlights: ({ children }: MockNavigationHighlightsProps) => (
-      <div data-testid="highlights-root">{children}</div>
-    ),
-  },
-}));
-
+jest.mock("@swo/design-system/navigation", () => mockDesignSystemNavigation);
 jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
-
-jest.mock("@swo/design-system/skeleton", () => ({
-  Skeleton: () => <div data-testid="skeleton" />,
-}));
+jest.mock("@swo/design-system/skeleton", () => mockDesignSystemSkeleton);

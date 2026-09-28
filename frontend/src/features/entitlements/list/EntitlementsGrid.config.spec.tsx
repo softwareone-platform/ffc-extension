@@ -201,9 +201,7 @@ describe("EntitlementsGrid.config", () => {
   describe("useFields", () => {
     it("exposes linked_datasource_type as a list field with azure_cnr and aws_cnr options", () => {
       const fields = getFields();
-      const field = fields.find(
-        (f) => f.name === "linked_datasource_type",
-      ) as GridFieldDefinition;
+      const field = fields.find((f) => f.name === "linked_datasource_type") as GridFieldDefinition;
 
       expect(field).toMatchObject({ type: "list" });
       expect(field.options!.map((o) => o.value)).toEqual(["azure_cnr", "aws_cnr"]);

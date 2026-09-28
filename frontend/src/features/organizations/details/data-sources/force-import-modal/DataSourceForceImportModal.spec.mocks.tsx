@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 
 import type { DatePicker } from "@swo/design-system/date-picker";
 
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemNotification } from "~test-utils/mocks/designSystemNotification";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
@@ -11,7 +12,6 @@ import {
 } from "~test-utils/mocks/inlineErrorNotification";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
-import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 import type { useForceImportController } from "../hooks/useForceImportController";
 

@@ -1,18 +1,16 @@
 import type { useOrganizationsApi } from "~organizations/api";
 import type { useOrganizationContext } from "~organizations/providers/OrganizationsProvider";
 import type { useUserRole } from "~shared/hooks/useUserRole";
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
-import {
-  mockCustomIcon,
-  mockGridCellCurrency,
-  mockGridCellDate,
-  mockGridCellDynamicActions,
-} from "~test-utils/mocks/sharedGridCells";
+import { mockGridCellCurrency } from "~test-utils/mocks/gridCellCurrency";
+import { mockGridCellDate } from "~test-utils/mocks/gridCellDate";
+import { mockGridCellDynamicActions } from "~test-utils/mocks/gridCellDynamicActions";
 import {
   mockGridInfoDialogConfigurationModule,
   mockReactQueryRqlGridModule,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 
@@ -20,7 +18,7 @@ export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 export {
   mockUseGridInfoDialogConfiguration,
   mockUseReactQueryRqlGrid,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 
 type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
 

@@ -1,19 +1,10 @@
 import { Outlet } from "react-router-dom";
 
-import type { RouteGuard } from "~shared/components/RouteGuard";
+import { mockRouteGuardModule } from "~test-utils/mocks/routeGuard";
 
-type MockRouteGuardProps = React.ComponentProps<typeof RouteGuard>;
+export { mockRouteGuard } from "~test-utils/mocks/routeGuard";
 
-export const mockRouteGuard = jest.fn() as jest.MockedFunction<
-  (props: Pick<MockRouteGuardProps, "allowedRoles">) => void
->;
-
-jest.mock("~shared/components/RouteGuard", () => ({
-  RouteGuard: ({ children, allowedRoles }: MockRouteGuardProps) => {
-    mockRouteGuard({ allowedRoles });
-    return <div data-testid="route-guard">{children}</div>;
-  },
-}));
+jest.mock("~shared/components/RouteGuard", () => mockRouteGuardModule);
 
 jest.mock("~features/organizations/list/OrganizationsGrid", () => ({
   OrganizationsGrid: () => <div data-testid="organizations-grid" />,

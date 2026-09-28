@@ -2,11 +2,11 @@ import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import {
   mockGridIdentityModule,
   mockGridInfoDialogConfigurationModule,
-} from "~test-utils/mocks/sharedGridHooks";
+} from "~test-utils/mocks/gridHooks";
 import { mockUserRoleModule } from "~test-utils/mocks/userRole";
 
 export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
-export { mockUseGridInfoDialogConfiguration } from "~test-utils/mocks/sharedGridHooks";
+export { mockUseGridInfoDialogConfiguration } from "~test-utils/mocks/gridHooks";
 export { mockUseUserRole } from "~test-utils/mocks/userRole";
 
 export const mockUseColumns = jest.fn();

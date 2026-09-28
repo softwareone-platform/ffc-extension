@@ -2,10 +2,7 @@ import { renderHook } from "@testing-library/react";
 
 import type { useOrganizationsApi } from "~organizations/api";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
-import {
-  mockReactQueryRqlGridModule,
-  mockUseReactQueryRqlGrid,
-} from "~test-utils/mocks/sharedGridHooks";
+import { mockReactQueryRqlGridModule, mockUseReactQueryRqlGrid } from "~test-utils/mocks/gridHooks";
 
 import { useAsyncOptions } from "./useAsyncOptions";
 

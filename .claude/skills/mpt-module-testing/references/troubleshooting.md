@@ -162,4 +162,4 @@ Before committing a spec:
 
 ---
 
-**See also:** [SKILL.md](../SKILL.md) · [testing-conventions.md](./testing-conventions.md)
+**See also:** [SKILL.md](../SKILL.md)

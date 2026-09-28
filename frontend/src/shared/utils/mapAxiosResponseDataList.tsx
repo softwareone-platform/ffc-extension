@@ -16,9 +16,10 @@ function ensureArray<TArray extends unknown[]>(value: TArray | undefined | null)
   return value;
 }
 
-export function mapAxiosResponseDataList<T>(
-  res: AxiosResponseData<ListResponse<T>>,
-): { data: T[]; total: number | undefined } {
+export function mapAxiosResponseDataList<T>(res: AxiosResponseData<ListResponse<T>>): {
+  data: T[];
+  total: number | undefined;
+} {
   const offset = res?.data?.offset ?? 0;
   const limit = res?.data?.limit ?? 0;
   const total = res?.data?.total;

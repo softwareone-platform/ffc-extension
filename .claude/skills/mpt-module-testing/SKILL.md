@@ -7,17 +7,20 @@ description: Write unit tests for MPT modules (ffc-extension frontend). Jest + @
 
 Stack: `jest@30` + `@swc/jest` (CJS transform) + `jest-environment-jsdom` + `@testing-library/react@16`. Config in `frontend/jest.config.js`; global setup in `frontend/jest.setup.js`.
 
-Key runtime facts: `clearMocks: true` (no manual resets needed), `testTimeout: 10_000`, `workerIdleMemoryLimit: '512MB'` (heap-sensitive — see Never spread the real design-system module).
+Key runtime facts: `clearMocks: true` (no manual resets needed), `testTimeout: 10_000`, `workerIdleMemoryLimit: '512MB'` (heap-sensitive — see Never spread the real design-system module). `npm test` runs jest + tsc + prettier + eslint in parallel via `npm-run-all --parallel --continue-on-error` — SWC skips type-checking so typed-spy drift only surfaces at the tsc step.
+
+## TL;DR
+
+- **File extension:** `.spec.tsx` (never `.test.tsx`); `.spec.ts` for utilities without JSX.
+- **Mock design-system as `@swo/design-system/[component]`** — the FULL path. `@swo/[component]` silently no-ops.
+- **Never spread `jest.requireActual("@swo/design-system/*")`** — blows the 512 MB heap.
+- **Type spies with the real signature** — `jest.MockedFunction<typeof realFn>` catches drift at `tsc`.
+- **Prefer shared mocks** from `~test-utils/mocks/*` (inventory at [Shared test infrastructure](#shared-test-infrastructure)) over hand-writing per spec.
+- **Extract a `<file>.spec.mocks.ts[x]` sibling** when the prelude tops ~20 lines or 3+ mocked modules.
+- **Coverage floor: 85%** — add behaviour tests or drop change-detectors if you dip.
+- **Never mock `react` / `react-dom` / `react-dom/client`** — bootstrap is e2e's job.
 
 ## Critical Rules
-
-### File extension
-
-Always `.spec.tsx` (or `.spec.ts` for utilities without JSX). Never `.test.tsx`.
-
-### Coverage floor
-
-Unit-test coverage must always stay above **85%**. If a change drops coverage below that threshold, add meaningful tests or remove low-value assertions before finishing. Prefer behaviour-finding tests over shallow change-detectors when raising coverage.
 
 ### Design system: mock the FULL import path
 
@@ -84,11 +87,9 @@ Global stubs also in `jest.setup.js`: `TextEncoder` / `TextDecoder` (needed at `
 - `react`, `react-dom`, `react-dom/client` — bootstrap files (`createRoot`) are covered by e2e.
 - Full `react-router-dom` in a spec-specific factory. Use `MemoryRouter` + `Routes` + `Route` for `useParams`.
 
-### `npm test` runs jest + tsc + prettier + eslint in parallel
+### Coverage floor
 
-SWC skips type-checking, so typed-spy drift only surfaces at the tsc step. `npm test` runs all four via `npm-run-all --parallel --continue-on-error` so every failure class shows on one run.
-
-Run coverage when your change touches branching logic, route composition, or shared test infrastructure. Treat `<85%` as a failed outcome even if the Jest run itself passes.
+Unit-test coverage must stay above **85%**. Run coverage when your change touches branching logic, route composition, or shared test infrastructure. Treat `<85%` as a failed outcome even if the Jest run itself passes — add behaviour-finding tests or drop shallow change-detectors before finishing.
 
 ### Spec-scoped ESLint
 
@@ -100,10 +101,6 @@ Run coverage when your change touches branching logic, route composition, or sha
 ### `.spec.mocks` siblings must sort before the source under test
 
 `jest.mock(...)` in a `.spec.mocks` sibling fires only when the sibling is imported. If the source-under-test import lands first, real modules resolve before mocks apply. `frontend/.prettierrc.json` has a dedicated import-order group for `.spec.mocks` before the general `^[./]` group — do not reorder.
-
-### Aliases live in two places
-
-`tsconfig.json` `paths` and `jest.config.js` `moduleNameMapper` are separate resolvers. New aliases must be added to both or specs fail with `Cannot find module '~foo/…'`.
 
 ## Test wrappers
 
@@ -157,33 +154,44 @@ import { mockDesignSystemGrid, mockGridProps, mockUseGridAsync } from "~test-uti
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 ```
 
-Current inventory (browse `src/test-utils/mocks/` for exact shapes): `controlledInput`, `designSystemButton`, `designSystemGrid`, `designSystemText`, `entityReferenceCell`, `errorDetails`, `fixedT`, `inPageHighlight`, `inlineErrorNotification`, `modal`, `sharedGridCells`, `sharedGridHooks`, `userRole`, `wizardStep`.
+Current inventory (browse `src/test-utils/mocks/` for exact shapes): `controlledInput`, `customIcon`, `designSystemButton`, `designSystemGrid`, `designSystemNavigation`, `designSystemNotification`, `designSystemSkeleton`, `designSystemText`, `designSystemUtils`, `entityReferenceCell`, `errorDetails`, `fixedT`, `gridCellCurrency`, `gridCellDate`, `gridCellDynamicActions`, `gridHooks`, `inPageHighlight`, `inlineErrorNotification`, `modal`, `notifyParentChildModal`, `routeGuard`, `userRole`, `wizardStep`.
 
-### `useFixedT` mocking
+### File organisation
 
-`~shared/hooks/useFixedT` is globally mocked to an identity translator in `jest.setup.js`. When a spec needs deterministic translated output, prefer the shared helper from `~test-utils/mocks/fixedT` instead of hand-writing local translation factories.
+Rules that keep the folder navigable and grep-able:
 
-```text
-import { mockFixedT } from "~test-utils/mocks/fixedT";
-import { useFixedT } from "~shared/hooks/useFixedT";
+- **One mock per file.** Never bundle multiple unrelated mocks in the same file — if a spec only needs `mockCustomIcon` it shouldn't drag in `mockGridCellCurrency`. When the temptation to group appears, resist unless every consumer wants all exports.
+- **No `index.ts` barrels in `mocks/`.** Callers import specific paths (`~test-utils/mocks/designSystemButton`) so the reader can see exactly which module gets mocked. A barrel would let unrelated spies leak in and drift silently.
+- **Names describe what's mocked, not "shared".** Everything in `mocks/` is shared by definition — the "shared" prefix is redundant. Prefer `gridHooks` over `sharedGridHooks`, `customIcon` over `sharedCustomIcon`.
 
-mockFixedT(jest.mocked(useFixedT));
-mockFixedT(jest.mocked(useFixedT), (key, params) => `${key}:${params?.code}`);
-```
+### Module-wrapper export pattern
 
-If the code under test imports `./useFixedT` relatively rather than through `~shared/...`, locally mock that module to `jest.fn()` first, then drive it with `mockFixedT(...)`.
+Every shared mock exports two things:
 
-### Shared Button mock
-
-Prefer `~test-utils/mocks/designSystemButton` for `@swo/design-system/button` instead of hand-writing a `<button>` factory in each spec.
+- The **spy** (`mockUseX`) — the `jest.fn()` instance tests drive with `mockReturnValue` / assert on with `.toHaveBeenCalledWith`.
+- The **module shape** (`mockXModule`) — the object with the exports the source uses, wired to call the spy.
 
 ```text
-import { mockButton, mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
+// ~test-utils/mocks/userRole.ts
+export const mockUseUserRole = jest.fn() as jest.MockedFunction<typeof useUserRole>;
+export const mockUserRoleModule = { useUserRole: () => mockUseUserRole() };
 
-jest.mock("@swo/design-system/button", () => mockDesignSystemButton);
+// spec
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
+mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 ```
 
-Assert only behaviourally relevant props (`children`, `type`, `color`, `isDisabled`, `isBusy`, click wiring) and interact through the rendered `<button>` where possible.
+Both must start with `mock*` (Jest hoist rule).
+
+### When to extract to a shared mock
+
+Threshold: **2+ specs mock the same module with an equivalent factory**. Common candidates:
+
+- Provider mocks that always render `{children}` (e.g. `RouteGuard`, `DesignSystemOptionsProvider`).
+- Hook mocks with a fixed signature (e.g. `useNotifyParentChildModal(open: boolean)`).
+- Design-system components with a common test shape (e.g. `Skeleton`, `Navigation.Highlights`).
+
+When multiple specs override the same static child on a shared mock (e.g. `Grid.Actions`, `GridCellDateTime`), **extend the shared mock** rather than have every caller spread-and-override. The rule of thumb: if the override shape is identical across callers, promote it into the shared mock's default; callers stop needing the spread trick.
 
 ### Type shared mocks from source
 
@@ -201,22 +209,6 @@ import type { Grid } from "@swo/design-system/grid";
 type MockGridProps = ComponentProps<typeof Grid>;
 export const mockGridProps = jest.fn() as jest.MockedFunction<(props: MockGridProps) => void>;
 ```
-
-## Mock organisation: three options
-
-**Option A — shared factory (`~test-utils/mocks/`).** For mocks reused by 2+ specs. Constraints: exports must start with `mock*` (Jest hoist rule), static imports only (ESLint bans `require(...)` in factories).
-
-**Option B — per-spec sibling `<File>.spec.mocks.ts[x]`.** Extract when the prelude exceeds ~20-30 lines, touches 3+ mocked modules, or reads like a "mock wall". Same directory as the spec so relative paths inside `jest.mock` resolve identically. `jest.mock` calls in the sibling apply to the spec's run because Jest registers them in the per-test module registry as soon as the file is imported.
-
-**Option C — root `frontend/__mocks__/`.** Only for third-party (`node_modules`) packages that every spec should see identically. User modules with aliased paths (`~shared/…`) cannot go here — root `__mocks__/` doesn't reach them; put those in `jest.setup.js` or extract via A/B.
-
-**Keep inline** when the prelude is small (<20 lines) and stays close to the assertions.
-
-Canonical example set: `frontend/src/features/organizations/details/data-sources/`
-
-- `DataSources.spec.tsx` — container + `MemoryRouter` + child mock; small inline prelude
-- `DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx` — thin Grid wrapper with extracted sibling helper
-- `DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts` — large prelude extracted; spec imports spies
 
 ## Gotchas
 
@@ -385,7 +377,7 @@ Rule of thumb: **subject → verb → observable outcome**.
 5. describe(...)
 ```
 
-Extract to `<file>.spec.mocks.ts[x]` when step 3 grows past ~20-30 lines or spans 3+ mocked modules.
+Extract to `<file>.spec.mocks.ts[x]` when step 3 grows past ~20-30 lines or spans 3+ mocked modules. Canonical example set at `frontend/src/features/organizations/details/data-sources/`: small inline prelude (`DataSources.spec.tsx`), grid wrapper with sibling helper (`DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx`), large prelude fully extracted (`DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts`).
 
 ## Final pass after finishing test work
 
@@ -393,5 +385,4 @@ Review the whole touched surface (edited specs, sibling `.spec.mocks` files, `sr
 
 ## References
 
-- `./references/testing-conventions.md` — additional testing patterns (containers, grid wrappers, config hooks, actions)
 - `./references/troubleshooting.md` — common issues (design-system paths, `@mpt-extension/sdk`, TextEncoder, `transformIgnorePatterns`, `column.cell` calling)

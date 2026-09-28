@@ -1,7 +1,10 @@
 import { render } from "@testing-library/react";
 
 import { makeEmployee, triggerModalCancel, triggerModalSubmit } from "~test-utils";
-import { mockInlineErrorNotification, mockSharedInlineErrorNotification } from "~test-utils/mocks/inlineErrorNotification";
+import {
+  mockInlineErrorNotification,
+  mockSharedInlineErrorNotification,
+} from "~test-utils/mocks/inlineErrorNotification";
 import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { useEmployeeController } from "../hooks/useEmployeeController";
@@ -12,7 +15,10 @@ type Controller = ReturnType<typeof useEmployeeController>;
 const mockUseEmployeeController = jest.fn() as jest.MockedFunction<typeof useEmployeeController>;
 
 jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
-jest.mock("~shared/components/error/InlineErrorNotification", () => mockSharedInlineErrorNotification);
+jest.mock(
+  "~shared/components/error/InlineErrorNotification",
+  () => mockSharedInlineErrorNotification,
+);
 
 jest.mock("../hooks/useEmployeeController", () => ({
   useEmployeeController: (...args: Parameters<typeof useEmployeeController>) =>

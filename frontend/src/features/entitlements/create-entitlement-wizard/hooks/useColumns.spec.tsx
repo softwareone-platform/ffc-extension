@@ -1,7 +1,7 @@
 import { render, renderHook, screen } from "@testing-library/react";
 
 import { makeAccount } from "~test-utils";
-import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
+import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 
 import { useColumns } from "./useColumns";
 
