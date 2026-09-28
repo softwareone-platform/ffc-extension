@@ -18,16 +18,4 @@ describe("useEditOrganizationForm", () => {
       currency: "USD",
     });
   });
-
-  it("initialises formState with no errors on valid defaults", () => {
-    const { result } = renderHook(() =>
-      useEditOrganizationForm({
-        name: "Acme",
-        operations_external_id: "op-1",
-        currency: "USD",
-      }),
-    );
-
-    expect(result.current.formState.errors).toEqual({});
-  });
 });

@@ -1,11 +1,15 @@
+import type { ComponentProps } from "react";
+
 import { render } from "@testing-library/react";
 
 import { Status } from "./EntityStatusChip";
 
-const mockStatusChip = jest.fn() as jest.MockedFunction<(props: { status: string }) => void>;
+type MockStatusChipProps = ComponentProps<typeof import("@swo/mp-status-chip").StatusChip>;
+
+const mockStatusChip = jest.fn() as jest.MockedFunction<(props: MockStatusChipProps) => void>;
 
 jest.mock("@swo/mp-status-chip", () => ({
-  StatusChip: ({ status }: { status: string }) => {
+  StatusChip: ({ status }: MockStatusChipProps) => {
     mockStatusChip({ status });
     return <span data-testid="status-chip">{status}</span>;
   },

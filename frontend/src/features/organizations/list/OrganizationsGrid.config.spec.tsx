@@ -3,6 +3,7 @@ import { renderHook } from "@testing-library/react";
 import type { GridEvents } from "@swo/design-system/grid";
 
 import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
+
 import {
   mockUseAsyncOptions,
   mockUseColumns,
@@ -14,7 +15,6 @@ import {
 } from "./OrganizationsGrid.config.spec.mocks";
 
 import { useGridConfig } from "./OrganizationsGrid.config";
-
 
 describe("useGridConfig (organizations list)", () => {
   const silentRefresh = jest.fn();
@@ -82,5 +82,16 @@ describe("useGridConfig (organizations list)", () => {
     onEvent({ type: "SomeOtherEvent", data: {} } as unknown as GridEvents);
 
     expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it("safely no-ops on RowActionTriggered when no onAction is provided", () => {
+    mockUseGridAsync.mockReturnValue({});
+
+    renderHook(() => useGridConfig());
+    const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
+
+    expect(() =>
+      onEvent({ type: "RowActionTriggered", data: { action: "edit", item: { id: "o-1" } } }),
+    ).not.toThrow();
   });
 });

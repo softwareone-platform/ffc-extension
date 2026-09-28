@@ -6,6 +6,7 @@ import { mockUserRoleModule } from "~test-utils/mocks/userRole";
 
 import type { ReviewStep } from "./steps/ReviewStep";
 import type { SummaryStep } from "./steps/SummaryStep";
+import type { useSteps } from "./useSteps";
 
 export { mockUseUserRole } from "~test-utils/mocks/userRole";
 
@@ -90,5 +91,5 @@ jest.mock("./steps/SummaryStep", () => ({
 }));
 
 jest.mock("./useSteps", () => ({
-  useSteps: (...args: unknown[]) => mockUseSteps(...args),
+  useSteps: (...args: Parameters<typeof useSteps>) => mockUseSteps(...args),
 }));

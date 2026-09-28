@@ -115,6 +115,26 @@ describe("useEntitlementController", () => {
     await waitFor(() => expect(result.current.error).toBe("readable failure"));
   });
 
+  it("clears a previous error after a successful terminate retry", async () => {
+    const failure = new Error("boom") as AxiosError;
+    mockGetErrorMessage.mockReturnValue("readable failure");
+    mockTerminate.mockRejectedValueOnce(failure);
+    const onClose = jest.fn();
+    const { result } = renderController(onClose);
+
+    await act(async () => {
+      await expect(result.current.terminate(entitlement)).rejects.toBeDefined();
+    });
+    await waitFor(() => expect(result.current.error).toBe("readable failure"));
+
+    mockTerminate.mockResolvedValueOnce(OK_TERMINATE);
+    await act(async () => {
+      await result.current.terminate(entitlement);
+    });
+
+    await waitFor(() => expect(result.current.error).toBeNull());
+  });
+
   it("cancel clears error and calls onClose without arguments when provided", () => {
     const onClose = jest.fn();
     const { result } = renderController(onClose);

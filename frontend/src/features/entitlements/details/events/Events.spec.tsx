@@ -2,25 +2,25 @@ import { screen } from "@testing-library/react";
 
 import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~features/entitlements/api/useEntitlementsDetailsApi";
+import type { EntityEvents } from "~shared/components/events/EntityEvents";
 import { renderWithEntitlementRoute } from "~test-utils";
 
 import { EntitlementEventsDetails } from "./Events";
 
 type ApiResult = ReturnType<typeof useEntitlementsDetailsApi>;
+type MockEntityEventsProps = Parameters<typeof EntityEvents<EntitlementRead>>[0];
 
 const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
   typeof useEntitlementsDetailsApi
 >;
-const mockEntityEvents = jest.fn() as jest.MockedFunction<
-  (props: { entity: EntitlementRead }) => void
->;
+const mockEntityEvents = jest.fn() as jest.MockedFunction<(props: MockEntityEventsProps) => void>;
 
 jest.mock("~features/entitlements/api/useEntitlementsDetailsApi", () => ({
   useEntitlementsDetailsApi: (id: string | undefined) => mockUseEntitlementsDetailsApi(id),
 }));
 
 jest.mock("~shared/components/events/EntityEvents", () => ({
-  EntityEvents: (props: { entity: EntitlementRead }) => {
+  EntityEvents: (props: MockEntityEventsProps) => {
     mockEntityEvents(props);
     return <div data-testid="entity-events">{props.entity.id}</div>;
   },

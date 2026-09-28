@@ -2,25 +2,25 @@ import { screen } from "@testing-library/react";
 
 import type { OrganizationRead } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~features/organizations/api/useOrganizationDetailsApi";
+import type { EntityEvents } from "~shared/components/events/EntityEvents";
 import { renderWithOrganizationRoute } from "~test-utils";
 
 import { OrganizationEventsDetails } from "./Events";
 
 type ApiResult = ReturnType<typeof useOrganizationDetailsApi>;
+type MockEntityEventsProps = Parameters<typeof EntityEvents<OrganizationRead>>[0];
 
 const mockUseOrganizationDetailsApi = jest.fn() as jest.MockedFunction<
   typeof useOrganizationDetailsApi
 >;
-const mockEntityEvents = jest.fn() as jest.MockedFunction<
-  (props: { entity: OrganizationRead }) => void
->;
+const mockEntityEvents = jest.fn() as jest.MockedFunction<(props: MockEntityEventsProps) => void>;
 
 jest.mock("~features/organizations/api/useOrganizationDetailsApi", () => ({
   useOrganizationDetailsApi: (id: string | undefined) => mockUseOrganizationDetailsApi(id),
 }));
 
 jest.mock("~shared/components/events/EntityEvents", () => ({
-  EntityEvents: (props: { entity: OrganizationRead }) => {
+  EntityEvents: (props: MockEntityEventsProps) => {
     mockEntityEvents(props);
     return <div data-testid="entity-events">{props.entity.id}</div>;
   },

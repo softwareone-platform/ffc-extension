@@ -3,6 +3,9 @@ import type { ComponentProps } from "react";
 import type { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import type { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import type { PageShell } from "~shared/components/page-shell";
+import { mockUserRoleModule } from "~test-utils/mocks/userRole";
+
+export { mockUseUserRole } from "~test-utils/mocks/userRole";
 
 export type MockHeaderProps = ComponentProps<typeof PageShell.Header>;
 type MockPageShellProps = ComponentProps<typeof PageShell>;
@@ -46,3 +49,5 @@ jest.mock("~features/entitlements/components/EntitlementDetailsHeader", () => ({
     return <div data-testid="entitlement-header" />;
   },
 }));
+
+jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);

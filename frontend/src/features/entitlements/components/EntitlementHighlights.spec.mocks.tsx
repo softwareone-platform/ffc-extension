@@ -46,5 +46,3 @@ jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHi
 jest.mock("@swo/design-system/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
-
-

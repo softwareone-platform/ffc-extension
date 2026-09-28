@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+
 import { render, screen } from "@testing-library/react";
 
 import { makeEntitlement } from "~test-utils";
@@ -6,11 +8,13 @@ import { mockCustomIcon } from "~test-utils/mocks/sharedGridCells";
 
 import { DataSourceEntityReference } from "./DataSourceEntityReference";
 
+type MockAvatarProps = ComponentProps<typeof import("@swo/design-system/avatar").Avatar>;
+
 jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
 jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
 
 jest.mock("@swo/design-system/avatar", () => ({
-  Avatar: ({ text }: { text: string }) => <div data-testid="avatar">{text}</div>,
+  Avatar: ({ text }: MockAvatarProps) => <div data-testid="avatar">{text}</div>,
 }));
 
 describe("DataSourceEntityReference", () => {

@@ -1,4 +1,6 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
+
+import type { Link } from "react-router-dom";
 
 import type { useEntitlementsApi } from "~entitlements/api";
 import type { DataSourceEntityReference } from "~features/entitlements/components/DataSourceEntityReference";
@@ -102,5 +104,5 @@ jest.mock("./hooks/useActionOptions", () => ({
 
 jest.mock("react-router-dom", () => {
   const actual = jest.requireActual("react-router-dom");
-  return { ...actual, Link: ({ children }: { children?: ReactNode }) => <>{children}</> };
+  return { ...actual, Link: ({ children }: ComponentProps<typeof Link>) => <>{children}</> };
 });

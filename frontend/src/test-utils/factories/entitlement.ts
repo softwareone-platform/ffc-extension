@@ -21,4 +21,3 @@ export function makeEntitlement(overrides: Partial<Entitlement> = {}): Entitleme
     ...overrides,
   } as Entitlement;
 }
-

@@ -43,6 +43,15 @@ describe("useActionOptions (organizations list)", () => {
     expect(edit).toMatchObject({ isDisabled: true });
   });
 
+  it("disables edit when the organization status is missing", () => {
+    const { result } = renderHook(() => useActionOptions());
+    const item = makeOrganization({ status: undefined });
+
+    const [edit] = result.current(item);
+
+    expect(edit).toMatchObject({ isDisabled: true });
+  });
+
   it("enables delete only when the organization is terminated", () => {
     const { result } = renderHook(() => useActionOptions());
 

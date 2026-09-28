@@ -16,9 +16,9 @@ jest.mock("@swo/design-system/utils", () => {
 describe("useFormatTime", () => {
   it("formats valid dates with the localisation formatter", () => {
     const formatTime = jest.fn(() => "formatted-time");
-    jest.mocked(useLocalisation).mockReturnValue(
-      { formatTime } as unknown as ReturnType<typeof useLocalisation>,
-    );
+    jest
+      .mocked(useLocalisation)
+      .mockReturnValue({ formatTime } as unknown as ReturnType<typeof useLocalisation>);
 
     const { result } = renderHook(() => useFormatTime());
 
@@ -32,9 +32,9 @@ describe("useFormatTime", () => {
     ["invalid Date", new Date("invalid")],
   ] as const)("returns NO_VALUE for %s", (_label, value) => {
     const formatTime = jest.fn();
-    jest.mocked(useLocalisation).mockReturnValue(
-      { formatTime } as unknown as ReturnType<typeof useLocalisation>,
-    );
+    jest
+      .mocked(useLocalisation)
+      .mockReturnValue({ formatTime } as unknown as ReturnType<typeof useLocalisation>);
 
     const { result } = renderHook(() => useFormatTime());
 
@@ -42,4 +42,3 @@ describe("useFormatTime", () => {
     expect(formatTime).not.toHaveBeenCalled();
   });
 });
-

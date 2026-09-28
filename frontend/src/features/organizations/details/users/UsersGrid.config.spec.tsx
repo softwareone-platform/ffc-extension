@@ -1,73 +1,22 @@
-import type { ReactNode } from "react";
-
 import { renderHook, screen } from "@testing-library/react";
 
 import type { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 
 import type { AccountType } from "~api/ffc-api-model";
-import type { useOrganizationsApi } from "~organizations/api";
 import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
 import { mapAxiosResponseDataList } from "~shared/utils/mapAxiosResponseDataList";
 import { columnByName, makeEmployee, renderColumnCell } from "~test-utils";
-import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
-import { mockGridCellDate, mockGridCellDynamicActions } from "~test-utils/mocks/sharedGridCells";
+
 import {
-  mockGridInfoDialogConfigurationModule,
-  mockReactQueryRqlGridModule,
+  mockGetActions,
+  mockListOrganizationEmployees,
+  mockUseGridAsync,
   mockUseGridInfoDialogConfiguration,
   mockUseReactQueryRqlGrid,
-} from "~test-utils/mocks/sharedGridHooks";
-import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
+  mockUseUserRole,
+} from "./UsersGrid.config.spec.mocks";
 
-import type { useActionOptions } from "./hooks/useActionOptions";
 import { useAsyncOptions, useColumns, useFields, useGridConfig } from "./UsersGrid.config";
-
-type OrganizationsApi = ReturnType<typeof useOrganizationsApi>;
-
-const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
-const mockListOrganizationEmployees = jest.fn() as jest.MockedFunction<
-  OrganizationsApi["listOrganizationEmployees"]
->;
-
-jest.mock("@swo/design-system/grid", () => ({
-  ...mockDesignSystemGrid,
-  GridCellTitleSubtitle: ({ title, subtitle }: { title: ReactNode; subtitle: ReactNode }) => (
-    <div>
-      <span data-testid="title">{title}</span>
-      <span data-testid="subtitle">{subtitle}</span>
-    </div>
-  ),
-}));
-
-jest.mock("@swo/mp-status-chip", () => ({
-  StatusChip: ({ status, color }: { status: string; color: string }) => (
-    <span data-testid="status-chip" data-color={color}>
-      {status}
-    </span>
-  ),
-}));
-
-jest.mock("~shared/components/grid/GridCellDate", () => mockGridCellDate);
-jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
-
-jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
-
-jest.mock(
-  "~shared/hooks/useGridInfoDialogConfiguration",
-  () => mockGridInfoDialogConfigurationModule,
-);
-
-jest.mock("~shared/hooks/useReactQueryRqlGrid", () => mockReactQueryRqlGridModule);
-
-jest.mock("~organizations/api", () => ({
-  useOrganizationsApi: () => ({
-    listOrganizationEmployees: mockListOrganizationEmployees,
-  }),
-}));
-
-jest.mock("./hooks/useActionOptions", () => ({
-  useActionOptions: () => mockGetActions,
-}));
 
 const COLUMN_FIELDS = [
   ["email", ["email"]],
@@ -294,6 +243,20 @@ describe("UsersGrid.config", () => {
       onEvent({ type: "SomethingElse", data: {} } as unknown as GridEvents);
 
       expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it("safely no-ops on RowActionTriggered when no onAction is provided", () => {
+      mockUseGridAsync.mockReturnValue({});
+
+      renderHook(() => useGridConfig("org-1"));
+      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
+
+      expect(() =>
+        onEvent({
+          type: "RowActionTriggered",
+          data: { action: "make_admin", item: { id: "e-1" } },
+        }),
+      ).not.toThrow();
     });
   });
 });

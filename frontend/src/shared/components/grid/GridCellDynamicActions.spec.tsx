@@ -1,13 +1,19 @@
+import type { ComponentProps } from "react";
+
 import { render, screen } from "@testing-library/react";
 
 import { GridCellDynamicActions } from "./GridCellDynamicActions";
 
+type MockGridCellActionsProps = ComponentProps<
+  typeof import("@swo/design-system/grid").GridCellActions
+>;
+
 const mockGridCellActions = jest.fn() as jest.MockedFunction<
-  (props: { actions: unknown[]; item: unknown }) => void
+  (props: MockGridCellActionsProps) => void
 >;
 
 jest.mock("@swo/design-system/grid", () => ({
-  GridCellActions: (props: { actions: unknown[]; item: unknown }) => {
+  GridCellActions: (props: MockGridCellActionsProps) => {
     mockGridCellActions(props);
     return <div data-testid="grid-cell-actions" />;
   },

@@ -25,10 +25,7 @@ function createStorage(): Storage {
   };
 }
 
-function defineStorageGetter(
-  name: "localStorage" | "sessionStorage",
-  getter: () => Storage,
-): void {
+function defineStorageGetter(name: "localStorage" | "sessionStorage", getter: () => Storage): void {
   Object.defineProperty(window, name, {
     configurable: true,
     get: getter,
@@ -88,4 +85,3 @@ describe("safe-storage", () => {
     expect(window.localStorage.getItem("key")).toBe("value");
   });
 });
-

@@ -21,4 +21,3 @@ jest.mock("~features/organizations/Organizations", () => ({
 jest.mock("~features/entitlements/Entitlements", () => ({
   Entitlements: () => <div data-testid="entitlements" />,
 }));
-

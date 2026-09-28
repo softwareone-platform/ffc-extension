@@ -12,4 +12,3 @@ describe("useFixedT", () => {
     expect(useFixedT("shared:grid")).toBe(t);
   });
 });
-

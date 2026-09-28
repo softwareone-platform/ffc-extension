@@ -47,4 +47,3 @@ describe("useModalToggle", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 });
-

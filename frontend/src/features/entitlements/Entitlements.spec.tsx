@@ -3,6 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { renderWithRouter } from "~test-utils";
 
 import { mockRouteGuard } from "./Entitlements.spec.mocks";
+
 import { Entitlements } from "./Entitlements";
 
 function renderEntitlements(initialUrl: string) {

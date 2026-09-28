@@ -3,16 +3,15 @@ import { render, screen, within } from "@testing-library/react";
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
 import { makeEntitlement } from "~test-utils";
 
-import type { Entitlement } from "../api/model";
 import {
   mockDataSourceEntityReference,
   mockUseEntitlementsDetailsApi,
 } from "./EntitlementHighlights.spec.mocks";
 
+import type { Entitlement } from "../api/model";
 import { EntitlementHighlights } from "./EntitlementHighlights";
 
 type ApiResult = ReturnType<typeof useEntitlementsDetailsApi>;
-
 
 function primeEntity(entity: Partial<Entitlement> | undefined) {
   mockUseEntitlementsDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);

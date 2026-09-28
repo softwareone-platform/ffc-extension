@@ -4,8 +4,8 @@ import { mockControlledInput, mockSharedControlledInput } from "~test-utils/mock
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
-import { renderWizardStep } from "./wizardStepTestUtils";
 import { DataSourceStep } from "./DataSourceStep";
+import { renderWizardStep } from "./wizardStepTestUtils";
 
 const mockRegisterOnNextCallback = jest.fn();
 

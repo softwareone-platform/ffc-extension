@@ -1,18 +1,14 @@
-import { renderWithRouter } from "~test-utils";
-
 import type { AccountType } from "~api/ffc-api-model";
-import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
+import { renderWithRouter } from "~test-utils";
 
 import {
   mockEntitlementDetailsHeader,
   mockHeader,
   mockOrganizationDetailsHeader,
+  mockUseUserRole,
 } from "./MainLayout.spec.mocks";
 
 import { MainLayout } from "./MainLayout";
-
-jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
-
 
 function renderAt(initialUrl: string) {
   return renderWithRouter(<MainLayout />, { initialUrl, routePath: "/*" });

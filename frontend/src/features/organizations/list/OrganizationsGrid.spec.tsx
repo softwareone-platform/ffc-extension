@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { act, render, screen } from "@testing-library/react";
 
@@ -12,6 +12,7 @@ import type { useGridConfig } from "./OrganizationsGrid.config";
 
 type MockEditModalProps = ComponentProps<typeof EditOrganizationModal>;
 type MockDeleteModalProps = ComponentProps<typeof DeleteOrganizationModal>;
+type MockCardProps = ComponentProps<typeof import("@swo/design-system/card").Card>;
 
 const mockUseGridConfig = jest.fn() as jest.MockedFunction<typeof useGridConfig>;
 const mockEditModal = jest.fn() as jest.MockedFunction<(props: MockEditModalProps) => void>;
@@ -19,7 +20,7 @@ const mockDeleteModal = jest.fn() as jest.MockedFunction<(props: MockDeleteModal
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 jest.mock("@swo/design-system/card", () => ({
-  Card: ({ children }: { children?: ReactNode }) => <div data-testid="card">{children}</div>,
+  Card: ({ children }: MockCardProps) => <div data-testid="card">{children}</div>,
 }));
 
 jest.mock("./OrganizationsGrid.config", () => ({

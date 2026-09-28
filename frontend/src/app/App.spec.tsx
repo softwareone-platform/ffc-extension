@@ -4,6 +4,7 @@ import type { AccountType } from "~api/ffc-api-model";
 import { renderWithRouter } from "~test-utils";
 
 import { mockUseUserRole } from "./App.spec.mocks";
+
 import { App } from "./App";
 
 function renderApp(initialUrl: string) {

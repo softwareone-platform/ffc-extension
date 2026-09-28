@@ -34,4 +34,3 @@ export function renderWizardStep(
 
   return { setValue, trigger };
 }
-

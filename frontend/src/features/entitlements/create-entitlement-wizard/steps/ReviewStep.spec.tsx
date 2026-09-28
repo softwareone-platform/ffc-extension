@@ -1,18 +1,21 @@
+import type { ComponentProps } from "react";
+
 import { screen } from "@testing-library/react";
 
+import type { EntityProps } from "~shared/components/EntityProperties";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
-import { renderWizardStep } from "./wizardStepTestUtils";
 import { ReviewStep } from "./ReviewStep";
+import { renderWizardStep } from "./wizardStepTestUtils";
 
-const mockEntityProps = jest.fn() as jest.MockedFunction<
-  (props: { entity: Partial<AddWizardForm> }) => void
->;
+type MockEntityPropsProps = ComponentProps<typeof EntityProps>;
+
+const mockEntityProps = jest.fn() as jest.MockedFunction<(props: MockEntityPropsProps) => void>;
 
 jest.mock("~shared/components/EntityProperties", () => ({
-  EntityProps: (props: { entity: Partial<AddWizardForm> }) => {
+  EntityProps: (props: MockEntityPropsProps) => {
     mockEntityProps(props);
     return <div data-testid="entity-props" />;
   },

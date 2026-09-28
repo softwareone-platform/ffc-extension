@@ -11,4 +11,3 @@ export function makeAccount(overrides: Partial<AccountRead> = {}): AccountRead {
     ...overrides,
   } as AccountRead;
 }
-

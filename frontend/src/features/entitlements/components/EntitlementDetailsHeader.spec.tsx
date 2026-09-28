@@ -4,11 +4,13 @@ import { render, screen } from "@testing-library/react";
 
 import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
+import { Status } from "~shared/components/entity-status-chip";
 import type { PageShell } from "~shared/components/page-shell";
 
 import { EntitlementDetailsHeader } from "./EntitlementDetailsHeader";
 
 type MockPageShellHeaderProps = ComponentProps<typeof PageShell.Header>;
+type MockStatusProps = ComponentProps<typeof Status>;
 type UseEntitlementsDetailsApiResult = ReturnType<typeof useEntitlementsDetailsApi>;
 
 const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
@@ -17,7 +19,7 @@ const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
 const mockPageShellHeader = jest.fn() as jest.MockedFunction<
   (props: MockPageShellHeaderProps) => void
 >;
-const mockStatus = jest.fn() as jest.MockedFunction<(props: { item: unknown }) => void>;
+const mockStatus = jest.fn() as jest.MockedFunction<(props: MockStatusProps) => void>;
 
 jest.mock("~entitlements/api", () => ({
   useEntitlementsDetailsApi: (id: string | undefined) => mockUseEntitlementsDetailsApi(id),
@@ -33,7 +35,7 @@ jest.mock("~shared/components/page-shell", () => ({
 }));
 
 jest.mock("~shared/components/entity-status-chip", () => ({
-  Status: (props: { item: unknown }) => {
+  Status: (props: MockStatusProps) => {
     mockStatus(props);
     return <span data-testid="status" />;
   },

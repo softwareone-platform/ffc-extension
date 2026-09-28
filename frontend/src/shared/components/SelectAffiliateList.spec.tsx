@@ -1,55 +1,23 @@
-import type { ComponentProps } from "react";
-
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import type { List, Row } from "@swo/design-system/list";
+import type { Row } from "@swo/design-system/list";
 
 import type { Account } from "~features/entitlements/api/model";
 import { makeAccount } from "~test-utils";
 
+import {
+  mockList,
+  mockUseApiCall,
+  mockUseColumns,
+  mockUseListDataWithSelectedEntity,
+  mockUseListWithApi,
+  nextSelectedAccount,
+} from "./SelectAffiliateList.spec.mocks";
+
 import { SelectAffiliateList } from "./SelectAffiliateList";
 
-type MockListProps = ComponentProps<typeof List>;
 type AccountRow = Row<Account>;
-
-const mockUseColumns = jest.fn();
-const mockUseApiCall = jest.fn();
-const mockUseListWithApi = jest.fn();
-const mockUseListDataWithSelectedEntity = jest.fn();
-const mockList = jest.fn() as jest.MockedFunction<(props: MockListProps) => void>;
-
-const nextSelectedAccount = makeAccount({ id: "acc-next", name: "Next Account" }) as Account;
-
-jest.mock("~entitlements/create-entitlement-wizard/hooks/useColumns", () => ({
-  useColumns: () => mockUseColumns(),
-}));
-
-jest.mock("~entitlements/create-entitlement-wizard/hooks/useApiCall", () => ({
-  useApiCall: (...args: unknown[]) => mockUseApiCall(...args),
-}));
-
-jest.mock("~entitlements/create-entitlement-wizard/hooks/useListDataWithSelectedEntity", () => ({
-  useListDataWithSelectedEntity: (...args: unknown[]) => mockUseListDataWithSelectedEntity(...args),
-}));
-
-jest.mock("@swo/design-system/list", () => ({
-  List: (props: MockListProps) => {
-    mockList(props);
-    return (
-      <div data-testid="affiliate-list">
-        <button
-          onClick={() => props.setSelectedRows?.([{ data: nextSelectedAccount, selected: true }])}
-        >
-          choose next
-        </button>
-        <div data-testid="selected-count">{props.selectedRows?.length ?? 0}</div>
-        <div data-testid="data-count">{props.data?.length ?? 0}</div>
-      </div>
-    );
-  },
-  useListWithApi: (...args: unknown[]) => mockUseListWithApi(...args),
-}));
 
 describe("SelectAffiliateList", () => {
   const columns = [{ name: "name" }, { name: "id" }];

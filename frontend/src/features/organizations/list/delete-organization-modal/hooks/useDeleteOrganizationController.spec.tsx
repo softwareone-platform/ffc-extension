@@ -75,6 +75,26 @@ describe("useDeleteOrganizationController", () => {
     expect(mockGetErrorMessage).toHaveBeenCalledWith(failure);
   });
 
+  it("clears a previous error after a successful retry", async () => {
+    const failure = new Error("boom") as AxiosError;
+    mockGetErrorMessage.mockReturnValue("readable failure");
+    mockDeleteOrganization.mockRejectedValueOnce(failure);
+    const onClose = jest.fn();
+    const { result } = renderController(onClose);
+
+    await act(async () => {
+      await result.current.remove(organization).catch(() => undefined);
+    });
+    await waitFor(() => expect(result.current.error).toBe("readable failure"));
+
+    mockDeleteOrganization.mockResolvedValueOnce(OK_RESPONSE);
+    await act(async () => {
+      await result.current.remove(organization);
+    });
+
+    await waitFor(() => expect(result.current.error).toBeNull());
+  });
+
   it("handleCancel clears error and calls onClose without arguments when provided", () => {
     const onClose = jest.fn();
     const { result } = renderController(onClose);

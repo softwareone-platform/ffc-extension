@@ -329,5 +329,19 @@ describe("DataSourcesGrid.config", () => {
 
       expect(onAction).not.toHaveBeenCalled();
     });
+
+    it("safely no-ops on RowActionTriggered when no onAction is provided", () => {
+      mockUseGridAsync.mockReturnValue({});
+
+      renderHook(() => useGridConfig("org-123"));
+      const onEvent = mockUseGridAsync.mock.lastCall![0].onEvent!;
+
+      expect(() =>
+        onEvent({
+          type: "RowActionTriggered",
+          data: { action: "force_import", item: { id: "ds-1" } },
+        }),
+      ).not.toThrow();
+    });
   });
 });

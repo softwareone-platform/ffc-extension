@@ -40,4 +40,3 @@ jest.mock(
 jest.mock("~shared/hooks/useGridIdentity", () => mockGridIdentityModule);
 
 jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
-

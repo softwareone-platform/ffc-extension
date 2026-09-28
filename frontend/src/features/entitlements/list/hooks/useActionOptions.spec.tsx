@@ -1,11 +1,14 @@
 import { renderHook } from "@testing-library/react";
 
+import type { ListItem } from "@swo/design-system/dropdown";
+
 import type { EntitlementStatus } from "~api/ffc-api-model";
+import type { EntitlementAction } from "~features/entitlements/api/model";
 import { makeEntitlement } from "~test-utils";
 
 import { useActionOptions } from "./useActionOptions";
 
-type ActionItem = { value: string; isDisabled?: boolean; props?: { className?: string } };
+type ActionItem = ListItem<EntitlementAction>;
 
 function getActions(fn: ReturnType<typeof useActionOptions>, status: EntitlementStatus) {
   const [terminate, , deleteAction] = fn(makeEntitlement({ status })) as unknown as [

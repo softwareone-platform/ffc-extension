@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
 import type { ErrorPage } from "~shared/components/error/ErrorPage";
 import type { UserEvent } from "~test-utils";
 
+import type { ErrorCode } from "./ErrorHandlerProvider";
 import { ErrorHandlerProvider, useErrorHandler } from "./ErrorHandlerProvider";
 
 type MockErrorPageProps = ComponentProps<typeof ErrorPage>;
@@ -37,13 +38,7 @@ function RouteChangeButton() {
   return <button onClick={() => navigate("/next")}>go next</button>;
 }
 
-function ErrorTrigger({
-  errorCode,
-  description,
-}: {
-  errorCode: "403" | "404" | "500" | "Forbidden" | "NotFound" | "InternalServerError";
-  description: string;
-}) {
+function ErrorTrigger({ errorCode, description }: { errorCode: ErrorCode; description: string }) {
   const { handleError } = useErrorHandler();
 
   return <button onClick={() => handleError(errorCode, description)}>show error</button>;
@@ -85,14 +80,14 @@ describe("ErrorHandlerProvider", () => {
     expect(screen.queryByTestId("error-page")).not.toBeInTheDocument();
   });
 
-  it.each([
+  it.each<[ErrorCode, string]>([
     ["403", "forbidden-code-description"],
     ["Forbidden", "forbidden-description"],
     ["404", "not-found-code-description"],
     ["NotFound", "not-found-description"],
     ["500", "server-code-description"],
     ["InternalServerError", "server-description"],
-  ] as const)(
+  ])(
     "renders the matching error page when handleError is called with %s",
     async (errorCode, description) => {
       render(
