@@ -11,17 +11,13 @@ import {
 
 import { CreateEntitlementWizard } from "./CreateEntitlementWizard";
 
-function primeOperations() {
-  mockUseUserRole.mockReturnValue({ user: null, role: "operations" });
-}
-
 function lastWizardProps() {
   return mockWizard.mock.lastCall![0];
 }
 
 describe("CreateEntitlementWizard", () => {
   beforeEach(() => {
-    primeOperations();
+    mockUseUserRole.mockReturnValue({ user: null, role: "operations" });
     mockUseSteps.mockReturnValue([{ title: "1" }, { title: "2" }, { title: "3" }, { title: "4" }]);
     mockStepContext.activeStepIndex = 0;
   });

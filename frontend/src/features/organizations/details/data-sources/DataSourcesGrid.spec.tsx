@@ -5,9 +5,7 @@ import { mockForceImportModal, mockUseGridConfig } from "./DataSourcesGrid.spec.
 import { DataSourcesGrid } from "./DataSourcesGrid";
 import type { useGridConfig } from "./DataSourcesGrid.config";
 
-function renderGrid(organizationId = "org-abc") {
-  render(<DataSourcesGrid organizationId={organizationId} />);
-}
+const organizationId = "org-abc";
 
 function getOnAction() {
   return mockUseGridConfig.mock.lastCall![1] as (action: string, item: unknown) => void;
@@ -25,27 +23,27 @@ describe("DataSourcesGrid", () => {
   });
 
   it("calls useGridConfig with organizationId and an onAction handler", () => {
-    renderGrid();
+    render(<DataSourcesGrid organizationId={organizationId} />);
 
-    expect(mockUseGridConfig).toHaveBeenCalledWith("org-abc", expect.any(Function));
+    expect(mockUseGridConfig).toHaveBeenCalledWith(organizationId, expect.any(Function));
   });
 
   it("passes the current organizationId to a closed force-import modal", () => {
-    renderGrid();
+    render(<DataSourcesGrid organizationId={organizationId} />);
 
     expect(screen.getByTestId("force-import-modal")).toBeInTheDocument();
     expect(mockForceImportModal).toHaveBeenCalledWith(
       expect.objectContaining({
         isOpen: false,
         datasource: null,
-        organizationId: "org-abc",
+        organizationId,
         className: "force-import-modal",
       }),
     );
   });
 
   it("opens the force-import modal with the selected item when onAction fires 'force_import'", () => {
-    renderGrid();
+    render(<DataSourcesGrid organizationId={organizationId} />);
     const onAction = getOnAction();
     const item = { id: "ds-1", name: "AWS", type: "aws" };
 
@@ -56,12 +54,12 @@ describe("DataSourcesGrid", () => {
     expect(mockForceImportModal.mock.lastCall![0]).toMatchObject({
       isOpen: true,
       datasource: item,
-      organizationId: "org-abc",
+      organizationId,
     });
   });
 
   it("closes the force-import modal when its onClose fires", () => {
-    renderGrid();
+    render(<DataSourcesGrid organizationId={organizationId} />);
     const onAction = getOnAction();
     const item = { id: "ds-1", name: "AWS", type: "aws" };
     act(() => onAction("force_import", item));
@@ -74,7 +72,7 @@ describe("DataSourcesGrid", () => {
   });
 
   it("ignores unknown actions", () => {
-    renderGrid();
+    render(<DataSourcesGrid organizationId={organizationId} />);
     const onAction = getOnAction();
 
     act(() => {

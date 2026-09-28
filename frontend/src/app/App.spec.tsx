@@ -7,10 +7,6 @@ import { mockUseUserRole } from "./App.spec.mocks";
 
 import { App } from "./App";
 
-function renderApp(initialUrl: string) {
-  return renderWithRouter(<App />, { initialUrl, routePath: "/*" });
-}
-
 function primeRole(role: AccountType | undefined) {
   mockUseUserRole.mockReturnValue({ user: null, role });
 }
@@ -19,7 +15,7 @@ describe("App", () => {
   it("redirects the index route to entitlements for affiliate users", async () => {
     primeRole("affiliate");
 
-    renderApp("/");
+    renderWithRouter(<App />, { initialUrl: "/", routePath: "/*" });
 
     expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
     expect(await screen.findByTestId("main-layout")).toBeInTheDocument();
@@ -31,7 +27,7 @@ describe("App", () => {
     async (role) => {
       primeRole(role);
 
-      renderApp("/");
+      renderWithRouter(<App />, { initialUrl: "/", routePath: "/*" });
 
       expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
       expect(await screen.findByTestId("main-layout")).toBeInTheDocument();
@@ -42,7 +38,7 @@ describe("App", () => {
   it("redirects the index route to organizations when the role is missing", async () => {
     primeRole(undefined);
 
-    renderApp("/");
+    renderWithRouter(<App />, { initialUrl: "/", routePath: "/*" });
 
     expect(await screen.findByTestId("organizations")).toBeInTheDocument();
   });
@@ -50,7 +46,10 @@ describe("App", () => {
   it("renders nested organizations routes under MainLayout", async () => {
     primeRole("admin");
 
-    renderApp("/organizations/anything");
+    renderWithRouter(<App />, {
+      initialUrl: "/organizations/anything",
+      routePath: "/*",
+    });
 
     expect(await screen.findByTestId("ffc-extension")).toBeInTheDocument();
     expect(await screen.findByTestId("main-layout")).toBeInTheDocument();

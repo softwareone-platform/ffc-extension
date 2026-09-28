@@ -10,15 +10,14 @@ import {
 
 import { MainLayout } from "./MainLayout";
 
-function renderAt(initialUrl: string) {
-  return renderWithRouter(<MainLayout />, { initialUrl, routePath: "/*" });
-}
-
 describe("MainLayout", () => {
   it("renders the OrganizationDetailsHeader when on an organization detail URL", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 
-    renderAt("/organizations/org-1");
+    renderWithRouter(<MainLayout />, {
+      initialUrl: "/organizations/org-1",
+      routePath: "/*",
+    });
 
     expect(mockOrganizationDetailsHeader).toHaveBeenCalledWith({
       organizationId: "org-1",
@@ -29,7 +28,10 @@ describe("MainLayout", () => {
   it("renders the EntitlementDetailsHeader when on an entitlement detail URL", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 
-    renderAt("/entitlements/ent-1");
+    renderWithRouter(<MainLayout />, {
+      initialUrl: "/entitlements/ent-1",
+      routePath: "/*",
+    });
 
     expect(mockEntitlementDetailsHeader).toHaveBeenCalledWith({
       entitlementId: "ent-1",
@@ -44,7 +46,10 @@ describe("MainLayout", () => {
   ])("filters nav items by role '%s' to %j", (role, expectedPaths) => {
     mockUseUserRole.mockReturnValue({ user: null, role });
 
-    renderAt("/");
+    renderWithRouter(<MainLayout />, {
+      initialUrl: "/",
+      routePath: "/*",
+    });
 
     const items = mockHeader.mock.lastCall![0].items!;
     expect(items.map((i) => i.path)).toEqual(expectedPaths);
@@ -53,7 +58,10 @@ describe("MainLayout", () => {
   it("treats a missing role as affiliate for nav filtering", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: undefined });
 
-    renderAt("/");
+    renderWithRouter(<MainLayout />, {
+      initialUrl: "/",
+      routePath: "/*",
+    });
 
     const items = mockHeader.mock.lastCall![0].items!;
     expect(items.map((i) => i.path)).toEqual(["/entitlements"]);
