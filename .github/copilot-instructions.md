@@ -37,6 +37,31 @@ Modals are in-app: a `Create<Entity>Modal` wrapping `<Modal>`,
 its open/close state driven by `useModalToggle`, with form logic in a shared
 `use<Entity>FormController`.
 
+### Frontend unit tests
+
+For frontend unit tests under `frontend/src/**/*.spec.{ts,tsx}` and sibling
+`.spec.mocks.ts[x]` helpers, also follow
+[`../.claude/skills/mpt-module-testing/SKILL.md`](../.claude/skills/mpt-module-testing/SKILL.md).
+
+Key rules Copilot should apply directly:
+
+- Coverage must stay **above 85%**.
+- Use real source types in specs and mocks: prefer
+  `ComponentProps<typeof X>`, `Pick<ComponentProps<typeof X>, ...>`, exported
+  app prop types, and `ReturnType<typeof useHook>` over handwritten `type
+  FooProps = { ... }` copies.
+- Prefer existing shared test utilities and mocks from `~test-utils`,
+  especially `renderWithRouter`, `renderWithEntitlementRoute`,
+  `renderWithOrganizationRoute`, `renderCell`, modal trigger helpers,
+  `mockFixedT`, and `mockDesignSystemButton`.
+- Mock the exact design-system import path (`@swo/design-system/...`) and do
+  not spread `jest.requireActual()` from large design-system modules.
+- Avoid low-value tests: path literal assertions, exhaustive router smoke
+  coverage that only restates route wiring, and inline snapshots for simple DOM
+  structure or attributes.
+- Prefer explicit behavioural assertions over snapshots; assert text, roles,
+  classes, callback wiring, and meaningful props.
+
 ### Runtime context
 
 The app ships as a single standalone bundle that can run inside the MPT host

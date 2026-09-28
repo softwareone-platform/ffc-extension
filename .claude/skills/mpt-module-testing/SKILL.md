@@ -36,6 +36,8 @@ Return only the runtime exports the code under test uses. Type-only exports are 
 ### Type `jest.fn()` spies with the real signature
 Untyped `jest.fn()` returns `jest.Mock<any, any>` — `mockReturnValue({...})` and `.mock.lastCall![0]` accept anything and drift silently.
 
+Do **not** handwrite component prop contracts in specs or mock helpers when the real source type is available. Prefer `ComponentProps<typeof X>`, `Pick<ComponentProps<typeof X>, ...>`, exported app prop types, or `ReturnType<typeof useHook>` over `type FooProps = { ... }` copies.
+
 | Spy target | Typing |
 |---|---|
 | Hook | `jest.MockedFunction<typeof realHook>` |
@@ -174,6 +176,7 @@ When a shared mock or utility mirrors an app component/hook, prefer the source-e
 - `import type` — compile-time only
 - `Pick<Props, ...>` when the mock touches a subset
 - `ComponentProps<typeof Component>` when the source doesn't export its props
+- Keep local handwritten types only for true test-harness state that the app does not export (for example a tiny `FormValues` object or a one-off callback payload used only inside the spec).
 
 ```text
 import type { ComponentProps } from "react";
