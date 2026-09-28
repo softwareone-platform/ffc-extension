@@ -100,12 +100,12 @@ jobs:
     - name: Generate SBOM
       run: uv --project backend tool run --from cyclonedx-bom cyclonedx-py environment backend/.venv > sbom.json
     - name: Upload SBOM
-      uses: DependencyTrack/gh-upload-sbom@v3
+      uses: DependencyTrack/gh-upload-sbom@v4
       with:
-        serverHostname: 'dependency-track.s1.team'
+        server-hostname: 'dependency-track.s1.team'
         protocol: 'https'
-        apiKey: ${{ secrets.DEPENDENCYTRACK_APIKEY }}
-        projectName: 'ff-extension'
-        projectVersion: ${{ steps.get_version.outputs.MAJOR }}
-        bomFilename: "sbom.json"
-        autoCreate: true
+        api-key: ${{ secrets.DEPENDENCYTRACK_APIKEY }}
+        project-name: 'ffc-extension'
+        project-version: ${{ steps.get_version.outputs.MAJOR }}
+        bom-filename: "sbom.json"
+        auto-create: true
