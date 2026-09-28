@@ -1,4 +1,5 @@
-import { act, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { renderWithQueryClient } from "~test-utils";
 
@@ -54,23 +55,21 @@ describe("CreateEntitlementWizard", () => {
   });
 
   it("closing the wizard reports an unsuccessful result when nothing was created", () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />);
 
-    act(() => {
-      lastWizardProps().onClose!();
+    return user.click(screen.getByRole("button", { name: "close wizard" })).then(() => {
+      expect(onClose).toHaveBeenCalledWith({ success: false });
     });
-
-    expect(onClose).toHaveBeenCalledWith({ success: false });
   });
 
-  it("saving the wizard reports an unsuccessful result when nothing was created", () => {
+  it("saving the wizard reports an unsuccessful result when nothing was created", async () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
     renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />);
 
-    act(() => {
-      lastWizardProps().onSave!();
-    });
+    await user.click(screen.getByRole("button", { name: "save wizard" }));
 
     expect(onClose).toHaveBeenCalledWith({ success: false });
   });

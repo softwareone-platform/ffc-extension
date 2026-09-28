@@ -91,7 +91,9 @@ describe("DeleteOrganizationModal", () => {
       />,
     );
 
-    expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitDisabled: true });
+    expect(mockModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isSubmitDisabled: true }),
+    );
     expect(screen.getByTestId("not-deletable-warning")).toBeInTheDocument();
   });
 
@@ -107,7 +109,9 @@ describe("DeleteOrganizationModal", () => {
       />,
     );
 
-    expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitDisabled: false });
+    expect(mockModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isSubmitDisabled: false }),
+    );
     expect(screen.queryByTestId("not-deletable-warning")).not.toBeInTheDocument();
   });
 
@@ -122,7 +126,9 @@ describe("DeleteOrganizationModal", () => {
       />,
     );
 
-    expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitDisabled: true });
+    expect(mockModal).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isSubmitDisabled: true }),
+    );
   });
 
   it("removes the organization and calls onSuccess after submit", async () => {

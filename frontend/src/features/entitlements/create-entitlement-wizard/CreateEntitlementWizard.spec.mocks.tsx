@@ -43,7 +43,17 @@ jest.mock("@swo/design-system/modal", () => ({
 jest.mock("@swo/design-system/wizard", () => {
   const Wizard = (props: MockWizardProps) => {
     mockWizard(props);
-    return <div data-testid="wizard">{props.children}</div>;
+    return (
+      <div data-testid="wizard">
+        <button onClick={() => props.onClose?.()} type="button">
+          close wizard
+        </button>
+        <button onClick={() => props.onSave?.()} type="button">
+          save wizard
+        </button>
+        {props.children}
+      </div>
+    );
   };
   Wizard.Header = ({ children }: WizardHeaderProps) => (
     <div data-testid="wizard-header">{children}</div>
