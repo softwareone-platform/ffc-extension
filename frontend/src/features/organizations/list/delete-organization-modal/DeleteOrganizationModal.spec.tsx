@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
@@ -14,6 +14,9 @@ import { DeleteOrganizationModal } from "./DeleteOrganizationModal";
 import type { useDeleteOrganizationController } from "./hooks/useDeleteOrganizationController";
 
 type Controller = ReturnType<typeof useDeleteOrganizationController>;
+type MockInlineNotificationProps = ComponentProps<
+  typeof import("@swo/design-system/notification").InlineNotification
+>;
 
 const mockUseDeleteController = jest.fn() as jest.MockedFunction<
   typeof useDeleteOrganizationController
@@ -29,7 +32,7 @@ jest.mock(
 );
 
 jest.mock("@swo/design-system/notification", () => ({
-  InlineNotification: ({ children }: { children?: ReactNode }) => (
+  InlineNotification: ({ children }: MockInlineNotificationProps) => (
     <div data-testid="not-deletable-warning">{children}</div>
   ),
 }));

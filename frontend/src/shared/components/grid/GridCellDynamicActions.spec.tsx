@@ -18,10 +18,6 @@ jest.mock("@swo/design-system/utils", () => ({
 }));
 
 describe("GridCellDynamicActions", () => {
-  beforeEach(() => {
-    mockGridCellActions.mockReset();
-  });
-
   it("renders GridCellActions when actions exist", () => {
     const item = { id: "row-1" };
     const actions = [{ value: "edit", label: "Edit" }];

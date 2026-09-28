@@ -1,7 +1,8 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { screen } from "@testing-library/react";
 
+import type { EntitlementHighlights } from "~features/entitlements/components/EntitlementHighlights";
 import { renderWithEntitlementRoute, renderWithRouter } from "~test-utils";
 
 import { EntitlementDetailsContent } from "./DetailsContent";
@@ -9,19 +10,21 @@ import { EntitlementDetailsContent } from "./DetailsContent";
 type MockNavigationTopBarProps = ComponentProps<
   typeof import("@swo/design-system/navigation").Navigation.TopBar
 >;
+type MockCardProps = ComponentProps<typeof import("@swo/design-system/card").Card>;
+type MockHighlightsProps = ComponentProps<typeof EntitlementHighlights>;
 
-const mockHighlights = jest.fn() as jest.MockedFunction<(props: { entitlementId: string }) => void>;
+const mockHighlights = jest.fn() as jest.MockedFunction<(props: MockHighlightsProps) => void>;
 const mockTopBar = jest.fn() as jest.MockedFunction<(props: MockNavigationTopBarProps) => void>;
 
 jest.mock("../components/EntitlementHighlights", () => ({
-  EntitlementHighlights: (props: { entitlementId: string }) => {
+  EntitlementHighlights: (props: MockHighlightsProps) => {
     mockHighlights(props);
     return <div data-testid="entitlement-highlights">{props.entitlementId}</div>;
   },
 }));
 
 jest.mock("@swo/design-system/card", () => ({
-  Card: ({ children }: { children?: ReactNode }) => <div data-testid="card">{children}</div>,
+  Card: ({ children }: MockCardProps) => <div data-testid="card">{children}</div>,
 }));
 
 jest.mock("@swo/design-system/navigation", () => ({

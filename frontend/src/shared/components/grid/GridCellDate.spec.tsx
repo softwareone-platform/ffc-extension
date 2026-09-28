@@ -44,7 +44,6 @@ jest.mock("~shared/hooks/useFormatTime", () => ({
 
 describe("GridCellDate", () => {
   beforeEach(() => {
-    mockGridCellTitleSubtitle.mockReset();
     mockUseFormatDate.mockReturnValue((value) => `date:${String(value)}`);
     mockUseFormatTime.mockReturnValue((value) => `time:${String(value)}`);
   });

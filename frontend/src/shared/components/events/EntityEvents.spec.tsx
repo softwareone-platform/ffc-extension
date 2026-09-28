@@ -37,10 +37,6 @@ function makeEntity(events: Partial<AuditEventsSchema>): { events: AuditEventsSc
 }
 
 describe("EntityEvents", () => {
-  beforeEach(() => {
-    mockEntityReference.mockReset();
-  });
-
   it("renders only events with timestamps and falls back to the system actor", () => {
     render(
       <EntityEvents

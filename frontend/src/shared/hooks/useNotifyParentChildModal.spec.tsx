@@ -18,11 +18,6 @@ jest.mock("~shared/providers/MPTContextProvider", () => ({
 }));
 
 describe("useNotifyParentChildModal", () => {
-  beforeEach(() => {
-    mockEmit.mockReset();
-    mockUseHasMPTHost.mockReset();
-  });
-
   it("does nothing when there is no MPT host", () => {
     mockUseHasMPTHost.mockReturnValue(false);
 

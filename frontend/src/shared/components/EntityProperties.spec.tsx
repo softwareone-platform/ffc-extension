@@ -64,11 +64,6 @@ function makeEntity(overrides: Partial<AddWizardForm> = {}): AddWizardForm {
 }
 
 describe("EntityProperties", () => {
-  beforeEach(() => {
-    mockEntityReference.mockReset();
-    mockStatus.mockReset();
-  });
-
   it("renders all properties for a fully populated entity", () => {
     render(<EntityProps entity={makeEntity()} />);
 

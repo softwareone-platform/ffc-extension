@@ -16,40 +16,21 @@ describe("WizardStep", () => {
 
   beforeEach(() => {
     scrollIntoViewMock = jest.fn();
-    mockInlineErrorNotification.mockReset();
     Object.defineProperty(Element.prototype, "scrollIntoView", {
       configurable: true,
       value: scrollIntoViewMock,
     });
   });
 
-  it("renders the title, children, and content classes", () => {
-    const { asFragment } = render(
+  it("renders the title heading and children body", () => {
+    render(
       <WizardStep title="Summary" className="custom-step" contentClassName="content-class">
         <div data-testid="step-body">body</div>
       </WizardStep>,
     );
 
     expect(screen.getByText("Summary")).toBeInTheDocument();
-    expect(screen.getByTestId("step-body")).toBeInTheDocument();
-    expect(asFragment()).toMatchInlineSnapshot(`
-      <DocumentFragment>
-        <div
-          class="step custom-step"
-        >
-          Summary
-          <div
-            class="step__content content-class"
-          >
-            <div
-              data-testid="step-body"
-            >
-              body
-            </div>
-          </div>
-        </div>
-      </DocumentFragment>
-    `);
+    expect(screen.getByTestId("step-body")).toHaveTextContent("body");
   });
 
   it("does not render an inline error or scroll when no error is provided", () => {

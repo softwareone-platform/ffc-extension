@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { screen } from "@testing-library/react";
 
@@ -15,6 +15,7 @@ type MockOrganizationHighlightsProps = ComponentProps<typeof OrganizationHighlig
 type MockNavigationTopBarProps = ComponentProps<
   typeof import("@swo/design-system/navigation").Navigation.TopBar
 >;
+type MockCardProps = ComponentProps<typeof import("@swo/design-system/card").Card>;
 
 const mockUseOrganizationDetailsApi = jest.fn() as jest.MockedFunction<
   typeof useOrganizationDetailsApi
@@ -46,7 +47,7 @@ jest.mock("../providers/OrganizationsProvider", () => ({
 }));
 
 jest.mock("@swo/design-system/card", () => ({
-  Card: ({ children }: { children?: ReactNode }) => <div data-testid="card">{children}</div>,
+  Card: ({ children }: MockCardProps) => <div data-testid="card">{children}</div>,
 }));
 
 jest.mock("@swo/design-system/navigation", () => ({

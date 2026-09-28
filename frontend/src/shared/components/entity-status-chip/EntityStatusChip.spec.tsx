@@ -12,10 +12,6 @@ jest.mock("@swo/mp-status-chip", () => ({
 }));
 
 describe("EntityStatusChip", () => {
-  beforeEach(() => {
-    mockStatusChip.mockReset();
-  });
-
   it.each([
     ["active", "Active"],
     ["Active", "Active"],

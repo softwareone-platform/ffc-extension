@@ -1,11 +1,15 @@
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
 import { InlineErrorNotification } from "./InlineErrorNotification";
 
+type MockInlineNotificationProps = ComponentProps<
+  typeof import("@swo/design-system/notification").InlineNotification
+>;
+
 jest.mock("@swo/design-system/notification", () => ({
-  InlineNotification: ({ children, status }: { children?: ReactNode; status: string }) => (
+  InlineNotification: ({ children, status }: MockInlineNotificationProps) => (
     <div data-testid="inline-notification" data-status={status}>
       {children}
     </div>

@@ -1,26 +1,30 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 
 import type { PageShellNavItem } from "./PageShell";
 import { PageShell } from "./PageShell";
 
+type NavigationProps = ComponentProps<typeof import("@swo/design-system/navigation").Navigation>;
 type HeaderBarProps = ComponentProps<
   typeof import("@swo/design-system/navigation").Navigation.HeaderBar
 >;
 type HeaderBarActionsProps = ComponentProps<
   typeof import("@swo/design-system/navigation").Navigation.HeaderBar.Actions
 >;
+type NavigationContentProps = ComponentProps<
+  typeof import("@swo/design-system/navigation").Navigation.Content
+>;
 
-const mockNavigation = jest.fn() as jest.MockedFunction<(props: { children?: ReactNode }) => void>;
+const mockNavigation = jest.fn() as jest.MockedFunction<(props: NavigationProps) => void>;
 const mockHeaderBar = jest.fn() as jest.MockedFunction<(props: HeaderBarProps) => void>;
 const mockHeaderBarActions = jest.fn() as jest.MockedFunction<
-  (props: { children?: ReactNode }) => void
+  (props: HeaderBarActionsProps) => void
 >;
-const mockContent = jest.fn() as jest.MockedFunction<(props: { children?: ReactNode }) => void>;
+const mockContent = jest.fn() as jest.MockedFunction<(props: NavigationContentProps) => void>;
 
 jest.mock("@swo/design-system/navigation", () => {
-  const Navigation = ({ children }: { children?: ReactNode }) => {
+  const Navigation = ({ children }: NavigationProps) => {
     mockNavigation({ children });
     return <div data-testid="navigation">{children}</div>;
   };
@@ -38,7 +42,7 @@ jest.mock("@swo/design-system/navigation", () => {
     },
   ) as typeof import("@swo/design-system/navigation").Navigation.HeaderBar;
 
-  Navigation.Content = ({ children }: { children?: ReactNode }) => {
+  Navigation.Content = ({ children }: NavigationContentProps) => {
     mockContent({ children });
     return <div data-testid="navigation-content">{children}</div>;
   };
@@ -47,13 +51,6 @@ jest.mock("@swo/design-system/navigation", () => {
 });
 
 describe("PageShell", () => {
-  beforeEach(() => {
-    mockNavigation.mockReset();
-    mockHeaderBar.mockReset();
-    mockHeaderBarActions.mockReset();
-    mockContent.mockReset();
-  });
-
   it("renders children inside the Navigation wrapper", () => {
     render(
       <PageShell>

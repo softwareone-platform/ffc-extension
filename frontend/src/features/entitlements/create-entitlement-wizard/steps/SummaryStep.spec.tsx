@@ -1,11 +1,17 @@
+import type { ComponentProps } from "react";
+
 import { screen } from "@testing-library/react";
 
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockSharedWizardStep } from "~test-utils/mocks/wizardStep";
 
 import type { AddWizardForm } from "../CreateEntitlement.Schema";
-import { renderWizardStep } from "./wizardStepTestUtils";
 import { SummaryStep } from "./SummaryStep";
+import { renderWizardStep } from "./wizardStepTestUtils";
+
+type MockInlineNotificationProps = ComponentProps<
+  typeof import("@swo/design-system/notification").InlineNotification
+>;
 
 jest.mock("~shared/components/EntityProperties", () => ({
   EntityProps: () => <div data-testid="entity-props" />,
@@ -14,7 +20,7 @@ jest.mock("~shared/components/EntityProperties", () => ({
 jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
 jest.mock("@swo/design-system/notification", () => ({
-  InlineNotification: ({ children }: { children?: React.ReactNode }) => (
+  InlineNotification: ({ children }: MockInlineNotificationProps) => (
     <div data-testid="success-notification">{children}</div>
   ),
 }));

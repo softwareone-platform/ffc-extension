@@ -2,15 +2,11 @@ import { renderHook } from "@testing-library/react";
 
 import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
 
-import { useActionsByRole, type RoleAwareAction } from "./useActionsByRole";
+import { type RoleAwareAction, useActionsByRole } from "./useActionsByRole";
 
 jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 describe("useActionsByRole", () => {
-  beforeEach(() => {
-    mockUseUserRole.mockReset();
-  });
-
   it("returns no actions when the role is missing", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: undefined });
 
@@ -32,4 +28,3 @@ describe("useActionsByRole", () => {
     expect(result.current(actions)).toEqual([actions[0], actions[1]]);
   });
 });
-

@@ -1,13 +1,18 @@
-import type { PropsWithChildren, ReactElement, ReactNode } from "react";
+import type { ComponentProps, PropsWithChildren, ReactElement } from "react";
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router-dom";
 
+import type { ErrorPage } from "~shared/components/error/ErrorPage";
+import type { UserEvent } from "~test-utils";
+
 import { ErrorHandlerProvider, useErrorHandler } from "./ErrorHandlerProvider";
 
+type MockErrorPageProps = ComponentProps<typeof ErrorPage>;
+
 jest.mock("~shared/components/error/ErrorPage", () => ({
-  ErrorPage: ({ title, subtitle }: { title: ReactNode; subtitle?: ReactNode }) => (
+  ErrorPage: ({ title, subtitle }: MockErrorPageProps) => (
     <div data-testid="error-page">
       <div data-testid="error-title">{title}</div>
       {subtitle && <div data-testid="error-subtitle">{subtitle}</div>}
@@ -58,8 +63,10 @@ function ExplodingChild(): ReactElement {
 
 describe("ErrorHandlerProvider", () => {
   let mockConsoleError: jest.SpiedFunction<typeof console.error>;
+  let user: UserEvent;
 
   beforeEach(() => {
+    user = userEvent.setup();
     mockConsoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -88,8 +95,6 @@ describe("ErrorHandlerProvider", () => {
   ] as const)(
     "renders the matching error page when handleError is called with %s",
     async (errorCode, description) => {
-      const user = userEvent.setup();
-
       render(
         <ProviderHarness>
           <ErrorTrigger errorCode={errorCode} description={description} />
@@ -104,8 +109,6 @@ describe("ErrorHandlerProvider", () => {
   );
 
   it("clears the displayed error when the route changes", async () => {
-    const user = userEvent.setup();
-
     render(
       <ProviderHarness>
         <>
@@ -138,8 +141,6 @@ describe("ErrorHandlerProvider", () => {
   });
 
   it("returns a noop error handler outside the provider", async () => {
-    const user = userEvent.setup();
-
     render(<UnwrappedErrorTrigger />);
 
     await user.click(screen.getByRole("button", { name: "show default handler" }));

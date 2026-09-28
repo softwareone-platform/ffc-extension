@@ -6,6 +6,8 @@ import { useForm, useWatch } from "react-hook-form";
 
 import type { Input } from "@swo/design-system/input";
 
+import type { UserEvent } from "~test-utils";
+
 import { ControlledInput } from "./ControlledInput";
 
 type MockInputProps = Pick<
@@ -67,8 +69,10 @@ function ControlledInputHarness({
 }
 
 describe("ControlledInput", () => {
+  let user: UserEvent;
+
   beforeEach(() => {
-    mockInput.mockReset();
+    user = userEvent.setup();
   });
 
   it("normalizes an undefined field value to an empty string and forwards the field name", () => {
@@ -86,8 +90,6 @@ describe("ControlledInput", () => {
   });
 
   it("updates the form value when the input changes", async () => {
-    const user = userEvent.setup();
-
     render(<ControlledInputHarness />);
 
     await user.type(screen.getByTestId("controlled-input"), "Alice");
@@ -96,8 +98,6 @@ describe("ControlledInput", () => {
   });
 
   it("switches to the error variant and exposes the validation message when invalid", async () => {
-    const user = userEvent.setup();
-
     render(<ControlledInputHarness variant="success" />);
 
     await user.click(screen.getByRole("button", { name: "set error" }));

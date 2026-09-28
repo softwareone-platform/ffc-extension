@@ -58,12 +58,6 @@ describe("SelectAffiliateList", () => {
   const mergedData = [makeAccount({ id: "acc-3", name: "Merged" }) as Account];
 
   beforeEach(() => {
-    mockUseColumns.mockReset();
-    mockUseApiCall.mockReset();
-    mockUseListWithApi.mockReset();
-    mockUseListDataWithSelectedEntity.mockReset();
-    mockList.mockReset();
-
     mockUseColumns.mockReturnValue(columns);
     mockUseApiCall.mockReturnValue(apiCall);
     mockUseListWithApi.mockReturnValue({

@@ -1,10 +1,12 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import type { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
 import type { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import type { PageShell } from "~shared/components/page-shell";
 
 export type MockHeaderProps = ComponentProps<typeof PageShell.Header>;
+type MockPageShellProps = ComponentProps<typeof PageShell>;
+type MockPageShellContentProps = ComponentProps<typeof PageShell.Content>;
 type MockOrganizationDetailsHeaderProps = ComponentProps<typeof OrganizationDetailsHeader>;
 type MockEntitlementDetailsHeaderProps = ComponentProps<typeof EntitlementDetailsHeader>;
 
@@ -18,13 +20,13 @@ export const mockEntitlementDetailsHeader = jest.fn() as jest.MockedFunction<
 
 jest.mock("~shared/components/page-shell", () => ({
   PageShell: Object.assign(
-    ({ children }: { children?: ReactNode }) => <div data-testid="page-shell">{children}</div>,
+    ({ children }: MockPageShellProps) => <div data-testid="page-shell">{children}</div>,
     {
       Header: (props: MockHeaderProps) => {
         mockHeader(props);
         return <header data-testid="page-shell-header" />;
       },
-      Content: ({ children }: { children?: ReactNode }) => (
+      Content: ({ children }: MockPageShellContentProps) => (
         <main data-testid="page-shell-content">{children}</main>
       ),
     },

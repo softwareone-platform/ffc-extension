@@ -37,7 +37,6 @@ function ContextConsumer() {
 
 describe("MPTContextProvider", () => {
   beforeEach(() => {
-    mockUseMPTContext.mockReset();
     globalThis.__MPT__ = undefined;
     jest.useRealTimers();
   });

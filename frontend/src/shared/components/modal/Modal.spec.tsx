@@ -3,6 +3,7 @@ import type { ComponentProps } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import type { UserEvent } from "~test-utils";
 import { mockButton, mockDesignSystemButton } from "~test-utils/mocks/designSystemButton";
 
 import { Modal } from "./Modal";
@@ -40,10 +41,10 @@ jest.mock("./ModalCancelButton", () => ({
 }));
 
 describe("Modal", () => {
+  let user: UserEvent;
+
   beforeEach(() => {
-    mockDSModal.mockReset();
-    mockButton.mockReset();
-    mockModalCancelButton.mockReset();
+    user = userEvent.setup();
   });
 
   it("forwards modal props, children, and merges the wrapper class", () => {
@@ -107,7 +108,6 @@ describe("Modal", () => {
   });
 
   it("builds default actions and uses onClose as the cancel fallback", async () => {
-    const user = userEvent.setup();
     const onClose = jest.fn();
     const onSubmit = jest.fn();
 
@@ -136,7 +136,6 @@ describe("Modal", () => {
   });
 
   it("prefers onCancel over onClose and propagates submitting and disabled states", async () => {
-    const user = userEvent.setup();
     const onClose = jest.fn();
     const onCancel = jest.fn();
     const onSubmit = jest.fn();

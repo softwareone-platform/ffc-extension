@@ -16,7 +16,6 @@ jest.mock("~shared/providers/ErrorHandlerProvider", () => ({
 
 describe("RouteGuard", () => {
   beforeEach(() => {
-    mockHandleError.mockReset();
     mockFixedT(jest.mocked(useFixedT));
   });
 

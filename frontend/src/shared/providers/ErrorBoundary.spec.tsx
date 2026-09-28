@@ -14,7 +14,6 @@ describe("ErrorBoundary", () => {
   let mockConsoleError: jest.SpiedFunction<typeof console.error>;
 
   beforeEach(() => {
-    mockOnError.mockReset();
     mockConsoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
   });
 

@@ -39,7 +39,6 @@ jest.mock("~shared/utils/NumberUtils", () => ({
 
 describe("GridCellCurrency", () => {
   beforeEach(() => {
-    mockGridCellTitleSubtitle.mockReset();
     mockUseFormatMoney.mockReturnValue(
       (value?: number | null) => `formatted:${value ?? "missing"}`,
     );
