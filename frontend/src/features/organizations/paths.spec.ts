@@ -11,4 +11,8 @@ describe("organizations paths", () => {
     const builder = PATHS[key] as (id: string) => string;
     expect(builder("org-1")).toBe(expected);
   });
+
+  it("exposes the react-router pattern for organization details", () => {
+    expect(PATHS.detailMatch).toBe("/organizations/:organizationId/*");
+  });
 });

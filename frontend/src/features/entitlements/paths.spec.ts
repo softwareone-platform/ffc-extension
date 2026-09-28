@@ -9,4 +9,8 @@ describe("entitlements paths", () => {
     const builder = PATHS[key] as (id: string) => string;
     expect(builder("ent-1")).toBe(expected);
   });
+
+  it("exposes the react-router pattern for entitlement details", () => {
+    expect(PATHS.detailMatch).toBe("/entitlements/:entitlementId/*");
+  });
 });
