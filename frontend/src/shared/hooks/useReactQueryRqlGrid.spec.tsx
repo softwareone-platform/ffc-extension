@@ -1,11 +1,8 @@
-import type { ComponentProps } from "react";
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { RqlQuery } from "@swo/rql-client";
 
-import { createQueryClientWrapper } from "~test-utils";
+import { createQueryClientWrapper, createTestQueryClient } from "~test-utils";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 
 import { useReactQueryRqlGrid } from "./useReactQueryRqlGrid";
@@ -92,21 +89,15 @@ describe("useReactQueryRqlGrid", () => {
 
   it("refresh invalidates the scoped query key and silentRefresh invalidates the base query key", async () => {
     primeBuildRqlQuery("scoped-rql");
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-    });
+    const queryClient = createTestQueryClient();
     const invalidateSpy = jest.spyOn(queryClient, "invalidateQueries");
-    type QueryClientWrapperProps = Pick<ComponentProps<typeof QueryClientProvider>, "children">;
-    const wrapper = ({ children }: QueryClientWrapperProps) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const options = (query: RqlQuery<object>) => ({
       queryKey: ["test-entities", query.toString()],
       queryFn: mockQueryFn,
     });
 
     const { result } = renderHook(() => useReactQueryRqlGrid(mockBaseQueryKey, options), {
-      wrapper,
+      wrapper: createQueryClientWrapper(queryClient),
     });
     await act(async () => {
       await result.current.onConfigChange(

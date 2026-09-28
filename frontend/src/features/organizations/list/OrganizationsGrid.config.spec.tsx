@@ -3,44 +3,18 @@ import { renderHook } from "@testing-library/react";
 import type { GridEvents } from "@swo/design-system/grid";
 
 import type { useGridInfoDialogConfiguration } from "~shared/hooks/useGridInfoDialogConfiguration";
-import { mockDesignSystemGrid, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 import {
-  mockGridIdentityModule,
-  mockGridInfoDialogConfigurationModule,
+  mockUseAsyncOptions,
+  mockUseColumns,
+  mockUseFields,
+  mockUseGridAsync,
   mockUseGridInfoDialogConfiguration,
-} from "~test-utils/mocks/sharedGridHooks";
-import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
+  mockUseUserRole,
+  mockUseViews,
+} from "./OrganizationsGrid.config.spec.mocks";
 
 import { useGridConfig } from "./OrganizationsGrid.config";
 
-const mockUseColumns = jest.fn();
-const mockUseFields = jest.fn();
-const mockUseViews = jest.fn();
-const mockUseAsyncOptions = jest.fn();
-
-jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
-
-jest.mock("./hooks/useColumns", () => ({
-  useColumns: () => mockUseColumns(),
-}));
-jest.mock("./hooks/useFields", () => ({
-  useFields: () => mockUseFields(),
-}));
-jest.mock("./hooks/useViews", () => ({
-  useViews: () => mockUseViews(),
-}));
-jest.mock("./hooks/useAsyncOptions", () => ({
-  useAsyncOptions: () => mockUseAsyncOptions(),
-}));
-
-jest.mock(
-  "~shared/hooks/useGridInfoDialogConfiguration",
-  () => mockGridInfoDialogConfigurationModule,
-);
-
-jest.mock("~shared/hooks/useGridIdentity", () => mockGridIdentityModule);
-
-jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 describe("useGridConfig (organizations list)", () => {
   const silentRefresh = jest.fn();

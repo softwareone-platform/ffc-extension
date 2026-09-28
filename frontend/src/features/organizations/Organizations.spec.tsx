@@ -1,55 +1,20 @@
-import type { ReactNode } from "react";
-
 import { screen, waitFor } from "@testing-library/react";
 
 import { renderWithRouter } from "~test-utils";
 
+import { mockRouteGuard } from "./Organizations.spec.mocks";
 import { Organizations } from "./Organizations";
 
-const mockRouteGuard = jest.fn() as jest.MockedFunction<
-  (props: { allowedRoles: readonly string[] }) => void
->;
-
-jest.mock("~shared/components/RouteGuard", () => ({
-  RouteGuard: ({
-    children,
-    allowedRoles,
-  }: {
-    children: ReactNode;
-    allowedRoles: readonly string[];
-  }) => {
-    mockRouteGuard({ allowedRoles });
-    return <div data-testid="route-guard">{children}</div>;
-  },
-}));
-
-jest.mock("~features/organizations/list/OrganizationsGrid", () => ({
-  OrganizationsGrid: () => <div data-testid="organizations-grid" />,
-}));
-
-jest.mock("~features/organizations/details/DetailsContent", () => ({
-  OrganizationDetailsContent: () => <div data-testid="details-content" />,
-}));
-
-jest.mock("~features/organizations/details/general/General", () => ({
-  OrganizationGeneralDetails: () => <div data-testid="general" />,
-}));
-
-jest.mock("~features/organizations/details/data-sources/DataSources", () => ({
-  OrganizationDataSources: () => <div data-testid="data-sources" />,
-}));
-
-jest.mock("~features/organizations/details/users/Users", () => ({
-  OrganizationUsers: () => <div data-testid="users" />,
-}));
-
-jest.mock("~features/organizations/details/events/Events", () => ({
-  OrganizationEventsDetails: () => <div data-testid="events" />,
-}));
+function renderOrganizations(initialUrl: string) {
+  return renderWithRouter(<Organizations />, {
+    initialUrl,
+    routePath: "/organizations/*",
+  });
+}
 
 describe("Organizations router", () => {
   it("guards the route tree with the admin and operations roles", async () => {
-    renderWithRouter(<Organizations />, { initialUrl: "/", routePath: "/*" });
+    renderOrganizations("/organizations");
 
     await waitFor(() =>
       expect(mockRouteGuard).toHaveBeenCalledWith({ allowedRoles: ["admin", "operations"] }),
@@ -57,8 +22,27 @@ describe("Organizations router", () => {
   });
 
   it("renders OrganizationsGrid at the index route", async () => {
-    renderWithRouter(<Organizations />, { initialUrl: "/", routePath: "/*" });
+    renderOrganizations("/organizations");
 
     expect(await screen.findByTestId("organizations-grid")).toBeInTheDocument();
+  });
+
+  it("renders the details shell and general tab at the bare detail route", async () => {
+    renderOrganizations("/organizations/org-1");
+
+    expect(await screen.findByTestId("details-content")).toBeInTheDocument();
+    expect(await screen.findByTestId("general")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/organizations/org-1/general", "general"],
+    ["/organizations/org-1/data-sources", "data-sources"],
+    ["/organizations/org-1/users", "users"],
+    ["/organizations/org-1/events", "events"],
+  ] as const)("renders %s inside the details shell", async (url, testId) => {
+    renderOrganizations(url);
+
+    expect(await screen.findByTestId("details-content")).toBeInTheDocument();
+    expect(await screen.findByTestId(testId)).toBeInTheDocument();
   });
 });

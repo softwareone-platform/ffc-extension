@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
+import { act, screen } from "@testing-library/react";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen } from "@testing-library/react";
+import { renderWithQueryClient } from "~test-utils";
 
 import {
   mockStepContext,
@@ -11,13 +10,6 @@ import {
 } from "./CreateEntitlementWizard.spec.mocks";
 
 import { CreateEntitlementWizard } from "./CreateEntitlementWizard";
-
-function withQueryClient(ui: ReactNode) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return <QueryClientProvider client={client}>{ui}</QueryClientProvider>;
-}
 
 function primeOperations() {
   mockUseUserRole.mockReturnValue({ user: null, role: "operations" });
@@ -35,19 +27,19 @@ describe("CreateEntitlementWizard", () => {
   });
 
   it("initialises useSteps with isPending=false", () => {
-    render(withQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />));
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(mockUseSteps).toHaveBeenLastCalledWith(false);
   });
 
   it("passes the useSteps result to the Wizard as stepsProps", () => {
-    render(withQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />));
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(lastWizardProps().stepsProps).toHaveLength(4);
   });
 
   it("starts at activeStepIndex=0", () => {
-    render(withQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />));
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(lastWizardProps().activeStepIndex).toBe(0);
   });
@@ -60,14 +52,14 @@ describe("CreateEntitlementWizard", () => {
   ] as const)("renders %s step at activeStepIndex=%i", (_name, index, testId) => {
     mockStepContext.activeStepIndex = index;
 
-    render(withQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />));
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
 
     expect(screen.getByTestId(testId)).toBeInTheDocument();
   });
 
   it("Wizard onClose reports success=false when no entitlement was created", () => {
     const onClose = jest.fn();
-    render(withQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />));
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />);
 
     act(() => {
       lastWizardProps().onClose!();
@@ -78,7 +70,7 @@ describe("CreateEntitlementWizard", () => {
 
   it("Wizard onSave reports success=false when no entitlement was created", () => {
     const onClose = jest.fn();
-    render(withQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />));
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={onClose} />);
 
     act(() => {
       lastWizardProps().onSave!();

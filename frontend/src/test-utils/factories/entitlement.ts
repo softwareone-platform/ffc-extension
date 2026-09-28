@@ -1,4 +1,3 @@
-import type { AccountRead } from "~api/ffc-api-model";
 import type { Entitlement } from "~features/entitlements/api/model";
 
 export function makeEntitlement(overrides: Partial<Entitlement> = {}): Entitlement {
@@ -23,14 +22,3 @@ export function makeEntitlement(overrides: Partial<Entitlement> = {}): Entitleme
   } as Entitlement;
 }
 
-export function makeAccount(overrides: Partial<AccountRead> = {}): AccountRead {
-  return {
-    id: "acc-1",
-    name: "Account 1",
-    external_id: "ext-1",
-    type: "affiliate",
-    integration: "aws",
-    events: {} as AccountRead["events"],
-    ...overrides,
-  } as AccountRead;
-}

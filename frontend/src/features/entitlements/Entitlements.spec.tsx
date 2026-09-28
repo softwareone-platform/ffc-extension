@@ -1,47 +1,20 @@
-import type { ReactNode } from "react";
-
 import { screen, waitFor } from "@testing-library/react";
 
 import { renderWithRouter } from "~test-utils";
 
+import { mockRouteGuard } from "./Entitlements.spec.mocks";
 import { Entitlements } from "./Entitlements";
 
-const mockRouteGuard = jest.fn() as jest.MockedFunction<
-  (props: { allowedRoles: readonly string[] }) => void
->;
-
-jest.mock("~shared/components/RouteGuard", () => ({
-  RouteGuard: ({
-    children,
-    allowedRoles,
-  }: {
-    children: ReactNode;
-    allowedRoles: readonly string[];
-  }) => {
-    mockRouteGuard({ allowedRoles });
-    return <div data-testid="route-guard">{children}</div>;
-  },
-}));
-
-jest.mock("~features/entitlements/list/EntitlementsGrid", () => ({
-  EntitlementsGrid: () => <div data-testid="entitlements-grid" />,
-}));
-
-jest.mock("~features/entitlements/details/general/General", () => ({
-  EntitlementsGeneralDetails: () => <div data-testid="general" />,
-}));
-
-jest.mock("~features/entitlements/details/events/Events", () => ({
-  EntitlementEventsDetails: () => <div data-testid="events" />,
-}));
-
-jest.mock("~features/entitlements/details/DetailsContent", () => ({
-  EntitlementDetailsContent: () => <div data-testid="details-content" />,
-}));
+function renderEntitlements(initialUrl: string) {
+  return renderWithRouter(<Entitlements />, {
+    initialUrl,
+    routePath: "/entitlements/*",
+  });
+}
 
 describe("Entitlements router", () => {
   it("guards the route tree with the admin, operations, and affiliate roles", async () => {
-    renderWithRouter(<Entitlements />, { initialUrl: "/", routePath: "/*" });
+    renderEntitlements("/entitlements");
 
     await waitFor(() =>
       expect(mockRouteGuard).toHaveBeenCalledWith({
@@ -51,8 +24,25 @@ describe("Entitlements router", () => {
   });
 
   it("renders EntitlementsGrid at the index route", async () => {
-    renderWithRouter(<Entitlements />, { initialUrl: "/", routePath: "/*" });
+    renderEntitlements("/entitlements");
 
     expect(await screen.findByTestId("entitlements-grid")).toBeInTheDocument();
+  });
+
+  it("redirects the bare detail route to the general tab inside the details shell", async () => {
+    renderEntitlements("/entitlements/ent-1");
+
+    expect(await screen.findByTestId("details-content")).toBeInTheDocument();
+    expect(await screen.findByTestId("general")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/entitlements/ent-1/general", "general"],
+    ["/entitlements/ent-1/events", "events"],
+  ] as const)("renders %s inside the details shell", async (url, testId) => {
+    renderEntitlements(url);
+
+    expect(await screen.findByTestId("details-content")).toBeInTheDocument();
+    expect(await screen.findByTestId(testId)).toBeInTheDocument();
   });
 });

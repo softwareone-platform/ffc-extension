@@ -1,63 +1,21 @@
-import type { ComponentProps, ReactNode } from "react";
-
-import { render } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { renderWithRouter } from "~test-utils";
 
 import type { AccountType } from "~api/ffc-api-model";
-import type { PageShell } from "~shared/components/page-shell";
 import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
+
+import {
+  mockEntitlementDetailsHeader,
+  mockHeader,
+  mockOrganizationDetailsHeader,
+} from "./MainLayout.spec.mocks";
 
 import { MainLayout } from "./MainLayout";
 
-type MockHeaderProps = ComponentProps<typeof PageShell.Header>;
-
-const mockHeader = jest.fn() as jest.MockedFunction<(props: MockHeaderProps) => void>;
-const mockOrganizationDetailsHeader = jest.fn() as jest.MockedFunction<
-  (props: { organizationId: string; backUrl: string }) => void
->;
-const mockEntitlementDetailsHeader = jest.fn() as jest.MockedFunction<
-  (props: { entitlementId: string; backUrl: string }) => void
->;
-
 jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
-jest.mock("~shared/components/page-shell", () => ({
-  PageShell: Object.assign(
-    ({ children }: { children?: ReactNode }) => <div data-testid="page-shell">{children}</div>,
-    {
-      Header: (props: MockHeaderProps) => {
-        mockHeader(props);
-        return <header data-testid="page-shell-header" />;
-      },
-      Content: ({ children }: { children?: ReactNode }) => (
-        <main data-testid="page-shell-content">{children}</main>
-      ),
-    },
-  ),
-}));
-
-jest.mock("~features/organizations/components/OrganizationDetailsHeader", () => ({
-  OrganizationDetailsHeader: (props: { organizationId: string; backUrl: string }) => {
-    mockOrganizationDetailsHeader(props);
-    return <div data-testid="organization-header" />;
-  },
-}));
-
-jest.mock("~features/entitlements/components/EntitlementDetailsHeader", () => ({
-  EntitlementDetailsHeader: (props: { entitlementId: string; backUrl: string }) => {
-    mockEntitlementDetailsHeader(props);
-    return <div data-testid="entitlement-header" />;
-  },
-}));
 
 function renderAt(initialUrl: string) {
-  return render(
-    <MemoryRouter initialEntries={[initialUrl]}>
-      <Routes>
-        <Route path="*" element={<MainLayout />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  return renderWithRouter(<MainLayout />, { initialUrl, routePath: "/*" });
 }
 
 describe("MainLayout", () => {
