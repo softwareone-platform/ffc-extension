@@ -41,7 +41,10 @@ its open/close state driven by `useModalToggle`, with form logic in a shared
 
 For frontend unit tests under `frontend/src/**/*.spec.{ts,tsx}` and sibling
 `.spec.mocks.ts[x]` helpers, also follow
-[`../.claude/skills/mpt-module-testing/SKILL.md`](../.claude/skills/mpt-module-testing/SKILL.md).
+[`../.claude/skills/mpt-module-testing/SKILL.md`](../.claude/skills/mpt-module-testing/SKILL.md)
+— that's the canonical source. The rules below are mirrored inline **for
+Copilot** (which can't lazy-load skills). **When updating a rule, edit both
+files** — SKILL.md wins on drift.
 
 Key rules Copilot should apply directly:
 
@@ -72,10 +75,10 @@ FooProps = { ... }` copies.
 The app ships as a single standalone bundle that can run inside the MPT host
 iframe or loaded directly. Before adding behavior that varies with host
 presence, read
-[`../docs/architecture/standalone-mode.md`](../docs/architecture/standalone-mode.md)
-to pick the right hook (`useHasMPTHost` and `useIsRootPage` are **not**
-interchangeable). For how the host bridge is detected, see
-[`../docs/architecture/mpt-host-integration.md`](../docs/architecture/mpt-host-integration.md).
+[`../docs/architecture/mpt-host.md`](../docs/architecture/mpt-host.md) — it
+covers how the host bridge is detected and which of the two host-presence
+hooks to pick (`useHasMPTHost` and `useIsRootPage` are **not**
+interchangeable).
 
 ### Renames
 
