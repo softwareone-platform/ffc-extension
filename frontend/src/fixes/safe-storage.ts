@@ -59,3 +59,5 @@ function installFallback(name: "localStorage" | "sessionStorage"): void {
 
 installFallback("localStorage");
 installFallback("sessionStorage");
+
+export {};

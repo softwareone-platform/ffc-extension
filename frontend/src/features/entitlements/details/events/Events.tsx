@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 
-import { EntitlementRead } from "~api/ffc-api-model/types.gen";
+import type { EntitlementRead } from "~api/ffc-api-model";
 import { useEntitlementsDetailsApi } from "~features/entitlements/api/useEntitlementsDetailsApi";
 import { EntityEvents } from "~shared/components/events/EntityEvents";
 

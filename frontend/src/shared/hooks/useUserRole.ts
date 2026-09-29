@@ -1,6 +1,6 @@
 import { useContext } from "react";
 
-import { AccountType } from "~api/ffc-api-model/types.gen";
+import type { AccountType } from "~api/ffc-api-model";
 import { UserContext } from "~shared/providers/UserContext";
 
 export function useUserRole(): {
