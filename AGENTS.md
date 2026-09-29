@@ -10,10 +10,9 @@ Guidance for AI coding agents working in this repository.
   [`docs/conventions/i18n.md`](docs/conventions/i18n.md).
 - **Modal conventions** (in-app modals, `useModalToggle`, shared controllers):
   [`docs/conventions/modals.md`](docs/conventions/modals.md).
-- **MPT host integration** (iframe-as-extension runtime, `__MPT__` detection):
-  [`docs/architecture/mpt-host-integration.md`](docs/architecture/mpt-host-integration.md).
-- **Host-presence flags** (`useHasMPTHost` vs `useIsRootPage`):
-  [`docs/architecture/standalone-mode.md`](docs/architecture/standalone-mode.md).
+- **MPT host integration** (iframe-as-extension runtime, `__MPT__` detection,
+  `useHasMPTHost` vs `useIsRootPage`):
+  [`docs/architecture/mpt-host.md`](docs/architecture/mpt-host.md).
 - **General Copilot instructions** (mirrors what GitHub Copilot loads):
   [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 

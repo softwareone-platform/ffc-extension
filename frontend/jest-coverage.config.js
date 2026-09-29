@@ -23,6 +23,7 @@ export default {
     '\\.html$',
     'i18n',
     'tests',
+    'test-utils',
     'coverage',
     'TestUtils.tsx',
     'Root.tsx',
