@@ -1,32 +1,25 @@
-import { formatDateToYmdHms, limitString } from './utils';
+import { Page } from '@playwright/test';
 
-/**
- * Logs a debug message to the console if debugging is enabled.
- *
- * This function checks the `DEBUG_LOG` environment variable to determine
- * if debug logging is enabled. If it is set to 'true', the provided message
- * is logged to the console with a `[DEBUG]` prefix.
- *
- * @param {string} message - The debug message to log.
- * @param messageType
- */
+import { env } from './env';
+import { formatDateToYmdHms, limitString } from './format';
+
 export function debugLog(message: string, messageType: string = 'debug'): void {
-  process.env['DEBUG'] = 'true';
-  const trueValues = ['true', true];
-  const debugValue = process.env['DEBUG'] ?? 'false';
+  if (!env.debugLog) return;
 
-  if (trueValues.includes(debugValue)) {
-    console.log(`${formatDateToYmdHms(new Date())} [${limitString(messageType.toUpperCase(), 10)}]: ${message}`);
-  }
+  console.log(`${formatDateToYmdHms(new Date())} [${limitString(messageType.toUpperCase(), 10)}]: ${message}`);
 }
-/**
- * Logs an error message to the console.
- *
- * This function prefixes the provided message with `[ERROR]` and logs it
- * to the console using `console.error`.
- *
- * @param {string} message - The error message to log.
- */
-export function errorLog(message: string) {
+
+export function errorLog(message: string): void {
   console.error(`[ERROR] ${message}`);
+}
+
+/** Forwards the page's console errors to the test output when BROWSER_ERROR_LOGGING=true. */
+export function logBrowserConsoleErrors(page: Page): void {
+  if (!env.browserErrorLogging) return;
+
+  page.on('console', message => {
+    if (message.type() === 'error') {
+      errorLog(`Browser console: ${message.text()}`);
+    }
+  });
 }

@@ -45,8 +45,9 @@ files under `frontend/src`, follow the rules below.
    `useReactQueryRqlGrid.spec.tsx`.
 
 7. **Barrel files stay `index.ts`** and only re-export from the renamed PascalCase files:
+
    ```ts
-   export { PageShell } from './PageShell';
+   export { PageShell } from "./PageShell";
    ```
 
 8. **TS path aliases (`~app`, `~features`, `~shared`, `~i18n`,
@@ -54,9 +55,9 @@ files under `frontend/src`, follow the rules below.
    `kebab-case` folders. Only the file suffix changes — folder paths remain
    `kebab-case`:
    ```ts
-   import { PageShell } from '~shared/components/page-shell';      // folder
-   import { useFixedT } from '~shared/hooks/useFixedT';            // file
-   import { OrganizationsGrid } from '~features/organizations/list/OrganizationsGrid';
+   import { PageShell } from "~shared/components/page-shell"; // folder
+   import { useFixedT } from "~shared/hooks/useFixedT"; // file
+   import { OrganizationsGrid } from "~features/organizations/list/OrganizationsGrid";
    ```
 
 ## Translation keys

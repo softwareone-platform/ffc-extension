@@ -1,6 +1,7 @@
 # E2E Tests (Playwright)
 
-This folder contains Playwright end-to-end tests for the extension UI.
+Playwright end-to-end tests for the FFC Admin Panel. These run against a **real
+deployed environment** — see [`CLAUDE.md`](./CLAUDE.md) for the conventions.
 
 ## Local Execution
 
@@ -13,38 +14,30 @@ npm install
 npx playwright install chromium
 ```
 
-### 2) Configure environment files
+### 2) Choose an environment
 
-`e2e/.env.local` is optional. Use it when running from an IDE Playwright test runner and you want a default `LOCAL_TEST_ENV` without passing it every time.
+`ENVIRONMENT` selects the deployment and is **required** — there is no default, so a
+missing or misspelled value fails immediately rather than silently running against
+TEST. Valid values come from `env.config.ts`: `TEST`, `DEV`.
 
-If you do not use `e2e/.env.local`, pass `LOCAL_TEST_ENV` on the command line or use the npm scripts.
+The npm scripts set it for you:
 
-When `LOCAL_TEST_ENV` is set, the test runner loads env files in this order:
+| Command            | Environment |
+| ------------------ | ----------- |
+| `npm test`         | TEST        |
+| `npm run test:dev` | DEV         |
 
-1. `e2e/.env.local`
-2. `e2e/.env.<LOCAL_TEST_ENV>` (for example `e2e/.env.TEST` or `e2e/.env.DEV`)
-
-`LOCAL_TEST_ENV` can come from `.env.local`, the command line, or npm scripts.
-
-#### Optional: `e2e/.env.local` (recommended for IDE runs)
-
-```dotenv
-LOCAL_TEST_ENV=TEST
-```
-
-Use `TEST` or `DEV` based on which env file you want to load.
-
-If you prefer command line execution, set the variable inline instead:
+Or inline:
 
 ```powershell
-$env:LOCAL_TEST_ENV='TEST'; npx playwright test
-$env:LOCAL_TEST_ENV='DEV'; npx playwright test
+$env:ENVIRONMENT='TEST'; npx playwright test
 ```
 
-#### Required: `e2e/.env.TEST` (if `LOCAL_TEST_ENV=TEST`)
+### 3) Configure secrets
+
+Put per-machine values in `e2e/.env.local` (git-ignored):
 
 ```dotenv
-ENVIRONMENT=TEST
 DEFAULT_USER_PASSWORD=<password>
 IGNORE_HTTPS_ERRORS=true
 BROWSER_ERROR_LOGGING=false
@@ -52,52 +45,62 @@ DEBUG_LOG=true
 CLEAN_UP=true
 ```
 
-#### Required: `e2e/.env.DEV` (if `LOCAL_TEST_ENV=DEV`)
-
-```dotenv
-ENVIRONMENT=DEV
-DEFAULT_USER_PASSWORD=<password>
-IGNORE_HTTPS_ERRORS=true
-BROWSER_ERROR_LOGGING=false
-DEBUG_LOG=true
-CLEAN_UP=true
-```
+Optionally, `LOCAL_TEST_ENV=<name>` additionally loads `e2e/.env.<name>` (for example
+`.env.TEST`) after `.env.local`, and doubles as the `ENVIRONMENT` value when
+`ENVIRONMENT` is not set. Pointing it at a missing file fails at startup.
 
 ## Run tests
 
-From `e2e`:
-
 ```powershell
-npm run playwright:test
-```
-
-Run against DEV:
-
-```powershell
-npm run playwright:test:dev
+npm test                 # TEST
+npm run test:dev         # DEV
+npm run test:ui          # Playwright UI mode
+npm run test:headed      # headed, single worker
+npm run test:debug       # inspector
+npm run report           # open the last HTML report
 ```
 
 Run a single spec:
 
 ```powershell
-npx playwright test tests/example-test.spec.ts
+npm test -- tests/navigation.spec.ts
 ```
 
-Run in debug mode:
+List tests without running them (validates config and specs compile — no live
+environment needed):
 
 ```powershell
-npm run playwright:debug
+npx playwright test --list
 ```
 
-Show latest report:
+## Layout
 
-```powershell
-npm run playwright:show-report
-```
+| Path                       | Contents                                                   |
+| -------------------------- | ---------------------------------------------------------- |
+| `env.config.ts`            | Environment registry, validated at import                  |
+| `utils/env.ts`             | `.env` loading, typed config, `requireEnv()`               |
+| `setup/auth.setup.ts`      | `setup` project: logs in once, saves `storageState`        |
+| `setup/global-teardown.ts` | Deletes test data when `CLEAN_UP=true`                     |
+| `pages/`                   | Page objects (`PlatformPage` → `ExtensionPage` → concrete) |
+| `fixtures/fixture.ts`      | Page-object fixtures                                       |
+| `tests/`                   | Specs, one area per file                                   |
+
+## Authentication
+
+The `setup` project logs in once and writes a session to
+`.cache/<USER>_<HOST>_SESSION.json` (e.g. `..._portal_s1_show_SESSION.json`); specs opt
+in with `test.use({ storageState: ... })`.
+
+The cache is reused only when every persistent cookie still has at least 5 minutes left,
+so a session can't expire mid-run. Because the filename is keyed by **origin**,
+`portal.s1.show` and `portal.s1.today` keep separate caches and a session is never
+reused across deployments. Delete the file to force a fresh login.
+
+Note this checks expiry only — it can't detect a session revoked server-side, which
+would surface as a redirect to the login page inside a test.
 
 ## Notes
 
-- `DEFAULT_USER_PASSWORD` is required for login and teardown API token generation.
-- `CLEAN_UP=true` enables global teardown cleanup. Set `false` to keep created test data for debugging.
-- If `LOCAL_TEST_ENV` points to a missing file (for example `.env.STAGING`), test startup fails.
-
+- `DEFAULT_USER_PASSWORD` is required for login and for teardown API token generation.
+- `CLEAN_UP=true` enables global teardown cleanup. Set `false` to keep created test
+  data for debugging.
