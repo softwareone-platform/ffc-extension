@@ -5,11 +5,11 @@ import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { MediumText } from "@swo/design-system/text";
 import { NO_VALUE } from "@swo/design-system/utils";
 
-import {
+import type {
   AuditEventsSchema,
   EntitlementsEventsSchema,
   OrganizationEventsSchema,
-} from "~api/ffc-api-model/types.gen";
+} from "~api/ffc-api-model";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 type EntityEventsSchema = {

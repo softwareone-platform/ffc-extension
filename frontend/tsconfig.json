@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
@@ -10,7 +11,7 @@
     "outDir": "../static",
     "skipLibCheck": true,
     "baseUrl": "./src",
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "@testing-library/jest-dom"],
     "plugins": [{ "name": "typescript-plugin-css-modules" }],
     "paths": {
       "~api/*": ["api/*"],
@@ -20,7 +21,9 @@
       "~organizations/*": ["features/organizations/*"],
       "~entitlements/*": ["features/entitlements/*"],
       "~shared/*": ["shared/*"],
-      "~i18n/*": ["i18n/*"]
+      "~i18n/*": ["i18n/*"],
+      "~test-utils": ["test-utils"],
+      "~test-utils/*": ["test-utils/*"]
     }
   }
 }
