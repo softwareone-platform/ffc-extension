@@ -1,23 +1,25 @@
 ---
-name: ffc-frontend-standards
-description: Cross-cutting frontend conventions for ffc-extension — path aliases, design-system subpath imports, TypeScript discipline (no `any`, derived prop/return types), file-extension and Fast-Refresh rules, icon and SCSS token hygiene, i18n via useFixedT, verification commands (tsc, build, prettier, eslint), and the "don't invent, reuse" ethos. Baseline shared by `ffc-poc-builder` and `mpt-module-testing`. Use when touching any frontend code (component, hook, utility, shared module, type, SCSS, i18n key) that isn't clearly a new POC or a new test.
+name: mpt-frontend-standards
+description: Cross-cutting frontend conventions for ffc-extension — path aliases, design-system subpath imports, TypeScript discipline (no `any`, derived prop/return types), file-extension and Fast-Refresh rules, icon and SCSS token hygiene, i18n via useFixedT, verification commands (tsc, build, prettier, eslint), and the "don't invent, reuse" ethos. Baseline shared by `mpt-poc-builder` and `mpt-module-testing`. Use when touching any frontend code (component, hook, utility, shared module, type, SCSS, i18n key) that isn't clearly a new POC or a new test.
 ---
 
 # ffc-extension Frontend Standards
 
-Baseline conventions used by every file under `frontend/src/`. The feature-specific skills (`ffc-poc-builder`, `mpt-module-testing`) assume everything here already holds.
+Baseline conventions used by every file under `frontend/src/`. The feature-specific skills (`mpt-poc-builder`, `mpt-module-testing`) assume everything here already holds.
 
 **Canonical source of truth** — the project maintains these docs; this skill defers to them on every topic they cover:
 
-| Topic                               | Canonical doc                                              |
-| ----------------------------------- | ---------------------------------------------------------- |
-| File & folder naming (full rules)   | [`docs/conventions/naming.md`](../../../docs/conventions/naming.md)       |
-| API hook shapes + query keys        | [`docs/conventions/api-hooks.md`](../../../docs/conventions/api-hooks.md) |
-| i18n (namespaces, dynamic keys)     | [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md)           |
-| Modals + form controllers           | [`docs/conventions/modals.md`](../../../docs/conventions/modals.md)       |
-| MPT host integration                | [`docs/architecture/mpt-host.md`](../../../docs/architecture/mpt-host.md) |
+| Topic                                           | Canonical doc                                              |
+| ----------------------------------------------- | ---------------------------------------------------------- |
+| File & folder naming                            | [`docs/conventions/naming.md`](../../../docs/conventions/naming.md)       |
+| API hook shapes + query keys                    | [`docs/conventions/api-hooks.md`](../../../docs/conventions/api-hooks.md) |
+| i18n (namespaces, dynamic keys)                 | [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md)           |
+| Modals + form controllers                       | [`docs/conventions/modals.md`](../../../docs/conventions/modals.md)       |
+| Design system (imports, gaps, icons, tokens)    | [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md) |
+| Frontend unit tests                             | [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)     |
+| MPT host integration                            | [`docs/architecture/mpt-host.md`](../../../docs/architecture/mpt-host.md) |
 
-This skill covers what those docs don't: path-alias reference, DS subpath import rationale, TypeScript derivation discipline, file-extension / Fast-Refresh split, icon + SCSS token hygiene, verification commands, the "don't invent, reuse" ethos, and extraction thresholds.
+This skill covers what those docs don't: path-alias reference, TypeScript derivation discipline, file-extension / Fast-Refresh split, verification commands, the "don't invent, reuse" ethos, and extraction thresholds.
 
 ## Path aliases
 
@@ -31,17 +33,6 @@ Configured in `frontend/tsconfig.json` + `jest.config.js`. Always import by alia
 | `~test-utils/*` | `frontend/src/test-utils/*`     | Render wrappers, factories, shared jest mocks — spec files only             |
 
 Rule of thumb: if the file lives outside the current feature folder, use the alias.
-
-## Design-system imports
-
-**Always subpath**: `@swo/design-system/button`, `@swo/design-system/grid`, `@swo/design-system/chip`, `@swo/design-system/navigation`, etc. **Never root** `@swo/design-system`.
-
-Why — two reasons that compound:
-
-1. **Bundle size**: subpath imports cost 100s of KB each; the root barrel pulls everything (see `project-frontend-bundle-facts` memory).
-2. **Mock resolution**: `jest.mock("@swo/design-system/grid", …)` only matches the exact path the source imports. A root-barrel source + subpath mock (or vice-versa) silently no-ops.
-
-**Design tokens**: `@swo/design-tokens` — SCSS only. In amCharts configs use raw hex via `CHART_COLORS` (CSS vars haven't resolved yet when amCharts reads them).
 
 ## TypeScript discipline
 
@@ -72,26 +63,6 @@ Extension rules this skill adds on top:
 - `FooProvider.tsx` — only exports the Provider component
 
 Downstream imports stay stable (`import { useFoo } from "./FooContext"` resolves to the new `.ts` automatically).
-
-## Icon + SCSS token hygiene — do not guess
-
-**Icons** (`@swo/design-system/icon`): strict string-literal union. `arrow_drop_down`, `arrow_down`, etc. don't exist. Common ones: `expand_more` (dropdowns), `arrow_forward_ios` / `arrow_back_ios` (chevrons), `info`, `filter_alt`. Before using an unfamiliar name:
-
-```text
-ls frontend/node_modules/@swo/design-system/icon/src/lib/icon-paths/
-```
-
-**SCSS tokens** (`frontend/src/shared/styles/_tokens.scss`): fixed vocabulary. Invented names like `$primary`, `$danger`, `$warning` do not exist and the build fails silently from `npm run typecheck` — only `npm run build` catches it.
-
-| Alias                           | Use for                                              |
-| ------------------------------- | ---------------------------------------------------- |
-| `$surface`, `$surface-muted`    | Backgrounds (white, muted gray)                      |
-| `$border-subtle`                | 1 px borders                                         |
-| `$text-muted`, `$text-strong`   | Secondary / primary text colour                      |
-| `$positive`, `$negative`        | Up / down / success / danger text colour             |
-| `$space-xs` … `$space-xl`       | `--spacing-0.5` through `--spacing-4`                |
-| `$radius-card`                  | Card / panel rounding (8 px)                         |
-| `$panel-grid-breakpoint`        | Breakpoint where 2-col grid collapses to 1          |
 
 ## i18n
 
@@ -130,7 +101,7 @@ Before building anything new, check whether it already exists:
 | Shared layout class               | `~shared/styles/_components.scss` — look for `.ffc-*` modifiers             |
 | Mock axios response               | `mockResponse` from `~shared/utils/mockResponse`                            |
 
-If a Storybook/shared primitive **partially** matches: stop and ask. Don't silently invent a look-alike. (POC-side rationale in `ffc-poc-builder`; test-side in `mpt-module-testing`.)
+If a Storybook/shared primitive **partially** matches: stop and ask. Don't silently invent a look-alike. (POC-side rationale in `mpt-poc-builder`; test-side in `mpt-module-testing`.)
 
 ## Extraction threshold
 
@@ -145,20 +116,20 @@ Rule of thumb per surface:
 
 ## Universal anti-patterns
 
-- Root `@swo/design-system` imports — bundle-size regression + mock resolution breaks.
 - `any` or untyped `jest.fn()` — type-drift surfaces at runtime, far from the cause.
 - Inline response / prop shapes when `ComponentProps<typeof C>` / a model-file type exists.
-- Guessing SCSS token or icon names — grep first.
-- Hardcoded strings in JSX / in Chart config — break i18n.
+- Hardcoded strings in JSX / in chart config — break i18n.
 - Mixing a component with a hook/type/context export in the same `.tsx` — breaks Fast Refresh.
 - Importing JSON directly in a tab/component — breaks the swap-to-real-API story (POC) and makes mocks ambiguous (tests).
 - Rebuilding referentially-sensitive arrays (chart series, memo deps, `useQuery` options) inside the component body — triggers rebuilds / refetches on every render.
 - Climbing `../../../` instead of using a path alias.
 - Promoting shared primitives on day one — add them when the second duplicate appears.
 
+(DS-specific anti-patterns — root `@swo/*` imports, guessing icon names, inventing SCSS tokens — live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md).)
+
 ## Pointers to feature-specific skills
 
-- Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`ffc-poc-builder`** (folder layout, DS gap table, panel/chart/grid recipes, scaling patterns).
+- Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`mpt-poc-builder`** (folder layout, DS gap table, panel/chart/grid recipes, scaling patterns).
 - Writing or refactoring a `*.spec.tsx` — Grid wrapper, Details container, hook, action, wizard, modal callback, API hook → **`mpt-module-testing`** (jest mock rules, shared `~test-utils/mocks/`, spec file layout, canonical patterns).
 
 ## Pointers to workflow skills (git / PR / JIRA)

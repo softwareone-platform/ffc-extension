@@ -1,5 +1,5 @@
 ---
-name: ffc-poc-builder
+name: mpt-poc-builder
 description: Build sandbox/POC feature modules for the ffc-extension frontend using the SWO design system. Use when the user asks to prototype a dashboard, tab, panel, grid, chart, side-nav shell, or any new feature view driven by mock data. Enforces Storybook-first component sourcing, strongly-typed TS throughout, axios-shaped mocks abstracted behind react-query hooks, and the project's panel/chart/grid conventions.
 ---
 
@@ -7,25 +7,7 @@ description: Build sandbox/POC feature modules for the ffc-extension frontend us
 
 Goal: ship visually-correct, strongly-typed sandbox views that drop into real backend wiring without a rewrite. Mock data behaves like the API, components never know data is mocked, and the design-system primitives are the ones the real feature will ship with.
 
-Baseline conventions (path aliases, DS subpath imports, TypeScript discipline, Fast Refresh file-split rule, icon/SCSS token hygiene, i18n, verification commands, extraction thresholds) live in **`ffc-frontend-standards`**. This skill only covers POC-specific additions on top.
-
-## Component source priority
-
-1. **Storybook first.** https://storybook.platform.softwareone.com/ — if a widget/recipe matches, use the design-system package it ships from (`@swo/design-system/<subpath>`). Pattern naming in Storybook mirrors the exports (e.g. `widgets-grid--in-memory-example` ↔ `@swo/design-system/grid` `useGridInMemory`).
-2. **Partial match → ask.** If the Storybook component covers only part of the behaviour (e.g. `Navigation.SideNav` has the right chrome but can't hold arbitrary children), stop and ask: *"The DS component gives you X but not Y — do you want a custom wrapper, a different DS recipe, or should we open a design-system request?"* Do not invent styles that mimic the DS silently.
-3. **External only when nothing fits.** If no DS component covers the need, pick an existing dep (amCharts for charts, react-hook-form for forms) and justify briefly.
-
-## Design-system component gaps (verified)
-
-| Need | Status | What to do |
-|---|---|---|
-| Multiselect field | ❌ nothing fits. `Select` is single value; `Dropdown` closes on every `onItemSelected`; `SelectableFilter` is modal-heavy and needs an async `apiCall`. | Build from `Popover` + `Checkbox` list (recipe below). |
-| Button with `id` / ARIA | ❌ strict `ButtonProps` has no `id` or ARIA passthrough. | For a labelable combobox trigger, use a plain `<button>` with `aria-labelledby` + a visible `<span id>` label. |
-| `Icon.name` | ⚠️ strict string-literal union. `arrow_drop_down`, `arrow_down`, etc. don't exist. | Use `expand_more` for dropdowns, `arrow_forward_ios` / `arrow_back_ios` for chevrons, `info`, `filter_alt`. Check `node_modules/@swo/design-system/icon/src/lib/icon-paths/` before guessing. |
-| `DonutChart` default size | ⚠️ `height={150}` — tiny in wide panels. | Pass explicit `height={240+}` in large panels. |
-| `Navigation.SideNav.groups.items` | ⚠️ strictly link lists; `children` are silently dropped. | Use for navigation only. Form content goes in a sibling panel or a popover triggered from a nav item. |
-| `Navigation` default-collapsed | ❌ no prop. | Mount a tiny helper that `requestAnimationFrame`s then `document.querySelector('[data-testid="navigation__collapse-button"]')?.click()`. |
-| `Panel` chrome | ⚠️ `Panel` wraps `Card` which already ships padding / radius / background. | Don't restate chrome in `.ffc-panel` or you'll double-pad. |
+Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system usage (subpath imports, verified gaps, icon names, SCSS tokens, `.ffc-*` classes, chart palettes) lives in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). This skill only covers POC-specific additions on top.
 
 ## Feature folder layout
 
@@ -97,7 +79,7 @@ if (!data) return null;
 
 ## POC-specific type notes
 
-Everything in `ffc-frontend-standards` (no `any`, named types in `api/model.ts`, derive via `ComponentProps`/`ReturnType`, barrels re-export runtime + types) applies here. Two POC specifics on top:
+Everything in `mpt-frontend-standards` (no `any`, named types in `api/model.ts`, derive via `ComponentProps`/`ReturnType`, barrels re-export runtime + types) applies here. Two POC specifics on top:
 
 - **Chart series + colour arrays are typed** (`XySeriesDef[]`, `number[]`) — amCharts rebuilds its root on identity change, so these must be referentially stable (see "Charts" recipe below).
 - **Mock JSON types** go in `api/model.ts` alongside the real response types — the mock *is* the API shape until the real one lands.
@@ -302,9 +284,7 @@ Rotate a single chevron with `transform: rotate(90deg)` instead of swapping to a
 
 ### Styles
 
-- Shared feature-grid primitives live in `src/shared/styles/_components.scss` under the `.ffc-*` namespace.
-- Use existing classes before adding: `.ffc-tab-stack`, `.ffc-panel-grid`, `.ffc-panel`, `.ffc-panel--full`, `.ffc-panel--span-4`, `.ffc-panel--span-8`, `.ffc-kpi-row`, `.ffc-kpi-row--four`, `.ffc-kpi-row--quad`, `.ffc-kpi-row--column`, `.ffc-chart-split`, `.ffc-chart-split--triple`, `.ffc-legend`, `.ffc-filter-bar`, `.ffc-multiselect`.
-- Add modifiers (`&--variant`) rather than one-off component CSS.
+Shared `.ffc-*` class inventory + add-modifier rule live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). The POC recipes above spell out *which* class to reach for in each layout.
 
 ## Scaling the POC (iteration 2+)
 
@@ -423,7 +403,7 @@ POC sessions are visual-iteration heavy. The user rolls back layout decisions ~1
 
 ## POC anti-patterns
 
-(General ones — root DS imports, Fast-Refresh split, guessing icon/SCSS names, premature extraction — live in `ffc-frontend-standards`.)
+(General ones — root DS imports, Fast-Refresh split, guessing icon/SCSS names, premature extraction — live in `mpt-frontend-standards`.)
 
 - Importing JSON directly in a tab/component — breaks the swap-to-real-API story.
 - Inline response shapes in a tab/component — belongs in `api/model.ts`.

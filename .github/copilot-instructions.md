@@ -37,6 +37,12 @@ Modals are in-app: a `Create<Entity>Modal` wrapping `<Modal>`,
 its open/close state driven by `useModalToggle`, with form logic in a shared
 `use<Entity>FormController`.
 
+For design-system usage — subpath imports (`@swo/design-system/<component>`,
+never root), verified gaps (multi-select, DonutChart default height, strict
+`Icon.name` union), SCSS token vocabulary (`$surface`, `$positive`, `$space-*`),
+and the shared `.ffc-*` layout classes — see
+[`../docs/conventions/design-system.md`](../docs/conventions/design-system.md).
+
 ### Claude Code skills (not loaded by Copilot)
 
 Claude Code can lazy-load these; Copilot cannot. If a frontend task falls into
@@ -47,20 +53,21 @@ NOT mirror them inline (keeping sync tax to the one testing section below).
 - Baseline frontend conventions (path aliases, DS subpath imports, derived TS
   types, Fast Refresh file-split, icon/SCSS token hygiene, verify commands,
   extraction thresholds) —
-  [`../.claude/skills/ffc-frontend-standards/SKILL.md`](../.claude/skills/ffc-frontend-standards/SKILL.md).
+  [`../.claude/skills/mpt-frontend-standards/SKILL.md`](../.claude/skills/mpt-frontend-standards/SKILL.md).
 - Sandbox / POC work (feature folder layout, DS component gap table,
   panel/chart/grid recipes, mock-driven data layer, `<MetricPanel>` and chart
   config patterns) —
-  [`../.claude/skills/ffc-poc-builder/SKILL.md`](../.claude/skills/ffc-poc-builder/SKILL.md).
+  [`../.claude/skills/mpt-poc-builder/SKILL.md`](../.claude/skills/mpt-poc-builder/SKILL.md).
 
 ### Frontend unit tests
 
 For frontend unit tests under `frontend/src/**/*.spec.{ts,tsx}` and sibling
-`.spec.mocks.ts[x]` helpers, also follow
-[`../.claude/skills/mpt-module-testing/SKILL.md`](../.claude/skills/mpt-module-testing/SKILL.md)
-— that's the canonical source. The rules below are mirrored inline **for
-Copilot** (which can't lazy-load skills). **When updating a rule, edit both
-files** — SKILL.md wins on drift.
+`.spec.mocks.ts[x]` helpers, the canonical doc is
+[`../docs/conventions/testing.md`](../docs/conventions/testing.md); the Claude
+skill [`../.claude/skills/mpt-module-testing/SKILL.md`](../.claude/skills/mpt-module-testing/SKILL.md)
+layers recipes on top. The rules below are mirrored inline **for Copilot**
+(which can't lazy-load either). **When updating a rule, edit all three** —
+`docs/conventions/testing.md` wins on drift, then SKILL.md, then this file.
 
 Key rules Copilot should apply directly:
 

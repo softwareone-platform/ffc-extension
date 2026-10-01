@@ -1,0 +1,66 @@
+# Claude Code skills
+
+Lazy-loaded skills for Claude Code sessions in this repo. Each `SKILL.md`
+layers code recipes and Claude-coaching metadata on top of the canonical
+project documentation at [`../../docs/conventions/`](../../docs/conventions/).
+
+Audience for this README: **skill maintainers**. Daily contributors browse
+`docs/conventions/` instead. Claude Code loads skills by matching the
+`description:` frontmatter against the user's task — not by reading this file.
+
+## Skills in this repo
+
+| Skill                                              | Triggers on                                                                                 | Layered on top of                                                                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`mpt-frontend-standards/`](mpt-frontend-standards/SKILL.md) | Any frontend code touch that isn't clearly POC or test work                                 | All of [`docs/conventions/*`](../../docs/conventions/). Adds path-alias reference, TS derivation discipline, Fast-Refresh file-split, verification commands, extraction thresholds. |
+| [`mpt-poc-builder/`](mpt-poc-builder/SKILL.md)             | Prototyping a dashboard, tab, panel, grid, chart, side-nav, filter sidebar, mock-driven view | [`docs/conventions/design-system.md`](../../docs/conventions/design-system.md), [`api-hooks.md`](../../docs/conventions/api-hooks.md), [`modals.md`](../../docs/conventions/modals.md). Adds feature folder layout, panel/chart/grid recipes, scaling patterns, POC checklist, iteration rhythm. |
+| [`mpt-module-testing/`](mpt-module-testing/SKILL.md)       | Writing or refactoring a `*.spec.{ts,tsx}` for ffc-extension frontend                       | [`docs/conventions/testing.md`](../../docs/conventions/testing.md). Adds spec-file layout, Grid wrapper / Container / Modal callback / mutation-controller / Wizard-step recipes, the `<Link>`-router gotcha, AAA structure, final-pass coaching. |
+
+Workflow skills (branches, PRs, backports, JIRA, devcontainer) live in a
+separate plugin: [`mpt-ignite-skills`](../../../mpt-skills/plugins/mpt-ignite-skills/).
+Those are code-shipping skills; the three in this folder are code-writing
+skills.
+
+## Drift precedence
+
+**[`docs/conventions/*`](../../docs/conventions/) wins on drift.** If a
+skill contradicts a convention doc, the doc is right and the skill is stale.
+The [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md)
+inline mirrors are the lowest priority — they exist because Copilot can't
+lazy-load skills, and they're explicitly flagged with "when updating a rule,
+edit all three."
+
+Chain:
+
+```
+docs/conventions/*.md         (human-authored, team-wide, wins on drift)
+  └── .claude/skills/*/SKILL.md   (Claude-only, layers recipes + coaching)
+        └── .github/copilot-instructions.md   (Copilot-only inline mirror)
+```
+
+## Adding a new skill
+
+1. Create `.claude/skills/<name>/SKILL.md` with frontmatter:
+   ```yaml
+   ---
+   name: <skill-name>
+   description: <one line that Claude Code matches against user tasks>
+   ---
+   ```
+2. If the content overlaps a `docs/conventions/*` doc, open with a
+   pointer at the top: "Canonical rules live in `docs/conventions/<topic>.md` —
+   that doc wins on drift. This skill layers X on top."
+3. If the skill introduces a **new** canonical topic humans should see,
+   promote it to `docs/conventions/` first; the skill then defers.
+4. Add a row to the table above.
+5. If humans need to know the skill exists, link it from
+   [`../../AGENTS.md`](../../AGENTS.md).
+
+## Updating a rule
+
+- **Canonical topic (naming, api-hooks, i18n, modals, design-system, testing):**
+  edit `docs/conventions/<topic>.md` first. Then propagate down to any SKILL
+  pointer wording and (for testing) the Copilot inline mirror.
+- **Skill-only content (recipes, scaling patterns, iteration rhythm, POC
+  checklist, Claude coaching):** edit the SKILL only. These have no
+  convention doc counterpart by design.
