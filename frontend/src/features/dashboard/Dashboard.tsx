@@ -6,7 +6,6 @@ import { SEGMENTS } from "~features/dashboard/paths";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { FilterSidebar } from "./components/FilterSidebar";
-import { OrganisationFilter } from "./components/OrganisationFilter";
 
 export function Dashboard() {
   const tTabs = useFixedT("dashboard:tabs");
@@ -22,11 +21,7 @@ export function Dashboard() {
     <div className={"ffc-workspace"}>
       <FilterSidebar />
       <div className={"ffc-workspace__main"}>
-        <Navigation.TopBar items={topBarItems}>
-          <Navigation.TopBar.Actions>
-            <OrganisationFilter />
-          </Navigation.TopBar.Actions>
-        </Navigation.TopBar>
+        <Navigation.TopBar items={topBarItems} />
         <Outlet />
       </div>
     </div>

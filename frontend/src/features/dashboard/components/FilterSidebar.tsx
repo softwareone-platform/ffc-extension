@@ -4,6 +4,7 @@ import { Button } from "@swo/design-system/button";
 import { Checkbox } from "@swo/design-system/checkbox";
 import { ConfigurationPanel } from "@swo/design-system/configuration-panel";
 import { DatePicker } from "@swo/design-system/date-picker";
+import { Icon } from "@swo/design-system/icon";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
@@ -24,12 +25,27 @@ export function FilterSidebar() {
   const tStatus = useFixedT("dashboard:filters:status");
   const tProvider = useFixedT("dashboard:filters:provider");
 
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [range, setRange] = useState(initialRange);
   const [statuses, setStatuses] = useState<string[]>(["active"]);
   const [providers, setProviders] = useState<string[]>([]);
 
   function toggle(list: string[], value: string) {
     return list.includes(value) ? list.filter((entry) => entry !== value) : [...list, value];
+  }
+
+  if (isCollapsed) {
+    return (
+      <button
+        type={"button"}
+        className={"ffc-filter-sidebar__trigger"}
+        data-testid={"ffc-filter-sidebar__trigger"}
+        aria-label={tFilters("expand")}
+        onClick={() => setIsCollapsed(false)}
+      >
+        <Icon name={"filter_alt"} size={20} />
+      </button>
+    );
   }
 
   return (
@@ -69,6 +85,9 @@ export function FilterSidebar() {
         ))}
       </ConfigurationPanel.Section>
       <ConfigurationPanel.Actions>
+        <Button type={"secondary"} onClick={() => setIsCollapsed(true)}>
+          {tFilters("collapse")}
+        </Button>
         <Button type={"primary"} onClick={() => undefined}>
           {tFilters("apply")}
         </Button>

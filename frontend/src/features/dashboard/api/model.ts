@@ -26,6 +26,39 @@ export type ConsumptionMetrics = {
   topOrganizations: MetricPoint[];
 };
 
+export type OrganizationWithoutDatasourceRow = {
+  id: string;
+  organizationName: string;
+  creationDate: string;
+  status: "trial" | "paid";
+  daysSinceCreation: number;
+};
+
+export type AdoptionMetrics = {
+  organizationsOverview: {
+    total: string;
+    active: string;
+    terminated: string;
+    deleted: string;
+    statusDistribution: DistributionSlice[];
+  };
+  datasources: {
+    total: string;
+    withDatasources: string;
+    withoutDatasources: string;
+    providerDistribution: DistributionSlice[];
+    byProvider: MetricPoint[];
+  };
+  organizationsWithoutDatasources: OrganizationWithoutDatasourceRow[];
+  adoptionFunnel: MetricPoint[];
+  trialVsPaid: {
+    trial: string;
+    paid: string;
+    distribution: DistributionSlice[];
+    monthlyTrend: MetricPoint[];
+  };
+};
+
 export type MaturityRow = {
   id: string;
   organizationName: string;

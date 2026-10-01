@@ -1,0 +1,112 @@
+{
+  "organizationsOverview": {
+    "total": "412",
+    "active": "328",
+    "terminated": "54",
+    "deleted": "30",
+    "statusDistribution": [
+      { "category": "Active", "value": 328 },
+      { "category": "Terminated", "value": 54 },
+      { "category": "Deleted", "value": 30 }
+    ]
+  },
+  "datasources": {
+    "total": "876",
+    "withDatasources": "281",
+    "withoutDatasources": "131",
+    "providerDistribution": [
+      { "category": "Azure", "value": 402 },
+      { "category": "AWS", "value": 311 },
+      { "category": "GCP", "value": 163 }
+    ],
+    "byProvider": [
+      { "period": "Jan", "azure": 180, "aws": 142, "gcp": 71 },
+      { "period": "Feb", "azure": 212, "aws": 158, "gcp": 82 },
+      { "period": "Mar", "azure": 248, "aws": 181, "gcp": 97 },
+      { "period": "Apr", "azure": 283, "aws": 206, "gcp": 112 },
+      { "period": "May", "azure": 331, "aws": 248, "gcp": 128 },
+      { "period": "Jun", "azure": 402, "aws": 311, "gcp": 163 }
+    ]
+  },
+  "organizationsWithoutDatasources": [
+    {
+      "id": "org-ww-901",
+      "organizationName": "Wide World Importers",
+      "creationDate": "2026-09-28",
+      "status": "trial",
+      "daysSinceCreation": 3
+    },
+    {
+      "id": "org-tt-834",
+      "organizationName": "Tailspin Toys",
+      "creationDate": "2026-09-22",
+      "status": "paid",
+      "daysSinceCreation": 9
+    },
+    {
+      "id": "org-ff-712",
+      "organizationName": "Fourth Coffee",
+      "creationDate": "2026-09-10",
+      "status": "trial",
+      "daysSinceCreation": 21
+    },
+    {
+      "id": "org-cs-688",
+      "organizationName": "Contoso Suites",
+      "creationDate": "2026-09-01",
+      "status": "paid",
+      "daysSinceCreation": 30
+    },
+    {
+      "id": "org-lp-611",
+      "organizationName": "Lucerne Publishing",
+      "creationDate": "2026-08-18",
+      "status": "trial",
+      "daysSinceCreation": 44
+    },
+    {
+      "id": "org-mt-544",
+      "organizationName": "Margie's Travel",
+      "creationDate": "2026-08-03",
+      "status": "trial",
+      "daysSinceCreation": 59
+    },
+    {
+      "id": "org-sfa-498",
+      "organizationName": "School of Fine Art",
+      "creationDate": "2026-07-14",
+      "status": "paid",
+      "daysSinceCreation": 79
+    },
+    {
+      "id": "org-sv-402",
+      "organizationName": "Southridge Video",
+      "creationDate": "2026-06-02",
+      "status": "trial",
+      "daysSinceCreation": 121
+    }
+  ],
+  "adoptionFunnel": [
+    { "stage": "Organization Created", "count": 412 },
+    { "stage": "Datasource Connected", "count": 281 },
+    { "stage": "Consumption Data Available", "count": 236 },
+    { "stage": "Usage Data Available", "count": 184 },
+    { "stage": "Active Platform Usage", "count": 142 }
+  ],
+  "trialVsPaid": {
+    "trial": "148",
+    "paid": "264",
+    "distribution": [
+      { "category": "Paid", "value": 264 },
+      { "category": "Trial", "value": 148 }
+    ],
+    "monthlyTrend": [
+      { "month": "Jan", "trial": 92, "paid": 184 },
+      { "month": "Feb", "trial": 101, "paid": 198 },
+      { "month": "Mar", "trial": 112, "paid": 214 },
+      { "month": "Apr", "trial": 124, "paid": 229 },
+      { "month": "May", "trial": 139, "paid": 247 },
+      { "month": "Jun", "trial": 148, "paid": 264 }
+    ]
+  }
+}

@@ -397,6 +397,7 @@
     "tabs": {
       "adoption": "FFC Adoption",
       "consumption": "Cloud Consumption & Metrics",
+      "dashboard": "Dashboard",
       "health": "Customer Health",
       "maturity": "FinOps Maturity"
     },
@@ -411,6 +412,8 @@
       "organisationStatus": "Organisation Status",
       "cloudProvider": "Cloud Provider",
       "apply": "Apply Filters",
+      "collapse": "Collapse",
+      "expand": "Expand filters",
       "status": {
         "active": "Active",
         "paid": "Paid",
@@ -422,6 +425,46 @@
         "azure": "Azure",
         "aws": "AWS",
         "gcp": "GCP"
+      }
+    },
+    "adoption": {
+      "overview": {
+        "title": "Organizations Overview",
+        "total": "Total Organizations",
+        "active": "Active Organizations",
+        "terminated": "Terminated Organizations",
+        "deleted": "Deleted Organizations",
+        "statusDistribution": "Status distribution"
+      },
+      "datasources": {
+        "title": "Datasource Adoption",
+        "total": "Total Datasources",
+        "withDatasources": "Organizations with Datasources",
+        "withoutDatasources": "Organizations without Datasources",
+        "providerDistribution": "Provider distribution"
+      },
+      "withoutDatasources": {
+        "title": "Organizations Without Datasources",
+        "description": "Customers who created an organization but never completed onboarding — newest first.",
+        "columns": {
+          "organizationName": "Organization Name",
+          "creationDate": "Creation Date",
+          "status": "Trial / Paid",
+          "daysSinceCreation": "Days Since Creation"
+        },
+        "status": {
+          "trial": "Trial",
+          "paid": "Paid"
+        }
+      },
+      "funnel": {
+        "title": "Adoption Funnel"
+      },
+      "trialVsPaid": {
+        "title": "Trial vs Paid",
+        "trial": "Trial Organizations",
+        "paid": "Paid Organizations",
+        "distribution": "Current distribution"
       }
     },
     "consumption": {

@@ -28,6 +28,24 @@
   [class*="_configuration-panel__content_"] {
     overflow: visible;
   }
+
+  // Compact affordance shown while the panel is collapsed — occupies the same column slot so
+  // the main content doesn't reflow when the filters open.
+  &__trigger {
+    flex: 0 0 40px;
+    align-self: flex-start;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid $border-subtle;
+    border-radius: $radius-card;
+    background: $surface;
+    color: $text-strong;
+    cursor: pointer;
+  }
 }
 
 // Responsive grid of equal-width panels.
@@ -51,6 +69,13 @@
 
     margin: 0 0 $space-sm;
   }
+
+  &__description {
+    @extend %regular1;
+
+    margin: 0 0 $space-sm;
+    color: $text-muted;
+  }
 }
 
 // Stat tiles.
@@ -58,6 +83,11 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-sm;
+
+  // 2x2 grid for panels that expose four KPIs (e.g. organisations overview).
+  &--quad {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .ffc-kpi {
