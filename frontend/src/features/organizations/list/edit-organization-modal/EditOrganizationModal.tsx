@@ -1,4 +1,4 @@
-import { OrganizationRead } from "~api/ffc-api-model/types.gen";
+import type { OrganizationRead } from "~api/ffc-api-model";
 import { Modal } from "~shared/components/modal/Modal";
 import { ModalCloseResult } from "~shared/components/modal/types";
 import { useFixedT } from "~shared/hooks/useFixedT";
