@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
 from app.db.models import Account, Entitlement, System, User
-from app.enums import AccountStatus, DatasourceType, EntitlementStatus, OrganizationStatus
+from app.enums import AccountStatus, EntitlementStatus
 from tests.types import ModelFactory
 
 # ====================
@@ -78,6 +78,63 @@ async def test_create_entitlement_with_incomplete_data(api_client: AsyncClient, 
     [detail] = response.json()["detail"]
 
     assert detail["type"] == "missing"
+    assert detail["loc"] == ["body", "datasource_id"]
+
+
+async def test_whitespaces_stripped_on_creation(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    db_session: AsyncSession,
+):
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "  SPONSOR_CONTAINER_ID_1234  ",
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+
+    assert data["id"] is not None
+    assert data["name"] == "AWS"
+    assert data["affiliate_external_id"] == "EXTERNAL_ID_987123"
+    assert data["datasource_id"] == "SPONSOR_CONTAINER_ID_1234"
+    assert data["status"] == "new"
+    assert data["events"]["created"]["at"] is not None
+    assert data["events"]["created"]["by"]["id"] == str(gcp_extension.id)
+    assert data["events"]["created"]["by"]["type"] == gcp_extension.type
+    assert data["events"]["created"]["by"]["name"] == gcp_extension.name
+    assert data["events"]["updated"]["at"] is not None
+    assert data["events"]["updated"]["by"]["id"] == str(gcp_extension.id)
+    assert data["events"]["updated"]["by"]["type"] == gcp_extension.type
+    assert data["events"]["updated"]["by"]["name"] == gcp_extension.name
+
+    result = await db_session.execute(select(Entitlement).where(Entitlement.id == data["id"]))
+    assert result.one_or_none() is not None
+
+
+@pytest.mark.parametrize("ds_name", ["", "   "])
+async def test_create_entitlement_with_empty_datasource_id(
+    api_client: AsyncClient, gcp_jwt_token: str, ds_name: str
+):
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": ds_name,
+        },
+    )
+
+    assert response.status_code == 422
+    [detail] = response.json()["detail"]
+
+    assert detail["type"] == "string_too_short"
     assert detail["loc"] == ["body", "datasource_id"]
 
 
@@ -214,6 +271,42 @@ async def test_create_entitlement_by_admin_with_owner_not_affiliate(
     assert response.status_code == 400
     error = response.json()["detail"]
     assert error == (f"No Active Affiliate Account has been found with ID {admin_account.id}.")
+
+
+@pytest.mark.parametrize(
+    "existing_status",
+    [EntitlementStatus.NEW, EntitlementStatus.ACTIVE],
+)
+async def test_create_entitlement_already_existing_for_datasource(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_account: Account,
+    entitlement_factory: ModelFactory[Entitlement],
+    existing_status: EntitlementStatus,
+):
+    await entitlement_factory(
+        name="AWS",
+        affiliate_external_id="EXTERNAL_ID_987123",
+        datasource_id="SPONSOR_CONTAINER_ID_1234",
+        owner=gcp_account,
+        status=existing_status,
+    )
+
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "SPONSOR_CONTAINER_ID_1234",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        f"An Entitlement in status '{existing_status.value}' already exist "
+        "for the data source SPONSOR_CONTAINER_ID_1234"
+    )
 
 
 # ================
@@ -511,9 +604,27 @@ async def test_terminate_entitlement_success(
     admin_client: AsyncClient,
     admin_user_token: str,
     admin_user: User,
-    gcp_extension: System,
     db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
 ):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+
     assert entitlement_gcp.terminated_at is None
     assert entitlement_gcp.terminated_by is None
     assert entitlement_gcp.status == EntitlementStatus.NEW
@@ -550,6 +661,70 @@ async def test_terminate_entitlement_success(
     assert data["events"]["terminated"]["by"]["id"] == admin_user.id
     assert data["events"]["terminated"]["by"]["type"] == admin_user.type._value_
     assert data["events"]["terminated"]["by"]["name"] == admin_user.name
+
+
+async def test_terminate_entitlement_by_affiliate_success(
+    entitlement_gcp: Entitlement,
+    affiliate_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    request_start_dt = datetime.now(UTC)
+    response = await affiliate_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+    )
+    request_end_dt = datetime.now(UTC)
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["id"] == str(entitlement_gcp.id)
+    assert data["status"] == "terminated"
+
+    await db_session.refresh(entitlement_gcp)
+
+    assert entitlement_gcp.status == EntitlementStatus.TERMINATED
+    assert entitlement_gcp.terminated_at is not None
+    assert request_start_dt < entitlement_gcp.terminated_at < request_end_dt
+    assert entitlement_gcp.terminated_by_id == gcp_extension.id
+
+    assert (
+        datetime.fromisoformat(data["events"]["terminated"]["at"]) == entitlement_gcp.terminated_at
+    )
+    assert data["events"]["terminated"]["by"]["id"] == gcp_extension.id
+    assert data["events"]["terminated"]["by"]["type"] == gcp_extension.type._value_
+    assert data["events"]["terminated"]["by"]["name"] == gcp_extension.name
 
 
 async def test_terminate_new_entitlement(
@@ -609,372 +784,128 @@ async def test_terminate_non_existing_entitlement(
     assert error_msg == f"Entitlement with ID `{entitlement_id}` wasn't found."
 
 
-async def test_terminate_entitlement_by_affiliate(
-    affiliate_client: AsyncClient,
+async def test_terminate_entitlement_untag_error(
     entitlement_gcp: Entitlement,
-    gcp_jwt_token: str,
-):
-    response = await affiliate_client.post(
-        f"/entitlements/{entitlement_gcp.id}/terminate",
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
-    )
-
-    assert response.status_code == 403
-
-
-# ==================
-# Redeem Entitlement
-# ==================
-
-
-async def test_redeem_entitlement_success(
     admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    organization_factory,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
     db_session: AsyncSession,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
 ):
-    organization = await organization_factory(
-        name="Test Organization",
-        currency="USD",
-        operations_external_id="ORG-123456",
-        linked_organization_id="FORG-123456789012",
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": "tag_id",
+        },
+        status_code=200,
     )
 
     httpx_mock.add_response(
-        method="GET",
-        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{entitlement_gcp.datasource_id}?details=true",
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
-        json={
-            "id": entitlement_gcp.datasource_id,
-            "name": "GCP Dev Project",
-            "type": "gcp_cnr",
-            "organization_id": "FORG-123456789012",
-        },
+        status_code=500,
     )
 
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": organization.id},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
 
-    assert response.status_code == 200
-    data = response.json()
-
-    assert data["id"] == str(entitlement_gcp.id)
-    assert data["status"] == "active"
-    assert data["linked_datasource_id"] == entitlement_gcp.datasource_id
-    assert data["linked_datasource_name"] == "GCP Dev Project"
-    assert data["linked_datasource_type"] == "gcp_cnr"
-    assert data["events"]["redeemed"]["at"] is not None
-    assert data["events"]["redeemed"]["by"]["id"] == organization.id
-
-    await db_session.refresh(entitlement_gcp)
-    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
-    assert entitlement_gcp.redeemed_at is not None
-    assert entitlement_gcp.redeemed_by_id == organization.id
-    assert entitlement_gcp.linked_datasource_id == entitlement_gcp.datasource_id
-    assert entitlement_gcp.linked_datasource_name == "GCP Dev Project"
-    assert entitlement_gcp.linked_datasource_type == DatasourceType.GCP_CNR
-
-
-async def test_redeem_entitlement_with_set_redeem_at(
-    admin_client: AsyncClient,
-    entitlement_gcp_with_redeem_at: Entitlement,
-    organization_factory,
-    db_session: AsyncSession,
-    httpx_mock: HTTPXMock,
-    test_settings: Settings,
-):
-    organization = await organization_factory(
-        name="Test Organization",
-        currency="USD",
-        operations_external_id="ORG-123456",
-        linked_organization_id="FORG-123456789012",
-    )
-
-    httpx_mock.add_response(
-        method="GET",
-        url=(
-            f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/"
-            f"{entitlement_gcp_with_redeem_at.datasource_id}?details=true"
-        ),
-        match_headers={"Secret": test_settings.optscale_cluster_secret},
-        json={
-            "id": entitlement_gcp_with_redeem_at.datasource_id,
-            "name": "GCP Dev Project",
-            "type": "gcp_cnr",
-            "organization_id": "FORG-123456789012",
-        },
-    )
-
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp_with_redeem_at.id}/redeem",
-        json={
-            "organization": {"id": organization.id},
-            "datasource": {
-                "id": entitlement_gcp_with_redeem_at.datasource_id,
-                "name": "GCP Dev",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-
-    assert data["id"] == str(entitlement_gcp_with_redeem_at.id)
-    assert data["status"] == "active"
-
-    await db_session.refresh(entitlement_gcp_with_redeem_at)
-    redeemed = data["events"]["redeemed"]["at"]
-    assert datetime.fromisoformat(redeemed) == entitlement_gcp_with_redeem_at.redeem_at
-    assert entitlement_gcp_with_redeem_at.status == EntitlementStatus.ACTIVE
-
-
-async def test_redeem_entitlement_by_affiliate(
-    affiliate_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-):
-    response = await affiliate_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": "FORG-123456789012"},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-
-    assert response.status_code == 403
-
-
-async def test_redeem_non_new_entitlement(
-    admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    db_session: AsyncSession,
-):
     entitlement_gcp.status = EntitlementStatus.ACTIVE
+
     db_session.add(entitlement_gcp)
     await db_session.commit()
     await db_session.refresh(entitlement_gcp)
 
     response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": "FORG-123456789012"},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        "Only new entitlements can be redeemed, current status is active."
-    )
-
-
-async def test_redeem_entitlement_organization_doesnt_exist(
-    admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-):
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": "FORG-1001-0110"},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        f"Cannot redeem Entitlement {entitlement_gcp.id}: organization FORG-1001-0110 not found."
-    )
-
-
-async def test_redeem_entitlement_inactive_organization(
-    admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    organization_factory,
-    db_session: AsyncSession,
-):
-    organization = await organization_factory(
-        name="Test Organization",
-        currency="USD",
-        operations_external_id="ORG-123456",
-        status=OrganizationStatus.TERMINATED,
-    )
-
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": organization.id},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        "Only active organizations can redeem entitlements, current status is terminated."
-    )
-
-
-async def test_redeem_entitlement_datasource_organization_mismatch(
-    admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    organization_factory,
-    test_settings: Settings,
-    httpx_mock: HTTPXMock,
-):
-    organization = await organization_factory(
-        name="Test Organization",
-        currency="USD",
-        operations_external_id="ORG-123456",
-        linked_organization_id="FORG-123456789012",
-    )
-
-    httpx_mock.add_response(
-        method="GET",
-        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{entitlement_gcp.datasource_id}?details=true",
-        match_headers={"Secret": test_settings.optscale_cluster_secret},
-        json={
-            "id": entitlement_gcp.datasource_id,
-            "name": "GCP Dev Project",
-            "type": "gcp_cnr",
-            "organization_id": "FORG-different-org-id",  # Different from the provided organization
-        },
-    )
-
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": organization.id},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        f"Datasource {entitlement_gcp.datasource_id} does not belong to organization "
-        f"{organization.id} on Optscale."
-    )
-
-
-async def test_redeem_entitlement_datasource_doesnt_exist(
-    admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    organization_factory,
-    test_settings: Settings,
-    httpx_mock: HTTPXMock,
-):
-    organization = await organization_factory(
-        name="Test Organization",
-        currency="USD",
-        operations_external_id="ORG-123456",
-        linked_organization_id="FORG-123456789012",
-    )
-
-    httpx_mock.add_response(
-        method="GET",
-        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{entitlement_gcp.datasource_id}?details=true",
-        status_code=404,
-    )
-
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": organization.id},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
-    )
-
-    assert response.status_code == 400
-    assert response.json()["detail"] == (
-        f"Cannot redeem Entitlement {entitlement_gcp.id}: "
-        f"datasource {entitlement_gcp.datasource_id} not found."
-    )
-
-
-async def test_redeem_entitlement_datasource_unexpected_http_error(
-    admin_client: AsyncClient,
-    entitlement_gcp: Entitlement,
-    organization_factory,
-    test_settings: Settings,
-    httpx_mock: HTTPXMock,
-):
-    organization = await organization_factory(
-        name="Test Organization",
-        currency="USD",
-        operations_external_id="ORG-123456",
-        linked_organization_id="FORG-123456789012",
-    )
-
-    httpx_mock.add_response(
-        method="GET",
-        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{entitlement_gcp.datasource_id}?details=true",
-        status_code=500,
-    )
-
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_gcp.id}/redeem",
-        json={
-            "organization": {"id": organization.id},
-            "datasource": {
-                "id": entitlement_gcp.datasource_id,
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
     )
 
     assert response.status_code == 502
 
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
 
-async def test_redeem_non_existent_entitlement(admin_client: AsyncClient):
-    entitlement_id = "FENT-1234-5678-9012"
 
-    response = await admin_client.post(
-        f"/entitlements/{entitlement_id}/redeem",
-        json={
-            "organization": {"id": "FORG-123456789012"},
-            "datasource": {
-                "id": "datasource-id",
-                "name": "GCP Dev Project",
-                "type": "gcp_cnr",
-            },
-        },
+async def test_terminate_entitlement_get_tag_error(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
     )
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == f"Entitlement with ID `{entitlement_id}` wasn't found."
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 502
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.ACTIVE
+
+
+async def test_terminate_entitlement_tag_not_found(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    gcp_extension: System,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=404,
+    )
+
+    assert entitlement_gcp.terminated_at is None
+    assert entitlement_gcp.terminated_by is None
+    assert entitlement_gcp.status == EntitlementStatus.NEW
+
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+    await db_session.refresh(entitlement_gcp)
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 200
+
+    await db_session.refresh(entitlement_gcp)
+    assert entitlement_gcp.status == EntitlementStatus.TERMINATED
 
 
 ####

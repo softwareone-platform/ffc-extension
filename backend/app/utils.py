@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import binascii
 import contextlib
@@ -7,17 +8,23 @@ import logging
 import os
 import socket
 import subprocess
-from datetime import UTC, datetime
+from collections.abc import Sequence
+from datetime import UTC, datetime, time
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 
 import httpx
+from dateutil.relativedelta import relativedelta
 from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from yaml import safe_load
 
-from app.conf import get_settings
+from app.conf import Settings, get_settings
+from app.db.base import configure_db_engine, session_factory
+from app.db.handlers import AccountHandler
+from app.db.models import Account
+from app.enums import AccountStatus, AccountType
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +36,21 @@ _JINJA_ENV = Environment(  # noqa: S701
 
 def find_first(func, iterable, default=None):
     return next(filter(func, iterable), default)
+
+
+def get_organization_deletable_at(terminated_at: datetime) -> datetime:
+    """
+    Computes the moment from which a terminated organization can be deleted: midnight UTC
+    of the first day of the month, two months after the organization has been terminated.
+
+    Args:
+        terminated_at (datetime): the moment the organization has been terminated.
+
+    Returns:
+        datetime: the timezone aware (UTC) moment from which the organization can be deleted.
+    """
+    deletable_date = terminated_at.astimezone(UTC).date() + relativedelta(months=2, day=1)
+    return datetime.combine(deletable_date, time.min, tzinfo=UTC)
 
 
 def compute_daily_expenses(
@@ -154,9 +176,40 @@ def get_instance_external_id() -> str:
     return hashlib.sha256(seed.encode()).hexdigest()[:12]
 
 
-def get_meta():
+async def _fetch_affiliate_products(settings: Settings) -> list[str]:
+    engine = configure_db_engine(settings)
+    try:
+        async with session_factory() as session:
+            accounts = await AccountHandler(session).query_db(
+                where_clauses=[
+                    Account.type == AccountType.AFFILIATE,
+                    Account.status == AccountStatus.ACTIVE,
+                    Account.products.is_not(None),
+                ]
+            )
+        products = {
+            product.strip()
+            for account in accounts
+            for product in account.products.split(",")
+            if product.strip()
+        }
+        return sorted(products)
+    finally:
+        await engine.dispose()
+
+
+def get_affiliate_products(settings: Settings) -> list[str]:
+    return asyncio.run(_fetch_affiliate_products(settings))
+
+
+def get_meta(products: Sequence[str] | None = None):
     template = _JINJA_ENV.get_template("meta.yaml")
-    return safe_load(template.render(settings=get_settings()))
+    return safe_load(
+        template.render(
+            settings=get_settings(),
+            products=products or [],
+        )
+    )
 
 
 def get_jwt_token_claims(token: str) -> dict:

@@ -7,3 +7,5 @@ export type EmployeeActions = "make_admin" | "delete" | "re-invite";
 export type Organization = OrganizationRead;
 
 export type OrganizationAction = "edit" | "activate" | "terminate" | "delete";
+
+export type DatasourceAction = "force_import";

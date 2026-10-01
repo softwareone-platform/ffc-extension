@@ -16,14 +16,13 @@ const columns: Column<Account>[] = [
           primaryContent={data.name}
           secondaryContent={data.id}
           isPrimaryContentBold={false}
-          icon={<CustomIcon name={data.integration} size={44} />}
+          icon={<CustomIcon name={data.integration || "unknown"} size={44} />}
         />
       );
     },
   },
 ];
 
-// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 export function useColumns(): Column<Account>[] {
   return columns;
 }

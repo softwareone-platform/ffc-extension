@@ -12,7 +12,10 @@ import { EntitlementHighlights } from "../components/EntitlementHighlights";
 export function EntitlementDetailsContent() {
   const tDetails = useFixedT("entitlement:details");
 
-  const topBarItems = [{ label: tDetails("general:title"), path: SEGMENTS.general }];
+  const topBarItems = [
+    { label: tDetails("general:title"), path: SEGMENTS.general },
+    { label: tDetails("events:title"), path: SEGMENTS.events },
+  ];
 
   const { entitlementId } = useParams();
 

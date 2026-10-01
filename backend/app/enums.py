@@ -65,6 +65,7 @@ class DatasourceType(enum.StrEnum):
     AWS_CNR = "aws_cnr"
     AZURE_CNR = "azure_cnr"
     AZURE_TENANT = "azure_tenant"
+    GCP_TENANT = "gcp_tenant"
     GCP_CNR = "gcp_cnr"
     UNKNOWN = "unknown"
 

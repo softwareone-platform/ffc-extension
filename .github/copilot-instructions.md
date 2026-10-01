@@ -37,15 +37,48 @@ Modals are in-app: a `Create<Entity>Modal` wrapping `<Modal>`,
 its open/close state driven by `useModalToggle`, with form logic in a shared
 `use<Entity>FormController`.
 
+### Frontend unit tests
+
+For frontend unit tests under `frontend/src/**/*.spec.{ts,tsx}` and sibling
+`.spec.mocks.ts[x]` helpers, also follow
+[`../.claude/skills/mpt-module-testing/SKILL.md`](../.claude/skills/mpt-module-testing/SKILL.md)
+— that's the canonical source. The rules below are mirrored inline **for
+Copilot** (which can't lazy-load skills). **When updating a rule, edit both
+files** — SKILL.md wins on drift.
+
+Key rules Copilot should apply directly:
+
+- Coverage must stay **above 85%**.
+- Use real source types in specs and mocks: prefer
+  `ComponentProps<typeof X>`, `Pick<ComponentProps<typeof X>, ...>`, exported
+  app prop types, and `ReturnType<typeof useHook>` over handwritten `type
+FooProps = { ... }` copies.
+- Prefer existing shared test utilities and mocks from `~test-utils`,
+  especially `renderWithRouter`, `renderWithEntitlementRoute`,
+  `renderWithOrganizationRoute`, `renderCell`, modal trigger helpers,
+  `mockFixedT`, and `mockDesignSystemButton`.
+- Mock the exact design-system import path (`@swo/design-system/...`) and do
+  not spread `jest.requireActual()` from large design-system modules.
+- Avoid low-value tests: path literal assertions, exhaustive router smoke
+  coverage that only restates route wiring, and inline snapshots for simple DOM
+  structure or attributes.
+- Keep test names behaviour-focused: avoid `noop`, raw assertion fragments like
+  `-> isHidden=%s` / `-> isDisabled=%s`, and URL-heavy route names when a tab
+  or scenario label is clearer.
+- For API-hook specs, prefer behaviour-focused titles like `fetches X by id`
+  or `lists X using the provided query` over raw HTTP verb/path descriptions.
+- Prefer explicit behavioural assertions over snapshots; assert text, roles,
+  classes, callback wiring, and meaningful props.
+
 ### Runtime context
 
 The app ships as a single standalone bundle that can run inside the MPT host
 iframe or loaded directly. Before adding behavior that varies with host
 presence, read
-[`../docs/architecture/standalone-mode.md`](../docs/architecture/standalone-mode.md)
-to pick the right hook (`useHasMPTHost` and `useIsRootPage` are **not**
-interchangeable). For how the host bridge is detected, see
-[`../docs/architecture/mpt-host-integration.md`](../docs/architecture/mpt-host-integration.md).
+[`../docs/architecture/mpt-host.md`](../docs/architecture/mpt-host.md) — it
+covers how the host bridge is detected and which of the two host-presence
+hooks to pick (`useHasMPTHost` and `useIsRootPage` are **not**
+interchangeable).
 
 ### Renames
 

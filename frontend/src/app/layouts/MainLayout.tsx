@@ -1,6 +1,6 @@
 import { Outlet, useMatch } from "react-router-dom";
 
-import { AccountType } from "~api/ffc-api-model/types.gen";
+import type { AccountType } from "~api/ffc-api-model";
 import { FEATURE_FLAGS } from "~app/featureFlags";
 import { PATHS } from "~app/paths";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";

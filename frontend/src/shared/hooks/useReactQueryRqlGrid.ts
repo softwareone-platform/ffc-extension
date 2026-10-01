@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import {
@@ -47,6 +48,7 @@ export function useReactQueryRqlGrid<
     baseQueryKey,
     isInitialised,
   });
+
   stateRef.current = {
     query,
     isInitialised,
@@ -56,7 +58,6 @@ export function useReactQueryRqlGrid<
 
   const { data, isFetching, error } = useQuery({
     ...stateRef.current.options,
-    // placeholderData: keepPreviousData,
     enabled: isInitialised,
   });
 

@@ -31,11 +31,11 @@ A Docker container configured as a development environment, described by an open
 
 You need a running container runtime on your host:
 
-| Platform | Recommended runtime |
-|----------|--------------------|
-| macOS / Windows | [Docker Desktop](https://www.docker.com/products/docker-desktop/) |
-| Linux | [Docker Engine](https://docs.docker.com/engine/install/) |
-| Alternative | [Podman Desktop](https://podman-desktop.io/), [Rancher Desktop](https://rancherdesktop.io/), [OrbStack](https://orbstack.dev/) (macOS) |
+| Platform        | Recommended runtime                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| macOS / Windows | [Docker Desktop](https://www.docker.com/products/docker-desktop/)                                                                      |
+| Linux           | [Docker Engine](https://docs.docker.com/engine/install/)                                                                               |
+| Alternative     | [Podman Desktop](https://podman-desktop.io/), [Rancher Desktop](https://rancherdesktop.io/), [OrbStack](https://orbstack.dev/) (macOS) |
 
 Make sure Docker is running before opening the dev container:
 
@@ -178,32 +178,31 @@ All commands below run **inside** the dev container (VS Code terminal, PyCharm t
 
 ### Backend (run from `/app`)
 
-| Task | Command |
-|------|---------|
-| Run the app | `uv run ffcops serve --server-workers 2` |
-| Run tests | `uv run pytest` |
-| Lint | `uv run ruff check .` |
-| Type check | `uv run mypy .` |
-| Apply DB migrations | `uv run alembic upgrade head` |
-| Open a psql shell | `psql -h db -U $FFC_EXT_POSTGRES_USER $FFC_EXT_POSTGRES_DB` |
-
+| Task                | Command                                                     |
+| ------------------- | ----------------------------------------------------------- |
+| Run the app         | `uv run ffcops serve --server-workers 2`                    |
+| Run tests           | `uv run pytest`                                             |
+| Lint                | `uv run ruff check .`                                       |
+| Type check          | `uv run mypy .`                                             |
+| Apply DB migrations | `uv run alembic upgrade head`                               |
+| Open a psql shell   | `psql -h db -U $FFC_EXT_POSTGRES_USER $FFC_EXT_POSTGRES_DB` |
 
 ### Frontend (run from `/app/frontend`)
 
 Node.js 24 is preinstalled in the dev container (via `nvm`).
 
-| Task | Command |
-|------|---------|
-| Install dependencies | `npm ci` |
-| Build (types + bundle) into `static/` | `npm run build` |
-| Watch and rebuild on change | `npm run start` |
-| Run the Vite dev server | `npm run dev` |
-| Lint | `npm run lint` |
-| Auto-fix lint issues | `npm run lint:fix` |
-| Format with Prettier | `npm run format` |
-| Check formatting | `npm run format:check` |
-| Lint + format check | `npm run check:all` |
-| Production build | `npm run build:prod` |
+| Task                                  | Command                |
+| ------------------------------------- | ---------------------- |
+| Install dependencies                  | `npm ci`               |
+| Build (types + bundle) into `static/` | `npm run build`        |
+| Watch and rebuild on change           | `npm run start`        |
+| Run the Vite dev server               | `npm run dev`          |
+| Lint                                  | `npm run lint`         |
+| Auto-fix lint issues                  | `npm run lint:fix`     |
+| Format with Prettier                  | `npm run format`       |
+| Check formatting                      | `npm run format:check` |
+| Lint + format check                   | `npm run check:all`    |
+| Production build                      | `npm run build:prod`   |
 
 ---
 

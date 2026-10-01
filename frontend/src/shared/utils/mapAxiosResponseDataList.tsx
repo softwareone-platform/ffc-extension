@@ -3,7 +3,7 @@ export interface AxiosResponseData<T> {
 }
 
 export interface ListResponse<T> {
-  total: number;
+  total?: number;
   offset?: number;
   limit?: number;
   items?: Array<T>;
@@ -16,7 +16,10 @@ function ensureArray<TArray extends unknown[]>(value: TArray | undefined | null)
   return value;
 }
 
-export function mapAxiosResponseDataList<T>(res: AxiosResponseData<ListResponse<T>>) {
+export function mapAxiosResponseDataList<T>(res: AxiosResponseData<ListResponse<T>>): {
+  data: T[];
+  total: number | undefined;
+} {
   const offset = res?.data?.offset ?? 0;
   const limit = res?.data?.limit ?? 0;
   const total = res?.data?.total;

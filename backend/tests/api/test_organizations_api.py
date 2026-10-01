@@ -5,8 +5,6 @@ import time_machine
 from dateutil.relativedelta import relativedelta
 from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
-from pytest_mock import MockerFixture
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
@@ -183,6 +181,29 @@ async def test_get_organization_with_operations_external_id_filter(
     assert len(data["items"]) == data["total"]
 
 
+async def test_get_all_organizations_include_deletable_at(
+    organization_factory: ModelFactory[Organization], api_client: AsyncClient, ffc_jwt_token: str
+):
+    """The listing endpoint exposes `deletable_at` only for the organizations terminated."""
+    active_organization = await organization_factory(operations_external_id="EXTERNAL_ID_1")
+    terminated_organization = await organization_factory(
+        operations_external_id="EXTERNAL_ID_2",
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
+    )
+
+    response = await api_client.get(
+        "/organizations",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+    )
+
+    assert response.status_code == 200
+    items = {item["id"]: item for item in response.json()["items"]}
+    # the active organization is not terminated, so the field is dropped by the serialization
+    assert "deletable_at" not in items[active_organization.id]
+    assert items[terminated_organization.id]["deletable_at"] == "2026-09-01T00:00:00Z"
+
+
 async def test_get_organization_with_not_valid_filter(
     organization_factory: ModelFactory[Organization], api_client: AsyncClient, ffc_jwt_token: str
 ):
@@ -265,245 +286,6 @@ async def test_get_all_organizations_multiple_pages(
     assert sorted(all_external_ids) == sorted({f"EXTERNAL_ID_{index}" for index in range(10)})
 
 
-# ====================
-# Create Organizations
-# ====================
-
-
-async def test_can_create_organizations(
-    mocker: MockerFixture,
-    httpx_mock: HTTPXMock,
-    api_client: AsyncClient,
-    db_session: AsyncSession,
-    ffc_jwt_token: str,
-    ffc_extension: System,
-):
-    mocker.patch("app.api_clients.api_modifier.jwt.encode", return_value="test_token")
-
-    httpx_mock.add_response(
-        method="POST",
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-        url="https://api-modifier.ffc.com/organizations",
-        json={"id": "UUID-yyyy-yyyy-yyyy-yyyy"},
-        match_headers={"Authorization": "Bearer test_token"},
-    )
-
-    response = await api_client.post(
-        "/organizations",
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-        json={
-            "name": "My Organization",
-            "operations_external_id": "ACC-1234-5678",
-            "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-            "currency": "USD",
-            "billing_currency": "EUR",
-        },
-    )
-
-    assert response.status_code == 201
-    data = response.json()
-
-    assert data["id"] is not None
-    assert data["name"] == "My Organization"
-    assert data["currency"] == "USD"
-    assert data["billing_currency"] == "EUR"
-    assert data["operations_external_id"] == "ACC-1234-5678"
-    assert data["linked_organization_id"] == "UUID-yyyy-yyyy-yyyy-yyyy"
-    assert data["events"]["created"]["at"] is not None
-    assert data["events"]["created"]["by"]["id"] == str(ffc_extension.id)
-    assert data["events"]["created"]["by"]["type"] == ffc_extension.type
-    assert data["events"]["created"]["by"]["name"] == ffc_extension.name
-    assert data["events"]["updated"]["at"] is not None
-    assert data["events"]["updated"]["by"]["id"] == str(ffc_extension.id)
-    assert data["events"]["updated"]["by"]["type"] == ffc_extension.type
-    assert data["events"]["updated"]["by"]["name"] == ffc_extension.name
-
-    result = await db_session.execute(select(Organization).where(Organization.id == data["id"]))
-    assert result.one_or_none() is not None
-
-
-@pytest.mark.parametrize(
-    "missing_field", ["name", "operations_external_id", "user_id", "currency", "billing_currency"]
-)
-async def test_create_organization_with_incomplete_data(
-    api_client: AsyncClient, missing_field: str, ffc_jwt_token: str
-):
-    payload = {
-        "name": "My Organization",
-        "operations_external_id": "ACC-1234-5678",
-        "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-        "currency": "USD",
-        "billing_currency": "USD",
-    }
-    payload.pop(missing_field)
-
-    response = await api_client.post(
-        "/organizations",
-        json=payload,
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-    )
-
-    assert response.status_code == 422
-    [detail] = response.json()["detail"]
-
-    assert detail["type"] == "missing"
-    assert detail["loc"] == ["body", missing_field]
-
-
-async def test_create_organization_with_existing_db_organization(
-    mocker: MockerFixture,
-    httpx_mock: HTTPXMock,
-    api_client: AsyncClient,
-    organization_factory: ModelFactory[Organization],
-    ffc_jwt_token: str,
-):
-    mocker.patch("app.api_clients.api_modifier.jwt.encode", return_value="test_token")
-
-    existing_org = await organization_factory(operations_external_id="ACC-1234-5678")
-    payload = {
-        "name": existing_org.name,
-        "operations_external_id": "ACC-1234-5678",
-        "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-        "currency": "USD",
-        "billing_currency": "USD",
-    }
-
-    httpx_mock.add_response(
-        method="POST",
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-        url="https://api-modifier.ffc.com/organizations",
-        json={"id": "UUID-yyyy-yyyy-yyyy-yyyy"},
-        match_headers={"Authorization": "Bearer test_token"},
-    )
-
-    response = await api_client.post(
-        "/organizations",
-        json=payload,
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-    )
-
-    assert response.status_code == 201
-    data = response.json()
-
-    assert data["id"] == str(existing_org.id)
-    assert data["name"] == existing_org.name
-    assert data["operations_external_id"] == "ACC-1234-5678"
-    assert data["linked_organization_id"] == "UUID-yyyy-yyyy-yyyy-yyyy"
-    assert data["events"]["created"]["at"] is not None
-
-
-async def test_create_organization_with_existing_db_organization_name_mismatch(
-    mocker: MockerFixture,
-    httpx_mock: HTTPXMock,
-    api_client: AsyncClient,
-    organization_factory: ModelFactory[Organization],
-    ffc_jwt_token: str,
-):
-    mocker.patch("app.api_clients.api_modifier.jwt.encode", return_value="test_token")
-
-    existing_org = await organization_factory(operations_external_id="ACC-1234-5678")
-    payload = {
-        "name": f"{existing_org.name} Existing",
-        "operations_external_id": "ACC-1234-5678",
-        "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-        "currency": "USD",
-        "billing_currency": "USD",
-    }
-
-    response = await api_client.post(
-        "/organizations",
-        json=payload,
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-    )
-
-    assert response.status_code == 400
-    detail = response.json()["detail"]
-    assert detail == (
-        f"The name of a partially created Organization with "
-        f"external ID {existing_org.operations_external_id}  doesn't match the "
-        f"current request: {existing_org.name}."
-    )
-
-
-async def test_create_organization_already_created(
-    api_client: AsyncClient, organization_factory: ModelFactory[Organization], ffc_jwt_token: str
-):
-    payload = {
-        "name": "My Organization",
-        "operations_external_id": "ACC-1234-5678",
-        "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-        "currency": "USD",
-        "billing_currency": "USD",
-    }
-
-    await organization_factory(
-        operations_external_id="ACC-1234-5678",
-        linked_organization_id="957c9a0a-2d18-4015-b7b0-e1b4259b3167",
-    )
-
-    response = await api_client.post(
-        "/organizations",
-        json=payload,
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-    )
-
-    assert response.status_code == 400
-    detail = response.json()["detail"]
-    assert detail == "An Organization with external ID `ACC-1234-5678` already exists."
-
-
-async def test_create_organization_api_modifier_error(
-    mocker: MockerFixture,
-    httpx_mock: HTTPXMock,
-    api_client: AsyncClient,
-    ffc_jwt_token: str,
-):
-    httpx_mock.add_response(
-        method="POST",
-        url="https://api-modifier.ffc.com/organizations",
-        status_code=500,
-        text="Internal Server Error",
-    )
-
-    response = await api_client.post(
-        "/organizations",
-        json={
-            "name": "My Organization",
-            "operations_external_id": "ACC-1234-5678",
-            "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-            "currency": "USD",
-            "billing_currency": "AUD",
-        },
-        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
-    )
-
-    assert response.status_code == 502
-
-    detail = response.json()["detail"]
-    assert detail == "Error creating organization in FinOps for Cloud: 500 - Internal Server Error."
-
-
-async def test_create_employee_affiliate_forbidden(
-    api_client: AsyncClient,
-    gcp_jwt_token: str,
-):
-    response = await api_client.post(
-        "/organizations",
-        json={
-            "name": "My Organization",
-            "operations_external_id": "ACC-1234-5678",
-            "user_id": "UUID-xxxx-xxxx-xxxx-xxxx",
-            "currency": "USD",
-            "billing_currency": "GBP",
-        },
-        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
-    )
-    assert response.status_code == 403
-    assert response.json() == {
-        "detail": "You've found the door, but you don't have the key.",
-    }
-
-
 # =====================
 # Get Organization by ID
 # ======================
@@ -553,6 +335,8 @@ async def test_get_organization_by_id(
     assert data["events"]["updated"]["by"]["name"] == ffc_extension.name
     assert data["expenses_info"] is not None
     assert data["expenses_info"]["expenses_this_month_forecast"] == "3690.91"
+    # the organization is not terminated, so the field is dropped by response_model_exclude_none
+    assert "deletable_at" not in data
 
 
 async def test_get_terminated_organization_by_id(
@@ -568,7 +352,7 @@ async def test_get_terminated_organization_by_id(
         updated_by=ffc_extension,
         linked_organization_id="ee7ebfaf-a222-4209-aecc-67861694a488",
         status=OrganizationStatus.TERMINATED,
-        terminated_at=datetime.now(UTC),
+        terminated_at=datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
     )
     httpx_mock.add_response(
         method="GET",
@@ -590,6 +374,7 @@ async def test_get_terminated_organization_by_id(
 
     assert data["events"]["terminated"]["at"] is not None
     assert data["status"] == "terminated"
+    assert data["deletable_at"] == "2026-09-01T00:00:00Z"
 
 
 async def test_get_non_existant_organization(api_client: AsyncClient, ffc_jwt_token: str):
@@ -888,11 +673,6 @@ async def test_try_update_name_for_organization_without_linked_organization_id(
     assert db_org.operations_external_id == "initial_external_id"
 
 
-# ====================
-# Create Organizations
-# ====================
-
-
 @time_machine.travel("2026-08-1", tick=False)
 async def test_delete_organization(
     test_settings: Settings,
@@ -943,7 +723,7 @@ async def test_delete_organization_to_early(
     response = await admin_client.delete(f"/organizations/{db_org.id}")
     assert response.status_code == 400
     assert response.json()["detail"] == (
-        f"The organization {db_org.name}cannot be deleted before September 1, 2026."
+        f"The organization {db_org.name} cannot be deleted before September 1, 2026."
     )
 
 

@@ -21,6 +21,7 @@ type Props = {
   isToShowCloseButton?: boolean;
   isToHidePadding?: boolean;
   isToShowWarningModal?: boolean;
+  isSubmitDisabled?: boolean;
   testId?: string;
   actions?: ReactNode;
   onCancel?: () => void;
@@ -50,6 +51,7 @@ export function Modal({
   submitLabel,
   isSubmitting,
   submitButtonColor = "primary",
+  isSubmitDisabled = false,
 }: Readonly<Props>) {
   const mergedClassName = className ? `${DEFAULT_CLASS} ${className}` : DEFAULT_CLASS;
   const resolvedActions =
@@ -60,6 +62,7 @@ export function Modal({
       submitLabel,
       isSubmitting,
       submitButtonColor,
+      isSubmitDisabled,
     });
 
   return (
@@ -89,18 +92,26 @@ function buildDefaultActions({
   submitLabel,
   isSubmitting,
   submitButtonColor = "primary",
+  isSubmitDisabled,
 }: {
   onCancel: () => void;
   onSubmit?: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
   submitButtonColor: ButtonColor;
+  isSubmitDisabled?: boolean;
 }): ReactNode | undefined {
   if (!onSubmit) return undefined;
   return (
     <>
       <ModalCancelButton onClick={onCancel} isDisabled={isSubmitting} />
-      <Button type="primary" color={submitButtonColor} onClick={onSubmit} isBusy={isSubmitting}>
+      <Button
+        type="primary"
+        color={submitButtonColor}
+        onClick={onSubmit}
+        isDisabled={isSubmitDisabled}
+        isBusy={isSubmitting}
+      >
         {submitLabel}
       </Button>
     </>

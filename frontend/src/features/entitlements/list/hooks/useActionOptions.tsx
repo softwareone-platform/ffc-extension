@@ -1,14 +1,12 @@
 import { useCallback } from "react";
 
-import { ListOption } from "@swo/dropdown";
+import { ListOption } from "@swo/design-system/dropdown";
 
 import { EntitlementStatus } from "~api/ffc-api-model";
 import { Entitlement, EntitlementAction } from "~features/entitlements/api/model";
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useUserRole } from "~shared/hooks/useUserRole";
 
 export function useActionOptions(): (entity: Entitlement) => ListOption<EntitlementAction>[] {
-  const { role } = useUserRole();
   const tActions = useFixedT("shared:actions");
 
   return useCallback(
@@ -32,6 +30,6 @@ export function useActionOptions(): (entity: Entitlement) => ListOption<Entitlem
         },
       ];
     },
-    [role, tActions],
+    [tActions],
   );
 }

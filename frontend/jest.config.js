@@ -1,6 +1,3 @@
-import { createDefaultEsmPreset } from "ts-jest";
-const presetConfig = createDefaultEsmPreset({});
-
 const swcConfig = {
   jsc: {
     parser: {
@@ -14,13 +11,17 @@ const swcConfig = {
     },
     target: 'es2022',
   },
+  module: {
+    type: 'commonjs',
+  },
 };
 
 export default {
-  ...presetConfig,
   rootDir: 'src',
   testEnvironment: 'jsdom',
-  transformIgnorePatterns: [],
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@swo|@mpt-extension|axios|@tanstack|react-i18next|zod|zod-i18n-map|@hey-api|@hookform)/)',
+  ],
   transform: {
     '^.+\\.[jt]sx?$': ['@swc/jest', swcConfig],
   },
@@ -29,12 +30,19 @@ export default {
     '~api(.*)$': '<rootDir>/api/$1',
     '~app(.*)$': '<rootDir>/app/$1',
     '~features(.*)$': '<rootDir>/features/$1',
+    '~fixes(.*)$': '<rootDir>/fixes/$1',
     '~organizations(.*)$': '<rootDir>/features/organizations/$1',
     '~entitlements(.*)$': '<rootDir>/features/entitlements/$1',
     '~shared(.*)$': '<rootDir>/shared/$1',
-    '~i18n(.*)$': '<rootDir>/i18n/$1'
+    '~i18n(.*)$': '<rootDir>/i18n/$1',
+    '~test-utils$': '<rootDir>/test-utils',
+    '~test-utils/(.*)$': '<rootDir>/test-utils/$1',
   },
   setupFilesAfterEnv: ['@testing-library/jest-dom', '../jest.setup.js'],
   testTimeout: 10_000,
+  clearMocks: true,
   workerIdleMemoryLimit: '512MB',
+  coverageThreshold: {
+    global: { branches: 85, functions: 85, lines: 85, statements: 85 },
+  },
 };

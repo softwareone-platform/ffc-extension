@@ -1,6 +1,7 @@
 import copy
 import functools
 from datetime import datetime
+from typing import Any
 
 from app.utils import find_first
 
@@ -53,7 +54,12 @@ def get_ff_date_parameter(parameter_name, source):
     return None
 
 
-def set_ordering_parameter_error(order, param_external_id, error, required=True):
+def set_ordering_parameter_error(
+    order: dict[str, Any],
+    param_external_id: str,
+    error: dict[str, Any],
+    required: bool = True,
+) -> dict[str, Any]:
     """
     Set a validation error on an ordering parameter.
 

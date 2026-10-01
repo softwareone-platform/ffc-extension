@@ -1,9 +1,15 @@
 @use "@swo/design-tokens" as *;
 
-.modal__error {
-  margin-bottom: var(--spacing-3);
-}
+.add-user-modal {
+  p {
+    margin: 0 0 var(--spacing-3);
+  }
 
-.modal__input:not(:last-child) {
-  margin-bottom: var(--spacing-3);
+  .modal__error {
+    margin-bottom: var(--spacing-3);
+  }
+
+  .modal__input:not(:last-child) {
+    margin-bottom: var(--spacing-3);
+  }
 }

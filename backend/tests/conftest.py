@@ -10,7 +10,6 @@ from typing import Any
 import httpx
 import jwt
 import pytest
-import responses
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
@@ -22,16 +21,19 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
+from app.api_clients.api_modifier import APIModifierClient
 from app.api_clients.base import BaseAPIClient
+from app.api_clients.mpt import MPTClient, MPTExtensionAuth
+from app.api_clients.optscale import OptscaleAuthClient, OptscaleClient
 from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
 from app.conf import Settings, get_settings
 from app.db.base import configure_db_engine, session_factory
+from app.db.handlers import EntitlementHandler, OrganizationHandler
 from app.db.models import (
     Account,
     AccountUser,
     Actor,
-    ActorType,
     Base,
     DatasourceExpense,
     Entitlement,
@@ -50,8 +52,7 @@ from app.enums import (
     SystemStatus,
     UserStatus,
 )
-from app.fastapi import setup_app
-from app.fulfilment.constants import (
+from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     ORDER_TYPE_CHANGE,
     ORDER_TYPE_PURCHASE,
@@ -61,19 +62,16 @@ from app.fulfilment.constants import (
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
 )
-from app.fulfilment.processing import (
-    PROCESSOR_BY_TYPE,
+from app.events.orders.processing import (
+    OrderEventHandler,
     OrderProcessor,
-    OrderProcessorFactory,
-    PurchaseOrderProcessor,
 )
+from app.events.subscriptions.constants import ACTIVE_SUBSCRIPTION_STATUS
+from app.events.subscriptions.processing import SubscriptionEventHandler
+from app.fastapi import setup_app
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
-from tests.types import ModelFactory, OrderFactory
-
-pytest_plugins = [
-    "tests.fixtures.mock_api_clients",
-]
+from tests.types import ModelFactory, MPTSubscriptionFactory, OrderFactory
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -226,6 +224,22 @@ async def mpt_api_client(
 
 
 @pytest.fixture
+def mpt_client(test_settings: Settings) -> MPTClient:
+    """A `MPTClient` pinned to test settings, with its transport mocked."""
+    client = MPTClient(auth=MPTExtensionAuth())
+    client.settings = test_settings
+    return client
+
+
+@pytest.fixture
+def mpt_extension_client():
+    """An `MPTClient` authenticated with the static extension token (no token refresh)."""
+    from app.api_clients.mpt import MPTClient, MPTExtensionAuth
+
+    return MPTClient(MPTExtensionAuth())
+
+
+@pytest.fixture
 def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Account]:
     async def _account(
         name: str | None = None,
@@ -238,6 +252,7 @@ def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Acco
         new_entitlements_count: int = 0,
         active_entitlements_count: int = 0,
         terminated_entitlements_count: int = 0,
+        products: str | None = None,
     ) -> Account:
         account = Account(
             type=type or AccountType.AFFILIATE,
@@ -250,6 +265,7 @@ def account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[Acco
             new_entitlements_count=new_entitlements_count,
             active_entitlements_count=active_entitlements_count,
             terminated_entitlements_count=terminated_entitlements_count,
+            products=products,
         )
         db_session.add(account)
         await db_session.commit()
@@ -279,6 +295,7 @@ def entitlement_factory(
         redeemed_at: datetime | None = None,
         redeemed_by: Organization | None = None,
         terminated_at: datetime | None = None,
+        created_at: datetime | None = None,
     ) -> Entitlement:
         entitlement = Entitlement(
             name=name or "AWS",
@@ -295,6 +312,8 @@ def entitlement_factory(
             redeemed_by=redeemed_by,
             terminated_at=terminated_at,
         )
+        if created_at is not None:
+            entitlement.created_at = created_at
         db_session.add(entitlement)
         await db_session.commit()
         await db_session.refresh(entitlement)
@@ -600,20 +619,6 @@ async def affiliate_account(
 
 
 @pytest.fixture
-async def affiliate_system(
-    system_factory: ModelFactory[System], affiliate_account: Account
-) -> System:
-    return await system_factory(external_id="TKN-3333-3333", owner=affiliate_account)
-
-
-@pytest.fixture
-def affiliate_account_jwt_token(
-    system_jwt_token_factory: Callable[[System], str], affiliate_system: System
-) -> str:
-    return system_jwt_token_factory(affiliate_system)
-
-
-@pytest.fixture
 def gcp_jwt_token(system_jwt_token_factory: Callable[[System], str], gcp_extension: System) -> str:
     return system_jwt_token_factory(gcp_extension)
 
@@ -727,40 +732,6 @@ def assert_equal_or_raises[T](
 
 
 @pytest.fixture
-def requests_mocker():
-    """
-    Allow mocking of http calls made with requests.
-    """
-    with responses.RequestsMock() as rsps:
-        yield rsps
-
-
-@pytest.fixture
-def get_organizations():
-    creator = Actor(
-        id="FUSR-6956-9254",
-        name="FrancescoFaraone",
-        type=ActorType.USER,
-        external_id="FUSR-6956-9254",
-    )
-    return Organization(
-        name="SoftwareOne (Test Environment)",
-        currency="USD",
-        billing_currency="EUR",
-        operations_external_id="ACC-1234-5678",
-        id="FORG-4801-6958-2949",
-        linked_organization_id="3d0fe384-b1cf-4929-ad5e-1aa544f93dd5",
-        status=OrganizationStatus.ACTIVE,
-        created_at=datetime(2025, 4, 3, 15, 18, 2, 408803, tzinfo=UTC),
-        created_by_id="FUSR-6956-9254",
-        created_by=creator,
-        updated_at=datetime(2025, 4, 22, 13, 32, 0, 599322, tzinfo=UTC),
-        updated_by_id="FUSR-6956-9254",
-        updated_by=creator,
-    )
-
-
-@pytest.fixture
 def order_parameters_factory():
     def _order_parameters():
         return [
@@ -851,14 +822,6 @@ def fulfillment_parameters_factory():
 
 
 @pytest.fixture
-def mpt_extension_client():
-    """An `MPTClient` authenticated with the static extension token (no token refresh)."""
-    from app.api_clients.mpt import MPTClient, MPTExtensionAuth
-
-    return MPTClient(MPTExtensionAuth())
-
-
-@pytest.fixture
 def order_with_parameters(
     order_parameters_factory: Callable[[], list[dict]],
     fulfillment_parameters_factory: Callable[[], list[dict]],
@@ -875,26 +838,6 @@ def order_with_parameters(
         }
 
     return _order
-
-
-@pytest.fixture
-def items_factory():
-    def _items(
-        item_id=1,
-        name="Awesome product",
-        external_vendor_id="FINOPS-ITEM-00001",
-    ):
-        return [
-            {
-                "id": f"ITM-1234-1234-1234-{item_id:04d}",
-                "name": name,
-                "externalIds": {
-                    "vendor": external_vendor_id,
-                },
-            },
-        ]
-
-    return _items
 
 
 @pytest.fixture
@@ -958,97 +901,6 @@ def subscriptions_factory(lines_factory):
         ]
 
     return _subscriptions
-
-
-@pytest.fixture
-def agreement_factory(buyer, order_parameters_factory, fulfillment_parameters_factory):
-    def _agreement(
-        licensee_name="My beautiful licensee",
-        licensee_address=None,
-        licensee_contact=None,
-        use_buyer_address=False,
-        subscriptions=None,
-        fulfillment_parameters=None,
-        ordering_parameters=None,
-        lines=None,
-    ):
-        if not subscriptions:
-            subscriptions = [
-                {
-                    "id": "SUB-1000-2000-3000",
-                    "status": "Active",
-                    "item": {
-                        "id": "ITM-0000-0001-0001",
-                    },
-                },
-                {
-                    "id": "SUB-1234-5678",
-                    "status": "Terminated",
-                    "item": {
-                        "id": "ITM-0000-0001-0002",
-                    },
-                },
-            ]
-
-        licensee = {
-            "name": licensee_name,
-            "address": licensee_address,
-            "useBuyerAddress": use_buyer_address,
-        }
-        if licensee_contact:
-            licensee["contact"] = licensee_contact
-
-        return {
-            "id": "AGR-2119-4550-8674-5962",
-            "href": "/commerce/agreements/AGR-2119-4550-8674-5962",
-            "icon": None,
-            "name": "Product Name 1",
-            "audit": {
-                "created": {
-                    "at": "2023-12-14T18:02:16.9359",
-                    "by": {"id": "USR-0000-0001"},
-                },
-                "updated": None,
-            },
-            "listing": {
-                "id": "LST-9401-9279",
-                "href": "/listing/LST-9401-9279",
-                "priceList": {
-                    "id": "PRC-9457-4272-3691",
-                    "href": "/v1/price-lists/PRC-9457-4272-3691",
-                    "currency": "USD",
-                },
-            },
-            "licensee": licensee,
-            "buyer": buyer,
-            "seller": {
-                "id": "SEL-9121-8944",
-                "href": "/accounts/sellers/SEL-9121-8944",
-                "name": "Software LN",
-                "icon": "/static/SEL-9121-8944/icon.png",
-                "address": {
-                    "country": "US",
-                },
-            },
-            "client": {
-                "id": "ACC-9121-8944",
-                "href": "/accounts/sellers/ACC-9121-8944",
-                "name": "Software LN",
-                "icon": "/static/ACC-9121-8944/icon.png",
-            },
-            "product": {
-                "id": "PRD-1111-1111",
-            },
-            "authorization": {"id": "AUT-1234-5678"},
-            "lines": lines or [],
-            "subscriptions": subscriptions,
-            "parameters": {
-                "ordering": ordering_parameters or order_parameters_factory(),
-                "fulfillment": fulfillment_parameters or fulfillment_parameters_factory(),
-            },
-        }
-
-    return _agreement
 
 
 @pytest.fixture
@@ -1377,161 +1229,6 @@ def agreement(buyer, licensee, listing):
 
 
 @pytest.fixture
-def mpt_error_factory():
-    """
-    Generate an error message returned by the Marketplace platform.
-    """
-
-    def _mpt_error(
-        status,
-        title,
-        detail,
-        trace_id="00-27cdbfa231ecb356ab32c11b22fd5f3c-721db10d009dfa2a-00",
-        errors=None,
-    ):
-        error = {
-            "status": status,
-            "title": title,
-            "detail": detail,
-            "traceId": trace_id,
-        }
-        if errors:
-            error["errors"] = errors
-
-        return error
-
-    return _mpt_error
-
-
-@pytest.fixture
-def mpt_list_response():
-    def _wrap_response(objects_list):
-        return {
-            "data": objects_list,
-        }
-
-    return _wrap_response
-
-
-@pytest.fixture
-def mock_env_webhook_secret():
-    return '{ "webhook_secret": "WEBHOOK_SECRET" }'
-
-
-@pytest.fixture
-def mocked_next_step(mocker):
-    return mocker.MagicMock()
-
-
-@pytest.fixture
-def ffc_organization():
-    return {
-        "name": "Nimbus Nexus Inc.",
-        "currency": "EUR",
-        "billing_currency": "USD",
-        "operations_external_id": "AGR-9876-5534-9172",
-        "events": {
-            "created": {
-                "at": "2025-04-03T15:04:25.894Z",
-                "by": {"id": "string", "type": "user", "name": "Barack Obama"},
-            },
-            "updated": {
-                "at": "2025-04-03T15:04:25.894Z",
-                "by": {"id": "string", "type": "user", "name": "Barack Obama"},
-            },
-            "deleted": {
-                "at": "2025-04-03T15:04:25.894Z",
-                "by": {"id": "string", "type": "user", "name": "Barack Obama"},
-            },
-        },
-        "id": "FORG-1234-1234-1234",
-        "linked_organization_id": "ee7ebfaf-a222-4209-aecc-67861694a488",
-        "status": "active",
-        "expenses_info": {
-            "limit": "10,000.00",
-            "expenses_last_month": "4,321.26",
-            "expenses_this_month": "2,111.49",
-            "expenses_this_month_forecast": "5,001.12",
-            "possible_monthly_saving": "4.66",
-        },
-    }
-
-
-@pytest.fixture
-def fetch_terminated_entitlement():
-    return {
-        "name": "Test with Antonio",
-        "affiliate_external_id": "AGR-1234-5678-9012",
-        "datasource_id": "e30e2a6e-0712-48c3-8685-3298df063633",
-        "id": "FENT-9763-4488-4624",
-        "linked_datasource_id": "89d63330-92d1-45dc-a408-5a768ae22f9f",
-        "linked_datasource_name": "MPT (Dev)",
-        "linked_datasource_type": "azure_cnr",
-        "owner": {"id": "FACC-3887-7055", "name": "Microsoft CSP", "type": "affiliate"},
-        "status": "terminated",
-        "events": {
-            "created": {
-                "at": "2025-05-06T08:39:09.584186Z",
-                "by": {"id": "FUSR-5352-1497", "type": "user", "name": "Francesco Faraone"},
-            },
-            "updated": {
-                "at": "2025-05-12T07:47:17.877365Z",
-                "by": {"id": "FTKN-4573-9711", "type": "system", "name": "Microsoft CSP Extension"},
-            },
-            "redeemed": {
-                "at": "2025-05-06T08:39:45.995072Z",
-                "by": {
-                    "id": "FORG-1317-5652-8045",
-                    "name": "SoftwareOne (Test Environment)",
-                    "operations_external_id": "AGR-4480-3352-1794",
-                },
-            },
-            "terminated": {
-                "at": "2025-06-28T07:47:19.142190Z",
-                "by": {"id": "FTKN-4573-9711", "type": "system", "name": "Microsoft CSP Extension"},
-            },
-        },
-    }
-
-
-@pytest.fixture
-def active_entitlement():
-    return {
-        "name": "Test with Antonio",
-        "affiliate_external_id": "AGR-1234-5678-9012",
-        "datasource_id": "e30e2a6e-0712-48c3-8685-3298df063633",
-        "id": "FENT-9763-4488-4624",
-        "linked_datasource_id": "89d63330-92d1-45dc-a408-5a768ae22f9f",
-        "linked_datasource_name": "MPT (Dev)",
-        "linked_datasource_type": "azure_cnr",
-        "owner": {"id": "FACC-3887-7055", "name": "Microsoft CSP", "type": "affiliate"},
-        "status": "active",
-        "events": {
-            "created": {
-                "at": "2025-09-06T08:39:09.584186Z",
-                "by": {"id": "FUSR-5352-1497", "type": "user", "name": "Peter Parker"},
-            },
-            "updated": {
-                "at": "2025-09-12T07:47:17.877365Z",
-                "by": {
-                    "id": "FTKN-4573-9711",
-                    "type": "system",
-                    "name": "Microsoft CSP Extension",
-                },
-            },
-            "redeemed": {
-                "at": "2025-09-06T08:39:45.995072Z",
-                "by": {
-                    "id": "FORG-1317-5652-8045",
-                    "name": "SoftwareOne (Test Environment)",
-                    "operations_external_id": "AGR-4480-3352-1794",
-                },
-            },
-        },
-    }
-
-
-@pytest.fixture
 def expenses():
     org_id = "FORG-4801-6958-2949"
 
@@ -1791,18 +1488,6 @@ def daily_expenses():
 
 
 @pytest.fixture
-def ffc_employee():
-    return {
-        "email": "test@example.com",
-        "display_name": "Tor James Parker",
-        "created_at": "2025-04-04T09:11:36.291Z",
-        "last_login": "2025-04-04T09:11:36.291Z",
-        "roles_count": 0,
-        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    }
-
-
-@pytest.fixture
 def create_journal_response():
     return {
         "$meta": {
@@ -1919,40 +1604,6 @@ def existing_journal_file_response():
                     "ready": 0,
                     "error": 0,
                 },
-            },
-        ],
-    }
-
-
-@pytest.fixture
-def journal_attachment_response():
-    return {
-        "$meta": {
-            "pagination": {"offset": 0, "limit": 10, "total": 1},
-            "omitted": ["processing", "audit"],
-        },
-        "data": [
-            {
-                "id": "JOA-5985-1983",
-                "name": "charge_file.json",
-                "journal": {
-                    "id": "BJO-9000-4019",
-                    "name": "June 2025 Charges",
-                    "dueDate": "2025-07-01T00:00:00.000Z",
-                },
-                "vendor": {
-                    "id": "ACC-3102-8586",
-                    "type": "Vendor",
-                    "status": "Active",
-                    "name": "FinOps for Cloud",
-                    "icon": "/v1/accounts/accounts/ACC-3102-8586/icon",
-                },
-                "type": "Attachment",
-                "filename": "charge_file.json",
-                "size": 2981,
-                "contentType": "application/json",
-                "description": "Conversion Rate",
-                "isDeleted": False,
             },
         ],
     }
@@ -2134,53 +1785,6 @@ def agreement_data_no_trial():
 
 
 @pytest.fixture
-def agreement_fulfillment():
-    return [
-        {
-            "externalId": "dueDate",
-            "id": "PAR-7208-0459-0007",
-            "name": "Due date",
-            "phase": "Fulfillment",
-            "type": "Date",
-        },
-        {
-            "externalId": "isNewUser",
-            "id": "PAR-7208-0459-0008",
-            "name": "Is new user?",
-            "phase": "Fulfillment",
-            "type": "Checkbox",
-        },
-        {
-            "displayValue": "2025-06-01",
-            "externalId": "trialStartDate",
-            "id": "PAR-7208-0459-0009",
-            "name": "Trial period start date",
-            "phase": "Fulfillment",
-            "type": "Date",
-            "value": "2025-06-01",
-        },
-        {
-            "displayValue": "2025-06-15",
-            "externalId": "trialEndDate",
-            "id": "PAR-7208-0459-0010",
-            "name": "Trial period end date",
-            "phase": "Fulfillment",
-            "type": "Date",
-            "value": "2025-06-15",
-        },
-        {
-            "displayValue": "4",
-            "externalId": "billedPercentage",
-            "id": "PAR-7208-0459-0011",
-            "name": "Billed percentage of monthly spend",
-            "phase": "Fulfillment",
-            "type": "SingleLineText",
-            "value": "4",
-        },
-    ]
-
-
-@pytest.fixture
 def organization_data():
     return {
         "name": "SoftwareOne (Test Environment)",
@@ -2208,85 +1812,6 @@ def organization_data():
         "id": "FORG-4801-6958-2949",
         "linked_organization_id": "3d0fe384-b1cf-4929-ad5e-1aa544f93dd5",
         "status": "active",
-    }
-
-
-@pytest.fixture
-def catalog_authorizations():
-    return {
-        "$meta": {"pagination": {"offset": 0, "limit": 10, "total": 1}, "omitted": ["audit"]},
-        "data": [
-            {
-                "id": "AUT-5305-9928",
-                "name": "asdasdsa",
-                "externalIds": {},
-                "currency": "USD",
-                "notes": "",
-                "product": {
-                    "id": "PRD-2426-7318",
-                    "name": "FinOps for Cloud",
-                    "externalIds": {"operations": "adsasadsa"},
-                    "icon": "/v1/catalog/products/PRD-2426-7318/icon",
-                    "status": "Published",
-                },
-                "vendor": {
-                    "id": "ACC-3102-8586",
-                    "type": "Vendor",
-                    "status": "Active",
-                    "name": "FinOps for Cloud",
-                    "icon": "/v1/accounts/accounts/ACC-3102-8586/icon",
-                },
-                "owner": {
-                    "id": "SEL-7032-1456",
-                    "externalId": "US",
-                    "name": "SoftwareONE Inc.",
-                    "icon": "/v1/accounts/sellers/SEL-7032-1456/icon",
-                },
-                "statistics": {"subscriptions": 7, "agreements": 12, "sellers": 2, "listings": 2},
-                "journal": {"firstInvoiceDate": "2025-02-01T00:00:00.000Z", "frequency": "1m"},
-                "eligibility": {"client": True, "partner": False},
-            }
-        ],
-    }
-
-
-@pytest.fixture
-def catalog_authorization():
-    return {
-        "id": "AUT-5305-9928",
-        "name": "asdasdsa",
-        "externalIds": {},
-        "currency": "USD",
-        "notes": "",
-        "product": {
-            "id": "PRD-2426-7318",
-            "name": "FinOps for Cloud",
-            "externalIds": {"operations": "adsasadsa"},
-            "icon": "/v1/catalog/products/PRD-2426-7318/icon",
-            "status": "Published",
-        },
-        "vendor": {
-            "id": "ACC-3102-8586",
-            "type": "Vendor",
-            "status": "Active",
-            "name": "FinOps for Cloud",
-            "icon": "/v1/accounts/accounts/ACC-3102-8586/icon",
-        },
-        "owner": {
-            "id": "SEL-7032-1456",
-            "externalId": "US",
-            "name": "SoftwareONE Inc.",
-            "icon": "/v1/accounts/sellers/SEL-7032-1456/icon",
-        },
-        "statistics": {"subscriptions": 7, "agreements": 12, "sellers": 2, "listings": 2},
-        "journal": {"firstInvoiceDate": "2025-02-01T00:00:00.000Z", "frequency": "1m"},
-        "eligibility": {"client": True, "partner": False},
-        "audit": {
-            "created": {
-                "at": "2024-10-23T15:39:19.138Z",
-                "by": {"id": "USR-6476-8245", "name": "Francesco Faraone"},
-            }
-        },
     }
 
 
@@ -2628,11 +2153,6 @@ class FakeAPIClient(BaseAPIClient):
 
 
 @pytest.fixture
-def fake_apiclient(test_settings: Settings):
-    return FakeAPIClient(settings=test_settings)
-
-
-@pytest.fixture
 def process_result_success_payload():
     return [
         ProcessResultInfo(
@@ -2678,50 +2198,11 @@ MSTEAMS_FAKE_WEBHOOK_URL = "https://localhost/webhook"
 
 
 @pytest.fixture
-def _no_real_http_post(mocker):
-    """Replace ``httpx.AsyncClient.post`` with an ``AsyncMock`` returning a
-    fake 202 response. Opt-in (not autouse): tests that do not need it must
-    not pull it in, otherwise FastAPI integration tests using ASGI transport
-    would have their POSTs intercepted too.
-    """
-    mock_response = mocker.MagicMock()
-    mock_response.status_code = 202
-    mock_response.text = ""
-    return mocker.patch(
-        "httpx.AsyncClient.post",
-        new=mocker.AsyncMock(return_value=mock_response),
-    )
-
-
-@pytest.fixture
 def configured_webhook(mocker):
     mocked_settings = mocker.MagicMock()
     mocked_settings.msteams_notifications_webhook_url = MSTEAMS_FAKE_WEBHOOK_URL
     mocker.patch("app.notifications.get_settings", return_value=mocked_settings)
     return mocked_settings
-
-
-@pytest.fixture
-def send_notification_spy(mocker):
-    """Observes calls to ``app.notifications.send_notification`` without
-    replacing it. Pair with ``_no_real_http_post`` to keep the underlying
-    POST offline.
-    """
-    import app.notifications as notifications_module
-
-    return mocker.spy(notifications_module, "send_notification")
-
-
-@pytest.fixture
-def msteams_post_mock(_no_real_http_post):
-    """The ``AsyncMock`` that ``_no_real_http_post`` substitutes for
-    ``httpx.AsyncClient.post``. Use this fixture (instead of injecting
-    ``_no_real_http_post`` directly) when a test needs to inspect the
-    captured POST calls — its leading underscore signals "side-effect only"
-    to ruff (PT019), so accessing the value through this wrapper keeps
-    lint clean.
-    """
-    return _no_real_http_post
 
 
 @pytest.fixture
@@ -2771,17 +2252,19 @@ def mock_owned_task(mocker: MockerFixture, mocked_extension_ctx) -> Callable[...
 
 @pytest.fixture
 def event_factory() -> Callable[..., Event]:
-    """Return a builder for an order `status_changed` marketplace event."""
+    """Return a builder for an `status_changed` marketplace event."""
 
     def _event(
         *,
-        order_id: str,
+        object_id: str,
+        object_name: str = "order",
+        object_type: str = "Order",
         task_id: str = "TSK-0014-5578-6577-4688",
         event_id: str = "01ef68d7-3792-48cc-96cc-924599f6d490",
     ) -> Event:
         return Event(
             id=event_id,
-            object=Object(id=order_id, name="order", object_type="Order"),
+            object=Object(id=object_id, name=object_name, object_type=object_type),
             details=Details(
                 event_type="status_changed",
                 enqueue_time=datetime(2026, 6, 10, 14, 50, 30, 609000, tzinfo=UTC),
@@ -2809,62 +2292,67 @@ def post_order_event(
     return _post
 
 
+@pytest.fixture
+async def post_subscription_event(
+    mpt_api_client: AsyncClient,
+    system_jwt_token_factory: Callable[[System], str],
+    system_factory: ModelFactory[System],
+    subscription_account: Account,
+) -> Callable[[Event], Awaitable[Response]]:
+    """Return a helper that posts an event to the subscriptions endpoint as the affiliate."""
+    subscription_system = await system_factory(
+        external_id="TKN-3333-3333",
+        owner=subscription_account,
+    )
+    token = system_jwt_token_factory(subscription_system)
+
+    async def _post(event: Event) -> Response:
+        return await mpt_api_client.post(
+            "/events/commerce/subscriptions",
+            headers={"Authorization": f"Bearer {token}"},
+            json=event.model_dump(mode="json", by_alias=True),
+        )
+
+    return _post
+
+
 # ---------------------------------------------------------------------------
 # Fulfilment order processors
 # ---------------------------------------------------------------------------
 
-
-@pytest.fixture
-def make_processor(
-    test_settings: Settings, mocker: MockerFixture
-) -> Callable[[dict[str, Any]], PurchaseOrderProcessor]:
-    """Return a builder for a `PurchaseOrderProcessor` with all collaborators mocked."""
-
-    def _make(order: dict[str, Any]) -> OrderProcessor:
-        processor_cls = PROCESSOR_BY_TYPE[order["type"]]
-        return processor_cls(
-            api_modifier_client=mocker.AsyncMock(),
-            client=mocker.AsyncMock(),
-            ext_client=mocker.AsyncMock(),
-            optscale_auth_client=mocker.AsyncMock(),
-            optscale_client=mocker.AsyncMock(),
-            organization_repo=mocker.AsyncMock(),
-            entitlement_repo=mocker.AsyncMock(),
-            order=order,
-            settings=test_settings,
-        )
-
-    return _make
+OrderProcessorBuilder = Callable[[dict[str, Any]], Awaitable[OrderProcessor]]
 
 
 @pytest.fixture
-def make_order_processor_factory(
-    test_settings: Settings, mocker: MockerFixture
-) -> Callable[[dict[str, Any]], OrderProcessorFactory]:
-    """Return a builder for an `OrderProcessorFactory` whose client yields the given order."""
+def order_event_handler(
+    test_settings: Settings,
+    db_session: AsyncSession,
+    mpt_client: MPTClient,
+) -> OrderEventHandler:
+    """Return a `OrderEventHandler` whose client yields the given order."""
 
-    def _make(order: dict[str, Any]) -> OrderProcessorFactory:
-        client = mocker.AsyncMock()
-        client.get_order = mocker.AsyncMock(return_value=order)
-        return OrderProcessorFactory(
-            api_modifier_client=mocker.AsyncMock(),
-            client=client,
-            ext_client=mocker.AsyncMock(),
-            optscale_auth_client=mocker.AsyncMock(),
-            optscale_client=mocker.AsyncMock(),
-            organization_repo=mocker.AsyncMock(),
-            entitlement_repo=mocker.AsyncMock(),
-            settings=test_settings,
-        )
-
-    return _make
+    return OrderEventHandler(
+        api_modifier_client=APIModifierClient(test_settings),
+        installation_client=mpt_client,
+        ext_client=mpt_client,
+        optscale_auth_client=OptscaleAuthClient(test_settings),
+        optscale_client=OptscaleClient(test_settings),
+        organization_repo=OrganizationHandler(db_session),
+        entitlement_repo=EntitlementHandler(db_session),
+        settings=test_settings,
+    )
 
 
 @pytest.fixture
 def product_templates() -> list[dict[str, Any]]:
     """The templates the marketplace returns for the purchase product."""
     return [
-        {"id": "TPL-0001", "type": PROCESSING_TEMPLATE_TYPE, "name": "Purchase", "default": False},
+        {
+            "id": "TPL-0001",
+            "type": PROCESSING_TEMPLATE_TYPE,
+            "name": PURCHASE_TEMPLATE_NAME,
+            "default": False,
+        },
         {"id": "TPL-0002", "type": PROCESSING_TEMPLATE_TYPE, "name": "Standard", "default": True},
         {"id": "TPL-0003", "type": QUERYING_TEMPLATE_TYPE, "name": None, "default": True},
         {"id": "TPL-0004", "type": COMPLETED_TEMPLATE_TYPE, "name": None, "default": False},
@@ -2883,25 +2371,60 @@ def product_templates() -> list[dict[str, Any]]:
     ]
 
 
+@pytest.fixture(autouse=True)
+def mock_affiliate_products(mocker: MockerFixture) -> None:
+    """`bootstrap` reads the affiliate products from the database, we don't want this."""
+    mocker.patch("app.bootstrap.get_affiliate_products", return_value=["PRD-1111-1111"])
+
+
+# ---------------------------------------------------------------------------
+# Subscription event processing
+# ---------------------------------------------------------------------------
+
+
 @pytest.fixture
-def mock_product_templates(
-    mocker: MockerFixture, product_templates: list[dict[str, Any]]
-) -> Callable[..., None]:
-    """Return a helper that patches a processor to stream product templates."""
+def mpt_subscription_factory() -> MPTSubscriptionFactory:
+    """Return a builder for the subscription payload the marketplace returns."""
 
-    def _mock(
-        processor: PurchaseOrderProcessor, templates: list[dict[str, Any]] | None = None
-    ) -> None:
-        streamed = product_templates if templates is None else templates
+    def _subscription(
+        subscription_id: str = "SUB-1234-5678",
+        status: str = ACTIVE_SUBSCRIPTION_STATUS,
+        product_id: str = "PRD-1111-1111",
+        datasource_id: str | None = "ds0001234",
+        name: str = "Subscription for FinOps for Cloud",
+    ) -> dict[str, Any]:
+        return {
+            "id": subscription_id,
+            "name": name,
+            "status": status,
+            "product": {"id": product_id},
+            "externalIds": {"vendor": datasource_id} if datasource_id else {},
+        }
 
-        async def _gen() -> Any:
-            for template in streamed:
-                yield template
+    return _subscription
 
-        mocker.patch.object(
-            processor.ext_client,
-            "get_templates_by_product_id",
-            mocker.Mock(side_effect=lambda **_: _gen()),
-        )
 
-    return _mock
+@pytest.fixture
+async def subscription_account(account_factory: ModelFactory[Account]) -> Account:
+    """An affiliate account entitled to the product the subscription fixtures use."""
+    return await account_factory(
+        name="Microsoft",
+        type=AccountType.AFFILIATE,
+        external_id="ACC-3333-3333",
+        products="PRD-1111-1111,PRD-2222-2222",
+    )
+
+
+@pytest.fixture
+def subscription_event_handler(
+    db_session: AsyncSession,
+    mpt_client: MPTClient,
+    subscription_account: Account,
+) -> SubscriptionEventHandler:
+    """Return a `SubscriptionEventHandler` bound to the test session and an affiliate account."""
+    return SubscriptionEventHandler(
+        installation_client=mpt_client,
+        ext_client=mpt_client,
+        entitlement_repo=EntitlementHandler(db_session),
+        account=subscription_account,
+    )

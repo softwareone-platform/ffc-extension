@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { ListOption } from "@swo/dropdown";
+import { ListOption } from "@swo/design-system/dropdown";
 
 import { OrganizationRead, OrganizationStatus } from "~api/ffc-api-model";
 import { OrganizationAction } from "~features/organizations/api/model";
@@ -14,7 +14,7 @@ export function useActionOptions(): (entity: OrganizationRead) => ListOption<Org
   return useCallback(
     (item: OrganizationRead): ListOption<OrganizationAction>[] => {
       const editEnabledStatus: Set<OrganizationStatus> = new Set(["active", "terminated"]);
-      const deleteEnabledStatus: Set<OrganizationStatus> = new Set(["terminated"]);
+      const isDeleteEnabled = item.status === "terminated";
 
       const actions: RoleAwareAction<OrganizationAction>[] = [
         {
@@ -26,7 +26,7 @@ export function useActionOptions(): (entity: OrganizationRead) => ListOption<Org
         {
           label: tActions("delete"),
           value: "delete",
-          isDisabled: !deleteEnabledStatus.has(item.status!),
+          isDisabled: !isDeleteEnabled,
           requiredRoles: ["admin"],
           props: { className: "dangerous-option" },
         },

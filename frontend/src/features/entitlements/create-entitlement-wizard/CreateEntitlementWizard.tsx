@@ -7,8 +7,9 @@ import { FormProvider, useForm } from "react-hook-form";
 import { Modal } from "@swo/design-system/modal";
 import { Wizard, WizardContextProps } from "@swo/design-system/wizard";
 
-import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
+import { EntitlementCreated, useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useUserRole } from "~shared/hooks/useUserRole";
 
@@ -21,6 +22,10 @@ import { useSteps } from "./useSteps";
 
 import "./CreateEntitlementWizard.scss";
 
+import { AxiosError, AxiosResponse } from "axios";
+
+import { EntitlementCreate } from "~api/ffc-api-model";
+
 type Props = {
   isOpen: boolean;
   onClose: (result?: ModalCloseResult) => void;
@@ -32,7 +37,23 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   const [entitlementCreated, setEntitlementCreated] = useState(false);
   const [error, setError] = useState("");
   const { save } = useEntitlementsApi();
-  const { mutateAsync, isPending } = useMutation({ mutationFn: save });
+  const { getErrorMessage } = useErrorDetails("entitlements:addWizard:error");
+  const { mutateAsync, isPending } = useMutation<
+    AxiosResponse<EntitlementCreated>,
+    AxiosError,
+    EntitlementCreate
+  >({
+    mutationFn: save,
+    onError: (err) => {
+      setError(getErrorMessage(err));
+    },
+    onSuccess: (res) => {
+      setError("");
+      setValue("id", res.data?.id);
+      setEntitlementCreated(true);
+      setActiveStepIndex((i) => i + 1);
+    },
+  });
   const steps = useSteps(isPending);
   const { user, role } = useUserRole();
 
@@ -63,32 +84,22 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   }, [onClose, entitlementCreated]);
 
   const onSubmit = useCallback(
-    async (form: AddWizardForm) => {
-      try {
-        const basePayload = {
-          name: form.name,
-          affiliate_external_id: form.dataSource.affiliate_external_id || "",
-          datasource_id: form.dataSource.id,
-        };
+    (form: AddWizardForm) => {
+      setError("");
 
-        const res = await mutateAsync(
-          role === "affiliate" ? basePayload : { ...basePayload, owner: { id: form.affiliate.id } },
-        );
+      const basePayload = {
+        name: form.name,
+        affiliate_external_id: form.dataSource.affiliate_external_id || "",
+        datasource_id: form.dataSource.id,
+      };
 
-        setValue("id", res.data?.id);
-
-        if (res.status !== 201) {
-          setError(res.statusText);
-          return;
-        }
-
-        setEntitlementCreated(true);
-        setActiveStepIndex((i) => i + 1);
-      } catch (err) {
-        setError(err + "");
-      }
+      mutateAsync(
+        role === "affiliate"
+          ? basePayload
+          : ({ ...basePayload, owner: { id: form.affiliate.id } } as EntitlementCreate),
+      ).catch(() => {});
     },
-    [mutateAsync, role, setValue],
+    [mutateAsync, role],
   );
 
   return (

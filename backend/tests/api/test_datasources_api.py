@@ -21,7 +21,7 @@ def optscale_aws_cnr_datasource_get_by_id_response_data():
         "last_getting_metric_attempt_at": 0,
         "last_getting_metric_attempt_error": None,
         "last_getting_metrics_at": 0,
-        "last_import_at": 0,
+        "last_import_at": 1756684800,  # 2025-09-01T00:00:00Z
         "last_import_attempt_at": 0,
         "last_import_attempt_error": None,
         "name": "swotest02",
@@ -243,6 +243,11 @@ async def test_get_datasource_by_id_success(
         "expenses_so_far_this_month": 99.88,
         "expenses_forecast_this_month": 1234.56,
         "datasource_id": "1dc9b339-fadb-432e-86df-423c38a0fcb8",
+        "last_import_at": "2025-09-01T00:00:00Z",
+        # Optscale does not report these two for this datasource: they fall back to the epoch.
+        "last_import_modified_at": "1970-01-01T00:00:00Z",
+        "last_import_attempt_at": "1970-01-01T00:00:00Z",
+        # last_import_attempt_error is None and therefore omitted from the response.
     }
 
 
@@ -327,6 +332,43 @@ async def test_force_reimport_datasource(
 
     response = await admin_client.post(
         f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
+    )
+
+    assert response.status_code == 204
+
+
+async def test_force_reimport_datasource_with_last_import_at(
+    organization_factory: ModelFactory[Organization],
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+):
+    org = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()),
+    )
+    datasource_id = str(uuid.uuid4())
+    # 2025-09-01T00:00:00+00:00 expressed as seconds since the epoch
+    expected_timestamp = 1756684800
+    httpx_mock.add_response(
+        method="PATCH",
+        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        match_json={
+            "last_import_at": expected_timestamp,
+            "last_import_modified_at": expected_timestamp,
+        },
+        status_code=200,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_rest_api_base_url}/schedule_imports",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=200,
+    )
+
+    response = await admin_client.post(
+        f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
+        json={"last_import_at": "2025-09-01"},
     )
 
     assert response.status_code == 204

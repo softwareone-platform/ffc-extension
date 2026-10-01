@@ -1,49 +1,32 @@
 import {jest} from '@jest/globals';
+import {TextEncoder, TextDecoder} from 'node:util';
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  Link: ({ children }) => <>{children}</>,
-}));
+// jsdom lacks TextEncoder/TextDecoder; react-router-dom needs them at import time.
+Object.assign(globalThis, {TextEncoder, TextDecoder});
 
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: key => key,
-  }),
-  Trans: jest.fn(({ i18nKey }) => <>{i18nKey}</>),
-}));
+// Shared node_modules stubs live in <root>/__mocks__/. Enable only the ones
+// that need deterministic global activation across specs.
+jest.mock('@mpt-extension/sdk', () => ({
+  setup: jest.fn(),
+  http: jest.fn(),
+}), { virtual: true });
+jest.mock('@swo/design-system/utils');
 
+// jsdom does not implement ResizeObserver, but some design-system components expect it during render.
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+
+    unobserve() {}
+
+    disconnect() {}
+  };
+}
+
+// User-module mock (aliased path — not eligible for root __mocks__/, keep here).
 const identityFn = key => key;
 jest.mock('~shared/hooks/useFixedT', () => {
   return { useFixedT: jest.fn(() => identityFn) };
 });
-
-jest.mock('@swo/design-system/utils', () => ({
-  ...jest.requireActual('@swo/design-system/utils'),
-  useDesignSystemOptions: jest
-    .fn()
-    .mockReturnValue({ languageCode: 'en-GB', dateFormat: 'dd MMM yyy', timeFormat: 'HH:mm', inputDateFormat: 'P' }),
-  useLocalisation: jest.fn().mockReturnValue({
-    formatDate: date => (!date ? '' : typeof date === 'string' ? date : date instanceof Date ? date.toISOString() : ''),
-  }),
-  DisplayValue: ({ value, transform, context, fallback }) => {
-    const NO_VALUE = jest.requireActual('@swo/design-system/utils').NO_VALUE;
-    if (value == null || (!value && context !== 'financial')) {
-      return <>{fallback ?? NO_VALUE}</>;
-    }
-
-    if (typeof value === 'number' && !transform) {
-      return <>{Intl.NumberFormat().format(value)}</>;
-    }
-
-    if (typeof value !== 'string' && !transform) {
-      return <>{NO_VALUE}</>;
-    }
-
-    return <>{transform?.(value) ?? value}</>;
-  },
-}));
-
-jest.setTimeout(5_000);
-jest.useFakeTimers();
 
 global.jest = jest;

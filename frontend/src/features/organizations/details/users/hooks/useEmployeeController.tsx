@@ -6,12 +6,12 @@ import { AxiosError } from "axios";
 import { Employee } from "~features/organizations/api/model";
 import { useEmployeesApi } from "~features/organizations/api/useEmployeesApi";
 import { ModalControllerProps } from "~shared/components/modal/types";
-import { useFixedT } from "~shared/hooks/useFixedT";
+import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 
 export function useEmployeeController({ onClose }: ModalControllerProps = {}) {
   const [error, setError] = useState<string | null>(null);
   const { promoteToAdmin } = useEmployeesApi();
-  const tErrors = useFixedT("organizations:make_admin:errors");
+  const { getErrorMessage } = useErrorDetails("organizations:make_admin:errors");
 
   const cancel = useCallback((): void => {
     if (onClose) {
@@ -21,9 +21,9 @@ export function useEmployeeController({ onClose }: ModalControllerProps = {}) {
 
   const onError = useCallback(
     (err: AxiosError): void => {
-      setError(tErrors("add_admin_failed_with_code_" + (err.status || "unknown")));
+      setError(getErrorMessage(err));
     },
-    [tErrors],
+    [getErrorMessage],
   );
 
   const onSuccess = useCallback((): void => {

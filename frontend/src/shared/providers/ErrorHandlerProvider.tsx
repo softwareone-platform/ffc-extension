@@ -69,6 +69,7 @@ export function ErrorHandlerProvider({ children }: PropsWithChildren) {
   return (
     <ErrorHandlerContext.Provider value={value}>
       <ErrorBoundary
+        key={location.key}
         fallback={
           <Suspense>
             <ErrorPage

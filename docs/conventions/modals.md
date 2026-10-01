@@ -159,8 +159,8 @@ For a **multi-step** flow, build a wizard instead (see
 
 ## See also
 
-- [MPT host integration](../architecture/mpt-host-integration.md) — the app
-  can run inside the MPT host iframe; `useNotifyParentChildModal` tells the
-  host when a modal is open.
+- [MPT host integration](../architecture/mpt-host.md) — the app can run
+  inside the MPT host iframe; `useNotifyParentChildModal` tells the host when
+  a modal is open.
 - [API hook conventions](./api-hooks.md) — the controllers consume
   `useFooApi()` for mutations.

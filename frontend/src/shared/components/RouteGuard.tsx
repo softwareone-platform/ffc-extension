@@ -20,7 +20,7 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
     if (roles.length > 0 && (!role || !roles.includes(role))) {
       handleError("403", tError("description:forbidden"));
     }
-  }, [allowedRoles, role]);
+  }, [allowedRoles, role, handleError, tError]);
 
   return <>{children}</>;
 }

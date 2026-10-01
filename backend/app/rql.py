@@ -81,6 +81,8 @@ class OrganizationRules(ModelRQLRules, AuditableMixin):
     status = FieldRule()
     operations_external_id = FieldRule()
     linked_organization_id = FieldRule()
+    terminated_at = FieldRule(alias="events.terminated.at")
+    terminated_by = RelationshipRule(alias="events.terminated.by", rules=ActorRules())
 
 
 class EntitlementRules(ModelRQLRules, AuditableMixin):

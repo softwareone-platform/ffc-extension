@@ -1,5 +1,7 @@
 import { ReactElement, useEffect, useState } from "react";
 
+import unknownIcon from "./icons/unknown";
+
 type IconProps = {
   readonly name: string;
   readonly width?: number;
@@ -27,37 +29,42 @@ function CustomIcon({
     height = size;
   }
 
-  const [viewBox, setViewBox] = useState<string>(`0 0 ${boxWidth} ${boxHeight}`);
-
-  useEffect(() => setViewBox(`0 0 ${boxWidth} ${boxHeight}`), [boxHeight, boxWidth]);
-
   const [iconContent, setIconContent] = useState<ReactElement>();
+
   useEffect(() => {
     if (!name) {
       return;
     }
 
-    import(`./icons/${name}.tsx`)
-      .then((module) => {
-        setIconContent(module.default);
-        // if (viewBox) {
-        //   setViewBox(viewBox);
-        // }
-      })
-      .catch((error) => {
-        console.error(`Error loading icon: ${name}`, error);
-      });
+    const asyncImport = async (name: string) => {
+      const module = await import(`./icons/${name}.tsx`);
+      setIconContent(module.default);
+    };
+
+    const availableIcons: string[] = [
+      "aws",
+      "aws_cnr",
+      "azure_cnr",
+      "azure_tenant",
+      "gcp_cnr",
+      "gcp_tenant",
+      "google",
+      "microsoft",
+      "unknown",
+    ];
+
+    asyncImport(availableIcons.includes(name) ? name : "unknown");
   }, [name]);
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={viewBox}
+      viewBox={`0 0 ${boxWidth} ${boxHeight}`}
       width={width}
       height={height}
       className={className}
     >
-      {iconContent}
+      {iconContent ?? unknownIcon}
     </svg>
   );
 }

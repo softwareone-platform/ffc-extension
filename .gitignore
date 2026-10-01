@@ -205,3 +205,6 @@ frontend/src/api/*.json
 
 # DB dump files
 *.sql
+
+# SonarQube scanner working directory
+.scannerwork/

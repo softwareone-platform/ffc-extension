@@ -29,5 +29,6 @@
         "importOrderParserPlugins": ["[\"typescript\", { \"dts\": true }]", "decorators"]
       }
     }
-  ]
+  ],
+  "plugins": ["@trivago/prettier-plugin-sort-imports"]
 }

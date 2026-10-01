@@ -32,9 +32,11 @@
         "charliermarsh.ruff",
         "ms-python.mypy-type-checker",
         "anthropic.claude-code",
-        "knisterpeter.vscode-commitizen",
+        "vivaxy.vscode-conventional-commits",
         "eamodio.gitlens",
-        "astral-sh.ty"
+        "astral-sh.ty",
+        "rvest.vs-code-prettier-eslint",
+        "dbaeumer.vscode-eslint"
       ],
       "settings": {
         "python.terminal.activateEnvironment": false,

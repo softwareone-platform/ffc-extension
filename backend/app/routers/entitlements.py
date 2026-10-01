@@ -1,28 +1,27 @@
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import ColumnExpressionArgument, Select
 
 from app.db.handlers import NotFoundError
 from app.db.models import Account, Entitlement
-from app.dependencies.api_clients import OptscaleClient
+from app.dependencies.api_clients import FFCAPIClient
 from app.dependencies.auth import AuthorizedAccountTypes, CurrentAuthContext
 from app.dependencies.db import (
     AccountRepository,
     EntitlementRepository,
-    OrganizationRepository,
 )
 from app.dependencies.path import EntitlementId
-from app.enums import AccountStatus, AccountType, EntitlementStatus, OrganizationStatus
+from app.enums import AccountStatus, AccountType, EntitlementStatus
 from app.pagination import LimitOffsetPage, paginate
 from app.rql import EntitlementRules, RQLQuery
 from app.schemas.core import convert_model_to_schema, convert_schema_to_model
 from app.schemas.entitlements import (
     EntitlementCreate,
     EntitlementRead,
-    EntitlementRedeemInput,
 )
-from app.utils import wrap_exc_in_http_response, wrap_http_error_in_502, wrap_http_not_found_in_400
+from app.utils import wrap_http_error_in_502
 
 # ============
 # Dependencies
@@ -111,6 +110,22 @@ async def create_entitlement(
                 detail=f"No Active Affiliate Account has been found with ID {data.owner.id}.",
             )
 
+    existing_entitlement = await entitlement_repo.first(
+        where_clauses=[
+            Entitlement.datasource_id == data.datasource_id,
+            Entitlement.owner_id == owner.id,
+            Entitlement.status.in_([EntitlementStatus.NEW, EntitlementStatus.ACTIVE]),
+        ]
+    )
+    if existing_entitlement:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"An Entitlement in status '{existing_entitlement.status.value}' "
+                f"already exist for the data source {data.datasource_id}"
+            ),
+        )
+
     entitlement = convert_schema_to_model(data, Entitlement)
     entitlement.owner = owner
     db_entitlement = await entitlement_repo.create(entitlement)
@@ -127,11 +142,12 @@ async def get_entitlement_by_id(
 @router.post(
     "/{id}/terminate",
     response_model=EntitlementRead,
-    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.AFFILIATE))],
 )
 async def terminate_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
     entitlement_repo: EntitlementRepository,
+    ffcapi_client: FFCAPIClient,
 ):
     if entitlement.status == EntitlementStatus.TERMINATED:
         raise HTTPException(
@@ -148,6 +164,20 @@ async def terminate_entitlement(
         )
 
     entitlement = await entitlement_repo.terminate(entitlement)
+    with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
+        tag_data = None
+        try:
+            response = await ffcapi_client.get_tag_by_datasource_name(
+                str(entitlement.linked_datasource_id),
+                "entitlement",
+            )
+            tag_data = response.json()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != 404:
+                raise e
+
+        if tag_data:
+            await ffcapi_client.delete_tag(tag_data["id"])
 
     return convert_model_to_schema(EntitlementRead, entitlement)
 
@@ -163,76 +193,3 @@ async def delete_entitlement_by_id(
             detail="Only Entitlements in status `new` can be deleted.",
         )
     await entitlement_repo.delete(entitlement)
-
-
-@router.post(
-    "/{id}/redeem",
-    response_model=EntitlementRead,
-    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
-)
-async def redeem_entitlement(
-    entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
-    redeem_info: EntitlementRedeemInput,
-    organization_repo: OrganizationRepository,
-    entitlement_repo: EntitlementRepository,
-    auth_context: CurrentAuthContext,
-    optscale_client: OptscaleClient,
-):
-    if entitlement.status != EntitlementStatus.NEW:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Only new entitlements can be redeemed, "
-                f"current status is {entitlement.status.value}."
-            ),
-        )
-    with wrap_exc_in_http_response(
-        NotFoundError,
-        error_msg=(
-            f"Cannot redeem Entitlement {entitlement.id}: "
-            f"organization {redeem_info.organization.id} not found."
-        ),
-        status_code=status.HTTP_400_BAD_REQUEST,
-    ):
-        redeemer_organization = await organization_repo.get(redeem_info.organization.id)
-
-    if redeemer_organization.status != OrganizationStatus.ACTIVE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Only active organizations can redeem entitlements, "
-                f"current status is {redeemer_organization.status.value}."
-            ),
-        )
-
-    optscale_datasource = None
-
-    with wrap_http_error_in_502():
-        with wrap_http_not_found_in_400(
-            f"Cannot redeem Entitlement {entitlement.id}: "
-            f"datasource {redeem_info.datasource.id} not found."
-        ):
-            optscale_datasource_response = await optscale_client.fetch_datasource_by_id(
-                redeem_info.datasource.id
-            )
-
-            optscale_datasource = optscale_datasource_response.json()
-
-    if optscale_datasource["organization_id"] != redeemer_organization.linked_organization_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"Datasource {redeem_info.datasource.id} does not belong to organization "
-                f"{redeemer_organization.id} on Optscale."
-            ),
-        )
-
-    entitlement = await entitlement_repo.redeem(
-        entitlement,
-        redeemer_organization=redeemer_organization,
-        datasource_id=redeem_info.datasource.id,
-        datasource_name=redeem_info.datasource.name,
-        datasource_type=redeem_info.datasource.type,
-    )
-
-    return convert_model_to_schema(EntitlementRead, entitlement)

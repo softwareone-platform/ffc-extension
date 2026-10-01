@@ -62,9 +62,9 @@ _ENVELOPE_BASE = len(
 #
 # In practice payloads close to 28672 bytes are still rejected: chunks at
 # 27.7 KB failed in production and the empirical safe upper bound was 26 KB.
-# We pack chunks against this 26 KB target, leaving ~2 KB of headroom under
+# We pack chunks against this 20 KB target, leaving ~8 KB of headroom under
 # the documented 28 KB cap.
-MSTEAMS_PAYLOAD_LIMIT = 26 * 1024
+MSTEAMS_PAYLOAD_LIMIT = 20 * 1024
 
 # Power Automate request-throttling: 600 calls/min per connection,
 # burst 100/10s. We pace at ≤ 4 req/s (~240/min) for a 6× margin.
@@ -188,7 +188,7 @@ def _adaptive_card(body: list[dict], actions: list[dict]) -> dict[str, Any]:
     return {
         "type": "AdaptiveCard",
         "version": "1.4",
-        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
         "body": body,
         "actions": actions,
         "msteams": {"width": "Full"},

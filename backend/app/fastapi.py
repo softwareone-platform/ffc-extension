@@ -175,11 +175,13 @@ def setup_app():
         events.router,
         prefix="/commerce",
         tags=["Marketplace Commerce Events"],
+        include_in_schema=False,
         dependencies=[
             Depends(
                 AuthorizedAccountTypes(
                     AccountType.ADMIN,
                     AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
                     actor_required=False,
                 ),
             ),

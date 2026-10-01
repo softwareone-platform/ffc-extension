@@ -5,7 +5,6 @@ from typing import Annotated
 from uuid import UUID
 
 import httpx
-from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import create_page
 from sqlalchemy import Select
@@ -34,12 +33,16 @@ from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
     AdditionalAdminRequestCreate,
     AdditionalAdminRequestRead,
+    DatasourceForceReimport,
     DatasourceRead,
-    OrganizationCreate,
     OrganizationRead,
     OrganizationUpdate,
 )
-from app.utils import wrap_exc_in_http_response, wrap_http_error_in_502
+from app.utils import (
+    get_organization_deletable_at,
+    wrap_exc_in_http_response,
+    wrap_http_error_in_502,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -70,67 +73,6 @@ async def get_organizations(
     base_query: Select = Depends(RQLQuery(OrganizationRules())),
 ):
     return await paginate(organization_repo, OrganizationRead, base_query=base_query)
-
-
-@router.post(
-    "",
-    response_model=OrganizationRead,
-    responses={
-        201: {
-            "description": "Organization",
-            "content": {
-                "application/json": {
-                    "example": examples.ORGANIZATION_RESPONSE,
-                }
-            },
-        },
-    },
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
-)
-async def create_organization(
-    data: OrganizationCreate,
-    organization_repo: OrganizationRepository,
-    api_modifier_client: APIModifierClient,
-):
-    defaults = data.model_dump(exclude_unset=True, exclude={"user_id"})
-    db_organization, created = await organization_repo.get_or_create(
-        defaults=defaults,
-        operations_external_id=data.operations_external_id,
-    )
-
-    if not created:
-        if db_organization.linked_organization_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    "An Organization with external ID "
-                    f"`{data.operations_external_id}` already exists."
-                ),
-            )
-        if db_organization.name != data.name:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    f"The name of a partially created Organization with "
-                    f"external ID {data.operations_external_id}  doesn't match the "
-                    f"current request: {db_organization.name}."
-                ),
-            )
-
-    with wrap_http_error_in_502("Error creating organization in FinOps for Cloud"):
-        response = await api_modifier_client.create_organization(
-            org_name=db_organization.name, user_id=data.user_id, currency=data.currency
-        )
-
-        ffc_organization = response.json()
-        db_organization = await organization_repo.update(
-            db_organization.id,
-            {
-                "linked_organization_id": ffc_organization["id"],
-            },
-        )
-        return convert_model_to_schema(OrganizationRead, db_organization)
 
 
 def validate_linked_organization_id(organization: Organization) -> str:
@@ -208,19 +150,7 @@ async def get_datasources_by_organization_id(
 
     datasources = response.json()
     return create_page(
-        [
-            DatasourceRead(
-                id=datasource["id"],
-                name=datasource["name"],
-                type=datasource["type"],
-                parent=datasource.get("parent"),
-                resources_charged_this_month=datasource["resources"],
-                expenses_so_far_this_month=datasource["cost"],
-                expenses_forecast_this_month=datasource["forecast"],
-                datasource_id=datasource["account_id"],
-            )
-            for datasource in datasources["items"]
-        ],
+        [DatasourceRead(**datasource) for datasource in datasources["items"]],
         params=params,
         total=datasources["total"],
     )
@@ -252,6 +182,10 @@ async def get_datasource_by_id(
         expenses_so_far_this_month=datasource["details"]["cost"],
         expenses_forecast_this_month=datasource["details"]["forecast"],
         datasource_id=datasource["account_id"],
+        last_import_at=datasource.get("last_import_at", 0),
+        last_import_modified_at=datasource.get("last_import_modified_at", 0),
+        last_import_attempt_at=datasource.get("last_import_attempt_at", 0),
+        last_import_attempt_error=datasource.get("last_import_attempt_error"),
     )
 
 
@@ -264,16 +198,19 @@ async def force_reimport_datasource(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
     optscale_client: OptscaleClient,
+    data: DatasourceForceReimport | None = None,
 ):
     validate_linked_organization_id(organization)
+    # Optscale expects the import timestamps as seconds since the epoch.
+    last_import_at = data.last_import_at_timestamp if data is not None else 0
     with wrap_http_error_in_502(
         f"Error scheduling import of cloud account with ID {datasource_id}"
     ):
         await optscale_client.update_datasource(
             datasource_id=datasource_id,
             payload={
-                "last_import_at": 0,
-                "last_import_modified_at": 0,
+                "last_import_at": last_import_at,
+                "last_import_modified_at": last_import_at,
             },
         )
         await optscale_client.force_reimport_datasource(datasource_id)
@@ -446,14 +383,14 @@ async def delete_organization_by_id(
             detail="Only terminated organization can be deleted.",
         )
 
-    delete_available_at = db_organization.terminated_at.date() + relativedelta(months=2, day=1)  # type: ignore
+    deletable_at = get_organization_deletable_at(db_organization.terminated_at)  # type: ignore
 
-    if datetime.now(UTC).date() < delete_available_at:
+    if datetime.now(UTC) < deletable_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                f"The organization {db_organization.name}cannot be deleted "
-                f"before {delete_available_at.strftime('%B %-d, %Y')}."
+                f"The organization {db_organization.name} cannot be deleted "
+                f"before {deletable_at.strftime('%B %-d, %Y')}."
             ),
         )
 

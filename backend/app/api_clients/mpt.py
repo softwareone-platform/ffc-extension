@@ -9,6 +9,7 @@ from functools import cache, cached_property
 from typing import Any
 
 import httpx
+from httpx_retries import Retry, RetryTransport
 
 from app.billing.enum import JournalStatus
 from app.conf import get_settings
@@ -90,9 +91,15 @@ class MPTClient:
                 write=2.0,
                 pool=5.0,
             ),
+            transport=RetryTransport(
+                retry=Retry(
+                    total=self.settings.httpx_retry_count,
+                    backoff_factor=self.settings.httpx_retry_backoff_factor,
+                ),
+            ),
         )
 
-        # Generic HTTP helpers
+    # Generic HTTP helpers
 
     async def get(
         self,
@@ -321,6 +328,9 @@ class MPTClient:
 
     async def fail_order(self, order_id: str, payload: dict | None = None):
         return await self.run_object_action("commerce/orders", order_id, "fail", payload=payload)
+
+    async def get_subscription(self, subscription_id: str) -> dict[str, Any]:
+        return await self.get("commerce/subscriptions", subscription_id)
 
     async def create_subscription(self, order_id, subscription):
         return await self.create(

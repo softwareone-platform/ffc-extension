@@ -1,9 +1,5 @@
 @use "@swo/design-tokens" as *;
 
-p {
-  margin: 0 0 var(--spacing-3);
-}
-
 .modal__error {
   margin-bottom: var(--spacing-3);
 }

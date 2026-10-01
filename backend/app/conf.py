@@ -29,6 +29,8 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    extension_version: str = "0.0.0-dev"
+
     postgres_db: str
     postgres_user: str
     postgres_password: str

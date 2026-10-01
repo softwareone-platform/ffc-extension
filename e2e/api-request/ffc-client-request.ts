@@ -1,8 +1,9 @@
 import { type APIRequestContext, APIResponse } from '@playwright/test';
+
 import { ERequestMethod } from '../types/enums';
 import { debugLog } from '../utils/debug-logging';
+import { getCurrentEnv } from '../utils/env';
 import { getBearerTokenHeader } from '../utils/teardown-utils';
-import { getCurrentEnv } from '../utils/utils';
 
 export class FfcClientRequest {
   readonly request: APIRequestContext;
