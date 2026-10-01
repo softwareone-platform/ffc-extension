@@ -7,6 +7,8 @@ description: Build sandbox/POC feature modules for the ffc-extension frontend us
 
 Goal: ship visually-correct, strongly-typed sandbox views that drop into real backend wiring without a rewrite. Mock data behaves like the API, components never know data is mocked, and the design-system primitives are the ones the real feature will ship with.
 
+Baseline conventions (path aliases, DS subpath imports, TypeScript discipline, Fast Refresh file-split rule, icon/SCSS token hygiene, i18n, verification commands, extraction thresholds) live in **`ffc-frontend-standards`**. This skill only covers POC-specific additions on top.
+
 ## Component source priority
 
 1. **Storybook first.** https://storybook.platform.softwareone.com/ — if a widget/recipe matches, use the design-system package it ships from (`@swo/design-system/<subpath>`). Pattern naming in Storybook mirrors the exports (e.g. `widgets-grid--in-memory-example` ↔ `@swo/design-system/grid` `useGridInMemory`).
@@ -24,22 +26,6 @@ Goal: ship visually-correct, strongly-typed sandbox views that drop into real ba
 | `Navigation.SideNav.groups.items` | ⚠️ strictly link lists; `children` are silently dropped. | Use for navigation only. Form content goes in a sibling panel or a popover triggered from a nav item. |
 | `Navigation` default-collapsed | ❌ no prop. | Mount a tiny helper that `requestAnimationFrame`s then `document.querySelector('[data-testid="navigation__collapse-button"]')?.click()`. |
 | `Panel` chrome | ⚠️ `Panel` wraps `Card` which already ships padding / radius / background. | Don't restate chrome in `.ffc-panel` or you'll double-pad. |
-
-## SCSS token vocabulary — do not guess
-
-The project exposes a specific set of aliases in `src/shared/styles/_tokens.scss`. Only use these; **do NOT invent** names like `$primary`, `$danger`, `$warning` — they don't exist and the build will fail.
-
-| Alias | Use for |
-|---|---|
-| `$surface`, `$surface-muted` | Backgrounds (white, muted gray) |
-| `$border-subtle` | 1 px borders |
-| `$text-muted`, `$text-strong` | Secondary / primary text colour |
-| `$positive`, `$negative` | Up / down / success / danger text colour |
-| `$space-xs` … `$space-xl` | `--spacing-0.5` through `--spacing-4` |
-| `$radius-card` | Card / panel rounding (8 px) |
-| `$panel-grid-breakpoint` | Breakpoint where 2-col grid collapses to 1 |
-
-`npm run typecheck` **does not** catch SCSS errors — run `npm run build` after any SCSS change.
 
 ## Feature folder layout
 
@@ -105,34 +91,12 @@ const { data } = useAdoptionMetricsApi();
 if (!data) return null;
 ```
 
-## TypeScript discipline (strongly typed everywhere)
+## POC-specific type notes
 
-- **Every API response is a named `type`** in `api/model.ts`. Avoid inline shapes.
-- **Enums or string-literal unions** for finite categorical values (`status: "trial" | "paid"`), never `string`.
-- **No `any`** — use `unknown` and narrow, or a precise type.
-- **Chart series arrays and colour arrays are typed** (`XySeriesDef[]`, `number[]`).
-- **Row types are shared** between the API model, the grid, and any cell renderer.
-- **Props on helper components** always declared, even for one-prop wrappers.
-- **Barrels re-export both runtime + types** (`export type { Foo }`, `export { useFoo }`).
+Everything in `ffc-frontend-standards` (no `any`, named types in `api/model.ts`, derive via `ComponentProps`/`ReturnType`, barrels re-export runtime + types) applies here. Two POC specifics on top:
 
-Example row + typed enum:
-
-```ts
-export type OrgWithoutDatasourceRow = {
-  id: string;
-  organizationName: string;
-  creationDate: string;       // ISO
-  status: OrgSubscriptionStatus;
-  daysSinceCreation: number;
-};
-export type OrgSubscriptionStatus = "trial" | "paid";
-```
-
-## Design-system import discipline
-
-- **Always subpath**: `@swo/design-system/button`, `@swo/design-system/grid`, `@swo/design-system/chip`, `@swo/design-system/navigation`, etc. Never root `@swo/design-system`.
-- **Why**: subpath imports cost 100s of KB each; root import pulls everything (see `project-frontend-bundle-facts` memory).
-- **Design tokens**: `@swo/design-tokens` — only in SCSS. In amCharts configs use raw hex via `CHART_COLORS` because tokens are CSS vars that haven't resolved yet.
+- **Chart series + colour arrays are typed** (`XySeriesDef[]`, `number[]`) — amCharts rebuilds its root on identity change, so these must be referentially stable (see "Charts" recipe below).
+- **Mock JSON types** go in `api/model.ts` alongside the real response types — the mock *is* the API shape until the real one lands.
 
 ## Common recipes
 
@@ -328,12 +292,6 @@ Rotate a single chevron with `transform: rotate(90deg)` instead of swapping to a
 }
 ```
 
-### i18n
-
-- Namespace: `"<feature>": { ... }` in `src/i18n/en.json`.
-- Access: `const t = useFixedT("<feature>:<section>")` then `t("key")` — one hook per section used, not one for the whole feature.
-- Keys sorted alphabetically within each object (the `translations:sort` script enforces this).
-
 ### Styles
 
 - Shared feature-grid primitives live in `src/shared/styles/_components.scss` under the `.ffc-*` namespace.
@@ -343,15 +301,6 @@ Rotate a single chevron with `transform: rotate(90deg)` instead of swapping to a
 ## Scaling the POC (iteration 2+)
 
 The first draft of a POC follows the "feature folder layout" above. These patterns kick in once the feature has multiple tabs, repeated panels, or starts to need interactive filtering. Apply them *when* the duplication appears — not pre-emptively.
-
-### Context + Provider split (Fast Refresh)
-
-React's `react-refresh/only-export-components` ESLint rule forbids mixing a component export with non-component exports (hooks, types, context objects) in the same `.tsx` file. Any Provider that owns a context + hook must be split:
-
-- `FooContext.ts` — plain `.ts`: `createContext`, the hook (`useFoo`), the value type, the filter type.
-- `FooProvider.tsx` — only exports the Provider component (holds state, wraps children).
-
-Downstream imports stay stable (`import { useFoo } from "./FooContext"` resolves to the `.ts` file automatically).
 
 ### Collapse repeated react-query hooks into a factory
 
@@ -444,7 +393,6 @@ Const tuples + derived unions for domain values (`ORGANISATION_STATUSES`, `CLOUD
 
 - **`ListResponse<T>` promotion** — only promote when *this feature* uses paginated lists. A shared one already exists at `~shared/utils/mapAxiosResponseDataList.tsx` (`items?: T[]`). `features/organizations/api/*` has local duplicates with an incompatible shape (`data?: T[]`). Reconciling them touches live production code and is a separate feature-level cleanup — don't fold it into a POC refactor.
 - **Narrowing `DistributionSlice.category`** — if the mock values are display strings (`"Azure"`, `"Active"`, `"Level 0"`) rather than identifiers, union-narrowing buys nothing: chart legends consume them as plain text, no logic keys off them.
-- **Barrels at `components/` or `tabs/`** — live features (entitlements, organizations) only barrel `api/`. Adding `components/index.ts` or `tabs/index.ts` introduces a convention that doesn't exist elsewhere. The 4-char import saving isn't worth the inconsistency.
 
 ## New POC checklist
 
@@ -465,18 +413,14 @@ POC sessions are visual-iteration heavy. The user rolls back layout decisions ~1
 - **Keep each change tightly scoped.** One concern per iteration (grid ratios, OR KPI typography, OR hover effect) — mixing them makes rollback expensive.
 - **Trust the roll-back.** If asked to revert, do it cleanly (not partially) and remove orphaned i18n keys / SCSS blocks / imports in the same step.
 
-## Anti-patterns
+## POC anti-patterns
+
+(General ones — root DS imports, Fast-Refresh split, guessing icon/SCSS names, premature extraction — live in `ffc-frontend-standards`.)
 
 - Importing JSON directly in a tab/component — breaks the swap-to-real-API story.
-- Hardcoded strings in JSX — breaks i18n.
-- Inline response shapes — belongs in `model.ts`.
-- Rebuilding chart series arrays inside the component body — triggers amCharts root rebuild on every render.
-- Root `@swo/design-system` imports — bundle size regression.
-- Custom chrome that mimics DS primitives — if it looks like a Navigation.CollapseButton it must be one, otherwise ask.
-- Guessing SCSS token names (always grep `_tokens.scss` first).
-- Guessing icon names (always `ls icon-paths/` first).
-- Using `Dropdown` for multi-value — closes on each selection; use `Popover` + `Checkbox` instead.
+- Inline response shapes in a tab/component — belongs in `api/model.ts`.
+- Rebuilding chart series arrays inside the component body — triggers amCharts root rebuild on every render; keep them at module scope.
+- Custom chrome that mimics DS primitives — if it looks like a `Navigation.CollapseButton` it must be one, otherwise ask.
+- Using `Dropdown` for multi-value — closes on each selection; use the `Popover` + `Checkbox` multi-select recipe instead.
 - `grid-template-rows: 0fr → 1fr` for height animation — intrinsic-sized form controls leak out of the clipped row in some browsers; use `max-height` + `overflow:hidden` + `visibility` instead.
 - Re-adding an import to a file whose target was previously deleted — check with the Grep tool before trusting a paste.
-- Exporting a hook, type, or context object alongside a component from the same `.tsx` — breaks Fast Refresh (`react-refresh/only-export-components`). Split: `.ts` for the non-component exports, `.tsx` for the component.
-- Promoting shared primitives (ListResponse, barrels, MetricPanel) on day one — add them when the second duplicate appears, not before.

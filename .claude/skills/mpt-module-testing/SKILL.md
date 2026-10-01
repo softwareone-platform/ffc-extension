@@ -5,6 +5,8 @@ description: Write unit tests for MPT modules (ffc-extension frontend). Jest + @
 
 # MPT Module Testing (ffc-extension)
 
+Baseline frontend conventions (path aliases, DS subpath imports, derived TypeScript types, file extensions, verification commands) live in **`ffc-frontend-standards`**. This skill only covers test-specific rules on top.
+
 Stack: `jest@30` + `@swc/jest` (CJS transform) + `jest-environment-jsdom` + `@testing-library/react@16`. Config in `frontend/jest.config.js`; global setup in `frontend/jest.setup.js`.
 
 Key runtime facts: `clearMocks: true` (no manual resets needed), `testTimeout: 10_000`, `workerIdleMemoryLimit: '512MB'` (heap-sensitive — see Never spread the real design-system module). `npm test` runs jest + tsc + prettier + eslint in parallel via `npm-run-all --parallel --continue-on-error` — SWC skips type-checking so typed-spy drift only surfaces at the tsc step.
