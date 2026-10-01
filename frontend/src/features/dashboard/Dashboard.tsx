@@ -5,6 +5,7 @@ import { Navigation } from "@swo/design-system/navigation";
 import { SEGMENTS } from "~features/dashboard/paths";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { DashboardFiltersProvider } from "./components/DashboardFiltersProvider";
 import { FilterSidebar } from "./components/FilterSidebar";
 
 export function Dashboard() {
@@ -18,12 +19,14 @@ export function Dashboard() {
   ];
 
   return (
-    <div className={"ffc-workspace"}>
-      <div className={"ffc-workspace__main"}>
-        <Navigation.TopBar items={topBarItems} />
-        <FilterSidebar />
-        <Outlet />
+    <DashboardFiltersProvider>
+      <div className={"ffc-workspace"}>
+        <div className={"ffc-workspace__main"}>
+          <Navigation.TopBar items={topBarItems} />
+          <FilterSidebar />
+          <Outlet />
+        </div>
       </div>
-    </div>
+    </DashboardFiltersProvider>
   );
 }

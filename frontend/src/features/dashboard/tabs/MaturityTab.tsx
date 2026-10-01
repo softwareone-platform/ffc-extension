@@ -3,6 +3,7 @@ import { Panel } from "~shared/components/panel";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useMaturityMetricsApi } from "../api";
+import { CHART_HEIGHT } from "../chartConfig";
 import {
   MATURITY_AREA_SERIES,
   MATURITY_COLORS,
@@ -30,12 +31,12 @@ export function MaturityTab() {
       <Panel title={tMaturity("dashboard:title")}>
         <div className={"ffc-chart-split ffc-chart-split--triple"}>
           <ChartLegend heading={tMaturity("dashboard:level")} items={legendItems} />
-          <DonutChart data={data.distribution} colors={MATURITY_COLORS} height={190} />
+          <DonutChart data={data.distribution} colors={MATURITY_COLORS} height={CHART_HEIGHT.xs} />
           <XyChart
             data={data.byLevel}
             categoryField={"bucket"}
             series={MATURITY_COLUMN_SERIES}
-            height={190}
+            height={CHART_HEIGHT.xs}
             stacked
           />
         </div>
@@ -46,7 +47,7 @@ export function MaturityTab() {
           data={data.progression}
           categoryField={"month"}
           series={MATURITY_AREA_SERIES}
-          height={200}
+          height={CHART_HEIGHT.sm}
           stacked
         />
         <ChartLegend layout={"horizontal"} items={legendItems} />

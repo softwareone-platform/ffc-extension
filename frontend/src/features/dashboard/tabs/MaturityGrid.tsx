@@ -5,6 +5,8 @@ import {
   Grid,
   GridCellSimple,
   GridColumnDefinition,
+  GridFieldDefinition,
+  GridFieldSortOperation,
   useGridInMemory,
 } from "@swo/design-system/grid";
 
@@ -14,6 +16,9 @@ import { MaturityRow } from "../api/model";
 import { MATURITY_LEVELS } from "../maturityLevels";
 
 const LEVEL_CHIP_COLORS = ["gray", "primary", "warning", "warning", "success"] as const;
+
+// Highest maturity first — matches the narrative of the maturity tab (celebrate operationalized tenants).
+const INITIAL_SORT: GridFieldSortOperation[] = [{ field: "level", direction: "desc" }];
 
 export function MaturityGrid({ rows }: { rows: MaturityRow[] }) {
   const tColumns = useFixedT("dashboard:maturity:columns");
@@ -78,9 +83,24 @@ export function MaturityGrid({ rows }: { rows: MaturityRow[] }) {
     ];
   }, [tColumns, tLevels, tFlags]);
 
+  const fields = useMemo(
+    (): GridFieldDefinition[] => [
+      { name: "organizationName", title: tColumns("organizationName"), type: "text" },
+      { name: "level", title: tColumns("level"), type: "number" },
+      { name: "dataSources", title: tColumns("dataSources"), type: "number" },
+      { name: "hasConsumption", title: tColumns("consumptionStatus"), type: "boolean" },
+      { name: "hasUsage", title: tColumns("usageStatus"), type: "boolean" },
+      { name: "hasRecommendations", title: tColumns("recommendationStatus"), type: "boolean" },
+      { name: "lastActivity", title: tColumns("lastActivity"), type: "date" },
+    ],
+    [tColumns],
+  );
+
   const gridProps = useGridInMemory<MaturityRow>(rows, {
     id: "grid__dashboard-organization-maturity",
     columns,
+    fields,
+    sort: INITIAL_SORT,
   });
 
   return <Grid<MaturityRow> {...gridProps} />;

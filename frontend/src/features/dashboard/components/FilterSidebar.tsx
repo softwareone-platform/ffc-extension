@@ -9,11 +9,13 @@ import { Popover } from "@swo/design-system/popover";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-const ORGANISATION_STATUSES = ["active", "paid", "trial", "terminated", "deleted"] as const;
-const CLOUD_PROVIDERS = ["azure", "aws", "gcp"] as const;
-
-type OrganisationStatus = (typeof ORGANISATION_STATUSES)[number];
-type CloudProvider = (typeof CLOUD_PROVIDERS)[number];
+import {
+  CLOUD_PROVIDERS,
+  CloudProvider,
+  ORGANISATION_STATUSES,
+  OrganisationStatus,
+} from "../api/model";
+import { DashboardFilters, useDashboardFilters } from "./DashboardFiltersContext";
 
 type MultiSelectOption<T extends string> = { value: T; label: string };
 
@@ -87,30 +89,21 @@ function MultiSelect<T extends string>({
   );
 }
 
-// Default range: rolling 3-month window ending today. Computed once inside useState so the
-// initial pair stays stable across re-renders.
-function initialRange() {
-  const to = new Date();
-  const from = new Date(to);
-  from.setMonth(from.getMonth() - 3);
-  return { from, to };
-}
-
 /**
  * Global filter strip sitting above the dashboard tabs. Collapsed by default — a compact
  * header shows the active-filter counts and a chevron; expanded reveals a row of controls:
  * date range (From + To as one group, separated from the rest by a divider), then two
- * labelled multi-selects for organisation status and cloud provider.
+ * labelled multi-selects for organisation status and cloud provider. Changes stay in a local
+ * draft until Apply commits them to `DashboardFiltersContext`.
  */
 export function FilterSidebar() {
   const tFilters = useFixedT("dashboard:filters");
   const tStatus = useFixedT("dashboard:filters:status");
   const tProvider = useFixedT("dashboard:filters:provider");
 
+  const { filters, setFilters } = useDashboardFilters();
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [range, setRange] = useState(initialRange);
-  const [statuses, setStatuses] = useState<OrganisationStatus[]>(["active"]);
-  const [providers, setProviders] = useState<CloudProvider[]>([]);
+  const [draft, setDraft] = useState<DashboardFilters>(filters);
 
   const statusOptions: MultiSelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map(
     (status) => ({ value: status, label: tStatus(status) }),
@@ -119,6 +112,10 @@ export function FilterSidebar() {
     value: provider,
     label: tProvider(provider),
   }));
+
+  function apply() {
+    setFilters(draft);
+  }
 
   return (
     <section className={"ffc-filter-bar"} data-testid={"ffc-filter-bar"}>
@@ -137,8 +134,8 @@ export function FilterSidebar() {
         <span className={"ffc-filter-bar__title"}>{tFilters("title")}</span>
         <span className={"ffc-filter-bar__summary"}>
           {tFilters("summary", {
-            statusCount: statuses.length,
-            providerCount: providers.length,
+            statusCount: filters.statuses.length,
+            providerCount: filters.providers.length,
           })}
         </span>
       </button>
@@ -153,15 +150,15 @@ export function FilterSidebar() {
             <div className={"ffc-filter-bar__group-controls"}>
               <DatePicker<Date>
                 label={tFilters("from")}
-                value={range.from}
-                maxDate={range.to}
-                onChange={(from) => setRange((current) => ({ ...current, from }))}
+                value={draft.from}
+                maxDate={draft.to}
+                onChange={(from) => setDraft((current) => ({ ...current, from }))}
               />
               <DatePicker<Date>
                 label={tFilters("to")}
-                value={range.to}
-                minDate={range.from}
-                onChange={(to) => setRange((current) => ({ ...current, to }))}
+                value={draft.to}
+                minDate={draft.from}
+                onChange={(to) => setDraft((current) => ({ ...current, to }))}
               />
             </div>
           </div>
@@ -173,8 +170,8 @@ export function FilterSidebar() {
               label={tFilters("organisationStatus")}
               placeholder={tFilters("selectStatuses")}
               options={statusOptions}
-              value={statuses}
-              onChange={setStatuses}
+              value={draft.statuses}
+              onChange={(statuses) => setDraft((current) => ({ ...current, statuses }))}
             />
           </div>
 
@@ -183,13 +180,13 @@ export function FilterSidebar() {
               label={tFilters("cloudProvider")}
               placeholder={tFilters("selectProviders")}
               options={providerOptions}
-              value={providers}
-              onChange={setProviders}
+              value={draft.providers}
+              onChange={(providers) => setDraft((current) => ({ ...current, providers }))}
             />
           </div>
 
           <div className={"ffc-filter-bar__actions"}>
-            <Button type={"primary"} onClick={() => undefined}>
+            <Button type={"primary"} onClick={apply}>
               {tFilters("apply")}
             </Button>
           </div>
