@@ -52,7 +52,6 @@ export function OrganizationsWithoutDatasourcesGrid({
             <Chip
               label={tStatus(item.status)}
               color={item.status === "paid" ? "success" : "primary"}
-              type={"outline"}
             />
           </GridCellSimple>
         ),

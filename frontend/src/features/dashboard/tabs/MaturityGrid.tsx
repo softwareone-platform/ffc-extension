@@ -27,7 +27,6 @@ export function MaturityGrid({ rows }: { rows: MaturityRow[] }) {
           <Chip
             label={value ? tFlags("yes") : tFlags("no")}
             color={value ? "success" : "gray"}
-            type={"outline"}
           />
         </GridCellSimple>
       );

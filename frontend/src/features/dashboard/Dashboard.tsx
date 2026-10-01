@@ -19,9 +19,9 @@ export function Dashboard() {
 
   return (
     <div className={"ffc-workspace"}>
-      <FilterSidebar />
       <div className={"ffc-workspace__main"}>
         <Navigation.TopBar items={topBarItems} />
+        <FilterSidebar />
         <Outlet />
       </div>
     </div>

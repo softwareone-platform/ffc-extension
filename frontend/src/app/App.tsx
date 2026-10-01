@@ -54,7 +54,7 @@ export function App() {
       >
         {FEATURE_FLAGS.dashboard && (
           <Route path={DASHBOARD_SEGMENTS.root} element={<Dashboard />}>
-            <Route index element={<Navigate to={DASHBOARD_SEGMENTS.consumption} replace />} />
+            <Route index element={<Navigate to={DASHBOARD_SEGMENTS.adoption} replace />} />
             <Route path={DASHBOARD_SEGMENTS.adoption} element={<AdoptionTab />} />
             <Route path={DASHBOARD_SEGMENTS.consumption} element={<ConsumptionTab />} />
             <Route path={DASHBOARD_SEGMENTS.health} element={<HealthTab />} />

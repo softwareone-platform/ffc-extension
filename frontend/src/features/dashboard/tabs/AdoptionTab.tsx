@@ -9,11 +9,15 @@ import {
 import { KpiTile, Panel } from "~shared/components/panel";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { PATHS as ENTITLEMENT_PATHS } from "~features/entitlements/paths";
+import { PATHS as ORGANIZATION_PATHS } from "~features/organizations/paths";
+
 import { useAdoptionMetricsApi } from "../api";
 import { OrganizationsWithoutDatasourcesGrid } from "./OrganizationsWithoutDatasourcesGrid";
 
 // Module scope keeps these referentially stable — the chart wrappers rebuild their
 // amCharts root whenever `series`/`colors` change identity.
+const STATUS_LEGEND_KEYS = ["active", "terminated", "deleted"] as const;
 const STATUS_DONUT_COLORS = [CHART_COLORS.green, CHART_COLORS.orange, CHART_COLORS.gray];
 
 const DATASOURCE_PROVIDER_SERIES: XySeriesDef[] = [
@@ -43,40 +47,49 @@ export function AdoptionTab() {
     return null;
   }
 
-  return (
-    <div className={"ffc-panel-grid"}>
-      <Panel title={tAdoption("overview:title")}>
-        <div className={"ffc-chart-split"}>
-          <div className={"ffc-kpi-row ffc-kpi-row--quad"}>
-            <KpiTile label={tAdoption("overview:total")} value={data.organizationsOverview.total} />
-            <KpiTile
-              label={tAdoption("overview:active")}
-              value={data.organizationsOverview.active}
-              trend={"up"}
-            />
-            <KpiTile
-              label={tAdoption("overview:terminated")}
-              value={data.organizationsOverview.terminated}
-            />
-            <KpiTile
-              label={tAdoption("overview:deleted")}
-              value={data.organizationsOverview.deleted}
-              trend={"down"}
-            />
-          </div>
-          <div className={"ffc-chart-split__aside"}>
-            <span className={"ffc-chart-split__aside-label"}>
-              {tAdoption("overview:statusDistribution")}
-            </span>
-            <DonutChart
-              data={data.organizationsOverview.statusDistribution}
-              colors={STATUS_DONUT_COLORS}
-            />
-          </div>
-        </div>
-      </Panel>
+  const statusLegendItems = STATUS_LEGEND_KEYS.map((key, index) => ({
+    name: tAdoption(`overview:${key}`),
+    color: STATUS_DONUT_COLORS[index],
+  }));
 
-      <Panel title={tAdoption("datasources:title")}>
+  return (
+    <div className={"ffc-tab-stack"}>
+      <div className={"ffc-kpi-row ffc-kpi-row--four"}>
+        <KpiTile
+          label={tAdoption("overview:total")}
+          value={data.organizationsOverview.total}
+          linkTo={ORGANIZATION_PATHS.root}
+        />
+        <KpiTile
+          label={tAdoption("overview:active")}
+          value={data.organizationsOverview.active}
+          trend={"up"}
+          linkTo={`${ORGANIZATION_PATHS.root}?status=active`}
+        />
+        <KpiTile
+          label={tAdoption("overview:terminated")}
+          value={data.organizationsOverview.terminated}
+          linkTo={`${ORGANIZATION_PATHS.root}?status=terminated`}
+        />
+        <KpiTile
+          label={tAdoption("overview:deleted")}
+          value={data.organizationsOverview.deleted}
+          trend={"down"}
+          linkTo={`${ORGANIZATION_PATHS.root}?status=deleted`}
+        />
+      </div>
+
+      <div className={"ffc-panel-grid"}>
+        <Panel title={tAdoption("statusBreakdown:title")} className={"ffc-panel--span-4"}>
+          <DonutChart
+            data={data.organizationsOverview.statusDistribution}
+            colors={STATUS_DONUT_COLORS}
+            height={260}
+          />
+          <ChartLegend items={statusLegendItems} layout={"horizontal"} />
+        </Panel>
+
+      <Panel title={tAdoption("datasources:title")} className={"ffc-panel--span-8"}>
         <div className={"ffc-kpi-row"}>
           <KpiTile label={tAdoption("datasources:total")} value={data.datasources.total} />
           <KpiTile
@@ -109,20 +122,18 @@ export function AdoptionTab() {
         </div>
       </Panel>
 
-      <Panel title={tAdoption("funnel:title")}>
-        <XyChart
-          data={data.adoptionFunnel}
-          categoryField={"stage"}
-          series={FUNNEL_SERIES}
-          height={240}
-          horizontal
-        />
-      </Panel>
-
       <Panel title={tAdoption("trialVsPaid:title")}>
         <div className={"ffc-kpi-row"}>
-          <KpiTile label={tAdoption("trialVsPaid:paid")} value={data.trialVsPaid.paid} />
-          <KpiTile label={tAdoption("trialVsPaid:trial")} value={data.trialVsPaid.trial} />
+          <KpiTile
+            label={tAdoption("trialVsPaid:paid")}
+            value={data.trialVsPaid.paid}
+            linkTo={`${ENTITLEMENT_PATHS.root}?billing=paid`}
+          />
+          <KpiTile
+            label={tAdoption("trialVsPaid:trial")}
+            value={data.trialVsPaid.trial}
+            linkTo={`${ENTITLEMENT_PATHS.root}?billing=trial`}
+          />
         </div>
         <div className={"ffc-chart-split"}>
           <div>
@@ -143,10 +154,22 @@ export function AdoptionTab() {
         </div>
       </Panel>
 
+      <Panel title={tAdoption("funnel:title")}>
+        <p className={"ffc-panel__description"}>{tAdoption("funnel:description")}</p>
+        <XyChart
+          data={data.adoptionFunnel}
+          categoryField={"stage"}
+          series={FUNNEL_SERIES}
+          height={260}
+          horizontal
+        />
+      </Panel>
+
       <Panel title={tAdoption("withoutDatasources:title")} className={"ffc-panel--full"}>
         <p className={"ffc-panel__description"}>{tAdoption("withoutDatasources:description")}</p>
         <OrganizationsWithoutDatasourcesGrid rows={data.organizationsWithoutDatasources} />
       </Panel>
+      </div>
     </div>
   );
 }

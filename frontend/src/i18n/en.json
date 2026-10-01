@@ -405,15 +405,16 @@
       "description": "This view is not built yet."
     },
     "filters": {
-      "title": "Global Filters",
+      "title": "Filter options",
       "timeLabel": "Time",
       "from": "From",
       "to": "To",
       "organisationStatus": "Organisation Status",
       "cloudProvider": "Cloud Provider",
       "apply": "Apply Filters",
-      "collapse": "Collapse",
-      "expand": "Expand filters",
+      "selectProviders": "Select providers…",
+      "selectStatuses": "Select statuses…",
+      "summary": "{{statusCount}} status · {{providerCount}} provider",
       "status": {
         "active": "Active",
         "paid": "Paid",
@@ -443,6 +444,9 @@
         "withoutDatasources": "Organizations without Datasources",
         "providerDistribution": "Provider distribution"
       },
+      "statusBreakdown": {
+        "title": "Organizations by Status"
+      },
       "withoutDatasources": {
         "title": "Organizations Without Datasources",
         "description": "Customers who created an organization but never completed onboarding — newest first.",
@@ -458,7 +462,8 @@
         }
       },
       "funnel": {
-        "title": "Adoption Funnel"
+        "title": "Adoption Funnel",
+        "description": "Where customers drop off between creating an organization and reaching active FFC usage."
       },
       "trialVsPaid": {
         "title": "Trial vs Paid",
