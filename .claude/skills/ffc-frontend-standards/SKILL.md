@@ -7,6 +7,18 @@ description: Cross-cutting frontend conventions for ffc-extension — path alias
 
 Baseline conventions used by every file under `frontend/src/`. The feature-specific skills (`ffc-poc-builder`, `mpt-module-testing`) assume everything here already holds.
 
+**Canonical source of truth** — the project maintains these docs; this skill defers to them on every topic they cover:
+
+| Topic                               | Canonical doc                                              |
+| ----------------------------------- | ---------------------------------------------------------- |
+| File & folder naming (full rules)   | [`docs/conventions/naming.md`](../../../docs/conventions/naming.md)       |
+| API hook shapes + query keys        | [`docs/conventions/api-hooks.md`](../../../docs/conventions/api-hooks.md) |
+| i18n (namespaces, dynamic keys)     | [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md)           |
+| Modals + form controllers           | [`docs/conventions/modals.md`](../../../docs/conventions/modals.md)       |
+| MPT host integration                | [`docs/architecture/mpt-host.md`](../../../docs/architecture/mpt-host.md) |
+
+This skill covers what those docs don't: path-alias reference, DS subpath import rationale, TypeScript derivation discipline, file-extension / Fast-Refresh split, icon + SCSS token hygiene, verification commands, the "don't invent, reuse" ethos, and extraction thresholds.
+
 ## Path aliases
 
 Configured in `frontend/tsconfig.json` + `jest.config.js`. Always import by alias — never climb `../../../`.
@@ -45,6 +57,10 @@ Why — two reasons that compound:
 
 ## File extensions + Fast Refresh
 
+File **casing** (PascalCase components, camelCase `use`-prefixed hooks, kebab-case folders, companion `.config.tsx` siblings, SCSS paired to component name) lives in [`docs/conventions/naming.md`](../../../docs/conventions/naming.md) — follow it.
+
+Extension rules this skill adds on top:
+
 - `.ts` — pure logic, types, hooks, utilities, factories, mock-module shapes.
 - `.tsx` — files that return JSX.
 - `.spec.ts` / `.spec.tsx` — unit tests (never `.test.*`).
@@ -79,9 +95,10 @@ ls frontend/node_modules/@swo/design-system/icon/src/lib/icon-paths/
 
 ## i18n
 
-- **Namespace**: `"<feature>": { … }` in `src/i18n/en.json`.
-- **Access**: `const t = useFixedT("<feature>:<section>")` then `t("key")`. One hook per section used, not one for the whole feature.
-- **Alphabetised keys** within each object — the `translations:sort` script enforces this; sort before committing.
+Full rules — namespaces (`<feature>` / `shared`), key separator (`:`), leaf casing (snake_case for API-mirror fields vs camelCase for UI-only labels), dynamic-key enumeration, adding a locale — in [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md). Highlights:
+
+- `const t = useFixedT("<feature>:<section>")` then `t("key")`. Never raw `useTranslation()`. One hook per section used, not one for the whole feature.
+- Alphabetised keys within each object — the `translations:sort` script enforces this; sort before committing.
 - In **tests**, `useFixedT` is globally identity-mocked in `jest.setup.js`; the key passes through as text. Don't assert specific translation values — that only tests the mock.
 
 ## Verification before done
@@ -143,3 +160,13 @@ Rule of thumb per surface:
 
 - Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`ffc-poc-builder`** (folder layout, DS gap table, panel/chart/grid recipes, scaling patterns).
 - Writing or refactoring a `*.spec.tsx` — Grid wrapper, Details container, hook, action, wizard, modal callback, API hook → **`mpt-module-testing`** (jest mock rules, shared `~test-utils/mocks/`, spec file layout, canonical patterns).
+
+## Pointers to workflow skills (git / PR / JIRA)
+
+This skill only covers writing the code. For shipping it, hand off to the `mpt-ignite-skills` plugin:
+
+- Starting a JIRA ticket → branch from master → **`start-feature`** (branch-name prefix by issue type, lowercase-dashes, pull-before-branch).
+- Opening a PR against the right base branch → **`create-pr`** (merge-base-first vs. direct push, confirm description before submit).
+- Writing a PR summary → **`summarize-pr`** (why-focused, short vs. structured by file count).
+- Reviewing PR feedback → **`review-pr-comments`** (severity triage: Blocking / Suggestion / Question / Nit; grouped by topic, not speaker).
+- Cherry-picking a landed commit onto a release branch → **`backport`** (branch from `origin/release/N`, oldest→newest, `-m 1` for merge parents, stop at conflicts).

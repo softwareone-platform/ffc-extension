@@ -37,6 +37,22 @@ Modals are in-app: a `Create<Entity>Modal` wrapping `<Modal>`,
 its open/close state driven by `useModalToggle`, with form logic in a shared
 `use<Entity>FormController`.
 
+### Claude Code skills (not loaded by Copilot)
+
+Claude Code can lazy-load these; Copilot cannot. If a frontend task falls into
+one of these buckets, the canonical rules live in the SKILL.md — this file does
+NOT mirror them inline (keeping sync tax to the one testing section below).
+`docs/conventions/*` still wins on drift against any skill.
+
+- Baseline frontend conventions (path aliases, DS subpath imports, derived TS
+  types, Fast Refresh file-split, icon/SCSS token hygiene, verify commands,
+  extraction thresholds) —
+  [`../.claude/skills/ffc-frontend-standards/SKILL.md`](../.claude/skills/ffc-frontend-standards/SKILL.md).
+- Sandbox / POC work (feature folder layout, DS component gap table,
+  panel/chart/grid recipes, mock-driven data layer, `<MetricPanel>` and chart
+  config patterns) —
+  [`../.claude/skills/ffc-poc-builder/SKILL.md`](../.claude/skills/ffc-poc-builder/SKILL.md).
+
 ### Frontend unit tests
 
 For frontend unit tests under `frontend/src/**/*.spec.{ts,tsx}` and sibling

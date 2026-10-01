@@ -50,6 +50,10 @@ features/<feature>/
 
 ## Data layer recipe
 
+General API-hook conventions live in [`docs/conventions/api-hooks.md`](../../../docs/conventions/api-hooks.md): `useFooApi.tsx` returns raw HTTP callbacks (`{ list, get, save, delete }`), `useFooDetailsApi.ts` wraps `useQuery` with a stable `["<Entity>", "Details", id]` key, consumers import both from the `api/` barrel. **Entity list/detail views in a POC follow those shapes.**
+
+The POC variant below applies to **mock-driven metrics endpoints** — one getter per metric (`getAdoptionMetrics`, …), react-query key `["<Feature>", "<Resource>"]` because metric aggregates aren't entity-centric. The shape is otherwise identical, so the swap to real HTTP is still a one-line change.
+
 **Mock JSON — must mirror the real API shape.** Dates ISO (`YYYY-MM-DD`) for sortable fields, display formatting happens in the cell. Numeric metrics stay numeric; preformatted strings only when the API itself returns strings.
 
 **Low-level API hook** (`api/useDashboardApi.ts` pattern):
@@ -244,6 +248,10 @@ return <Grid<Row> {...gridProps} />;
 **`GridFilterFieldType` values** (grep `@swo/design-system/grid/src/lib/model.d.ts`): `'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'list'`. `list` requires `options: {value, label}[]` — the stored row value is compared as a **string**, so don't use `list` for numeric columns (e.g. a maturity-level 0-4) unless you're willing to store the value as a string too; use `number` instead.
 
 Date columns: store ISO in the mock, format in the cell with `useFormatDate` from `~shared/hooks/useFormatDate`. Chips (`@swo/design-system/chip`) with `color="success"|"warning"|"gray"|"primary"` for status/threshold indicators — default `type` is filled; use `type="outline"` only when the storybook default doesn't fit.
+
+### Modals + wizards
+
+Follow [`docs/conventions/modals.md`](../../../docs/conventions/modals.md). Simple create-entity form → `Create<Entity>Modal.tsx` wrapping `<Modal>` + `useModalToggle` + `use<Entity>FormController` (shared mutation + close plumbing). Multi-step flow → a `<flow>-wizard/` folder with a single component rendering `@swo/design-system/wizard` inside `@swo/design-system/modal`'s `<Modal>`; owns its own `react-hook-form` + mutation across steps, no form controller.
 
 ### Navigation shell
 

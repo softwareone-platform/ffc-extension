@@ -15,6 +15,10 @@ Guidance for AI coding agents working in this repository.
   [`docs/architecture/mpt-host.md`](docs/architecture/mpt-host.md).
 - **General Copilot instructions** (mirrors what GitHub Copilot loads):
   [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+- **Claude Code skills** (lazy-loaded; `docs/conventions/*` wins on drift):
+  - Baseline frontend conventions (path aliases, DS subpath imports, TS discipline, Fast Refresh, verify commands) — [`.claude/skills/ffc-frontend-standards/SKILL.md`](.claude/skills/ffc-frontend-standards/SKILL.md).
+  - Sandbox / POC frontend work (folder layout, DS gap table, panel/chart/grid recipes, scaling patterns) — [`.claude/skills/ffc-poc-builder/SKILL.md`](.claude/skills/ffc-poc-builder/SKILL.md).
+  - Jest unit tests under `frontend/src/**/*.spec.{ts,tsx}` — [`.claude/skills/mpt-module-testing/SKILL.md`](.claude/skills/mpt-module-testing/SKILL.md).
 
 ## Repo layout
 
