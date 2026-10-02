@@ -16,6 +16,7 @@ Baseline conventions used by every file under `frontend/src/`. The feature-speci
 | i18n (namespaces, dynamic keys)                 | [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md)           |
 | Modals + form controllers                       | [`docs/conventions/modals.md`](../../../docs/conventions/modals.md)       |
 | Design system (imports, gaps, icons, tokens)    | [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md) |
+| Design system component usage (Panel, Grid, Modal, Charts, Multi-select, Navigation) | [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md) |
 | Frontend unit tests                             | [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)     |
 | MPT host integration                            | [`docs/architecture/mpt-host.md`](../../../docs/architecture/mpt-host.md) |
 
@@ -152,7 +153,8 @@ Rule of thumb per surface:
 
 ## Pointers to feature-specific skills
 
-- Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`mpt-poc-builder`** (folder layout, DS gap table, panel/chart/grid recipes, scaling patterns).
+- Using `@swo/design-system/*` components (Grid, Modal, Panel, Charts, Chip, Popover, Icon, DatePicker, Navigation) or any `~shared/components/{panel, charts, modal}` wrapper → **`mpt-design-system`** (composition recipes, wrapper-vs-raw-DS decisions, gap-table workflow).
+- Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`mpt-poc-builder`** (folder layout, mock data layer, scaling patterns, POC checklist).
 - Writing or refactoring a `*.spec.tsx` — Grid wrapper, Details container, hook, action, wizard, modal callback, API hook → **`mpt-module-testing`** (jest mock rules, shared `~test-utils/mocks/`, spec file layout, canonical patterns).
 
 ## Pointers to workflow skills (git / PR / JIRA)

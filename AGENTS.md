@@ -31,6 +31,10 @@ When reading, trust the top of the chain.
 - **Design system & presentation** (subpath imports, verified DS gaps, icon
   names, SCSS tokens, `.ffc-*` classes, chart palettes):
   [`docs/conventions/design-system.md`](docs/conventions/design-system.md).
+- **Design system component usage** (Panel + KpiTile, Grid with sort/filter,
+  Modal vs app wrapper, Charts, Multi-select composition, Navigation shell,
+  Chip, DatePicker):
+  [`docs/conventions/design-system-components.md`](docs/conventions/design-system-components.md).
 - **Frontend testing conventions** (jest/testing-library mocking rules,
   shared `~test-utils`, coverage floor, test-name style):
   [`docs/conventions/testing.md`](docs/conventions/testing.md).

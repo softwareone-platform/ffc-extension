@@ -7,7 +7,7 @@ description: Build sandbox/POC feature modules for the ffc-extension frontend us
 
 Goal: ship visually-correct, strongly-typed sandbox views that drop into real backend wiring without a rewrite. Mock data behaves like the API, components never know data is mocked, and the design-system primitives are the ones the real feature will ship with.
 
-Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system usage (subpath imports, verified gaps, icon names, SCSS tokens, `.ffc-*` classes, chart palettes) lives in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). This skill only covers POC-specific additions on top.
+Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system component usage (Panel + KpiTile, Grid, Modal, Charts, Multi-select, Chip, DatePicker, Navigation) lives in **`mpt-design-system`** + [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md). DS meta rules (subpath imports, verified gaps, icons, SCSS tokens, `.ffc-*` layout classes, chart palettes) live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). This skill only covers POC-specific additions on top of all that.
 
 ## Feature folder layout
 
@@ -103,151 +103,9 @@ Everything in `mpt-frontend-standards` (no `any`, named types in `api/model.ts`,
 </div>
 ```
 
-### Panel + KPI tiles
+### DS component recipes (Panel+KpiTile, Grid, Modal, Charts, Multi-select, Navigation)
 
-```tsx
-import { Panel, KpiTile } from "~shared/components/panel";
-
-<Panel title={t("overview:title")}>
-  <div className={"ffc-kpi-row"}>  {/* --four / --quad / --column for other layouts */}
-    <KpiTile label={t("overview:total")} value={data.total} />
-    <KpiTile label={t("overview:active")} value={data.active} trend={"up"} />
-  </div>
-</Panel>
-```
-
-### Linkable KPI tile (navigation affordance)
-
-```tsx
-import { PATHS as ORGANIZATION_PATHS } from "~features/organizations/paths";
-
-<KpiTile
-  label={t("overview:active")}
-  value={data.active}
-  trend={"up"}
-  linkTo={`${ORGANIZATION_PATHS.root}?status=active`}
-/>
-```
-
-`linkTo` wraps the Card in a `react-router-dom` `<Link>`, shows an `arrow_forward_ios` chevron on the right, and animates on hover (lift + chevron nudge). The target feature still needs to parse the query param to actually pre-filter its grid — nav + affordance works today.
-
-### Multi-select (compose Popover + Checkbox)
-
-Build this helper once; reuse across filter sidebars. Button-styled trigger with `aria-labelledby`, popover list that stays open across selections.
-
-```tsx
-import { useId } from "react";
-import { Checkbox } from "@swo/design-system/checkbox";
-import { Icon } from "@swo/design-system/icon";
-import { Popover } from "@swo/design-system/popover";
-
-type MultiSelectProps<T extends string> = {
-  label: string;
-  placeholder: string;
-  options: { value: T; label: string }[];
-  value: T[];
-  onChange: (next: T[]) => void;
-};
-
-export function MultiSelect<T extends string>({
-  label, placeholder, options, value, onChange,
-}: MultiSelectProps<T>) {
-  const labelId = useId();
-  const triggerId = useId();
-  const toggle = (v: T) => onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v]);
-  const summary = value.length === 0
-    ? placeholder
-    : options.filter(o => value.includes(o.value)).map(o => o.label).join(", ");
-
-  return (
-    <div className={"ffc-multiselect"}>
-      <span id={labelId} className={"ffc-multiselect__label"}>{label}</span>
-      <Popover trigger={"click"} keepOpenOnOutsideClick={false}>
-        <Popover.Target>
-          <button
-            type={"button"}
-            id={triggerId}
-            className={"ffc-multiselect__trigger"}
-            aria-labelledby={`${labelId} ${triggerId}`}
-            aria-haspopup={"listbox"}
-          >
-            <span className={"ffc-multiselect__summary"}>{summary}</span>
-            <Icon name={"expand_more"} size={16} />
-          </button>
-        </Popover.Target>
-        <Popover.Content>
-          <div className={"ffc-multiselect__list"} role={"listbox"} aria-multiselectable>
-            {options.map(o => (
-              <Checkbox
-                key={o.value}
-                label={o.label}
-                isChecked={value.includes(o.value)}
-                onChange={() => toggle(o.value)}
-              />
-            ))}
-          </div>
-        </Popover.Content>
-      </Popover>
-    </div>
-  );
-}
-```
-
-Why not `Dropdown`: it fires `isOpenChange(false)` on every `onItemSelected`, closing the list after each tick — poor multi-select UX.
-
-### Charts — module-scope series for referential stability
-
-```tsx
-// Module scope: amCharts rebuilds the root on series/colors identity change.
-const SERIES: XySeriesDef[] = [
-  { field: "spend", name: "Spend", color: CHART_COLORS.blue, kind: "line" },
-];
-```
-
-Shared primitives: `XyChart` (line/area/column, `stacked`, `horizontal`), `DonutChart`, `ChartLegend`. Palette: `CHART_COLORS` + `PROVIDER_COLORS` from `~shared/components/charts`. Pass explicit `height` to `DonutChart` in wide panels (default 150 looks tiny).
-
-### Grid (in-memory) with initial sort
-
-```tsx
-const INITIAL_SORT: GridFieldSortOperation[] = [{ field: "creationDate", direction: "desc" }];
-
-const columns = useMemo((): GridColumnDefinition<Row>[] => [ /* ... */ ], [deps]);
-const fields = useMemo((): GridFieldDefinition[] => [
-  { name: "creationDate", title: t("creationDate"), type: "date" },
-  { name: "daysSinceCreation", title: t("daysSinceCreation"), type: "number" },
-  { name: "status", title: t("status"), type: "text" },
-], [t]);
-
-const gridProps = useGridInMemory<Row>(rows, {
-  id: "grid__<feature>-<entity>",   // stable id, feature__entity casing
-  columns,
-  fields,                           // required for sort/filter comparisons
-  sort: INITIAL_SORT,
-});
-return <Grid<Row> {...gridProps} />;
-```
-
-**`GridFilterFieldType` values** (grep `@swo/design-system/grid/src/lib/model.d.ts`): `'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'list'`. `list` requires `options: {value, label}[]` — the stored row value is compared as a **string**, so don't use `list` for numeric columns (e.g. a maturity-level 0-4) unless you're willing to store the value as a string too; use `number` instead.
-
-Date columns: store ISO in the mock, format in the cell with `useFormatDate` from `~shared/hooks/useFormatDate`. Chips (`@swo/design-system/chip`) with `color="success"|"warning"|"gray"|"primary"` for status/threshold indicators — default `type` is filled; use `type="outline"` only when the storybook default doesn't fit.
-
-### Modals + wizards
-
-Follow [`docs/conventions/modals.md`](../../../docs/conventions/modals.md). Simple create-entity form → `Create<Entity>Modal.tsx` wrapping `<Modal>` + `useModalToggle` + `use<Entity>FormController` (shared mutation + close plumbing). Multi-step flow → a `<flow>-wizard/` folder with a single component rendering `@swo/design-system/wizard` inside `@swo/design-system/modal`'s `<Modal>`; owns its own `react-hook-form` + mutation across steps, no form controller.
-
-### Navigation shell
-
-```tsx
-<Navigation>
-  <Navigation.SideNav level={1} groups={sideNavGroups} />
-  <Navigation.Content>
-    <Navigation.TopBar items={topBarItems} />
-    <Outlet />
-  </Navigation.Content>
-</Navigation>
-```
-
-Collapsed-by-default: no prop. Mount a tiny helper that `requestAnimationFrame`s then clicks `[data-testid="navigation__collapse-button"]`.
+Moved to [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md) + the **`mpt-design-system`** skill. Both apply to POC and production. The POC-specific additions below (12-column grid, scaling patterns, iteration rhythm) build on top.
 
 ### Collapse / expand animation + chevron rotation
 

@@ -18,6 +18,7 @@ Copilot instruction mirror.
 | [`conventions/i18n.md`](conventions/i18n.md)                 | `useFixedT`, `:` key separator, `<feature>` / `shared` namespaces, snake_case vs camelCase leaf keys, dynamic-key enumeration, adding a locale. |
 | [`conventions/modals.md`](conventions/modals.md)             | In-app modals, `useModalToggle` close contract, simple-form vs wizard flavours, `use<Entity>FormController` plumbing. |
 | [`conventions/design-system.md`](conventions/design-system.md) | DS subpath imports (bundle size + mock resolution), verified DS gap table (multi-select, DonutChart height, strict `Icon.name`, etc.), icon-name hygiene, SCSS token vocabulary, `.ffc-*` shared classes, chart palettes. |
+| [`conventions/design-system-components.md`](conventions/design-system-components.md) | Component-specific usage recipes: Panel + KpiTile, Grid (in-memory with sort/filter, field types, cell renderers), Modal (DS vs app wrapper), Charts (XyChart / DonutChart / ChartLegend + module-scope series), Multi-select composition, Navigation shell, Chip, DatePicker. |
 | [`conventions/testing.md`](conventions/testing.md)           | Jest stack facts, `.spec.tsx` / `.spec.mocks` layout, 85% coverage floor, DS full-path mocking + no-spread rule, pre-mocked modules, typed-spy table, `~test-utils/*` inventory, spec-scoped ESLint, when-not-to-test, test-name style. |
 
 ## Architecture (how things run)

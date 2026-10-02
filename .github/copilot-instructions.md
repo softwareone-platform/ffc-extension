@@ -42,6 +42,9 @@ never root), verified gaps (multi-select, DonutChart default height, strict
 `Icon.name` union), SCSS token vocabulary (`$surface`, `$positive`, `$space-*`),
 and the shared `.ffc-*` layout classes — see
 [`../docs/conventions/design-system.md`](../docs/conventions/design-system.md).
+For component-specific usage recipes (Panel + KpiTile, Grid with sort/filter,
+Multi-select composition, Chart module-scope series, Navigation shell) see
+[`../docs/conventions/design-system-components.md`](../docs/conventions/design-system-components.md).
 
 ### Claude Code skills (not loaded by Copilot)
 
