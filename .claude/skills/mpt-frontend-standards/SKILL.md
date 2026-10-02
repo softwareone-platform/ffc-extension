@@ -86,6 +86,29 @@ npx eslint <touched files>
 
 For test work, `npm test` runs jest + tsc + prettier + eslint in parallel via `npm-run-all --parallel --continue-on-error`. SWC skips type-checking during jest, so **typed-spy drift only surfaces at the tsc step** — don't trust a green jest run alone.
 
+## After verification: offer unit tests
+
+Once the verify step passes and before reporting the task done, **ask the user whether to check existing tests or add new ones** for the files you touched. If they accept, hand off to **`mpt-module-testing`** (which layers recipes on top of [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)).
+
+**When to ask:**
+
+- Any task that changed source under `frontend/src/` — components, hooks, utilities, API shapes, context providers, feature modules.
+- Any bug fix (regression tests close the loop).
+
+**When to skip the ask:**
+
+- The task **was** writing or fixing tests — no need to prompt about doing it again.
+- Pure documentation changes (`docs/`, `README.md`, `SKILL.md`, `AGENTS.md`, this file).
+- Pure configuration (`package.json`, `tsconfig.json`, `.prettierrc.json`, `eslint.config.mjs`, CI yaml).
+- Rename-only / move-only changes that preserve existing test coverage automatically.
+- The user already declined for this specific change.
+
+**Phrasing** — one short line, concrete about the surface:
+
+> "Want me to check or add unit tests for the files I touched (`<file1>`, `<file2>`, …)? I'd use the `mpt-module-testing` skill."
+
+If accepted, identify the files worth testing (behaviour / branching, not pure types or barrels — see [`docs/conventions/testing.md`](../../../docs/conventions/testing.md) "When NOT to write a unit test"), then switch to `mpt-module-testing` for the actual spec work.
+
 ## "Don't invent, reuse"
 
 Before building anything new, check whether it already exists:
