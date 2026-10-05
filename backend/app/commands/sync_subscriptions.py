@@ -32,6 +32,8 @@ DEFAULT_STATUS_LIST = [
     EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 ]
+# The values of DEFAULT_STATUS_LIST spelled out: `Literal` only accepts literal values.
+StatusOption = Literal["Active", "Expired", "Terminated"]
 
 
 @dataclass
@@ -269,7 +271,7 @@ def build_notification_details(results: list[SyncResult]) -> NotificationDetails
         ColumnHeader(text="Action", width="stretch"),
         ColumnHeader(text="Details", width="stretch"),
     )
-    rows = [
+    rows: list[tuple[str, ...]] = [
         (
             result.account_id,
             result.subscription_id or "",
@@ -331,10 +333,7 @@ async def main(
     if since.tzinfo is None:
         since = since.replace(tzinfo=UTC)
 
-    if status is None:
-        status = DEFAULT_STATUS_LIST
-    else:
-        status = [status]
+    statuses = DEFAULT_STATUS_LIST if status is None else [status]
 
     semaphore = asyncio.Semaphore(max_parallel)
 
@@ -361,7 +360,7 @@ async def main(
     for account in accounts:
         try:
             results.extend(
-                await sync_account(account, status, since, until, page_size, dry_run, semaphore)
+                await sync_account(account, statuses, since, until, page_size, dry_run, semaphore)
             )
         except Exception as exc:
             logger.exception(f"Failed to sync the subscriptions for account {account.id}: {exc}")
@@ -390,7 +389,7 @@ def command(
         ),
     ] = None,
     status: Annotated[
-        Literal[*DEFAULT_STATUS_LIST] | None,
+        StatusOption | None,
         typer.Option(
             "--status",
             "-s",

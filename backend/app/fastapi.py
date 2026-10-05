@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from functools import partial
 from pathlib import Path
+from typing import Any
 
 import fastapi_pagination
 from fastapi import Depends, FastAPI
@@ -193,7 +193,12 @@ def setup_app():
 
     settings = get_settings()
 
-    app.openapi = partial(generate_openapi_spec, app, settings)
+    def openapi() -> dict[str, Any]:
+        return generate_openapi_spec(app, settings)
+
+    # FastAPI documents replacing `app.openapi` like this, but ty sees a method being
+    # overwritten on the instance.
+    app.openapi = openapi  # ty: ignore[invalid-assignment]
 
     setup_fastapi_instrumentor(
         settings,
