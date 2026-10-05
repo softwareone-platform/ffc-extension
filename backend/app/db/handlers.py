@@ -3,7 +3,8 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from types import get_original_bases
+from typing import Any, get_args, get_origin
 from uuid import UUID
 
 import sqlalchemy
@@ -65,9 +66,9 @@ class ModelHandler[M: BaseModel]:
         Retrieves the generic model class arg dynamically
         """
         return next(
-            base_cls.__args__
-            for base_cls in cls.__orig_bases__
-            if base_cls.__origin__ is ModelHandler
+            get_args(base_cls)
+            for base_cls in get_original_bases(cls)
+            if get_origin(base_cls) is ModelHandler
         )
 
     @property
@@ -168,7 +169,7 @@ class ModelHandler[M: BaseModel]:
                 f"{self.model_cls.__name__} status column does not have a 'deleted' value."
             )
 
-        if obj.status == "deleted":  # type: ignore[attr-defined]
+        if getattr(obj, status_column.key) == "deleted":
             raise CannotDeleteError(f"{self.model_cls.__name__} object is already deleted.")
 
         column_updates = {"status": "deleted"}
@@ -512,7 +513,6 @@ class OrganizationHandler(ModelHandler[Organization]):
         self,
         billing_currency: str,
     ) -> AsyncGenerator[Organization, None]:
-
         async for organization in self.stream_scalars(
             extra_conditions=[Organization.billing_currency == billing_currency],
         ):
