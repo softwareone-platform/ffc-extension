@@ -135,7 +135,7 @@ class SubscriptionEventHandler(EventHandler):
         self.entitlement_repo = entitlement_repo
         self.account = account
 
-    async def get_processor(self, object_id: str) -> SubscriptionProcessor:
+    async def _get_processor(self, object_id: str) -> SubscriptionProcessor:
         subscription = await self.installation_client.get_subscription(object_id)
         if not subscription:
             raise SubscriptionNotFoundError(f"No subscription found for {object_id}.")

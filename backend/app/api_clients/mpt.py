@@ -111,37 +111,25 @@ class MPTClient:
         if select:
             url = f"{url}?select={','.join(select)}"
         response = await self.httpx_client.get(url)
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        return response.json()
 
     async def create(self, endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:  # noqa: F811
         response: httpx.Response = await self.httpx_client.post(
             endpoint,
             json=payload,
         )
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        return response.json()
 
     async def update(self, endpoint: str, id: str, payload: dict) -> dict[str, Any]:
         response = await self.httpx_client.put(f"{endpoint}/{id}", json=payload)
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        return response.json()
 
     async def delete(self, endpoint: str, id: str) -> None:
         response = await self.httpx_client.delete(f"{endpoint}/{id}")
-        try:
-            response.raise_for_status()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
 
     async def run_object_action(
         self, endpoint: str, id: str, action: str, payload: dict | None = None
@@ -150,11 +138,8 @@ class MPTClient:
             f"{endpoint}/{id}/{action}",
             json=payload,
         )
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        return response.json()
 
     async def get_collection(
         self,
@@ -170,11 +155,8 @@ class MPTClient:
         url = f"{endpoint}?{'&'.join(parts)}" if parts else endpoint
 
         response = await self.httpx_client.get(url)
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        return response.json()
 
     async def get_page(
         self,
@@ -193,12 +175,9 @@ class MPTClient:
         url = f"{endpoint}?{'&'.join(parts)}"
 
         response = await self.httpx_client.get(url)
-        try:
-            response.raise_for_status()
-            page = response.json()
-            return page
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        page = response.json()
+        return page
 
     async def collection_iterator(
         self,
@@ -279,16 +258,17 @@ class MPTClient:
     async def log_task(
         self, task_id: str, severity: str | None = None, error_message: str | None = None
     ):
-        return (
-            await self.httpx_client.post(
-                f"system/tasks/{task_id}/logs",
-                json={
-                    "task": {"id": task_id},
-                    "severity": severity or "Info",
-                    "message": error_message,
-                },
-            ),
+        """Append an entry to the task's log."""
+
+        response = await self.httpx_client.post(
+            f"system/tasks/{task_id}/logs",
+            json={
+                "task": {"id": task_id},
+                "severity": severity or "Info",
+                "message": error_message,
+            },
         )
+        response.raise_for_status()
 
     # Order methods
 
@@ -315,11 +295,8 @@ class MPTClient:
             url=f"/commerce/orders/{order_id}/query",
             json=payload,
         )
-        try:
-            response.raise_for_status()
-            return response.json()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
+        return response.json()
 
     async def complete_order(self, order_id: str, payload: dict | None = None):
         return await self.run_object_action(
@@ -500,10 +477,7 @@ class MPTClient:
             content=body,
             headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
         )
-        try:
-            response.raise_for_status()
-        finally:
-            await response.aclose()
+        response.raise_for_status()
 
     async def submit_journal(self, journal_id: str) -> None:
         response = await self.httpx_client.post(f"billing/journals/{journal_id}/submit")

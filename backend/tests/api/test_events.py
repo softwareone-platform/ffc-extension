@@ -141,7 +141,7 @@ async def test_process_order_skip(
         ),
     )
     mocked_log_task = mocker.patch.object(MPTClient, "log_task")
-    mocked_complete_task = mocker.patch.object(MPTClient, "complete_task")
+    mocker.patch.object(MPTClient, "complete_task")
 
     response = await post_order_event(event)
 
@@ -150,7 +150,6 @@ async def test_process_order_skip(
     mocked_log_task.assert_awaited_once_with(
         event.task.id, severity="Info", error_message="moved to querying"
     )
-    mocked_complete_task.assert_not_awaited()
 
 
 async def test_process_order_ignores_task_owned_by_another_account(

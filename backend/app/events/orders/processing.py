@@ -2,6 +2,7 @@ import copy
 import logging
 import secrets
 import traceback
+from abc import ABC
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -17,7 +18,7 @@ from app.dependencies.api_clients import (
 from app.dependencies.core import AppSettings
 from app.dependencies.db import EntitlementRepository, OrganizationRepository
 from app.events.core import EventHandler, EventProcessor
-from app.events.exceptions import EventError
+from app.events.exceptions import EventError, TaskNotOwnedError
 from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     MPT_ORDER_STATUS_PROCESSING,
@@ -63,7 +64,7 @@ from app.schemas.core import ExtensionContext
 logger = logging.getLogger(__name__)
 
 
-class OrderProcessor(EventProcessor):
+class OrderProcessor(EventProcessor, ABC):
     object_type = "order"
 
     def __init__(
@@ -545,7 +546,7 @@ class OrderEventHandler(EventHandler):
         self.entitlement_repo = entitlement_repo
         self.settings = settings
 
-    async def claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> bool:
+    async def _claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> None:
         """The fulfilment of an order is a vendor activity: close any other account's task."""
 
         logger.info("Changing task %s status to Processing", task_id)
@@ -557,25 +558,16 @@ class OrderEventHandler(EventHandler):
             logger.info(
                 "The task %s does not match the ext account id %s", task_account_id, ext_account_id
             )
-
-            await self.ext_client.complete_task(task_id)
-            await self.ext_client.log_task(
-                task_id,
-                severity="Info",
-                error_message=(
-                    f"The task was ignored for the account {task_account_id} which is not the "
-                    f"fulfillment owner. The Fulfillment of the order {object_id} is a vendor "
-                    f"activity and is it processed under the vendor account {ext_account_id}"
-                ),
+            raise TaskNotOwnedError(
+                f"The task was ignored for the account {task_account_id} which is not the "
+                f"fulfillment owner. The Fulfillment of the order {object_id} is a vendor "
+                f"activity and is it processed under the vendor account {ext_account_id}"
             )
-            return False
 
-        return True
-
-    async def get_processor(self, object_id: str) -> OrderProcessor:
+    async def _get_processor(self, object_id: str) -> OrderProcessor:
         order = await self.installation_client.get_order(object_id, select=["subscriptions.lines"])
         order_type = order["type"]
-        logger.info("ORDER TYPE: %s", order_type)
+        logger.info("Order type: %s", order_type)
         processor_cls = PROCESSOR_BY_TYPE.get(order_type)
         if processor_cls is None:
             logger.warning("%s The order type %s is not supported.", order_type, order_type)
