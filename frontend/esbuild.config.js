@@ -1,5 +1,5 @@
 import { context } from 'esbuild';
-import { sassPlugin } from 'esbuild-sass-plugin';
+import { sassPlugin, postcssModules } from 'esbuild-sass-plugin';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { reloadBrowsersPlugin } from './devtools/reloadBrowsersPlugin.js';
@@ -26,6 +26,7 @@ const ctx = await context({
   format: 'esm',
   sourcemap: true,
   allowOverwrite: true,
+  metafile: true,
   // Keep these in sync with `compilerOptions.paths` in tsconfig.json.
   alias: {
     '~api': srcDir('api'),
@@ -42,6 +43,15 @@ const ctx = await context({
     "process.env.FFC_EXT_EXTENSION_VERSION": JSON.stringify(extensionVersion),
   },
   plugins: [
+    // `*.module.scss` must be registered before the catch-all below: esbuild uses
+    // the first plugin whose onLoad filter matches, and /\.scss$/ matches these too.
+    sassPlugin({
+      filter: /\.module\.scss$/,
+      type: 'style',
+      transform: postcssModules({
+        generateScopedName: '[name]__[local]___[hash:base64:5]',
+      }),
+    }),
     sassPlugin({
       filter: /\.scss$/,
       type: 'style',
