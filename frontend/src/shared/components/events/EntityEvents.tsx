@@ -1,16 +1,14 @@
 import { useMemo } from "react";
 
-import { EntityReference } from "@swo/design-system/entity-reference";
-import { InPageHighlight } from "@swo/design-system/in-page-highlight";
-import { MediumText } from "@swo/design-system/text";
-import { NO_VALUE } from "@swo/design-system/utils";
-
 import type {
   AuditEventsSchema,
   EntitlementsEventsSchema,
   OrganizationEventsSchema,
 } from "~api/ffc-api-model";
+import { EntityEvent, EventTimestamps } from "~shared/components/timestamps/EventTimestamps";
 import { useFixedT } from "~shared/hooks/useFixedT";
+
+import { CardSection } from "../CardSection";
 
 type EntityEventsSchema = {
   events: EntitlementsEventsSchema | OrganizationEventsSchema | AuditEventsSchema;
@@ -21,41 +19,32 @@ export function EntityEvents<TEntity extends EntityEventsSchema>({
 }: {
   readonly entity: TEntity;
 }) {
+  const tTimestamps = useFixedT("shared:timestampsForm");
   const tSharedDetails = useFixedT("shared:details");
   const tProperties = useFixedT("shared:properties");
 
-  const events = useMemo(
+  const events: EntityEvent[] = useMemo(
     () =>
       Object.entries(entity?.events ?? {})
         .filter(([, value]) => !!value?.at)
         .map(([field, value]) => {
           return {
             name: tProperties(field),
-            by: value?.by || { name: tSharedDetails("system") },
-            at: value?.at,
+            by: value?.by || { id: "system", name: tSharedDetails("system") },
+            at: new Date(value?.at as string),
           };
         }),
     [entity, tProperties, tSharedDetails],
   );
 
+  const columnNames = useMemo(
+    () => [tTimestamps("event"), tTimestamps("triggeredBy"), tTimestamps("dateAndTime")],
+    [tTimestamps],
+  );
+
   return (
-    <>
-      <MediumText size={4}>{tSharedDetails("events")}</MediumText>
-      <InPageHighlight style="block">
-        {events?.map((event) => (
-          <InPageHighlight.Item key={event.name} title={event.name}>
-            {event.at ? (
-              <EntityReference
-                primaryContent={event.by?.name}
-                secondaryContent={event.at}
-                isPrimaryContentBold={true}
-              />
-            ) : (
-              NO_VALUE
-            )}
-          </InPageHighlight.Item>
-        ))}
-      </InPageHighlight>
-    </>
+    <CardSection title={tSharedDetails("events")}>
+      <EventTimestamps events={events} columnNames={columnNames} />
+    </CardSection>
   );
 }
