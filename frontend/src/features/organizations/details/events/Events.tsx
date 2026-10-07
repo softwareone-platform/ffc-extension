@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 
-import { OrganizationRead } from "~api/ffc-api-model/types.gen";
+import type { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationDetailsApi } from "~features/organizations/api/useOrganizationDetailsApi";
 import { EntityEvents } from "~shared/components/events/EntityEvents";
 
