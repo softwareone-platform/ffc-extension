@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
@@ -68,7 +69,7 @@ class ModelHandler[M: BaseModel]:
         """
         return next(
             base_cls.__args__
-            for base_cls in cls.__orig_bases__
+            for base_cls in types.get_original_bases(cls)
             if base_cls.__origin__ is ModelHandler
         )
 
@@ -170,7 +171,7 @@ class ModelHandler[M: BaseModel]:
                 f"{self.model_cls.__name__} status column does not have a 'deleted' value."
             )
 
-        if obj.status == "deleted":  # type: ignore[attr-defined]
+        if obj.status == "deleted":  # ty: ignore[unresolved-attribute]
             raise CannotDeleteError(f"{self.model_cls.__name__} object is already deleted.")
 
         column_updates = {"status": "deleted"}

@@ -193,7 +193,8 @@ def setup_app():
 
     settings = get_settings()
 
-    app.openapi = partial(generate_openapi_spec, app, settings)
+    # FastAPI documents replacing `app.openapi` to customize the schema.
+    app.openapi = partial(generate_openapi_spec, app, settings)  # ty: ignore[invalid-assignment]
 
     setup_fastapi_instrumentor(
         settings,

@@ -289,8 +289,8 @@ async def list_account_users(
     Returns a list of accounts if any.
     """
     extra_conditions = []
-    if auth_context.account.type == AccountType.AFFILIATE:  # type: ignore
-        if auth_context.account != account:  # type: ignore
+    if auth_context.account.type == AccountType.AFFILIATE:
+        if auth_context.account != account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Account with ID `{account.id}` wasn't found.",

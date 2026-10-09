@@ -29,7 +29,11 @@ async def set_entitlements_tag(settings: Settings):
             batch_size=BATCH_SIZE,
         ):
             logger.info("Fetching tags for entitlements")
-            entitlements_map = {ent.id: ent.linked_datasource_id for ent in entitlements}
+            entitlements_map = {
+                ent.id: ent.linked_datasource_id
+                for ent in entitlements
+                if ent.linked_datasource_id is not None
+            }
 
             try:
                 entitlement_ids = ",".join(entitlements_map)

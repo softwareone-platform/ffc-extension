@@ -31,7 +31,7 @@ class LimitOffsetParams(BaseModel, AbstractParams):
 class LimitOffsetPage[S: BaseSchema](_LimitOffsetPage[S]):
     limit: GreaterEqualZero | None  # type: ignore[assignment]
 
-    __params_type__ = LimitOffsetParams  # type: ignore
+    __params_type__ = LimitOffsetParams
 
 
 async def paginate[M: Base, S: BaseSchema](
@@ -56,7 +56,7 @@ async def paginate[M: Base, S: BaseSchema](
         order_by = [
             handler.model_cls.id
             if not issubclass(handler.model_cls, TimestampMixin)
-            else handler.model_cls.updated_at.desc()  # type: ignore
+            else handler.model_cls.updated_at.desc()
         ]
         items = await handler.query_db(
             base_query=base_query,
