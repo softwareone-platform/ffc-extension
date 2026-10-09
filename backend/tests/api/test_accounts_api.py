@@ -277,8 +277,10 @@ async def test_get_all_account_multiple_pages(
 # ====================
 
 
-async def test_validate_account_type_and_required_conditions_account_type_admin():
-    account_repo = AccountRepository
+async def test_validate_account_type_and_required_conditions_account_type_admin(
+    mocker: MockerFixture,
+):
+    account_repo = mocker.Mock()
 
     data = AccountCreate(name="Microsoft", external_id=str(uuid4()), type=AccountType.ADMIN)
     with pytest.raises(HTTPException) as exc_info:

@@ -28,7 +28,9 @@ class SystemRead(IdSchema, CommonEventsSchema, SystemBase):
 
 
 class SystemCreate(SystemBase):
-    owner: Annotated[IdSchema | None, Field(examples=["FACC-5810-4583"])] = None  # type: ignore[assignment]
+    owner: Annotated[  # ty: ignore[invalid-attribute-override]
+        IdSchema | None, Field(examples=["FACC-5810-4583"])
+    ] = None
 
 
 class SystemUpdate(BaseSchema):

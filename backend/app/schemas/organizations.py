@@ -6,7 +6,7 @@ from typing import Annotated
 import pycountry
 from pydantic import ConfigDict, Field, computed_field, field_validator
 
-from app.enums import DatasourceType, OrganizationStatus
+from app.enums import DatasourceType, OrganizationStatus, TerminationReason
 from app.schemas.core import (
     AuditEventsSchema,
     AuditFieldSchema,
@@ -72,6 +72,23 @@ class OrganizationEventsSchema(AuditEventsSchema):
     terminated: AuditFieldSchema | None = None
 
 
+class TerminationFeedbackRead(IdSchema):
+    reason: Annotated[
+        TerminationReason,
+        Field(
+            examples=[TerminationReason.SWITCHING_TOOL],
+            description="Reason given by the client for terminating the agreement.",
+        ),
+    ]
+    comments: Annotated[
+        str | None,
+        Field(
+            examples=["We are consolidating our FinOps tooling."],
+            description="Additional comments; always provided when the reason is `other`.",
+        ),
+    ] = None
+
+
 class OrganizationRead(IdSchema, OrganizationBase):
     linked_organization_id: Annotated[
         str | None, Field(max_length=255, examples=["ee7ebfaf-a222-4209-aecc-67861694a488"])
@@ -79,6 +96,15 @@ class OrganizationRead(IdSchema, OrganizationBase):
     status: OrganizationStatus
     events: OrganizationEventsSchema
     expenses_info: OrganizationExpensesInfo | None = None
+    termination_feedback: Annotated[
+        TerminationFeedbackRead | None,
+        Field(
+            description=(
+                "Feedback given by the client when terminating the agreement. "
+                "Omitted if no feedback was collected."
+            ),
+        ),
+    ] = None
 
     @computed_field(  # type: ignore[prop-decorator]
         examples=["2026-09-01T00:00:00Z"],
