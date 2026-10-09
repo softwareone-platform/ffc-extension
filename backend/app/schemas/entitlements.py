@@ -53,7 +53,7 @@ class EntitlementUpdate(BaseSchema):
 
 class EntitlementReedemEventSchema(AuditFieldSchema):
     at: datetime.datetime
-    by: OrganizationReference
+    by: OrganizationReference  # ty: ignore[invalid-attribute-override]
 
 
 class EntitlementsEventsSchema(AuditEventsSchema):

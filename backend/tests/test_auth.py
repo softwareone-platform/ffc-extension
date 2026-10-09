@@ -91,7 +91,7 @@ async def test_resolve_installation_returns_none_when_no_installations(
 async def test_get_auth_context_raises_without_credentials() -> None:
     """`get_auth_context` raises a 401 when no credentials are supplied."""
     with pytest.raises(HTTPException) as exc_info:
-        await get_auth_context(None)  # type: ignore[arg-type]
+        await get_auth_context(None)  # ty: ignore[invalid-argument-type]
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -290,8 +290,8 @@ async def test_get_authentication_context_yields_none_without_mpt_context(
     async with contextlib.asynccontextmanager(get_authentication_context)(
         test_settings,
         db_session,
-        None,  # type: ignore[arg-type]
-        mocker.Mock(),  # type: ignore[arg-type]
+        None,  # ty: ignore[invalid-argument-type]
+        mocker.Mock(),
     ) as ctx:
         assert ctx is None
 
@@ -379,8 +379,8 @@ async def test_authentication_required_rejects_anonymous_request(
         async with contextlib.asynccontextmanager(authentication_required)(
             test_settings,
             db_session,
-            None,  # type: ignore[arg-type]
-            mocker.Mock(),  # type: ignore[arg-type]
+            None,  # ty: ignore[invalid-argument-type]
+            mocker.Mock(),
         ):
             pass
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED

@@ -221,7 +221,7 @@ async def test_get_datasource_by_id_success(
         linked_organization_id=str(uuid.uuid4()),
     )
 
-    datasource_data = optscale_aws_cnr_datasource_get_by_id_response_data()  # type: ignore
+    datasource_data = optscale_aws_cnr_datasource_get_by_id_response_data()
 
     httpx_mock.add_response(
         method="GET",

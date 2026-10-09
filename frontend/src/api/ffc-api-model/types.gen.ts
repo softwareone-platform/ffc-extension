@@ -2016,6 +2016,25 @@ export type LimitOffsetPageOrganizationRead = {
             possible_monthly_saving?: string;
         } | null;
         /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
+        /**
          * Deletable At
          *
          * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -2510,6 +2529,25 @@ export type OrganizationRead = {
         possible_monthly_saving?: string;
     } | null;
     /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
+    } | null;
+    /**
      * Deletable At
      *
      * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -2571,6 +2609,31 @@ export type SystemReference = {
      */
     external_id: string;
 };
+
+/**
+ * TerminationFeedbackRead
+ */
+export type TerminationFeedbackRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * TerminationReason
+     */
+    reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+    /**
+     * Comments
+     *
+     * Additional comments; always provided when the reason is `other`.
+     */
+    comments?: string | null;
+};
+
+/**
+ * TerminationReason
+ */
+export type TerminationReason = 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
 
 /**
  * UserRead
@@ -2988,6 +3051,25 @@ export type LimitOffsetPageOrganizationReadWritable = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
     }>;
     /**
      * Total
@@ -3143,6 +3225,25 @@ export type OrganizationReadWritable = {
          * Possible Monthly Saving
          */
         possible_monthly_saving?: string;
+    } | null;
+    /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
     } | null;
 };
 
@@ -4456,6 +4557,25 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                 possible_monthly_saving?: string;
             } | null;
             /**
+             * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+             */
+            termination_feedback?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * TerminationReason
+                 */
+                reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+                /**
+                 * Comments
+                 *
+                 * Additional comments; always provided when the reason is `other`.
+                 */
+                comments?: string | null;
+            } | null;
+            /**
              * Deletable At
              *
              * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -4735,6 +4855,25 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
             possible_monthly_saving?: string;
         } | null;
         /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
+        /**
          * Deletable At
          *
          * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -4951,6 +5090,25 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At

@@ -3,6 +3,7 @@ import logging
 import secrets
 import traceback
 from abc import ABC
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -16,7 +17,12 @@ from app.dependencies.api_clients import (
     OptscaleClient,
 )
 from app.dependencies.core import AppSettings
-from app.dependencies.db import EntitlementRepository, OrganizationRepository
+from app.dependencies.db import (
+    EntitlementRepository,
+    OrganizationRepository,
+    TerminationFeedbackRepository,
+)
+from app.enums import OrganizationStatus, TerminationReason
 from app.events.core import EventHandler, EventProcessor
 from app.events.exceptions import EventError, TaskNotOwnedError
 from app.events.orders.constants import (
@@ -42,7 +48,8 @@ from app.events.orders.exceptions import (
     UnsupportedOrderTypeError,
 )
 from app.events.orders.parameters import (
-    check_order_parameters,
+    check_purchase_order_parameters,
+    check_termination_order_parameters,
     get_billing_defaults_updates,
     get_due_date_update,
 )
@@ -57,11 +64,15 @@ from app.parameters import (
     get_due_date,
     get_fulfillment_parameter,
     get_ordering_parameter,
+    get_termination_comments,
+    get_termination_reason,
     set_is_new_user,
 )
 from app.schemas.core import ExtensionContext
 
 logger = logging.getLogger(__name__)
+
+ParametersValidator = Callable[[dict[str, Any]], tuple[dict[str, Any], bool]]
 
 
 class OrderProcessor(EventProcessor, ABC):
@@ -76,6 +87,7 @@ class OrderProcessor(EventProcessor, ABC):
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
+        termination_feedback_repo: TerminationFeedbackRepository,
         settings: AppSettings,
         order: dict[str, Any],
     ):
@@ -86,6 +98,7 @@ class OrderProcessor(EventProcessor, ABC):
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
+        self.termination_feedback_repo = termination_feedback_repo
         self.settings = settings
         self.order = order
         self.template_cache = {}
@@ -95,8 +108,12 @@ class OrderProcessor(EventProcessor, ABC):
         return self.order["id"]
 
     async def on_event_error(self, exc: EventError) -> ProcessingResult:
-        """A known error is still an order that did not go through: the due date decides."""
-
+        """
+        A known error is still an order that did not go through: the due date decides.
+        An order moved to query waits for the customer instead, so it's skipped.
+        """
+        if isinstance(exc, OrderMovedToQuery):
+            return exc.to_result()
         return await self.recover(exc)
 
     def set_template(self, order: dict, template_id: str | None) -> dict:
@@ -143,13 +160,14 @@ class OrderProcessor(EventProcessor, ABC):
             self.template_cache[(template_type, template_name)] = template_id
             logger.debug("Cached template %s (%s, %s)", template_id, template_type, template_name)
 
-    async def validate_and_move_to_querying_if_needed(self) -> bool:
+    async def validate_order_parameters(self, parameters_validator_fn: ParametersValidator) -> bool:
         """
-        Validate ordering params and move order back to Query if invalid.
+        Check the ordering parameters with `parameters_validator_fn`: if they are invalid, write the
+        errors back to the order and move it to Querying.
+
+        :return: True if the parameters are valid, False if the order was moved to Querying.
         """
-        order_with_validation_errors, validation_succeeded = check_order_parameters(
-            order=self.order
-        )
+        order_with_validation_errors, validation_succeeded = parameters_validator_fn(self.order)
         order_id = self.order["id"]
         if not validation_succeeded:
             template_id = await self.get_product_template_id(QUERYING_TEMPLATE_TYPE, None)
@@ -407,7 +425,7 @@ class PurchaseOrderProcessor(OrderProcessor):
 
     async def validate(self) -> None:
         await self.validate_order_status()
-        is_valid = await self.validate_and_move_to_querying_if_needed()
+        is_valid = await self.validate_order_parameters(check_purchase_order_parameters)
         if not is_valid:
             raise OrderMovedToQuery(
                 f"Order {self.order['id']} parameters are missing or invalid. Order Skipped."
@@ -454,11 +472,20 @@ class ChangeOrderProcessor(OrderProcessor):
         )
 
 
-class TerminateOrderProcessor(OrderProcessor):
+class TerminationOrderProcessor(OrderProcessor):
     async def validate(self) -> None:
         await self.validate_order_status()
+        is_valid = await self.validate_order_parameters(check_termination_order_parameters)
+        if not is_valid:
+            raise OrderMovedToQuery(
+                f"Order {self.order['id']} termination parameters are invalid. Order Skipped."
+            )
 
     async def handle(self) -> ProcessingResult:
+        # validated in `validate`: the reason is either missing or a known TerminationReason
+        reason = get_termination_reason(self.order)
+        comments = get_termination_comments(self.order)
+
         await self._store_order_parameters_updates(get_due_date_update(self.order, self.settings))
 
         agreement_id = self.order["agreement"]["id"]
@@ -494,15 +521,26 @@ class TerminateOrderProcessor(OrderProcessor):
         if is_disabled:
             severity = "Warning"
             message = f"The Organization {organization_id} was already terminated."
-
         else:
             await self.optscale_client.suspend_organization(optscale_org_id)
-
-            await self.organization_repo.terminate(organization)
-            await self.entitlement_repo.terminate_active_for_organization(organization)
-
             severity = "Info"
             message = f"The Organization {organization_id} was successfully suspended."
+
+        # The local termination doesn't rely on the OptScale status: a previous attempt
+        # could have suspended the organization and failed before terminating it locally.
+        if organization.status != OrganizationStatus.TERMINATED:
+            if is_disabled:
+                logger.info(
+                    "%s: OptScale organization %s is already disabled, "
+                    "terminating organization %s.",
+                    self.order["id"],
+                    optscale_org_id,
+                    organization.id,
+                )
+            await self.organization_repo.terminate(organization)
+        await self.entitlement_repo.terminate_active_for_organization(organization)
+
+        await self._store_termination_feedback(organization, reason, comments)
 
         await self.installation_client.complete_order(
             order_id=self.order["id"],
@@ -517,11 +555,39 @@ class TerminateOrderProcessor(OrderProcessor):
             message=message,
         )
 
+    async def _store_termination_feedback(
+        self,
+        organization: Organization,
+        reason: TerminationReason | None,
+        comments: str | None,
+    ) -> None:
+        """
+        Stores the termination reason and comments given by the client, replacing any
+        existing feedback of the organization: a previous termination order could have
+        failed and the client submitted a new one with a different feedback.
+        Orders created before the termination feedback parameters were introduced don't
+        carry a reason: in that case nothing is stored.
+        """
+        if reason is None:
+            logger.info(
+                "%s: no termination reason provided, skipping termination feedback "
+                "for organization %s.",
+                self.order["id"],
+                organization.id,
+            )
+            return
+
+        await self.termination_feedback_repo.upsert_for_organization(
+            organization,
+            reason=reason,
+            comments=comments,
+        )
+
 
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
     ORDER_TYPE_PURCHASE: PurchaseOrderProcessor,
     ORDER_TYPE_CHANGE: ChangeOrderProcessor,
-    ORDER_TYPE_TERMINATE: TerminateOrderProcessor,
+    ORDER_TYPE_TERMINATE: TerminationOrderProcessor,
 }
 
 
@@ -535,6 +601,7 @@ class OrderEventHandler(EventHandler):
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
+        termination_feedback_repo: TerminationFeedbackRepository,
         settings: AppSettings,
     ):
         self.api_modifier_client = api_modifier_client
@@ -544,6 +611,7 @@ class OrderEventHandler(EventHandler):
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
+        self.termination_feedback_repo = termination_feedback_repo
         self.settings = settings
 
     async def _claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> None:
@@ -580,6 +648,7 @@ class OrderEventHandler(EventHandler):
             optscale_client=self.optscale_client,
             organization_repo=self.organization_repo,
             entitlement_repo=self.entitlement_repo,
+            termination_feedback_repo=self.termination_feedback_repo,
             order=order,
             settings=self.settings,
         )

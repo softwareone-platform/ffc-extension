@@ -48,3 +48,7 @@ AdditionalAdminRequestRepository = Annotated[
     handlers.AdditionalAdminRequestHandler,
     Depends(HandlerFactory(handlers.AdditionalAdminRequestHandler)),
 ]
+TerminationFeedbackRepository = Annotated[
+    handlers.TerminationFeedbackHandler,
+    Depends(HandlerFactory(handlers.TerminationFeedbackHandler)),
+]

@@ -82,6 +82,19 @@ class OrganizationStatus(enum.StrEnum):
 
 
 @enum.unique
+class TerminationReason(enum.StrEnum):
+    MISSING_FEATURES = "missing_features"
+    TOO_COMPLEX = "too_complex"
+    COST_OR_PRICING = "cost_or_pricing"
+    DATA_ACCURACY = "data_accuracy"
+    SWITCHING_TOOL = "switching_tool"
+    NEED_ENDED = "need_ended"
+    INTERNAL_CHANGES = "internal_changes"
+    UNSATISFACTORY_SUPPORT = "unsatisfactory_support"
+    OTHER = "other"
+
+
+@enum.unique
 class TagType(enum.StrEnum):
     USER = "user"
     ORGANIZATION = "organization"
