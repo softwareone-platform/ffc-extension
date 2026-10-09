@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 from fastapi.exceptions import ResponseValidationError
@@ -9,9 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api_clients.mpt import MPTClient
 from app.db.models import Account, Entitlement
-from app.enums import EntitlementStatus
+from app.enums import EntitlementStatus, TerminationReason
+from app.events.orders.error import ERR_ORDER_TYPE_NOT_SUPPORTED, ERR_TERMINATION_COMMENTS
 from app.events.orders.processing import PurchaseOrderProcessor
 from app.events.processing import ProcessingResult, ProcessingStatus
+from app.parameters import (
+    PARAM_TERMINATION_COMMENTS,
+    PARAM_TERMINATION_REASON,
+    get_ordering_parameter,
+)
 from app.schemas.core import Event, ExtensionContext
 from tests.types import EventFactory, MPTSubscriptionFactory, TemplatesMocker
 
@@ -319,3 +326,89 @@ async def test_process_subscription_completes_the_task_for_an_unknown_subscripti
         select(Entitlement).where(Entitlement.owner == subscription_account)
     )
     assert result.scalars().all() == []
+
+
+async def test_validate_termination_order_requires_comments_when_reason_is_other(
+    post_order_validation: Callable[[dict[str, Any]], Awaitable[Response]],
+    draft_termination_order_factory: Callable[..., dict[str, Any]],
+) -> None:
+    """Draft validation sets a required error on the comments when the reason is `other`."""
+    order = draft_termination_order_factory(reason="other", comments=None)
+
+    response = await post_order_validation(order)
+
+    assert response.status_code == 200
+    validated = response.json()
+    assert validated["error"] == ERR_TERMINATION_COMMENTS.to_dict()
+    comments = get_ordering_parameter(validated, PARAM_TERMINATION_COMMENTS)
+    assert comments["error"] == ERR_TERMINATION_COMMENTS.to_dict()
+    assert comments["constraints"] == {"hidden": False, "required": True}
+    assert get_ordering_parameter(validated, PARAM_TERMINATION_REASON)["error"] is None
+
+
+@pytest.mark.parametrize("comments", ["", "   \n "])
+async def test_validate_termination_order_treats_blank_comments_as_missing(
+    post_order_validation: Callable[[dict[str, Any]], Awaitable[Response]],
+    draft_termination_order_factory: Callable[..., dict[str, Any]],
+    comments: str,
+) -> None:
+    """Draft validation treats whitespace-only comments as missing when the reason is `other`."""
+    order = draft_termination_order_factory(reason="other", comments=comments)
+
+    response = await post_order_validation(order)
+
+    assert response.status_code == 200
+    comments_param = get_ordering_parameter(response.json(), PARAM_TERMINATION_COMMENTS)
+    assert comments_param["error"] == ERR_TERMINATION_COMMENTS.to_dict()
+
+
+@pytest.mark.parametrize(
+    ("reason", "comments"),
+    [
+        ("other", "We moved to an in-house solution"),
+        *[(reason.value, None) for reason in TerminationReason if reason != "other"],
+        ("cost_or_pricing", "Too expensive for our budget"),
+        (None, None),
+    ],
+)
+async def test_validate_termination_order_returns_no_errors(
+    post_order_validation: Callable[[dict[str, Any]], Awaitable[Response]],
+    draft_termination_order_factory: Callable[..., dict[str, Any]],
+    reason: str | None,
+    comments: str | None,
+) -> None:
+    """Draft validation sets no error unless the reason is `other` and comments are empty."""
+    order = draft_termination_order_factory(reason=reason, comments=comments)
+
+    response = await post_order_validation(order)
+
+    assert response.status_code == 200
+    validated = response.json()
+    assert "error" not in validated
+    assert all(param["error"] is None for param in validated["parameters"]["ordering"])
+
+
+async def test_validate_termination_order_clears_previous_error(
+    post_order_validation: Callable[[dict[str, Any]], Awaitable[Response]],
+    draft_termination_order_factory: Callable[..., dict[str, Any]],
+) -> None:
+    """Draft validation clears a comments error left by a previous validation once fixed."""
+    order = draft_termination_order_factory(reason="other", comments="Now explained")
+    comments = get_ordering_parameter(order, PARAM_TERMINATION_COMMENTS)
+    comments["error"] = ERR_TERMINATION_COMMENTS.to_dict()
+
+    response = await post_order_validation(order)
+
+    assert response.status_code == 200
+    assert get_ordering_parameter(response.json(), PARAM_TERMINATION_COMMENTS)["error"] is None
+
+
+async def test_validate_change_order_is_not_supported(
+    post_order_validation: Callable[[dict[str, Any]], Awaitable[Response]],
+    change_order: dict[str, Any],
+) -> None:
+    """Draft validation of a Change order still returns the not-supported order error."""
+    response = await post_order_validation(change_order)
+
+    assert response.status_code == 200
+    assert response.json()["error"] == ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type="Change")

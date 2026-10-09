@@ -37,6 +37,7 @@ from app.enums import (
     EntitlementStatus,
     OrganizationStatus,
     SystemStatus,
+    TerminationReason,
     UserStatus,
 )
 
@@ -261,6 +262,12 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
     terminated_by_id: Mapped[str | None] = mapped_column(ForeignKey(FKEY_ACTOR))
     terminated_by: Mapped[Actor | None] = relationship(foreign_keys=[terminated_by_id])
 
+    termination_feedback: Mapped[TerminationFeedback | None] = relationship(
+        back_populates="organization",
+        uselist=False,
+        lazy="joined",
+    )
+
     __table_args__ = (
         Index(
             "ix_organizations_operations_external_id_for_non_deleted",
@@ -269,6 +276,25 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
             postgresql_where=(status != OrganizationStatus.DELETED),
         ),
     )
+
+
+class TerminationFeedback(Base, TimestampMixin, HumanReadablePKMixin):
+    __tablename__ = "termination_feedbacks"
+
+    PK_PREFIX = "FFBK"
+    PK_NUM_LENGTH = 12
+
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey(FKEY_ORGANIZATION), nullable=False, unique=True
+    )
+    organization: Mapped[Organization] = relationship(
+        back_populates="termination_feedback", foreign_keys=[organization_id]
+    )
+    reason: Mapped[TerminationReason] = mapped_column(
+        Enum(TerminationReason, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+    )
+    comments: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
 
 class DatasourceExpense(Base, HumanReadablePKMixin, TimestampMixin):

@@ -1,5 +1,6 @@
 import copy
 import logging
+from collections.abc import Callable
 from datetime import date
 from typing import Any
 
@@ -13,9 +14,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from app.conf import Settings
-from app.db.handlers import AccountHandler, EntitlementHandler, OrganizationHandler
-from app.db.models import Account, Entitlement, Organization
-from app.enums import AccountStatus, AccountType, EntitlementStatus, OrganizationStatus
+from app.db.handlers import (
+    AccountHandler,
+    EntitlementHandler,
+    OrganizationHandler,
+    TerminationFeedbackHandler,
+)
+from app.db.models import Account, Entitlement, Organization, TerminationFeedback
+from app.enums import (
+    AccountStatus,
+    AccountType,
+    EntitlementStatus,
+    OrganizationStatus,
+    TerminationReason,
+)
 from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     PROCESSING_TEMPLATE_TYPE,
@@ -48,7 +60,7 @@ from app.parameters import (
     get_ordering_parameter,
     set_due_date,
 )
-from tests.types import OrderFactory
+from tests.types import ModelFactory, OrderFactory
 
 PRODUCT_ID = "PRD-4141-4379"
 
@@ -1889,7 +1901,7 @@ async def test_purchase_order_process_fails_when_due_date_reached(
     assert f"{order_id}: order processing failed." in caplog.text
 
 
-# # TerminateOrderProcessor
+# # TerminationOrderProcessor
 async def test_terminated_order_process_completes_order(
     terminate_order: dict[str, Any],
     test_settings: Settings,
@@ -2035,6 +2047,9 @@ async def test_terminated_order_process_completes_order(
     ).all()
     assert len(replacements) == 2
     assert {r.affiliate_external_id for r in replacements} == {"EXTERNAL_ID_1", "EXTERNAL_ID_2"}
+    # the order doesn't carry the termination feedback parameters
+    await db_session.refresh(organization, ["termination_feedback"])
+    assert organization.termination_feedback is None
 
 
 async def test_terminate_cancels_when_order_has_no_due_date_parameter(
@@ -2170,6 +2185,337 @@ async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
     await db_session.refresh(organization)
     assert organization.status == OrganizationStatus.ACTIVE
     assert organization.terminated_at is None
+
+
+@pytest.mark.parametrize(
+    ("reason", "comments", "expected_comments"),
+    [
+        ("other", "We moved to an in-house tool.", "We moved to an in-house tool."),
+        ("cost_or_pricing", None, None),
+    ],
+)
+async def test_terminated_order_stores_termination_feedback(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    reason: str,
+    comments: str | None,
+    expected_comments: str | None,
+) -> None:
+    """The termination reason and comments of the order are stored for the organization."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason=reason, comments=comments
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    feedback = await db_session.scalar(
+        select(TerminationFeedback).where(TerminationFeedback.organization_id == organization.id)
+    )
+    assert feedback is not None
+    assert feedback.reason == TerminationReason(reason)
+    assert feedback.comments == expected_comments
+
+
+async def test_terminated_order_skips_feedback_when_parameters_are_missing(
+    terminate_order: dict[str, Any],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Orders created before the feedback parameters existed complete without a feedback."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    with caplog.at_level(logging.INFO):
+        result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    assert await db_session.scalar(select(TerminationFeedback)) is None
+    assert "no termination reason provided" in caplog.text
+
+
+async def test_terminated_order_keeps_existing_termination_feedback(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """An organization's existing feedback isn't overwritten by a later termination order."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="other", comments="New comments"
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    existing, _ = await TerminationFeedbackHandler(db_session).get_or_create_for_organization(
+        organization, reason=TerminationReason.TOO_COMPLEX
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    feedbacks = (await db_session.scalars(select(TerminationFeedback))).all()
+    assert [f.id for f in feedbacks] == [existing.id]
+    assert feedbacks[0].reason == TerminationReason.TOO_COMPLEX
+    assert feedbacks[0].comments is None
+
+
+@freeze_time("2024-12-01")
+async def test_terminated_order_is_not_terminated_when_storing_feedback_fails(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A failure while storing the feedback stops the termination and reschedules the order."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(reason="other")
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    mocker.patch.object(
+        TerminationFeedbackHandler,
+        "get_or_create_for_organization",
+        side_effect=RuntimeError("boom"),
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    with caplog.at_level(logging.ERROR):
+        result = await processor.process()
+
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert f"{order_id}: order processing failed." in caplog.text
+    assert httpx_mock.get_requests(method="PATCH") == []
+    await db_session.refresh(organization)
+    assert organization.status == OrganizationStatus.ACTIVE
+    assert organization.terminated_at is None
+
+
+@freeze_time("2024-12-01")
+async def test_terminated_order_is_not_terminated_when_termination_reason_is_unknown(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """An unknown reason key stops the termination and reschedules the order."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="not_a_reason"
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert "'not_a_reason' is not a valid TerminationReason" in result.message
+    assert httpx_mock.get_requests(method="PATCH") == []
+    assert await db_session.scalar(select(TerminationFeedback)) is None
+    await db_session.refresh(organization)
+    assert organization.status == OrganizationStatus.ACTIVE
 
 
 async def test_terminated_order_cancel_when_organization_not_found(

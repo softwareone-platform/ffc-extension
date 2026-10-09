@@ -16,5 +16,8 @@ ERR_ADMIN_CONTACT = ValidationError("FFC0003", "Administrator contact is require
 ERR_ORDER_TYPE_NOT_SUPPORTED = ValidationError(
     "FFC0004", "Order type `{order_type}` is not supported by FinOps"
 )
+ERR_TERMINATION_COMMENTS = ValidationError(
+    "FFC0005", "Additional comments are required when the termination reason is Other"
+)
 ERR_DUE_DATE_IS_REACHED = ValidationError("EXT1000", "Due date is reached {due_date}")
 ERR_DUE_DATE_NOT_SET = ValidationError("EXT1001", "No due date fulfillment parameter found.")

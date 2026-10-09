@@ -23,6 +23,7 @@ from app.db.models import (
     Entitlement,
     Organization,
     System,
+    TerminationFeedback,
     TimestampMixin,
     User,
 )
@@ -31,6 +32,7 @@ from app.enums import (
     AccountUserStatus,
     EntitlementStatus,
     OrganizationStatus,
+    TerminationReason,
 )
 
 
@@ -512,7 +514,6 @@ class OrganizationHandler(ModelHandler[Organization]):
         self,
         billing_currency: str,
     ) -> AsyncGenerator[Organization, None]:
-
         async for organization in self.stream_scalars(
             extra_conditions=[Organization.billing_currency == billing_currency],
         ):
@@ -528,6 +529,29 @@ class OrganizationHandler(ModelHandler[Organization]):
                 "status": OrganizationStatus.TERMINATED,
                 "terminated_at": datetime.now(UTC),
             },
+        )
+
+
+class TerminationFeedbackHandler(ModelHandler[TerminationFeedback]):
+    """
+    Handles CRUD operations for the TerminationFeedback model.
+    """
+
+    async def get_or_create_for_organization(
+        self,
+        organization: Organization,
+        reason: TerminationReason,
+        comments: str | None = None,
+    ) -> tuple[TerminationFeedback, bool]:
+        """
+        Returns the TerminationFeedback of the given organization, creating it with the
+        given reason and comments if it doesn't exist yet. An existing feedback is left untouched.
+
+        :return: a (feedback, created) tuple.
+        """
+        return await self.get_or_create(
+            organization_id=organization.id,
+            defaults={"reason": reason, "comments": comments},
         )
 
 

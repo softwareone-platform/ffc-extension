@@ -10,9 +10,10 @@ from app.db.handlers import (
     ConstraintViolationError,
     ModelHandler,
     NotFoundError,
+    TerminationFeedbackHandler,
 )
-from app.db.models import Account, AccountUser, Base, User
-from app.enums import AccountStatus, AccountUserStatus, UserStatus
+from app.db.models import Account, AccountUser, Base, Organization, User
+from app.enums import AccountStatus, AccountUserStatus, TerminationReason, UserStatus
 from tests.db.models import (
     DeletableAuditModelForTests,
     DeletableModelForTests,
@@ -342,3 +343,47 @@ async def test_deleted_by_user_id(
     assert result.status == AccountUserStatus.DELETED
     assert result.deleted_at is not None
     assert result.deleted_by_id == user_actor.id
+
+
+async def test_termination_feedback_get_or_create_for_organization_creates(
+    db_session: AsyncSession,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """A feedback is created when the organization doesn't have one yet."""
+    organization = await organization_factory()
+    handler = TerminationFeedbackHandler(db_session)
+
+    feedback, created = await handler.get_or_create_for_organization(
+        organization,
+        reason=TerminationReason.OTHER,
+        comments="We are moving to another tool.",
+    )
+
+    assert created is True
+    assert feedback.id.startswith("FFBK-")
+    assert feedback.organization_id == organization.id
+    assert feedback.reason == TerminationReason.OTHER
+    assert feedback.comments == "We are moving to another tool."
+
+
+async def test_termination_feedback_get_or_create_for_organization_existing(
+    db_session: AsyncSession,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """An existing feedback is returned unchanged instead of creating a new one."""
+    organization = await organization_factory()
+    handler = TerminationFeedbackHandler(db_session)
+    existing, _ = await handler.get_or_create_for_organization(
+        organization, reason=TerminationReason.TOO_COMPLEX
+    )
+
+    feedback, created = await handler.get_or_create_for_organization(
+        organization,
+        reason=TerminationReason.OTHER,
+        comments="Ignored",
+    )
+
+    assert created is False
+    assert feedback.id == existing.id
+    assert feedback.reason == TerminationReason.TOO_COMPLEX
+    assert feedback.comments is None

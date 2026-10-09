@@ -3,6 +3,7 @@ from datetime import date
 
 import pytest
 
+from app.enums import TerminationReason
 from app.parameters import (
     PARAM_BILLED_PERCENTAGE,
     PARAM_CURRENCY,
@@ -15,6 +16,8 @@ from app.parameters import (
     get_fulfillment_parameter,
     get_ordering_parameter,
     get_parameter,
+    get_termination_comments,
+    get_termination_reason,
     get_trial_end_date,
     get_trial_start_date,
     reset_ordering_parameters_error,
@@ -170,3 +173,60 @@ def test_reset_ordering_parameters_error_clears_all_errors(
     order = set_ordering_parameter_error(order, PARAM_CURRENCY, {"id": "E", "message": "m"})
     updated = reset_ordering_parameters_error(order)
     assert all(p["error"] is None for p in updated["parameters"][PARAM_PHASE_ORDERING])
+
+
+def test_get_termination_reason_returns_enum(
+    order_with_termination_parameters: Callable[..., dict],
+) -> None:
+    """`get_termination_reason` converts the selected key into a TerminationReason."""
+    order = order_with_termination_parameters(reason="switching_tool")
+    assert get_termination_reason(order) is TerminationReason.SWITCHING_TOOL
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_get_termination_reason_returns_none_when_empty(
+    order_with_termination_parameters: Callable[..., dict], value: str | None
+) -> None:
+    """`get_termination_reason` returns None when the parameter has no value."""
+    order = order_with_termination_parameters(reason=value)
+    assert get_termination_reason(order) is None
+
+
+def test_get_termination_reason_returns_none_when_parameter_absent(
+    order_with_parameters: OrderFactory,
+) -> None:
+    """`get_termination_reason` returns None when the order doesn't have the parameter."""
+    assert get_termination_reason(order_with_parameters()) is None
+
+
+def test_get_termination_reason_raises_on_unknown_key(
+    order_with_termination_parameters: Callable[..., dict],
+) -> None:
+    """`get_termination_reason` raises ValueError when the key isn't a known reason."""
+    order = order_with_termination_parameters(reason="not_a_reason")
+    with pytest.raises(ValueError):
+        get_termination_reason(order)
+
+
+def test_get_termination_comments_returns_stripped_value(
+    order_with_termination_parameters: Callable[..., dict],
+) -> None:
+    """`get_termination_comments` returns the comments without surrounding whitespace."""
+    order = order_with_termination_parameters(comments="  Too expensive for us.\n")
+    assert get_termination_comments(order) == "Too expensive for us."
+
+
+@pytest.mark.parametrize("value", [None, "", "   \n "])
+def test_get_termination_comments_returns_none_when_blank(
+    order_with_termination_parameters: Callable[..., dict], value: str | None
+) -> None:
+    """`get_termination_comments` returns None when the comments are missing or blank."""
+    order = order_with_termination_parameters(comments=value)
+    assert get_termination_comments(order) is None
+
+
+def test_get_termination_comments_returns_none_when_parameter_absent(
+    order_with_parameters: OrderFactory,
+) -> None:
+    """`get_termination_comments` returns None when the order doesn't have the parameter."""
+    assert get_termination_comments(order_with_parameters()) is None
