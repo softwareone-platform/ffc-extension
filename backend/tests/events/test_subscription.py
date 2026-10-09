@@ -12,6 +12,7 @@ from app.conf import Settings
 from app.db.handlers import EntitlementHandler
 from app.db.models import Account, Entitlement
 from app.enums import AccountType, EntitlementStatus
+from app.events.exceptions import HandlerHTTPError
 from app.events.processing import ProcessingStatus
 from app.events.subscriptions.constants import (
     ACTIVE_SUBSCRIPTION_STATUS,
@@ -102,8 +103,12 @@ async def test_get_processor_propagates_a_marketplace_failure(
         json={"errors": {"id": "Subscription not found"}},
     )
 
-    with pytest.raises(httpx.HTTPStatusError):
+    with pytest.raises(HandlerHTTPError) as exc_info:
         await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
+
+    result = exc_info.value.to_result()
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert result.severity == "Error"
 
 
 # -- claim_task --
@@ -127,11 +132,7 @@ async def test_claim_task_starts_the_task_without_an_ownership_check(
         json={"id": TASK_ID},
     )
 
-    claimed = await subscription_event_handler.claim_task(
-        mocked_extension_ctx, TASK_ID, SUBSCRIPTION_ID
-    )
-
-    assert claimed is True
+    await subscription_event_handler.claim_task(mocked_extension_ctx, TASK_ID, SUBSCRIPTION_ID)
     assert [request.method for request in httpx_mock.get_requests()] == ["POST", "PUT"]
 
 
