@@ -15,7 +15,11 @@ from app.dependencies.api_clients import (
     OptscaleClient,
 )
 from app.dependencies.core import AppSettings
-from app.dependencies.db import EntitlementRepository, OrganizationRepository
+from app.dependencies.db import (
+    EntitlementRepository,
+    OrganizationRepository,
+    TerminationFeedbackRepository,
+)
 from app.events.core import EventHandler, EventProcessor
 from app.events.exceptions import EventError
 from app.events.orders.constants import (
@@ -56,6 +60,8 @@ from app.parameters import (
     get_due_date,
     get_fulfillment_parameter,
     get_ordering_parameter,
+    get_termination_comments,
+    get_termination_reason,
     set_is_new_user,
 )
 from app.schemas.core import ExtensionContext
@@ -75,6 +81,7 @@ class OrderProcessor(EventProcessor):
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
+        termination_feedback_repo: TerminationFeedbackRepository,
         settings: AppSettings,
         order: dict[str, Any],
     ):
@@ -85,6 +92,7 @@ class OrderProcessor(EventProcessor):
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
+        self.termination_feedback_repo = termination_feedback_repo
         self.settings = settings
         self.order = order
         self.template_cache = {}
@@ -453,7 +461,7 @@ class ChangeOrderProcessor(OrderProcessor):
         )
 
 
-class TerminateOrderProcessor(OrderProcessor):
+class TerminationOrderProcessor(OrderProcessor):
     async def validate(self) -> None:
         await self.validate_order_status()
 
@@ -483,6 +491,8 @@ class TerminateOrderProcessor(OrderProcessor):
                 f"for Cloud Organization.",
             )
         optscale_org_id = organization.linked_organization_id
+
+        await self._store_termination_feedback(organization)
 
         response = await self.optscale_client.get_organization(optscale_org_id)
         optscale_organization = response.json()
@@ -516,11 +526,42 @@ class TerminateOrderProcessor(OrderProcessor):
             message=message,
         )
 
+    async def _store_termination_feedback(self, organization: Organization) -> None:
+        """
+        Stores the termination reason and comments given by the client, if the organization
+        doesn't have a feedback yet.
+        Orders created before the termination feedback parameters were introduced don't
+        carry a reason: in that case nothing is stored.
+        It runs before the organization is suspended and terminated, so that a failure
+        prevents the termination and the order is processed again.
+        """
+        reason = get_termination_reason(self.order)
+        if reason is None:
+            logger.info(
+                "%s: no termination reason provided, skipping termination feedback "
+                "for organization %s.",
+                self.order["id"],
+                organization.id,
+            )
+            return
+
+        _, created = await self.termination_feedback_repo.get_or_create_for_organization(
+            organization,
+            reason=reason,
+            comments=get_termination_comments(self.order),
+        )
+        if not created:
+            logger.info(
+                "%s: organization %s already has a termination feedback.",
+                self.order["id"],
+                organization.id,
+            )
+
 
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
     ORDER_TYPE_PURCHASE: PurchaseOrderProcessor,
     ORDER_TYPE_CHANGE: ChangeOrderProcessor,
-    ORDER_TYPE_TERMINATE: TerminateOrderProcessor,
+    ORDER_TYPE_TERMINATE: TerminationOrderProcessor,
 }
 
 
@@ -534,6 +575,7 @@ class OrderEventHandler(EventHandler):
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
+        termination_feedback_repo: TerminationFeedbackRepository,
         settings: AppSettings,
     ):
         self.api_modifier_client = api_modifier_client
@@ -543,6 +585,7 @@ class OrderEventHandler(EventHandler):
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
+        self.termination_feedback_repo = termination_feedback_repo
         self.settings = settings
 
     async def claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> bool:
@@ -588,6 +631,7 @@ class OrderEventHandler(EventHandler):
             optscale_client=self.optscale_client,
             organization_repo=self.organization_repo,
             entitlement_repo=self.entitlement_repo,
+            termination_feedback_repo=self.termination_feedback_repo,
             order=order,
             settings=self.settings,
         )

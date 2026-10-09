@@ -114,5 +114,5 @@ _settings = None
 def get_settings() -> Settings:
     global _settings
     if not _settings:
-        _settings = Settings()  # type: ignore
+        _settings = Settings()
     return _settings

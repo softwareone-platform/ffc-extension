@@ -8,8 +8,8 @@ from pytest_httpx import HTTPXMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
-from app.db.models import Organization, System
-from app.enums import OrganizationStatus
+from app.db.models import Organization, System, TerminationFeedback
+from app.enums import OrganizationStatus, TerminationReason
 from tests.types import ModelFactory
 
 # =================
@@ -337,6 +337,46 @@ async def test_get_organization_by_id(
     assert data["expenses_info"]["expenses_this_month_forecast"] == "3690.91"
     # the organization is not terminated, so the field is dropped by response_model_exclude_none
     assert "deletable_at" not in data
+    assert "termination_feedback" not in data
+
+
+async def test_get_organization_by_id_with_termination_feedback(
+    organization_factory: ModelFactory[Organization],
+    db_session: AsyncSession,
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """The organization response includes its termination feedback when it exists."""
+    org = await organization_factory(
+        linked_organization_id="ee7ebfaf-a222-4209-aecc-67861694a488",
+        status=OrganizationStatus.TERMINATED,
+    )
+    feedback = TerminationFeedback(
+        organization=org,
+        reason=TerminationReason.OTHER,
+        comments="We are consolidating our FinOps tooling.",
+    )
+    db_session.add(feedback)
+    await db_session.commit()
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/expenses",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={},
+    )
+
+    response = await api_client.get(
+        f"/organizations/{org.id}", headers={"Authorization": f"Bearer {ffc_jwt_token}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["termination_feedback"] == {
+        "id": feedback.id,
+        "reason": "other",
+        "comments": "We are consolidating our FinOps tooling.",
+    }
 
 
 async def test_get_terminated_organization_by_id(

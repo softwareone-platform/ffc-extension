@@ -668,24 +668,6 @@ export type DatasourceForceReimport = {
 };
 
 /**
- * DatasourceInfo
- */
-export type DatasourceInfo = {
-    /**
-     * Id
-     */
-    id: string;
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * DatasourceType
-     */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
-};
-
-/**
  * DatasourceRead
  */
 export type DatasourceRead = {
@@ -761,30 +743,6 @@ export type DatasourceRead = {
  * DatasourceType
  */
 export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
-
-/**
- * Details
- */
-export type Details = {
-    /**
-     * Eventtype
-     *
-     * The type of the event. Maps to the “routing.event” property of the EventMessage.
-     */
-    eventType: string;
-    /**
-     * Enqueuetime
-     *
-     * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-     */
-    enqueueTime: string;
-    /**
-     * Deliverytime
-     *
-     * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-     */
-    deliveryTime: string;
-};
 
 /**
  * EmployeeRead
@@ -1040,38 +998,6 @@ export type EntitlementRead = {
 };
 
 /**
- * EntitlementRedeemInput
- */
-export type EntitlementRedeemInput = {
-    /**
-     * IdSchema
-     */
-    organization: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    /**
-     * DatasourceInfo
-     */
-    datasource: {
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * DatasourceType
-         */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
-    };
-};
-
-/**
  * EntitlementReedemEventSchema
  */
 export type EntitlementReedemEventSchema = {
@@ -1234,91 +1160,6 @@ export type EntitlementsEventsSchema = {
             name: string;
         } | null;
     } | null;
-};
-
-/**
- * Event
- */
-export type Event = {
-    /**
-     * Id
-     *
-     * Unique message ID, can be used to correlate with platform logs.
-     */
-    id: string;
-    /**
-     * Object
-     */
-    object: {
-        /**
-         * Id
-         *
-         * Unique object ID, maps to the platform object ID property.
-         */
-        id: string;
-        /**
-         * Name
-         *
-         * Object name, maps to the platform object name property.
-         */
-        name: string;
-        /**
-         * Objecttype
-         *
-         * The object's type, maps to the “routing.entity” property of the EventMessage.
-         */
-        objectType: string;
-    };
-    /**
-     * Details
-     */
-    details: {
-        /**
-         * Eventtype
-         *
-         * The type of the event. Maps to the “routing.event” property of the EventMessage.
-         */
-        eventType: string;
-        /**
-         * Enqueuetime
-         *
-         * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-         */
-        enqueueTime: string;
-        /**
-         * Deliverytime
-         *
-         * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-         */
-        deliveryTime: string;
-    };
-    /**
-     * Information about the event's related task. Maps to the task created by Task Orchestrator.
-     */
-    task?: {
-        /**
-         * Id
-         *
-         * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
-         */
-        id: string;
-    } | null;
-};
-
-/**
- * EventResponse
- */
-export type EventResponse = {
-    /**
-     * Response
-     */
-    response: 'OK' | 'Delay' | 'Cancel';
-    /**
-     * Delay
-     *
-     * The minimum delay the Extensions Service must wait before sending the event again.
-     */
-    delay?: number | null;
 };
 
 /**
@@ -2175,6 +2016,25 @@ export type LimitOffsetPageOrganizationRead = {
             possible_monthly_saving?: string;
         } | null;
         /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
+        /**
          * Deletable At
          *
          * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -2411,56 +2271,6 @@ export type Me = {
          */
         id: string;
     } | null;
-};
-
-/**
- * Object
- */
-export type Object = {
-    /**
-     * Id
-     *
-     * Unique object ID, maps to the platform object ID property.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * Object name, maps to the platform object name property.
-     */
-    name: string;
-    /**
-     * Objecttype
-     *
-     * The object's type, maps to the “routing.entity” property of the EventMessage.
-     */
-    objectType: string;
-};
-
-/**
- * OrganizationCreate
- */
-export type OrganizationCreate = {
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Currency
-     */
-    currency: string;
-    /**
-     * Billing Currency
-     */
-    billing_currency: string;
-    /**
-     * Operations External Id
-     */
-    operations_external_id: string;
-    /**
-     * User Id
-     */
-    user_id: string;
 };
 
 /**
@@ -2719,6 +2529,25 @@ export type OrganizationRead = {
         possible_monthly_saving?: string;
     } | null;
     /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
+    } | null;
+    /**
      * Deletable At
      *
      * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -2782,16 +2611,29 @@ export type SystemReference = {
 };
 
 /**
- * Task
+ * TerminationFeedbackRead
  */
-export type Task = {
+export type TerminationFeedbackRead = {
     /**
      * Id
-     *
-     * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
      */
     id: string;
+    /**
+     * TerminationReason
+     */
+    reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+    /**
+     * Comments
+     *
+     * Additional comments; always provided when the reason is `other`.
+     */
+    comments?: string | null;
 };
+
+/**
+ * TerminationReason
+ */
+export type TerminationReason = 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
 
 /**
  * UserRead
@@ -3209,6 +3051,25 @@ export type LimitOffsetPageOrganizationReadWritable = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
     }>;
     /**
      * Total
@@ -3364,6 +3225,25 @@ export type OrganizationReadWritable = {
          * Possible Monthly Saving
          */
         possible_monthly_saving?: string;
+    } | null;
+    /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
     } | null;
 };
 
@@ -4521,270 +4401,6 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
 
 export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponse = TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses[keyof TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses];
 
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostData = {
-    /**
-     * EntitlementRedeemInput
-     */
-    body: {
-        /**
-         * IdSchema
-         */
-        organization: {
-            /**
-             * Id
-             */
-            id: string;
-        };
-        /**
-         * DatasourceInfo
-         */
-        datasource: {
-            /**
-             * Id
-             */
-            id: string;
-            /**
-             * Name
-             */
-            name: string;
-            /**
-             * DatasourceType
-             */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
-        };
-    };
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/ops/v1/entitlements/{id}/redeem';
-};
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostError = RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors[keyof RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors];
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses = {
-    /**
-     * EntitlementRead
-     *
-     * Successful Response
-     */
-    200: {
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Affiliate External Id
-         */
-        affiliate_external_id: string;
-        /**
-         * Datasource Id
-         */
-        datasource_id: string;
-        /**
-         * Redeem At
-         */
-        redeem_at?: string | null;
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Datasource Id
-         */
-        linked_datasource_id?: string | null;
-        /**
-         * Linked Datasource Name
-         */
-        linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
-        /**
-         * AccountReference
-         */
-        owner: {
-            /**
-             * Id
-             */
-            id: string;
-            /**
-             * Name
-             */
-            name: string;
-            /**
-             * AccountType
-             */
-            type: 'admin' | 'operations' | 'affiliate';
-            integration: 'aws' | 'google' | 'microsoft' | 'softwareone' | null;
-            /**
-             * External Id
-             *
-             * An external identifier for the account
-             */
-            external_id: string;
-        };
-        /**
-         * EntitlementStatus
-         */
-        status: 'new' | 'active' | 'terminated' | 'deleted';
-        /**
-         * EntitlementsEventsSchema
-         */
-        events: {
-            /**
-             * AuditFieldSchema
-             */
-            created: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            /**
-             * AuditFieldSchema
-             */
-            updated: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            deleted?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-            redeemed?: {
-                /**
-                 * At
-                 */
-                at: string;
-                /**
-                 * OrganizationReference
-                 */
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * Name
-                     */
-                    name: string;
-                    /**
-                     * Operations External Id
-                     */
-                    operations_external_id: string;
-                };
-            } | null;
-            terminated?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-        };
-    };
-};
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponse = RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses[keyof RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses];
-
 export type GetOrganizationsOpsV1OrganizationsGetData = {
     body?: never;
     path?: never;
@@ -4941,6 +4557,25 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                 possible_monthly_saving?: string;
             } | null;
             /**
+             * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+             */
+            termination_feedback?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * TerminationReason
+                 */
+                reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+                /**
+                 * Comments
+                 *
+                 * Additional comments; always provided when the reason is `other`.
+                 */
+                comments?: string | null;
+            } | null;
+            /**
              * Deletable At
              *
              * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -4963,231 +4598,6 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
 };
 
 export type GetOrganizationsOpsV1OrganizationsGetResponse = GetOrganizationsOpsV1OrganizationsGetResponses[keyof GetOrganizationsOpsV1OrganizationsGetResponses];
-
-export type CreateOrganizationOpsV1OrganizationsPostData = {
-    /**
-     * OrganizationCreate
-     */
-    body: {
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Currency
-         */
-        currency: string;
-        /**
-         * Billing Currency
-         */
-        billing_currency: string;
-        /**
-         * Operations External Id
-         */
-        operations_external_id: string;
-        /**
-         * User Id
-         */
-        user_id: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/ops/v1/organizations';
-};
-
-export type CreateOrganizationOpsV1OrganizationsPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type CreateOrganizationOpsV1OrganizationsPostError = CreateOrganizationOpsV1OrganizationsPostErrors[keyof CreateOrganizationOpsV1OrganizationsPostErrors];
-
-export type CreateOrganizationOpsV1OrganizationsPostResponses = {
-    /**
-     * OrganizationRead
-     *
-     * Organization
-     */
-    201: {
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Currency
-         */
-        currency: string;
-        /**
-         * Billing Currency
-         */
-        billing_currency: string;
-        /**
-         * Operations External Id
-         */
-        operations_external_id: string;
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Organization Id
-         */
-        linked_organization_id?: string | null;
-        /**
-         * OrganizationStatus
-         */
-        status: 'active' | 'terminated' | 'deleted';
-        /**
-         * OrganizationEventsSchema
-         */
-        events: {
-            /**
-             * AuditFieldSchema
-             */
-            created: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            /**
-             * AuditFieldSchema
-             */
-            updated: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            deleted?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-            terminated?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-        };
-        expenses_info?: {
-            /**
-             * Limit
-             */
-            limit?: string;
-            /**
-             * Expenses This Month
-             */
-            expenses_this_month?: string;
-            /**
-             * Expenses This Month Forecast
-             */
-            expenses_this_month_forecast?: string;
-            /**
-             * Possible Monthly Saving
-             */
-            possible_monthly_saving?: string;
-        } | null;
-        /**
-         * Deletable At
-         *
-         * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
-         */
-        readonly deletable_at: string | null;
-    };
-};
-
-export type CreateOrganizationOpsV1OrganizationsPostResponse = CreateOrganizationOpsV1OrganizationsPostResponses[keyof CreateOrganizationOpsV1OrganizationsPostResponses];
 
 export type DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteData = {
     body?: never;
@@ -5445,6 +4855,25 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
             possible_monthly_saving?: string;
         } | null;
         /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
+        /**
          * Deletable At
          *
          * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -5661,6 +5090,25 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -7463,331 +6911,3 @@ export type MeOpsV1MeGetResponses = {
 };
 
 export type MeOpsV1MeGetResponse = MeOpsV1MeGetResponses[keyof MeOpsV1MeGetResponses];
-
-export type ValidateOrderEventsCommerceOrdersValidatePostData = {
-    /**
-     * Order
-     */
-    body: {
-        [key: string]: unknown;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/commerce/orders/validate';
-};
-
-export type ValidateOrderEventsCommerceOrdersValidatePostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type ValidateOrderEventsCommerceOrdersValidatePostError = ValidateOrderEventsCommerceOrdersValidatePostErrors[keyof ValidateOrderEventsCommerceOrdersValidatePostErrors];
-
-export type ValidateOrderEventsCommerceOrdersValidatePostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type ProcessOrderEventsCommerceOrdersPostData = {
-    /**
-     * Event
-     */
-    body: {
-        /**
-         * Id
-         *
-         * Unique message ID, can be used to correlate with platform logs.
-         */
-        id: string;
-        /**
-         * Object
-         */
-        object: {
-            /**
-             * Id
-             *
-             * Unique object ID, maps to the platform object ID property.
-             */
-            id: string;
-            /**
-             * Name
-             *
-             * Object name, maps to the platform object name property.
-             */
-            name: string;
-            /**
-             * Objecttype
-             *
-             * The object's type, maps to the “routing.entity” property of the EventMessage.
-             */
-            objectType: string;
-        };
-        /**
-         * Details
-         */
-        details: {
-            /**
-             * Eventtype
-             *
-             * The type of the event. Maps to the “routing.event” property of the EventMessage.
-             */
-            eventType: string;
-            /**
-             * Enqueuetime
-             *
-             * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-             */
-            enqueueTime: string;
-            /**
-             * Deliverytime
-             *
-             * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-             */
-            deliveryTime: string;
-        };
-        /**
-         * Information about the event's related task. Maps to the task created by Task Orchestrator.
-         */
-        task?: {
-            /**
-             * Id
-             *
-             * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
-             */
-            id: string;
-        } | null;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/commerce/orders';
-};
-
-export type ProcessOrderEventsCommerceOrdersPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type ProcessOrderEventsCommerceOrdersPostError = ProcessOrderEventsCommerceOrdersPostErrors[keyof ProcessOrderEventsCommerceOrdersPostErrors];
-
-export type ProcessOrderEventsCommerceOrdersPostResponses = {
-    /**
-     * EventResponse
-     *
-     * Successful Response
-     */
-    200: {
-        /**
-         * Response
-         */
-        response: 'OK' | 'Delay' | 'Cancel';
-        /**
-         * Delay
-         *
-         * The minimum delay the Extensions Service must wait before sending the event again.
-         */
-        delay?: number | null;
-    };
-};
-
-export type ProcessOrderEventsCommerceOrdersPostResponse = ProcessOrderEventsCommerceOrdersPostResponses[keyof ProcessOrderEventsCommerceOrdersPostResponses];
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostData = {
-    /**
-     * Event
-     */
-    body: {
-        /**
-         * Id
-         *
-         * Unique message ID, can be used to correlate with platform logs.
-         */
-        id: string;
-        /**
-         * Object
-         */
-        object: {
-            /**
-             * Id
-             *
-             * Unique object ID, maps to the platform object ID property.
-             */
-            id: string;
-            /**
-             * Name
-             *
-             * Object name, maps to the platform object name property.
-             */
-            name: string;
-            /**
-             * Objecttype
-             *
-             * The object's type, maps to the “routing.entity” property of the EventMessage.
-             */
-            objectType: string;
-        };
-        /**
-         * Details
-         */
-        details: {
-            /**
-             * Eventtype
-             *
-             * The type of the event. Maps to the “routing.event” property of the EventMessage.
-             */
-            eventType: string;
-            /**
-             * Enqueuetime
-             *
-             * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-             */
-            enqueueTime: string;
-            /**
-             * Deliverytime
-             *
-             * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-             */
-            deliveryTime: string;
-        };
-        /**
-         * Information about the event's related task. Maps to the task created by Task Orchestrator.
-         */
-        task?: {
-            /**
-             * Id
-             *
-             * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
-             */
-            id: string;
-        } | null;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/commerce/subscriptions';
-};
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostError = ProcessSubscriptionEventsCommerceSubscriptionsPostErrors[keyof ProcessSubscriptionEventsCommerceSubscriptionsPostErrors];
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostResponses = {
-    /**
-     * EventResponse
-     *
-     * Successful Response
-     */
-    200: {
-        /**
-         * Response
-         */
-        response: 'OK' | 'Delay' | 'Cancel';
-        /**
-         * Delay
-         *
-         * The minimum delay the Extensions Service must wait before sending the event again.
-         */
-        delay?: number | null;
-    };
-};
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostResponse = ProcessSubscriptionEventsCommerceSubscriptionsPostResponses[keyof ProcessSubscriptionEventsCommerceSubscriptionsPostResponses];

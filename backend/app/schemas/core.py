@@ -58,8 +58,8 @@ def convert_model_to_schema[M: Base, S: BaseModel](
     # IF "events" exists, we're going to create an instance of AuditEventsSchema
     # extract field values from db_model that match schema_cls, not considering the
     # override_attributes fields,if any.
-    events = extract_events(db_model=db_model, events_schema_cls=events_schema_cls)  # type: ignore
-    return schema_cls(**schema_data, events=events, **override_attributes)
+    schema_data["events"] = extract_events(db_model=db_model, events_schema_cls=events_schema_cls)
+    return schema_cls(**schema_data, **override_attributes)
 
 
 def extract_events[M: Base, S: BaseModel](db_model: M, events_schema_cls: type[S]) -> BaseModel:
@@ -84,7 +84,7 @@ def extract_events[M: Base, S: BaseModel](db_model: M, events_schema_cls: type[S
         by_value = getattr(db_model, f"{field_name}_by", None)
 
         schema_values[field_name] = (
-            event_field_schema_cls(at=at_value, by=by_value) if at_value else None  # type: ignore
+            event_field_schema_cls(at=at_value, by=by_value) if at_value else None
         )
     return events_schema_cls(**schema_values)
 

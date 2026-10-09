@@ -29,7 +29,7 @@ from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
 from app.conf import Settings, get_settings
 from app.db.base import configure_db_engine, session_factory
-from app.db.handlers import EntitlementHandler, OrganizationHandler
+from app.db.handlers import EntitlementHandler, OrganizationHandler, TerminationFeedbackHandler
 from app.db.models import (
     Account,
     AccountUser,
@@ -834,6 +834,85 @@ def order_with_parameters(
             "parameters": {
                 "ordering": order_parameters_factory(),
                 "fulfillment": fulfillment_parameters_factory(),
+            },
+        }
+
+    return _order
+
+
+@pytest.fixture
+def termination_parameters_factory() -> Callable[..., list[dict]]:
+    """Build the termination feedback ordering parameters as the marketplace returns them."""
+
+    def _parameters(reason: str | None = None, comments: str | None = None) -> list[dict]:
+        return [
+            {
+                "id": "PAR-7390-4315-0014",
+                "externalId": "terminationReason",
+                "name": "Termination reason",
+                "type": "DropDown",
+                "phase": "Order",
+                "scope": "Order",
+                "multiple": False,
+                "constraints": {"required": False, "hidden": False, "readonly": False},
+                "options": {
+                    "optionsList": [
+                        {"label": "Missing features or functionality", "value": "missing_features"},
+                        {
+                            "label": "The product is too complex or difficult to use",
+                            "value": "too_complex",
+                        },
+                        {"label": "Cost or pricing concerns", "value": "cost_or_pricing"},
+                        {
+                            "label": "Issues with data accuracy or reliability",
+                            "value": "data_accuracy",
+                        },
+                        {
+                            "label": "Switching to another tool or solution",
+                            "value": "switching_tool",
+                        },
+                        {"label": "The project or need has ended", "value": "need_ended"},
+                        {
+                            "label": "Internal changes, such as reorganization or budget cuts",
+                            "value": "internal_changes",
+                        },
+                        {"label": "Unsatisfactory support", "value": "unsatisfactory_support"},
+                        {"label": "Other", "value": "other"},
+                    ],
+                    "defaultValue": None,
+                },
+                "displayValue": reason,
+                "value": reason,
+            },
+            {
+                "id": "PAR-7390-4315-0015",
+                "externalId": "terminationComments",
+                "name": "Additional comments",
+                "type": "MultiLineText",
+                "phase": "Order",
+                "scope": "Order",
+                "multiple": False,
+                "constraints": {"required": False, "hidden": False, "readonly": False},
+                "displayValue": comments,
+                "value": comments,
+            },
+        ]
+
+    return _parameters
+
+
+@pytest.fixture
+def order_with_termination_parameters(
+    termination_parameters_factory: Callable[..., list[dict]],
+) -> Callable[..., dict]:
+    """Build an order payload carrying the termination feedback ordering parameters."""
+
+    def _order(reason: str | None = None, comments: str | None = None) -> dict:
+        return {
+            "id": "ORD-1234-5678",
+            "parameters": {
+                "ordering": termination_parameters_factory(reason=reason, comments=comments),
+                "fulfillment": [],
             },
         }
 
@@ -2293,6 +2372,41 @@ def post_order_event(
 
 
 @pytest.fixture
+def post_order_validation(
+    mpt_api_client: AsyncClient, ffc_jwt_token: str
+) -> Callable[[dict[str, Any]], Awaitable[Response]]:
+    """Return a helper that posts a draft order to the order validation endpoint."""
+
+    async def _post(order: dict[str, Any]) -> Response:
+        return await mpt_api_client.post(
+            "/events/commerce/orders/validate",
+            headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+            json=order,
+        )
+
+    return _post
+
+
+@pytest.fixture
+def draft_termination_order_factory(
+    order_factory: OrderFactory,
+    termination_parameters_factory: Callable[..., list[dict]],
+) -> Callable[..., dict[str, Any]]:
+    """Build a draft Termination order carrying the termination feedback parameters."""
+
+    def _order(reason: str | None = None, comments: str | None = None) -> dict[str, Any]:
+        return order_factory(
+            order_type=ORDER_TYPE_TERMINATE,
+            status="Draft",
+            product_id="PRD-4141-4379",
+            product_name="SoftwareOne FinOps for Cloud",
+            ordering_parameters=termination_parameters_factory(reason=reason, comments=comments),
+        )
+
+    return _order
+
+
+@pytest.fixture
 async def post_subscription_event(
     mpt_api_client: AsyncClient,
     system_jwt_token_factory: Callable[[System], str],
@@ -2339,6 +2453,7 @@ def order_event_handler(
         optscale_client=OptscaleClient(test_settings),
         organization_repo=OrganizationHandler(db_session),
         entitlement_repo=EntitlementHandler(db_session),
+        termination_feedback_repo=TerminationFeedbackHandler(db_session),
         settings=test_settings,
     )
 

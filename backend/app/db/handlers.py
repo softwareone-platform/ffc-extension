@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
@@ -23,6 +24,7 @@ from app.db.models import (
     Entitlement,
     Organization,
     System,
+    TerminationFeedback,
     TimestampMixin,
     User,
 )
@@ -31,6 +33,7 @@ from app.enums import (
     AccountUserStatus,
     EntitlementStatus,
     OrganizationStatus,
+    TerminationReason,
 )
 
 
@@ -66,7 +69,7 @@ class ModelHandler[M: BaseModel]:
         """
         return next(
             base_cls.__args__
-            for base_cls in cls.__orig_bases__
+            for base_cls in types.get_original_bases(cls)
             if base_cls.__origin__ is ModelHandler
         )
 
@@ -168,7 +171,7 @@ class ModelHandler[M: BaseModel]:
                 f"{self.model_cls.__name__} status column does not have a 'deleted' value."
             )
 
-        if obj.status == "deleted":  # type: ignore[attr-defined]
+        if obj.status == "deleted":  # ty: ignore[unresolved-attribute]
             raise CannotDeleteError(f"{self.model_cls.__name__} object is already deleted.")
 
         column_updates = {"status": "deleted"}
@@ -512,7 +515,6 @@ class OrganizationHandler(ModelHandler[Organization]):
         self,
         billing_currency: str,
     ) -> AsyncGenerator[Organization, None]:
-
         async for organization in self.stream_scalars(
             extra_conditions=[Organization.billing_currency == billing_currency],
         ):
@@ -528,6 +530,29 @@ class OrganizationHandler(ModelHandler[Organization]):
                 "status": OrganizationStatus.TERMINATED,
                 "terminated_at": datetime.now(UTC),
             },
+        )
+
+
+class TerminationFeedbackHandler(ModelHandler[TerminationFeedback]):
+    """
+    Handles CRUD operations for the TerminationFeedback model.
+    """
+
+    async def get_or_create_for_organization(
+        self,
+        organization: Organization,
+        reason: TerminationReason,
+        comments: str | None = None,
+    ) -> tuple[TerminationFeedback, bool]:
+        """
+        Returns the TerminationFeedback of the given organization, creating it with the
+        given reason and comments if it doesn't exist yet. An existing feedback is left untouched.
+
+        :return: a (feedback, created) tuple.
+        """
+        return await self.get_or_create(
+            organization_id=organization.id,
+            defaults={"reason": reason, "comments": comments},
         )
 
 

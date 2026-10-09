@@ -31,15 +31,15 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | b
 # Install Claude code
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Download the latest installer
+# Download the latest astral installers
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
-
-
-# Install ty
-COPY --from=ghcr.io/astral-sh/ty:latest /ty /bin/
+ADD https://astral.sh/ty/install.sh /ty-installer.sh
 
 # Run the uv installer then remove it
 RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Run the ty installer then remove it
+RUN sh /ty-installer.sh && rm /ty-installer.sh
 
 # Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"

@@ -49,7 +49,6 @@ class ProcessResultInfo:
     message: str | None = None
 
 
-@dataclass
 class ProcessResultSummary(TypedDict):
     successful_counter: int
     error_counter: int
