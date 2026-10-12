@@ -7,7 +7,7 @@ description: Build sandbox / POC feature modules for an MPT frontend project usi
 
 Goal: ship visually-correct, strongly-typed sandbox views that drop into real backend wiring without a rewrite. Mock data behaves like the API, components never know data is mocked, and the design-system primitives are the ones the real feature will ship with.
 
-Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system component usage (Panel + KpiTile, Grid, Modal, Charts, Multi-select, Chip, DatePicker, Navigation) lives in **`mpt-design-system`** + [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md). DS meta rules (subpath imports, verified gaps, icons, SCSS tokens, shared layout classes, chart palettes) live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). Concrete project bindings (alias names, CSS prefix, wrapper paths, entity list) live in the active project's `*-local` skill — in ffc-extension that's [`ffc-local`](../ffc-local/SKILL.md). This skill only covers POC-specific additions on top of all that.
+Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system component usage (Panel + KpiTile, Grid, Modal, Charts, Multi-select, Chip, DatePicker, Navigation) lives in **`mpt-design-system`** + [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md). DS meta rules (subpath imports, verified gaps, icons, SCSS tokens, shared layout classes, chart palettes) live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). Concrete project bindings (alias names, CSS prefix, wrapper paths, entity list) live in the active project's project bindings skill — in ffc-extension that's [`ffc-extension`](../ffc-extension/SKILL.md). This skill only covers POC-specific additions on top of all that.
 
 ## Feature folder layout
 
@@ -38,13 +38,27 @@ The POC variant below applies to **mock-driven metrics endpoints** — one gette
 
 **Mock JSON — must mirror the real API shape.** Dates ISO (`YYYY-MM-DD`) for sortable fields, display formatting happens in the cell. Numeric metrics stay numeric; preformatted strings only when the API itself returns strings.
 
-**Low-level API hook** (`api/useDashboardApi.ts` pattern):
+**Low-level API hook** (`api/useFooApi.ts` pattern). The POC needs a tiny `mockResponse` helper that wraps the JSON fixture in an `AxiosResponse` shape — the project does not ship one, so add it under the POC feature folder (or in `~shared/utils/` if you expect other features to need it):
+
+```ts
+// features/<feature>/api/mockResponse.ts  (or ~shared/utils if promoted)
+import { AxiosResponse } from "axios";
+
+export function mockResponse<T>(data: T, delayMs = 250): Promise<AxiosResponse<T>> {
+  return new Promise((resolve) =>
+    setTimeout(() => resolve({ data } as AxiosResponse<T>), delayMs),
+  );
+}
+```
+
+Then the feature API hook uses it:
 
 ```ts
 import { useCallback, useMemo } from "react";
 import { AxiosResponse } from "axios";
-import { mockResponse } from "~shared/utils/mockResponse";
+
 import adoptionMetrics from "../mock/adoption.json";
+import { mockResponse } from "./mockResponse";
 import { AdoptionMetrics } from "./model";
 
 export function useDashboardApi() {
@@ -56,7 +70,7 @@ export function useDashboardApi() {
 }
 ```
 
-`mockResponse(data, 250)` from `~shared/utils/mockResponse` returns an axios-shaped promise with a 250 ms delay so components exercise loading states.
+The 250 ms delay lets react-query components exercise their loading states. The whole helper is throwaway — once the real HTTP endpoint lands, swap `mockResponse(...)` for `http<T>({ method: "GET", url })` and delete the helper.
 
 **Per-resource react-query hook** — thin, cache key under feature namespace:
 
@@ -81,24 +95,24 @@ if (!data) return null;
 
 Everything in `mpt-frontend-standards` (no `any`, named types in `api/model.ts`, derive via `ComponentProps`/`ReturnType`, barrels re-export runtime + types) applies here. Two POC specifics on top:
 
-- **Chart series + colour arrays are typed** (`XySeriesDef[]`, `number[]`) — amCharts rebuilds its root on identity change, so these must be referentially stable (see "Charts" recipe below).
+- **Chart series + colour arrays are typed** (use the project's chart series type if one exists, otherwise a local `type Series = { field: string; name: string; color: string; kind: "line" | "area" | "column" }[]`) — amCharts rebuilds its root on identity change, so these must be referentially stable (see the shared Charts section in [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md)).
 - **Mock JSON types** go in `api/model.ts` alongside the real response types — the mock *is* the API shape until the real one lands.
 
 ## Common recipes
 
 ### 12-column panel grid
 
-The project's shared `panel-grid` class is a 12-column CSS grid. Panels default to `grid-column: span 6` (half width). Modifiers: `--span-4`, `--span-8`, `--full`. Headline KPI strip sits **outside** the grid as a sibling under the project's `tab-stack` class (`display:flex; gap:$space-xl`). Concrete class names (ffc-extension uses `.ffc-tab-stack`, `.ffc-panel-grid`, `.ffc-panel`, `.ffc-panel--span-N`, `.ffc-panel--full`) are in [`ffc-local`](../ffc-local/SKILL.md).
+The project's shared `panel-grid` class is a 12-column CSS grid. Panels default to `grid-column: span 6` (half width). Modifiers: `--span-4`, `--span-8`, `--full`. Headline KPI strip sits **outside** the grid as a sibling under the project's `tab-stack` class (`display:flex; gap:$space-xl`). Concrete class names (ffc-extension uses `.ffc-tab-stack`, `.ffc-panel-grid`, `.ffc-panel`, `.ffc-panel--span-N`, `.ffc-panel--full`) are in [`ffc-extension`](../ffc-extension/SKILL.md). In the snippet below, `${PFX}` stands for the project's shared class prefix (resolve via your project bindings skill).
 
 ```tsx
-<div className={"ffc-tab-stack"}>
-  <div className={"ffc-kpi-row ffc-kpi-row--four"}>
+<div className={`${PFX}-tab-stack`}>
+  <div className={`${PFX}-kpi-row ${PFX}-kpi-row--four`}>
     {/* headline KPIs */}
   </div>
-  <div className={"ffc-panel-grid"}>
-    <Panel title={...} className={"ffc-panel--span-4"}>…</Panel>
-    <Panel title={...} className={"ffc-panel--span-8"}>…</Panel>
-    <Panel title={...} className={"ffc-panel--full"}>…</Panel>
+  <div className={`${PFX}-panel-grid`}>
+    <Panel title={...} className={`${PFX}-panel--span-4`}>…</Panel>
+    <Panel title={...} className={`${PFX}-panel--span-8`}>…</Panel>
+    <Panel title={...} className={`${PFX}-panel--full`}>…</Panel>
   </div>
 </div>
 ```
@@ -142,7 +156,7 @@ Rotate a single chevron with `transform: rotate(90deg)` instead of swapping to a
 
 ### Styles
 
-Shared presentation class inventory + add-modifier rule live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). The concrete class prefix (e.g. `.ffc-*`) and full class list are in the project's `*-local` skill.
+Shared presentation class inventory + add-modifier rule live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). The concrete class prefix (e.g. `.ffc-*`) and full class list are in the project's project bindings skill.
 
 ## Scaling the POC (iteration 2+)
 
@@ -181,8 +195,8 @@ When two or more tabs each declare module-scope `*_SERIES`, `*_COLORS`, pull the
 // features/<feature>/chartConfig.ts
 export const CHART_HEIGHT = { xs: 190, sm: 200, md: 220, lg: 260 } as const;
 
-export const PROVIDER_TREND_SERIES: XySeriesDef[] = [ /* ... */ ];
-export const STATUS_DONUT_COLORS = [CHART_COLORS.green, CHART_COLORS.orange, CHART_COLORS.gray];
+export const PROVIDER_TREND_SERIES = [ /* ... */ ] as const;
+export const STATUS_DONUT_COLORS = ["#1aa363", "#f26b1f", "#8a8a8a"] as const;
 ```
 
 Pick the `CHART_HEIGHT` scale to match the pixel values already in use so the refactor is visually non-breaking. One file to change for a palette or sizing update.
@@ -196,7 +210,7 @@ type MetricPanelProps = {
   title: string;
   className?: string;
   description?: string;
-  kpis?: KpiTileProps[];       // config array — renders ffc-kpi-row internally
+  kpis?: KpiTileProps[];       // config array — renders the project's shared kpi-row class internally
   trend?: ReactNode;           // left side of chart-split
   aside?: ReactNode;           // right side (usually a DonutChart)
   asideLabel?: string;         // optional heading above aside
@@ -248,7 +262,7 @@ Const tuples + derived unions for domain values (`ORGANISATION_STATUSES`, `CLOUD
 4. **API hooks** — low-level getter in `useFeatureApi`, react-query wrapper per resource, index barrel export.
 5. **Tab/component** — consume the hook, `if (!data) return null`, module-scope any amCharts config.
 6. **i18n** — all strings via `useFixedT`, keys alphabetised.
-7. **Styles** — reuse the project's shared presentation classes (prefix in `*-local`); add modifiers in `_components.scss` instead of local overrides.
+7. **Styles** — if a shared presentation layer exists (project bindings skill lists the prefix + class vocabulary), reuse those classes; otherwise use CSS Modules (`<Component>.module.scss` sibling) for per-feature styles. Add modifiers via `&--variant` rather than one-off CSS.
 8. **Verify** — `cd frontend && npm run typecheck` **and** `npm run build` (SCSS errors only show at build); run `npx prettier --write` on touched files.
 
 ## Iteration rhythm for POC work

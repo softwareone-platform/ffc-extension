@@ -2,9 +2,9 @@
 
 How we consume `@swo/design-system`, `@swo/design-tokens`, and the shared
 `.ffc-*` style primitives. "Don't invent what already exists" is the thread:
-the wrong icon name silently renders nothing, the wrong SCSS token fails the
-build silently from `tsc`, and the wrong import path silently breaks jest
-mocks or inflates the bundle.
+the wrong icon name silently renders nothing, an invented SCSS token fails
+only at `npm run build` (`tsc` doesn't process SCSS, so it won't catch it),
+and the wrong import path silently breaks jest mocks or inflates the bundle.
 
 ## Component sourcing: Storybook first
 
@@ -44,8 +44,10 @@ Two reasons that compound:
    mock (or vice-versa) silently no-ops and the real module runs.
 
 **Design tokens** (`@swo/design-tokens`): SCSS only. In amCharts configs use
-raw hex via `CHART_COLORS` (CSS vars haven't resolved yet when amCharts reads
-them).
+raw hex literals (not CSS vars) — amCharts reads config at mount time, before
+CSS variables resolve, so a token reference would evaluate to an empty
+string. Centralise the hex values in a palette module when more than one
+chart depends on them.
 
 ## Verified DS gaps (and the workarounds)
 
@@ -78,55 +80,86 @@ but easy to burn 10 minutes guessing synonyms. Keep a short mental cache:
 For anything else, grep
 [`frontend/node_modules/@swo/design-system/icon/src/lib/icon-paths/`](../../frontend/node_modules/@swo/design-system/icon/src/lib/icon-paths/).
 
-## SCSS token vocabulary
+## SCSS tokens
 
-[`frontend/src/shared/styles/_tokens.scss`](../../frontend/src/shared/styles/_tokens.scss)
-defines a fixed set of aliases on top of `@swo/design-tokens`. **Do not
-invent** names like `$primary`, `$danger`, `$warning` — they don't exist and
-the SCSS build silently fails (TypeScript doesn't catch it; only
-`npm run build` does).
+The project does **not** currently ship a shared alias layer on top of
+`@swo/design-tokens` — there is no `~shared/styles/_tokens.scss`. Feature
+SCSS files consume the vendor's CSS custom properties **directly**:
 
-| Alias                           | Use for                                              |
-| ------------------------------- | ---------------------------------------------------- |
-| `$surface`, `$surface-muted`    | Backgrounds (white, muted gray)                      |
-| `$border-subtle`                | 1 px borders                                         |
-| `$text-muted`, `$text-strong`   | Secondary / primary text colour                      |
-| `$positive`, `$negative`        | Up / down / success / danger text colour             |
-| `$space-xs` … `$space-xl`       | `--spacing-0.5` through `--spacing-4`                |
-| `$radius-card`                  | Card / panel rounding (8 px)                         |
-| `$panel-grid-breakpoint`        | Breakpoint where 2-col grid collapses to 1          |
+```scss
+.properties-section {
+  display: grid;
+  gap: var(--spacing-2);
+  margin: 0 var(--spacing-1);
+}
+```
 
-Run `npm run build` after any SCSS change — `npx tsc --noEmit` won't catch
-token errors.
+Available variable families (grep
+[`node_modules/@swo/design-tokens/src/lib/`](../../frontend/node_modules/@swo/design-tokens/src/lib/)
+for the full list):
 
-## Shared `.ffc-*` class primitives
+- Spacing: `var(--spacing-0.5)` … `var(--spacing-4)` (and `--spacing-N`)
+- Radius: `var(--radius-s)`, `var(--radius-m)`, `var(--radius-l)`
+- Shadow: `var(--box-shadow-1)` … `var(--box-shadow-3)`
+- Colour: `var(--brand-*)`, `var(--alerts-*-N)`, `var(--brand-type)` (text)
+- Z-index: `var(--z-bottom)`, `var(--z-below)`, `var(--z-0)`, `var(--z-above)`, `var(--z-above-2)`, `var(--z-top)`
+- Transition: `var(--transition)`
 
-Feature-grid primitives live in
-[`frontend/src/shared/styles/_components.scss`](../../frontend/src/shared/styles/_components.scss)
-under the `.ffc-*` namespace. Use existing classes before adding new ones:
+If you need SCSS variable form instead of CSS variables, import the vendor
+module and use `$var-*` names (e.g. `$var-radius-m`, `$var-brand-primary`):
 
-- Layout: `.ffc-tab-stack`, `.ffc-panel-grid`, `.ffc-panel`,
-  `.ffc-panel--full`, `.ffc-panel--span-4`, `.ffc-panel--span-8`
-- KPI rows: `.ffc-kpi-row`, `.ffc-kpi-row--four`, `.ffc-kpi-row--quad`,
-  `.ffc-kpi-row--column`
-- Chart composition: `.ffc-chart-split`, `.ffc-chart-split--triple`, `.ffc-legend`
-- Filter affordances: `.ffc-filter-bar`, `.ffc-multiselect`
+```scss
+@use "@swo/design-tokens/src/lib/design-tokens-variables" as *;
 
-**Add modifiers** (`&--variant`) rather than one-off component CSS. A new
-primitive earns a new class only after the shape repeats in a second feature.
+.card { border-radius: $var-radius-m; }
+```
+
+**Do not invent** names like `$primary`, `$danger`, `$surface`, `$space-xs`
+— they don't exist. An invented token fails only at `npm run build`
+(`tsc` doesn't process SCSS, so it won't catch it).
+
+Run `npm run build` after any SCSS change.
+
+> **When a shared alias layer lands** (`~shared/styles/_tokens.scss`),
+> replace this section with the alias table and link to the file.
+
+## Component styling
+
+The project does **not** currently ship a shared `.ffc-*` presentation
+layer at `~shared/styles/_components.scss`. Features style themselves two
+ways:
+
+- **CSS Modules** (`<Component>.module.scss` imported as `styles.foo`) —
+  default for component-local styling. Class names are hashed, so there's
+  no cross-feature collision risk. See
+  [`frontend/src/shared/components/CardSection.module.scss`](../../frontend/src/shared/components/CardSection.module.scss)
+  and the `.module.scss` siblings alongside details-page components for
+  canonical examples.
+- **Plain `.scss` with CSS Modules disabled** (`<Component>.scss` imported
+  for side effect, as in `~entries/StandaloneRoot.scss` or the modal
+  flows) — only when global selectors are intentional.
+
+**When a shared layout layer lands** (`~shared/styles/_components.scss`
+under a shared `.ffc-*` namespace), the recommended pattern is `.ffc-<area>`
+primitives (`tab-stack`, `panel-grid`, `kpi-row`, `chart-split`,
+`filter-bar`, `multiselect`) with `&--variant` modifiers rather than one-off
+CSS. A new primitive earns a class only after its shape repeats in a second
+feature — see the extraction threshold in
+[`.claude/skills/mpt-frontend-standards/SKILL.md`](../../.claude/skills/mpt-frontend-standards/SKILL.md#extraction-threshold).
 
 ## Chart palettes
 
-`CHART_COLORS` and `PROVIDER_COLORS` from `~shared/components/charts` are the
-canonical palettes. Use them in chart series definitions and anywhere a chart
-colour needs to match a legend / donut aside. **Keep chart series arrays at
-module scope** — amCharts rebuilds its root whenever `series` / `colors`
-identity changes.
+Colour constants used across more than one chart should live in a single
+project palette module (planned location in this project:
+`~shared/components/charts`). Use the same constants in chart series
+definitions and anywhere a legend / donut aside needs to match. **Keep chart
+series arrays at module scope** — amCharts rebuilds its root whenever
+`series` / `colors` identity changes.
 
 ```ts
-// Module scope: stable across renders.
-const SPEND_SERIES: XySeriesDef[] = [
-  { field: "spend", name: "Spend", color: CHART_COLORS.blue, kind: "line" },
+// Module scope: stable across renders. Use raw hex until a palette module ships.
+const SPEND_SERIES = [
+  { field: "spend", name: "Spend", color: "#2d7af0", kind: "line" as const },
 ];
 ```
 
