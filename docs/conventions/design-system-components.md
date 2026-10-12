@@ -17,29 +17,37 @@ Scope split:
 
 ## Panel + KpiTile
 
-Both come from `~shared/components/panel`, which wraps the DS primitives with
-the project's defaults.
+> **Status:** aspirational wrappers — not yet in `frontend/src/shared/components/`.
+> This section is the target shape; add the wrappers in the first PR that
+> needs them. Until they exist, use `@swo/design-system/card` directly for
+> panel chrome and build KPI tiles ad hoc inside the feature.
+
+The intended wrappers live at `~shared/components/panel`, which wraps the DS
+`Card` primitive with the project's defaults (chrome, spacing, title area).
 
 ```tsx
 import { Panel, KpiTile } from "~shared/components/panel";
 
 <Panel title={t("overview:title")}>
-  <div className={"ffc-kpi-row"}>  {/* --four / --quad / --column for other layouts */}
+  <div className={`${CSS_PREFIX}-kpi-row`}>  {/* --four / --quad / --column for other layouts */}
     <KpiTile label={t("overview:total")} value={data.total} />
     <KpiTile label={t("overview:active")} value={data.active} trend={"up"} />
   </div>
 </Panel>
 ```
 
-**`Panel` chrome gotcha** — `Panel` wraps `Card`, which already ships
-padding / radius / background. Don't restate chrome in `.ffc-panel` or
-you'll double-pad.
+`CSS_PREFIX` is the project's shared class prefix (ffc-extension: `ffc`).
+Resolve via the active project's project bindings skill.
+
+**`Panel` chrome gotcha** — if `Panel` wraps `Card`, the card already ships
+padding / radius / background. Don't restate chrome in the panel's own class
+or you'll double-pad.
 
 **`KpiTile` linkable variant** — pass `linkTo` to wrap the Card in a
 `react-router-dom` `<Link>` with a chevron affordance and hover animation:
 
 ```tsx
-import { PATHS as ORGANIZATION_PATHS } from "~features/organizations/paths";
+import { PATHS as ORGANIZATION_PATHS } from "~organizations/paths";
 
 <KpiTile
   label={t("overview:active")}
@@ -166,7 +174,15 @@ in [`.claude/skills/mpt-module-testing/SKILL.md`](../../.claude/skills/mpt-modul
 
 ## Charts
 
-Shared primitives from `~shared/components/charts` wrap amCharts:
+> **Status:** aspirational wrappers — `~shared/components/charts` is not yet
+> in the tree, and no current feature uses charts. The section below is the
+> target shape for a shared chart layer. When the first chart lands, add
+> wrappers at `~shared/components/charts` that wrap amCharts (or whichever
+> charting library is chosen) and apply **module-scope series arrays** (the
+> one rule that matters regardless of layer).
+
+The intended shared primitives at `~shared/components/charts` would wrap
+amCharts:
 
 - **`XyChart`** — line / area / column; props `stacked`, `horizontal`.
 - **`DonutChart`** — pass explicit `height={240+}` in wide panels (DS
@@ -174,6 +190,7 @@ Shared primitives from `~shared/components/charts` wrap amCharts:
   [`design-system.md`](./design-system.md) gap table).
 - **`ChartLegend`** — manual legend; takes `items={ name, color }[]` with
   optional `layout={"horizontal"}`.
+- **`CHART_COLORS` / `PROVIDER_COLORS`** — colour palette constants.
 
 ### Series + colour arrays live at module scope
 
@@ -183,8 +200,8 @@ every render.
 
 ```tsx
 // Module scope: stable across renders.
-const SPEND_SERIES: XySeriesDef[] = [
-  { field: "spend", name: "Spend", color: CHART_COLORS.blue, kind: "line" },
+const SPEND_SERIES = [
+  { field: "spend", name: "Spend", color: "#2d7af0", kind: "line" as const },
 ];
 
 function SpendPanel({ data }: Props) {
@@ -194,9 +211,11 @@ function SpendPanel({ data }: Props) {
 
 ### Palette
 
-`CHART_COLORS` and `PROVIDER_COLORS` from `~shared/components/charts` are
-the canonical palettes. See
-[`design-system.md`](./design-system.md#chart-palettes) for the full rule.
+Colour constants should be centralised in a palette module (planned location:
+`~shared/components/charts`). See
+[`design-system.md`](./design-system.md#chart-palettes) for the colour rule.
+In the meantime, inline hex values at module scope — amCharts can't read CSS
+variables that haven't resolved.
 
 ## Multi-select (compose `Popover` + `Checkbox`)
 
@@ -222,7 +241,7 @@ export function MultiSelect<T extends string>({
   label, placeholder, options, value, onChange,
 }: MultiSelectProps<T>) {
   const labelId = useId();
-  const triggerId = useId();
+  const groupId = useId();
   const toggle = (v: T) =>
     onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
   const summary =
@@ -231,23 +250,27 @@ export function MultiSelect<T extends string>({
       : options.filter((o) => value.includes(o.value)).map((o) => o.label).join(", ");
 
   return (
-    <div className={"ffc-multiselect"}>
-      <span id={labelId} className={"ffc-multiselect__label"}>{label}</span>
+    <div className={`${CSS_PREFIX}-multiselect`}>
+      <span id={labelId} className={`${CSS_PREFIX}-multiselect__label`}>{label}</span>
       <Popover trigger={"click"} keepOpenOnOutsideClick={false}>
         <Popover.Target>
           <button
             type={"button"}
-            id={triggerId}
-            className={"ffc-multiselect__trigger"}
-            aria-labelledby={`${labelId} ${triggerId}`}
-            aria-haspopup={"listbox"}
+            className={`${CSS_PREFIX}-multiselect__trigger`}
+            aria-labelledby={labelId}
+            aria-haspopup={"dialog"}
           >
-            <span className={"ffc-multiselect__summary"}>{summary}</span>
+            <span className={`${CSS_PREFIX}-multiselect__summary`}>{summary}</span>
             <Icon name={"expand_more"} size={16} />
           </button>
         </Popover.Target>
         <Popover.Content>
-          <div className={"ffc-multiselect__list"} role={"listbox"} aria-multiselectable>
+          <div
+            id={groupId}
+            className={`${CSS_PREFIX}-multiselect__list`}
+            role={"group"}
+            aria-labelledby={labelId}
+          >
             {options.map((o) => (
               <Checkbox
                 key={o.value}
@@ -264,11 +287,20 @@ export function MultiSelect<T extends string>({
 }
 ```
 
+**Accessibility note**: this is a **disclosure button revealing a labelled
+group of checkboxes**, not a `combobox` / `listbox`. ARIA listbox requires
+children with `role="option"` and `aria-selected`; a `<Checkbox>` is a
+`role="checkbox"` with `aria-checked`. The two patterns don't compose, so
+we use `role="group"` + `aria-labelledby` on the container and
+`aria-haspopup="dialog"` on the trigger. Screen readers announce "<label>,
+collapsed button" when focused and the enumerated checkboxes individually
+on expansion.
+
 **Why not `Dropdown`**: it fires `isOpenChange(false)` on every
 `onItemSelected`, closing the list after each tick — poor multi-select UX.
 
 **Why plain `<button>`**: DS `Button` has strict props with no `id` or ARIA
-passthrough. For a labelable combobox trigger a native `<button>` with
+passthrough. For a labelable disclosure trigger a native `<button>` with
 `aria-labelledby` is cleaner.
 
 ## Navigation

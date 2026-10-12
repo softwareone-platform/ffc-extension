@@ -10,7 +10,7 @@ description: Use @swo/design-system components (Grid, Modal, Panel, Charts, Chip
 - [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md) — meta rules: subpath imports (bundle size + mock resolution), verified DS gaps + workarounds, icon-name hygiene, SCSS token vocabulary, shared `.*-*` layout classes (project-specific prefix), chart palettes.
 - [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md) — component-specific usage recipes: Panel + KpiTile, Grid (in-memory with sort/filter), Modal (DS vs app wrapper), Charts (XyChart / DonutChart / ChartLegend with module-scope series), Multi-select composition, Navigation shell, Chip, DatePicker.
 
-Modals have their own canonical doc at [`docs/conventions/modals.md`](../../../docs/conventions/modals.md) (`useModalToggle`, `use<Entity>FormController`, simple-form vs wizard layouts). Testing patterns for DS components live in [`docs/conventions/testing.md`](../../../docs/conventions/testing.md). Concrete shared-wrapper paths (`~shared/components/panel`, `~shared/components/charts`, `~shared/components/modal/Modal`) are in the active project's `*-local` skill — in ffc-extension that's [`ffc-local`](../ffc-local/SKILL.md).
+Modals have their own canonical doc at [`docs/conventions/modals.md`](../../../docs/conventions/modals.md) (`useModalToggle`, `use<Entity>FormController`, simple-form vs wizard layouts). Testing patterns for DS components live in [`docs/conventions/testing.md`](../../../docs/conventions/testing.md). Concrete shared-wrapper paths (`~shared/components/panel`, `~shared/components/charts`, `~shared/components/modal/Modal`) are in the active project's project bindings skill — in ffc-extension that's [`ffc-extension`](../ffc-extension/SKILL.md).
 
 This skill layers Claude-level composition coaching on top: which wrapper to reach for first, how to compose multi-component widgets, how to spot DS-gap situations, and how to prepare a feature for the eventual real-API swap.
 
@@ -18,7 +18,7 @@ This skill layers Claude-level composition coaching on top: which wrapper to rea
 
 Order of preference when picking an import source:
 
-1. **Shared wrapper** — the project's `shared/components/{panel, charts, modal, …}` already apply its defaults (sizing, cancel / submit action buttons, SCSS tokens) and compose with its layout classes. Use these in feature code. Concrete paths in the project's `*-local` skill.
+1. **Shared wrapper** — the project's `shared/components/{panel, charts, modal, …}` already apply its defaults (sizing, cancel / submit action buttons, SCSS tokens) and compose with its layout classes. Use these in feature code. Concrete paths in the project's project bindings skill.
 2. **Raw DS subpath** (`@swo/design-system/<component>`) — reach for these when assembling a new composition the shared wrappers don't cover, or when writing a NEW shared wrapper. Never import from the root `@swo/design-system`.
 3. **Compose from DS primitives** — only when the DS has no fitting component (see the gap table in [`design-system.md`](../../../docs/conventions/design-system.md)). The Multi-select recipe (Popover + Checkbox) is the canonical example.
 
@@ -49,9 +49,9 @@ If a composition pattern lives in a single feature today but will clearly reappe
 
 A new shared wrapper means:
 
-1. Co-locate with the project's existing wrappers (concrete path in the `*-local` skill).
+1. Co-locate with the project's existing wrappers (concrete path in the project bindings skill).
 2. Export both the component and its props type (`export type FooProps = { … }`) so specs can derive via `ComponentProps<typeof Foo>`.
-3. If the wrapper owns SCSS, use the project's token vocabulary — see [`design-system.md`](../../../docs/conventions/design-system.md#scss-token-vocabulary).
+3. If the wrapper owns SCSS, use the project's token vocabulary — see [`design-system.md`](../../../docs/conventions/design-system.md#scss-tokens).
 4. Add a short recipe to [`design-system-components.md`](../../../docs/conventions/design-system-components.md) so humans discover it.
 
 ## See also
@@ -59,4 +59,4 @@ A new shared wrapper means:
 - [`mpt-frontend-standards`](../mpt-frontend-standards/SKILL.md) — baseline conventions (path aliases, TS discipline, Fast Refresh, verification).
 - [`mpt-poc-builder`](../mpt-poc-builder/SKILL.md) — POC-specific scaling patterns that build on DS components (chart config, `<MetricPanel>` extraction, filter sidebar wiring).
 - [`mpt-module-testing`](../mpt-module-testing/SKILL.md) — how DS components are mocked in specs (full subpath, project's shared `test-utils/mocks/designSystemGrid`, modal callback capture).
-- The active project's `*-local` skill (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)) — concrete shared wrapper paths, CSS prefix, test-utils inventory.
+- The active project's project bindings skill (ffc-extension: [`ffc-extension`](../ffc-extension/SKILL.md)) — concrete shared wrapper paths, CSS prefix, test-utils inventory.

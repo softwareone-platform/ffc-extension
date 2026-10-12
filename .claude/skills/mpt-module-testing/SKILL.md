@@ -7,7 +7,7 @@ description: Write unit tests for MPT frontend modules. Jest + @testing-library/
 
 **Canonical rules live in the active project's `docs/conventions/testing.md`** (ffc-extension: [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)) — stack facts, file naming, coverage floor, mocking rules (DS full-path, no-spread, pre-mocked modules, never-mock list, utils override gotcha), typed-spy table + source-type derivation, test-utils inventory + promotion threshold, spec-scoped ESLint, "when not to write a unit test", test-name style, and "patterns to delete on sight". **That doc wins on drift.**
 
-Baseline frontend conventions (path aliases, DS subpath imports, derived TS types, Fast Refresh, verify commands) are in **`mpt-frontend-standards`**. Concrete project bindings (`test-utils` paths, factories, shared mock inventory, entity route helpers) are in the active project's `*-local` skill — in ffc-extension that's [`ffc-local`](../ffc-local/SKILL.md).
+Baseline frontend conventions (path aliases, DS subpath imports, derived TS types, Fast Refresh, verify commands) are in **`mpt-frontend-standards`**. Concrete project bindings (`test-utils` paths, factories, shared mock inventory, entity route helpers) are in the active project's project bindings skill — in ffc-extension that's [`ffc-extension`](../ffc-extension/SKILL.md).
 
 This skill layers Claude-level recipes on top: spec file layout, how a Grid wrapper spec is driven, how to capture modal callbacks, how to test a mutation controller, where a typed spy lives in a `.spec.mocks` sibling, and a few gotchas the convention doc doesn't cover.
 
@@ -21,7 +21,7 @@ This skill layers Claude-level recipes on top: spec file layout, how a Grid wrap
 5. describe(...)
 ```
 
-Extract to `<file>.spec.mocks.ts[x]` when step 3 grows past ~20-30 lines or spans 3+ mocked modules. Canonical examples typically live under a nested feature folder — in ffc-extension the reference set is at `frontend/src/features/organizations/details/data-sources/`: small inline prelude (`DataSources.spec.tsx`), grid wrapper with sibling helper (`DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx`), large prelude fully extracted (`DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts`). The project's `*-local` skill lists the canonical example set for the current project.
+Extract to `<file>.spec.mocks.ts[x]` when step 3 grows past ~20-30 lines or spans 3+ mocked modules. Canonical examples typically live under a nested feature folder — in ffc-extension the reference set is at `frontend/src/features/organizations/details/data-sources/`: small inline prelude (`DataSources.spec.tsx`), grid wrapper with sibling helper (`DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx`), large prelude fully extracted (`DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts`). In another project, grep for `.spec.mocks.ts` to find its own reference set.
 
 ## Test wrappers
 
@@ -34,7 +34,7 @@ renderWithRouter(componentUnderTest, {
 });
 ```
 
-Entity detail routes — the project should expose one helper per entity (ffc-extension ships `renderWithEntitlementRoute` + `renderWithOrganizationRoute`; see [`ffc-local`](../ffc-local/SKILL.md) for the full list):
+Entity detail routes — the project should expose one helper per entity (ffc-extension ships `renderWithEntitlementRoute` + `renderWithOrganizationRoute`; see [`ffc-extension`](../ffc-extension/SKILL.md) for the full list):
 
 ```text
 renderWithEntitlementRoute(componentUnderTest, {
@@ -68,7 +68,7 @@ jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 mockUseGridAsync.mockReturnValue(/* ... */);
 ```
 
-Both names must start with `mock*` so jest's hoist rule accepts them. The current project's full shared-mock inventory is in its `*-local` skill (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)).
+Both names must start with `mock*` so jest's hoist rule accepts them. The current project's full shared-mock inventory is in its project bindings skill (ffc-extension: [`ffc-extension`](../ffc-extension/SKILL.md)).
 
 ## Gotchas not in the convention doc
 
@@ -134,7 +134,7 @@ await triggerModalSubmit(mockModal);
 triggerModalCancel(mockModal);
 ```
 
-Resolve the shared Modal path and the test-utils path via your project's `*-local` skill.
+Resolve the shared Modal path and the test-utils path via your project's project bindings skill.
 
 Rules of thumb:
 
