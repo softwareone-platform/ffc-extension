@@ -1,13 +1,13 @@
 ---
 name: mpt-module-testing
-description: Write unit tests for MPT modules (ffc-extension frontend). Jest + @testing-library/react + @swc/jest (CJS). Use for testing Grid components, Details containers, entity hooks, action components, wizard components, API hooks. Layers code recipes and spec-file layout on top of docs/conventions/testing.md.
+description: Write unit tests for MPT frontend modules. Jest + @testing-library/react + @swc/jest (CJS). Use for testing Grid components, Details containers, entity hooks, action components, wizard components, API hooks. Layers code recipes and spec-file layout on top of the project's testing convention doc.
 ---
 
-# MPT Module Testing (ffc-extension)
+# MPT Module Testing
 
-**Canonical rules live in [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)** — stack facts, file naming, coverage floor, mocking rules (DS full-path, no-spread, pre-mocked modules, never-mock list, utils override gotcha), typed-spy table + source-type derivation, `~test-utils/*` inventory + promotion threshold, spec-scoped ESLint, "when not to write a unit test", test-name style, and "patterns to delete on sight". **That doc wins on drift.**
+**Canonical rules live in the active project's `docs/conventions/testing.md`** (ffc-extension: [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)) — stack facts, file naming, coverage floor, mocking rules (DS full-path, no-spread, pre-mocked modules, never-mock list, utils override gotcha), typed-spy table + source-type derivation, test-utils inventory + promotion threshold, spec-scoped ESLint, "when not to write a unit test", test-name style, and "patterns to delete on sight". **That doc wins on drift.**
 
-Baseline frontend conventions (path aliases, DS subpath imports, derived TS types, Fast Refresh, verify commands) are in **`mpt-frontend-standards`**.
+Baseline frontend conventions (path aliases, DS subpath imports, derived TS types, Fast Refresh, verify commands) are in **`mpt-frontend-standards`**. Concrete project bindings (`test-utils` paths, factories, shared mock inventory, entity route helpers) are in the active project's `*-local` skill — in ffc-extension that's [`ffc-local`](../ffc-local/SKILL.md).
 
 This skill layers Claude-level recipes on top: spec file layout, how a Grid wrapper spec is driven, how to capture modal callbacks, how to test a mutation controller, where a typed spy lives in a `.spec.mocks` sibling, and a few gotchas the convention doc doesn't cover.
 
@@ -21,7 +21,7 @@ This skill layers Claude-level recipes on top: spec file layout, how a Grid wrap
 5. describe(...)
 ```
 
-Extract to `<file>.spec.mocks.ts[x]` when step 3 grows past ~20-30 lines or spans 3+ mocked modules. Canonical example set at `frontend/src/features/organizations/details/data-sources/`: small inline prelude (`DataSources.spec.tsx`), grid wrapper with sibling helper (`DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx`), large prelude fully extracted (`DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts`).
+Extract to `<file>.spec.mocks.ts[x]` when step 3 grows past ~20-30 lines or spans 3+ mocked modules. Canonical examples typically live under a nested feature folder — in ffc-extension the reference set is at `frontend/src/features/organizations/details/data-sources/`: small inline prelude (`DataSources.spec.tsx`), grid wrapper with sibling helper (`DataSourcesGrid.spec.tsx` + `.spec.mocks.tsx`), large prelude fully extracted (`DataSourcesGrid.config.spec.tsx` + `.spec.mocks.ts`). The project's `*-local` skill lists the canonical example set for the current project.
 
 ## Test wrappers
 
@@ -34,7 +34,7 @@ renderWithRouter(componentUnderTest, {
 });
 ```
 
-Entity detail routes:
+Entity detail routes — the project should expose one helper per entity (ffc-extension ships `renderWithEntitlementRoute` + `renderWithOrganizationRoute`; see [`ffc-local`](../ffc-local/SKILL.md) for the full list):
 
 ```text
 renderWithEntitlementRoute(componentUnderTest, {
@@ -48,7 +48,7 @@ renderWithOrganizationRoute(componentUnderTest, {
 });
 ```
 
-Use these helpers for entitlement / organization detail shells and leaf routes instead of repeating IDs and route strings inline.
+Use the entity-specific helpers for detail shells and leaf routes instead of repeating IDs and route strings inline.
 
 React Query (real client — needed for `useMutation` state transitions):
 
@@ -59,7 +59,7 @@ const { result } = renderHook(() => useMyHook(), { wrapper });
 
 ## Shared mock usage pattern
 
-Shared mocks live in [`src/test-utils/mocks/`](../../../frontend/src/test-utils/mocks/). Each file exports both a **spy** (`mockUseX`) and a **module shape** (`mockXModule`), wired to call the spy:
+Shared mocks live in the project's `test-utils/mocks/` folder. Each file exports both a **spy** (`mockUseX`) and a **module shape** (`mockXModule`), wired to call the spy:
 
 ```text
 import { mockDesignSystemGrid, mockGridProps, mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
@@ -68,13 +68,13 @@ jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 mockUseGridAsync.mockReturnValue(/* ... */);
 ```
 
-Both names must start with `mock*` so jest's hoist rule accepts them.
+Both names must start with `mock*` so jest's hoist rule accepts them. The current project's full shared-mock inventory is in its `*-local` skill (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)).
 
 ## Gotchas not in the convention doc
 
 ### Grid column cells with `<Link>` need a router mock
 
-`renderCell` from `~test-utils` renders without a router. Columns whose `cell` uses `<Link>` crash with `Cannot destructure property 'basename' of React.useContext(...) as it is null.`
+`renderCell` from the project's `test-utils` folder renders without a router. Columns whose `cell` uses `<Link>` crash with `Cannot destructure property 'basename' of React.useContext(...) as it is null.`
 
 Opt into the root `react-router-dom` mock's `Link` override:
 
@@ -91,7 +91,7 @@ The root mock is intentionally NOT global so route-param tests keep the real run
 
 ### Grid components (thin wrappers)
 
-- Mock `@swo/design-system/grid` (`Grid`, `useGridAsync`, `GridCellSimple`) — use `~test-utils/mocks/designSystemGrid`.
+- Mock `@swo/design-system/grid` (`Grid`, `useGridAsync`, `GridCellSimple`) — use the project's shared mock at `test-utils/mocks/designSystemGrid`.
 - Mock the co-located `*.config` and stub `useGridConfig` return with the props the wrapper spreads (`silentRefresh`, `refresh`, `onEvent`). Typed spies need `as unknown as ReturnType<typeof useGridConfig>` for partial fixtures.
 - Row-action wiring: capture the `onAction` callback via `mockUseGridConfig.mock.calls[0][1]`, invoke inside `act(...)`, assert modal props changed.
 
@@ -121,7 +121,7 @@ The root mock is intentionally NOT global so route-param tests keep the real run
 
 ### Modals (callback capture)
 
-Mock the shared `Modal` with a capture spy, drive its callbacks:
+Mock the project's shared `Modal` wrapper (not the raw `@swo/design-system/modal`) with a capture spy, drive its callbacks:
 
 ```text
 import { mockSharedModal, mockModal } from "~test-utils/mocks/modal";
@@ -133,6 +133,8 @@ jest.mock("~shared/components/modal/Modal", () => mockSharedModal);
 await triggerModalSubmit(mockModal);
 triggerModalCancel(mockModal);
 ```
+
+Resolve the shared Modal path and the test-utils path via your project's `*-local` skill.
 
 Rules of thumb:
 

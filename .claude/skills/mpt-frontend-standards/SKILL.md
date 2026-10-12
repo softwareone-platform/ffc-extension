@@ -1,37 +1,32 @@
 ---
 name: mpt-frontend-standards
-description: Cross-cutting frontend conventions for ffc-extension — path aliases, design-system subpath imports, TypeScript discipline (no `any`, derived prop/return types), file-extension and Fast-Refresh rules, icon and SCSS token hygiene, i18n via useFixedT, verification commands (tsc, build, prettier, eslint), and the "don't invent, reuse" ethos. Baseline shared by `mpt-poc-builder` and `mpt-module-testing`. Use when touching any frontend code (component, hook, utility, shared module, type, SCSS, i18n key) that isn't clearly a new POC or a new test.
+description: Cross-cutting frontend conventions for MPT frontend projects — path aliases, design-system subpath imports, TypeScript discipline (no `any`, derived prop/return types), file-extension and Fast-Refresh rules, icon and SCSS token hygiene, i18n via useFixedT, verification commands (tsc, build, prettier, eslint), and the "don't invent, reuse" ethos. Baseline shared by `mpt-design-system`, `mpt-poc-builder`, and `mpt-module-testing`. Use when touching any frontend code (component, hook, utility, shared module, type, SCSS, i18n key) that isn't clearly a new POC or a new test.
 ---
 
-# ffc-extension Frontend Standards
+# MPT Frontend Standards
 
-Baseline conventions used by every file under `frontend/src/`. The feature-specific skills (`mpt-poc-builder`, `mpt-module-testing`) assume everything here already holds.
+Baseline conventions used by every file under the project's `frontend/src/` tree. The feature-specific skills (`mpt-design-system`, `mpt-poc-builder`, `mpt-module-testing`) assume everything here already holds.
+
+**Project-specific bindings** (concrete alias names, CSS prefix, shared wrapper paths, test-utils inventory, entity list) live in the active project's `*-local` skill — in ffc-extension that's **`ffc-local`**. When this skill talks about "the project's shared panel wrapper" or "the project's test-utils factories", resolve names via `ffc-local`.
 
 **Canonical source of truth** — the project maintains these docs; this skill defers to them on every topic they cover:
 
-| Topic                                           | Canonical doc                                              |
-| ----------------------------------------------- | ---------------------------------------------------------- |
-| File & folder naming                            | [`docs/conventions/naming.md`](../../../docs/conventions/naming.md)       |
-| API hook shapes + query keys                    | [`docs/conventions/api-hooks.md`](../../../docs/conventions/api-hooks.md) |
-| i18n (namespaces, dynamic keys)                 | [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md)           |
-| Modals + form controllers                       | [`docs/conventions/modals.md`](../../../docs/conventions/modals.md)       |
-| Design system (imports, gaps, icons, tokens)    | [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md) |
+| Topic                                                                                | Canonical doc                                                                                           |
+|--------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| File & folder naming                                                                 | [`docs/conventions/naming.md`](../../../docs/conventions/naming.md)                                     |
+| API hook shapes + query keys                                                         | [`docs/conventions/api-hooks.md`](../../../docs/conventions/api-hooks.md)                               |
+| i18n (namespaces, dynamic keys)                                                      | [`docs/conventions/i18n.md`](../../../docs/conventions/i18n.md)                                         |
+| Modals + form controllers                                                            | [`docs/conventions/modals.md`](../../../docs/conventions/modals.md)                                     |
+| Design system (imports, gaps, icons, tokens)                                         | [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md)                       |
 | Design system component usage (Panel, Grid, Modal, Charts, Multi-select, Navigation) | [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md) |
-| Frontend unit tests                             | [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)     |
-| MPT host integration                            | [`docs/architecture/mpt-host.md`](../../../docs/architecture/mpt-host.md) |
+| Frontend unit tests                                                                  | [`docs/conventions/testing.md`](../../../docs/conventions/testing.md)                                   |
+| MPT host integration                                                                 | [`docs/architecture/mpt-host.md`](../../../docs/architecture/mpt-host.md)                               |
 
 This skill covers what those docs don't: path-alias reference, TypeScript derivation discipline, file-extension / Fast-Refresh split, verification commands, the "don't invent, reuse" ethos, and extraction thresholds.
 
 ## Path aliases
 
-Configured in `frontend/tsconfig.json` + `jest.config.js`. Always import by alias — never climb `../../../`.
-
-| Alias           | Points at                       | Use for                                                                     |
-| --------------- | ------------------------------- | --------------------------------------------------------------------------- |
-| `~shared/*`     | `frontend/src/shared/*`         | Hooks, utils, UI primitives, styles, mock helpers reused across features    |
-| `~features/*`   | `frontend/src/features/*`       | Cross-feature references (e.g. `~features/organizations/paths`)             |
-| `~api/*`        | `frontend/src/api/*`            | Generated/shared API types (`ffc-api-model`)                                |
-| `~test-utils/*` | `frontend/src/test-utils/*`     | Render wrappers, factories, shared jest mocks — spec files only             |
+Always import by alias — never climb `../../../`. The alias NAMES and the folders they target are project-specific; see the active project's `*-local` skill for the concrete table (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)).
 
 Rule of thumb: if the file lives outside the current feature folder, use the alias.
 
@@ -117,23 +112,25 @@ Before building anything new, check whether it already exists:
 | Need                              | Check first                                                                 |
 | --------------------------------- | --------------------------------------------------------------------------- |
 | UI widget / recipe                | https://storybook.platform.softwareone.com/ → use the DS package it ships from |
-| Shared hook                       | `~shared/hooks/`                                                            |
-| Mock factory for a jest module    | `~test-utils/mocks/`                                                        |
-| Typed `Partial<T>`-overlay builder| `~test-utils/factories/`                                                    |
-| Render wrapper (router, query)    | `~test-utils/` (`renderWithRouter`, `createQueryClientWrapper`, …)         |
-| Date formatting                   | `useFormatDate` from `~shared/hooks/useFormatDate`                          |
-| Shared layout class               | `~shared/styles/_components.scss` — look for `.ffc-*` modifiers             |
-| Mock axios response               | `mockResponse` from `~shared/utils/mockResponse`                            |
+| Shared hook                       | the project's `shared/hooks/` folder                                        |
+| Mock factory for a jest module    | the project's `test-utils/mocks/` folder                                    |
+| Typed `Partial<T>`-overlay builder| the project's `test-utils/factories/` folder                                |
+| Render wrapper (router, query)    | the project's `test-utils/` (`renderWithRouter`, `createQueryClientWrapper`, …) |
+| Date formatting                   | the project's shared date formatter hook                                    |
+| Shared layout class               | the project's `shared/styles/_components.scss` namespace                    |
+| Mock axios response               | the project's shared `mockResponse` helper                                  |
 
-If a Storybook/shared primitive **partially** matches: stop and ask. Don't silently invent a look-alike. (POC-side rationale in `mpt-poc-builder`; test-side in `mpt-module-testing`.)
+Concrete paths and the full inventory are in the active project's `*-local` skill (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)).
+
+If a Storybook / shared primitive **partially** matches: stop and ask. Don't silently invent a look-alike. (POC-side rationale in `mpt-poc-builder`; test-side in `mpt-module-testing`.)
 
 ## Extraction threshold
 
-Promote something into shared infrastructure (`~shared`, `~test-utils/mocks`, a feature-local primitive) **when the second duplicate appears** — not before. Day-one abstraction before the shape has stabilised freezes guesses as structure.
+Promote something into shared infrastructure (the project's `shared/*`, `test-utils/mocks/*`, or a feature-local primitive) **when the second duplicate appears** — not before. Day-one abstraction before the shape has stabilised freezes guesses as structure.
 
 Rule of thumb per surface:
 
-- **Jest module mock**: 2+ specs with equivalent factory → `~test-utils/mocks/<name>.ts`.
+- **Jest module mock**: 2+ specs with equivalent factory → project's `test-utils/mocks/<name>.ts`.
 - **Composable UI primitive** (e.g. `MetricPanel`): 3+ identical compositions → feature-local `components/<Name>.tsx`.
 - **React-query hook body**: 3+ hooks differing only by key + fetcher → single factory (`createMetricsQuery`).
 - **Chart config / palette**: 2+ tabs declare module-scope series → feature-local `chartConfig.ts`.
@@ -153,9 +150,10 @@ Rule of thumb per surface:
 
 ## Pointers to feature-specific skills
 
-- Using `@swo/design-system/*` components (Grid, Modal, Panel, Charts, Chip, Popover, Icon, DatePicker, Navigation) or any `~shared/components/{panel, charts, modal}` wrapper → **`mpt-design-system`** (composition recipes, wrapper-vs-raw-DS decisions, gap-table workflow).
+- Using `@swo/design-system/*` components (Grid, Modal, Panel, Charts, Chip, Popover, Icon, DatePicker, Navigation) or any of the project's shared DS wrappers → **`mpt-design-system`** (composition recipes, wrapper-vs-raw-DS decisions, gap-table workflow).
 - Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`mpt-poc-builder`** (folder layout, mock data layer, scaling patterns, POC checklist).
-- Writing or refactoring a `*.spec.tsx` — Grid wrapper, Details container, hook, action, wizard, modal callback, API hook → **`mpt-module-testing`** (jest mock rules, shared `~test-utils/mocks/`, spec file layout, canonical patterns).
+- Writing or refactoring a `*.spec.tsx` — Grid wrapper, Details container, hook, action, wizard, modal callback, API hook → **`mpt-module-testing`** (jest mock rules, shared test-utils mocks, spec file layout, canonical patterns).
+- Resolving project-specific concrete values (aliases, CSS prefix, wrapper paths, entity list) → **`ffc-local`** / the active project's `*-local` skill.
 
 ## Pointers to workflow skills (git / PR / JIRA)
 

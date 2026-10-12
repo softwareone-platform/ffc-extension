@@ -1,13 +1,13 @@
 ---
 name: mpt-poc-builder
-description: Build sandbox/POC feature modules for the ffc-extension frontend using the SWO design system. Use when the user asks to prototype a dashboard, tab, panel, grid, chart, side-nav shell, or any new feature view driven by mock data. Enforces Storybook-first component sourcing, strongly-typed TS throughout, axios-shaped mocks abstracted behind react-query hooks, and the project's panel/chart/grid conventions.
+description: Build sandbox / POC feature modules for an MPT frontend project using the SWO design system. Use when the user asks to prototype a dashboard, tab, panel, grid, chart, side-nav shell, or any new feature view driven by mock data. Enforces Storybook-first component sourcing, strongly-typed TS throughout, axios-shaped mocks abstracted behind react-query hooks, and the project's panel / chart / grid conventions.
 ---
 
-# ffc-extension POC Builder
+# MPT POC Builder
 
 Goal: ship visually-correct, strongly-typed sandbox views that drop into real backend wiring without a rewrite. Mock data behaves like the API, components never know data is mocked, and the design-system primitives are the ones the real feature will ship with.
 
-Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system component usage (Panel + KpiTile, Grid, Modal, Charts, Multi-select, Chip, DatePicker, Navigation) lives in **`mpt-design-system`** + [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md). DS meta rules (subpath imports, verified gaps, icons, SCSS tokens, `.ffc-*` layout classes, chart palettes) live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). This skill only covers POC-specific additions on top of all that.
+Baseline conventions (path aliases, TypeScript discipline, Fast Refresh file-split, verification commands, extraction thresholds) live in **`mpt-frontend-standards`**. Design-system component usage (Panel + KpiTile, Grid, Modal, Charts, Multi-select, Chip, DatePicker, Navigation) lives in **`mpt-design-system`** + [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md). DS meta rules (subpath imports, verified gaps, icons, SCSS tokens, shared layout classes, chart palettes) live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). Concrete project bindings (alias names, CSS prefix, wrapper paths, entity list) live in the active project's `*-local` skill — in ffc-extension that's [`ffc-local`](../ffc-local/SKILL.md). This skill only covers POC-specific additions on top of all that.
 
 ## Feature folder layout
 
@@ -88,7 +88,7 @@ Everything in `mpt-frontend-standards` (no `any`, named types in `api/model.ts`,
 
 ### 12-column panel grid
 
-`.ffc-panel-grid` is a 12-column CSS grid. Panels default to `grid-column: span 6` (half width). Modifiers: `--span-4`, `--span-8`, `--full`. Headline KPI strip sits **outside** the grid as a sibling under `.ffc-tab-stack` (`display:flex; gap:$space-xl`).
+The project's shared `panel-grid` class is a 12-column CSS grid. Panels default to `grid-column: span 6` (half width). Modifiers: `--span-4`, `--span-8`, `--full`. Headline KPI strip sits **outside** the grid as a sibling under the project's `tab-stack` class (`display:flex; gap:$space-xl`). Concrete class names (ffc-extension uses `.ffc-tab-stack`, `.ffc-panel-grid`, `.ffc-panel`, `.ffc-panel--span-N`, `.ffc-panel--full`) are in [`ffc-local`](../ffc-local/SKILL.md).
 
 ```tsx
 <div className={"ffc-tab-stack"}>
@@ -142,7 +142,7 @@ Rotate a single chevron with `transform: rotate(90deg)` instead of swapping to a
 
 ### Styles
 
-Shared `.ffc-*` class inventory + add-modifier rule live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). The POC recipes above spell out *which* class to reach for in each layout.
+Shared presentation class inventory + add-modifier rule live in [`docs/conventions/design-system.md`](../../../docs/conventions/design-system.md). The concrete class prefix (e.g. `.ffc-*`) and full class list are in the project's `*-local` skill.
 
 ## Scaling the POC (iteration 2+)
 
@@ -204,7 +204,7 @@ type MetricPanelProps = {
 };
 ```
 
-If `trend` or `aside` is provided, the component wraps them in `.ffc-chart-split` + `.ffc-chart-split__aside` internally. For truly bespoke layouts (e.g. inverted split with donut on the left), use `children` — don't bend the component with an orientation prop for a single case.
+If `trend` or `aside` is provided, the component wraps them in the project's `chart-split` + `chart-split__aside` classes internally. For truly bespoke layouts (e.g. inverted split with donut on the left), use `children` — don't bend the component with an orientation prop for a single case.
 
 ### Wired filter sidebar (draft/apply)
 
@@ -248,7 +248,7 @@ Const tuples + derived unions for domain values (`ORGANISATION_STATUSES`, `CLOUD
 4. **API hooks** — low-level getter in `useFeatureApi`, react-query wrapper per resource, index barrel export.
 5. **Tab/component** — consume the hook, `if (!data) return null`, module-scope any amCharts config.
 6. **i18n** — all strings via `useFixedT`, keys alphabetised.
-7. **Styles** — reuse `.ffc-*` classes; add modifiers in `_components.scss` instead of local overrides.
+7. **Styles** — reuse the project's shared presentation classes (prefix in `*-local`); add modifiers in `_components.scss` instead of local overrides.
 8. **Verify** — `cd frontend && npm run typecheck` **and** `npm run build` (SCSS errors only show at build); run `npx prettier --write` on touched files.
 
 ## Iteration rhythm for POC work
