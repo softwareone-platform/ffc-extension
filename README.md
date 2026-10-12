@@ -19,13 +19,15 @@ The FinOps for Cloud Extension enables SoftwareOne to manage the FinOps for Clou
 
 ## Documentation
 
-- [`AGENTS.md`](AGENTS.md) — guidance for AI coding agents (and humans) working in this repo.
-- [`docs/conventions/naming.md`](docs/conventions/naming.md) — frontend file & folder naming.
-- [`docs/conventions/api-hooks.md`](docs/conventions/api-hooks.md) — `useFooApi` vs `useFooDetailsApi` patterns.
-- [`docs/conventions/i18n.md`](docs/conventions/i18n.md) — translation namespaces, `useFixedT`, dynamic keys.
-- [`docs/conventions/modals.md`](docs/conventions/modals.md) — in-app modal pattern (`Modal`, `useModalToggle`, form controllers).
-- [`docs/architecture/mpt-host.md`](docs/architecture/mpt-host.md) — iframe-as-extension runtime, `useHasMPTHost` / `useIsRootPage`.
-- [`docs/dev/devcontainer.md`](docs/dev/devcontainer.md) — devcontainer setup.
+- [`docs/README.md`](docs/README.md) — full documentation index (conventions, architecture, dev setup).
+- [`AGENTS.md`](AGENTS.md) — AI-agent entry point: skills, workflow pointers, precedence rules.
+- Key conventions at a glance:
+  [naming](docs/conventions/naming.md) ·
+  [api hooks](docs/conventions/api-hooks.md) ·
+  [i18n](docs/conventions/i18n.md) ·
+  [modals](docs/conventions/modals.md) ·
+  [design system](docs/conventions/design-system.md) ·
+  [testing](docs/conventions/testing.md).
 
 # Create your .env file
 
