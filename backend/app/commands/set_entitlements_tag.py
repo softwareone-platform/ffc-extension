@@ -19,7 +19,7 @@ BATCH_SIZE = 100
 
 @capture_telemetry_cli_command(__name__, "Set Entitlements tag")
 async def set_entitlements_tag(settings: Settings):
-    tags_to_set = {}
+    tags_to_set: dict[str, str] = {}
     async with session_factory.begin() as session:
         entitlement_handler = EntitlementHandler(session)
         ffc_api_client = FFCAPIClient(settings)
@@ -29,7 +29,11 @@ async def set_entitlements_tag(settings: Settings):
             batch_size=BATCH_SIZE,
         ):
             logger.info("Fetching tags for entitlements")
-            entitlements_map = {ent.id: ent.linked_datasource_id for ent in entitlements}
+            entitlements_map = {
+                ent.id: ent.linked_datasource_id
+                for ent in entitlements
+                if ent.linked_datasource_id is not None
+            }
 
             try:
                 entitlement_ids = ",".join(entitlements_map)

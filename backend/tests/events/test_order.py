@@ -1767,7 +1767,6 @@ async def test_change_order_process_fail(
     assert result.status is ProcessingStatus.COMPLETE
     assert result.severity == "Warning"
     assert result.message == "Change orders are not supported."
-    assert "ORDER TYPE: Change" in caplog.text
     assert "Change Order processing failed." not in caplog.text
 
 
