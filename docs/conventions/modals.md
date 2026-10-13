@@ -164,3 +164,7 @@ For a **multi-step** flow, build a wizard instead (see
   a modal is open.
 - [API hook conventions](./api-hooks.md) — the controllers consume
   `useFooApi()` for mutations.
+- [Design system component usage](./design-system-components.md) — the raw
+  `@swo/design-system/modal` the shared `<Modal>` wrapper is built on,
+  alongside recipes for every other DS component (Grid, Panel, Charts,
+  Multi-select, Navigation).

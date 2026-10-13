@@ -1,10 +1,10 @@
 # Troubleshooting
 
-Common issues when writing unit tests in `ffc-extension/frontend/` and how to fix them.
+Common issues when writing unit tests in an MPT frontend and how to fix them. Resolve project-specific paths (`~shared`, `~test-utils`, concrete helper names) via the active project's `*-local` skill (ffc-extension: [`ffc-local`](../../ffc-local/SKILL.md)).
 
 ---
 
-## ffc-extension specifics (READ FIRST)
+## MPT frontend specifics (READ FIRST)
 
 ### `Cannot find module '@mpt-extension/sdk' from ...`
 
@@ -69,7 +69,7 @@ const { getByTestId } = render(renderCell(column, item));
 
 **Symptom:** the real component renders; the mock's `data-testid` is missing.
 
-**Cause:** the mock path doesn't match the source import. `ffc-extension/frontend` imports from `@swo/design-system/[component]` (full path), not `@swo/[component]`. Jest treats them as distinct module IDs.
+**Cause:** the mock path doesn't match the source import. MPT frontends import from `@swo/design-system/[component]` (full path), not `@swo/[component]`. Jest treats them as distinct module IDs.
 
 ```text
 // ❌ Wrong (mpt-vikings-ui pattern)
