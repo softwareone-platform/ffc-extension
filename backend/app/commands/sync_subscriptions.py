@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
@@ -94,7 +95,7 @@ async def sync_subscription(
     entitlement_handler: EntitlementHandler,
     account: Account,
     subscription: dict[str, Any],
-    entitlements: list[Entitlement],
+    entitlements: Sequence[Entitlement],
 ) -> SyncResult | None:
     sub_id = subscription["id"]
 
@@ -131,6 +132,8 @@ async def sync_subscription(
         if entitlements:
             actions = []
             for entitlement in entitlements:
+                if entitlement.affiliate_external_id != sub_id:
+                    continue
                 if entitlement.status == EntitlementStatus.NEW:
                     await entitlement_handler.delete(entitlement)
                     actions.append(f"The entitlement {entitlement.id} was deleted.")
@@ -141,11 +144,12 @@ async def sync_subscription(
                     logger.info(
                         f"Terminated entitlement {entitlement.id} for subscription {sub_id}."
                     )
-            return SyncResult(
-                subscription_id=sub_id,
-                account_id=account.id,
-                message="\n".join(actions),
-            )
+            if actions:
+                return SyncResult(
+                    subscription_id=sub_id,
+                    account_id=account.id,
+                    message="\n".join(actions),
+                )
 
     return None
 

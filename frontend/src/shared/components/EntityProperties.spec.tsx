@@ -6,16 +6,13 @@ import type { AddWizardForm } from "~entitlements/create-entitlement-wizard/Crea
 import type { Status } from "~shared/components/entity-status-chip";
 import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
+import { mockDesignSystemEntityReference } from "~test-utils/mocks/entityReference";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
 import { EntityProps } from "./EntityProperties";
 
-type EntityReferenceProps = ComponentProps<
-  typeof import("@swo/design-system/entity-reference").EntityReference
->;
 type StatusProps = ComponentProps<typeof Status<{ status: string }>>;
 
-const mockEntityReference = jest.fn() as jest.MockedFunction<(props: EntityReferenceProps) => void>;
 const mockStatus = jest.fn() as jest.MockedFunction<(props: StatusProps) => void>;
 
 jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
@@ -27,24 +24,7 @@ jest.mock("./entity-status-chip", () => ({
     return <span data-testid="status">{item.status}</span>;
   },
 }));
-jest.mock("@swo/design-system/entity-reference", () => ({
-  EntityReference: ({
-    primaryContent,
-    secondaryContent,
-    isPrimaryContentBold,
-    icon,
-  }: EntityReferenceProps) => {
-    mockEntityReference({ primaryContent, secondaryContent, isPrimaryContentBold, icon });
-    return (
-      <div data-testid="entity-reference">
-        <span data-testid="primary-content">{primaryContent}</span>
-        <span data-testid="secondary-content">{secondaryContent}</span>
-        <span data-testid="is-primary-content-bold">{String(isPrimaryContentBold)}</span>
-        <span data-testid="icon">{icon}</span>
-      </div>
-    );
-  },
-}));
+jest.mock("@swo/design-system/entity-reference", () => mockDesignSystemEntityReference);
 
 function makeEntity(overrides: Partial<AddWizardForm> = {}): AddWizardForm {
   return {

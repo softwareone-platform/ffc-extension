@@ -43,12 +43,12 @@ When reading, trust the top of the chain.
   [`docs/architecture/mpt-host.md`](docs/architecture/mpt-host.md).
 - **General Copilot instructions** (mirrors what GitHub Copilot loads):
   [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
-- **Claude Code skills** (lazy-loaded; `docs/conventions/*` wins on drift). The `mpt-*` skills are **portable across MPT frontend projects**; concrete project values live in a sibling `*-local` skill:
+- **Claude Code skills** (lazy-loaded; `docs/conventions/*` wins on drift). The `mpt-*` skills are **portable across MPT frontend projects**; concrete project values live in a sibling project bindings skill:
   - Baseline frontend conventions (TS discipline, Fast Refresh, verify commands) — [`.claude/skills/mpt-frontend-standards/SKILL.md`](.claude/skills/mpt-frontend-standards/SKILL.md).
   - `@swo/design-system` component usage (Grid, Modal, Panel, Charts, Multi-select, Navigation) — [`.claude/skills/mpt-design-system/SKILL.md`](.claude/skills/mpt-design-system/SKILL.md).
   - Sandbox / POC frontend work (folder layout, mock data layer, scaling patterns) — [`.claude/skills/mpt-poc-builder/SKILL.md`](.claude/skills/mpt-poc-builder/SKILL.md).
   - Jest unit tests under `frontend/src/**/*.spec.{ts,tsx}` — [`.claude/skills/mpt-module-testing/SKILL.md`](.claude/skills/mpt-module-testing/SKILL.md).
-  - **Project-specific bindings** (alias names, CSS prefix, wrapper paths, entity list, test-utils inventory) — [`.claude/skills/ffc-local/SKILL.md`](.claude/skills/ffc-local/SKILL.md). In another MPT project replaced by that project's `*-local` skill.
+  - **Project-specific bindings** (alias names, CSS prefix, wrapper paths, entity list, test-utils inventory) — [`.claude/skills/ffc-extension/SKILL.md`](.claude/skills/ffc-extension/SKILL.md). In another MPT project replaced by that project's project bindings skill.
 
 ## Repo layout
 

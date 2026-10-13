@@ -211,10 +211,16 @@ async def test_sync_subscription_actions_for_non_active_subscription(
     subscription_status: str,
 ) -> None:
     new_ent = await entitlement_factory(
-        owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.NEW
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id=SUBSCRIPTION_ID,
+        status=EntitlementStatus.NEW,
     )
     active_ent = await entitlement_factory(
-        owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.ACTIVE
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id=SUBSCRIPTION_ID,
+        status=EntitlementStatus.ACTIVE,
     )
     subscription = mpt_subscription_factory(status=subscription_status)
 
@@ -233,6 +239,79 @@ async def test_sync_subscription_actions_for_non_active_subscription(
     assert f"The entitlement {new_ent.id} was deleted." in result.message
     assert f"The entitlement {active_ent.id} was terminated." in result.message
     assert result.succeeded is True
+
+
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_sync_subscription_ignores_entitlements_of_other_subscriptions(
+    entitlement_handler: EntitlementHandler,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    entitlement_factory: ModelFactory[Entitlement],
+    db_session: AsyncSession,
+    subscription_status: str,
+) -> None:
+    """Entitlements bound to another subscription are left untouched and no result is reported."""
+    new_ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id="SUB-9999-9999",
+        status=EntitlementStatus.NEW,
+    )
+    active_ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id="SUB-9999-9999",
+        status=EntitlementStatus.ACTIVE,
+    )
+    subscription = mpt_subscription_factory(status=subscription_status)
+
+    result = await sync_subscription(
+        entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
+    )
+
+    assert result is None
+    await db_session.refresh(new_ent)
+    assert new_ent.status == EntitlementStatus.NEW
+    await db_session.refresh(active_ent)
+    assert active_ent.status == EntitlementStatus.ACTIVE
+    assert active_ent.terminated_at is None
+
+
+async def test_sync_subscription_only_acts_on_entitlements_of_the_subscription(
+    entitlement_handler: EntitlementHandler,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    entitlement_factory: ModelFactory[Entitlement],
+    db_session: AsyncSession,
+) -> None:
+    """Only entitlements whose affiliate id matches the subscription are terminated."""
+    own_ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id=SUBSCRIPTION_ID,
+        status=EntitlementStatus.ACTIVE,
+    )
+    other_ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id="SUB-9999-9999",
+        status=EntitlementStatus.ACTIVE,
+    )
+    subscription = mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS)
+
+    result = await sync_subscription(
+        entitlement_handler, subscription_account, subscription, [own_ent, other_ent]
+    )
+
+    await db_session.refresh(own_ent)
+    assert own_ent.status == EntitlementStatus.TERMINATED
+    await db_session.refresh(other_ent)
+    assert other_ent.status == EntitlementStatus.ACTIVE
+    assert result is not None
+    assert result.message == f"The entitlement {own_ent.id} was terminated."
 
 
 async def test_sync_page(

@@ -1,0 +1,62 @@
+@use "@swo/design-system/design-tokens" as *;
+
+.title {
+  @extend %medium4;
+  margin-bottom: $var-spacing-2;
+}
+
+.data {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $var-gray-2;
+  border-radius: $var-radius-m;
+  max-width: fit-content;
+
+  .headers {
+    @extend %medium2;
+  }
+
+  .row {
+    @extend %regular2;
+  }
+
+  .headers,
+  .row {
+    display: flex;
+    flex-direction: row;
+    padding: $var-spacing-1 $var-spacing-3;
+    gap: $var-spacing-6;
+
+    &:first-child {
+      padding-top: $var-spacing-3;
+      padding-bottom: 0;
+    }
+
+    &:last-child {
+      padding-bottom: $var-spacing-3;
+    }
+
+    .name {
+      width: 80px;
+    }
+
+    .by {
+      width: 170px;
+    }
+
+    .at {
+      width: 100px;
+    }
+
+    .button-container {
+      width: 54px;
+      position: relative;
+
+      Button {
+        position: absolute;
+        top: 12px;
+        right: 0;
+      }
+    }
+  }
+}

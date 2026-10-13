@@ -14,7 +14,11 @@ export function OrganizationDetailsHeader({ organizationId, backUrl }: Readonly<
   const title = (
     <span>
       {entity?.id}
-      {entity?.id && <Status<OrganizationRead> item={entity} />}
+      {entity?.id && (
+        <span className="entity-status">
+          <Status<OrganizationRead> item={entity} />
+        </span>
+      )}
     </span>
   );
 

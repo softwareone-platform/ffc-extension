@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Common issues when writing unit tests in an MPT frontend and how to fix them. Resolve project-specific paths (`~shared`, `~test-utils`, concrete helper names) via the active project's `*-local` skill (ffc-extension: [`ffc-local`](../../ffc-local/SKILL.md)).
+Common issues when writing unit tests in an MPT frontend and how to fix them. Resolve project-specific paths (`~shared`, `~test-utils`, concrete helper names) via the active project's project bindings skill (ffc-extension: [`ffc-extension`](../../ffc-extension/SKILL.md)).
 
 ---
 
@@ -72,10 +72,10 @@ const { getByTestId } = render(renderCell(column, item));
 **Cause:** the mock path doesn't match the source import. MPT frontends import from `@swo/design-system/[component]` (full path), not `@swo/[component]`. Jest treats them as distinct module IDs.
 
 ```text
-// ❌ Wrong (mpt-vikings-ui pattern)
+// ❌ Wrong — shortened path, doesn't match the source import
 jest.mock("@swo/grid", () => ({ Grid: () => null }));
 
-// ✅ Correct
+// ✅ Correct — full subpath, matches `@swo/design-system/grid`
 jest.mock("@swo/design-system/grid", () => ({ Grid: () => null }));
 ```
 
@@ -141,9 +141,7 @@ await user.click(screen.getByRole("button", { name: /save/i }));
 
 **Cause:** `jest.config.js` `moduleNameMapper` is missing the alias. `tsconfig.json` `paths` and `moduleNameMapper` are separate resolvers.
 
-**Solution:** add the mapping to both. Existing aliases live in `frontend/jest.config.js`.
-
-**Known drift:** `tsconfig.json` declares `~fixes/*` → `fixes/*` but `jest.config.js` doesn't map it. First spec to import from `~fixes` must add the mapping.
+**Solution:** add the mapping to both. The current complete alias set is listed in the project's project bindings skill (ffc-extension: [`ffc-extension`](../../ffc-extension/SKILL.md)) — any new alias added to `tsconfig.json` must also be added to `jest.config.js` `moduleNameMapper` and to project bindings skill.
 
 ---
 
