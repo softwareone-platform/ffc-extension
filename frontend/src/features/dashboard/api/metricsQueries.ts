@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { DashboardFilters, useDashboardFilters } from "../components/DashboardFiltersContext";
 import { useDashboardApi } from "./useDashboardApi";
@@ -14,6 +14,10 @@ function createMetricsQuery<T>(key: string, select: (api: DashboardApi) => Fetch
     return useQuery({
       queryKey: ["Dashboard", key, filters] as const,
       queryFn: async () => (await fetcher(filters)).data,
+      // Keep the previous payload rendered while the next one is in flight — prevents the
+      // `if (!data) return null` guard in each tab from unmounting the whole panel grid
+      // (amCharts restarts its load animation on remount) every time a filter changes.
+      placeholderData: keepPreviousData,
     });
   };
 }

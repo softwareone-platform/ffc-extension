@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 
 import {
   endOfMonth,
@@ -14,6 +14,7 @@ import {
 } from "date-fns";
 import { DateRange, DayPicker } from "react-day-picker";
 
+import { Button } from "@swo/design-system/button";
 import { Icon } from "@swo/design-system/icon";
 import { Popover } from "@swo/design-system/popover";
 
@@ -36,7 +37,8 @@ type PresetKey = "thisMonth" | "lastMonth" | "lastQuarter" | "lastYear";
  * Date-range trigger built from a SWO `Popover` + `react-day-picker` `DayPicker` in range mode.
  * The SWO design system doesn't ship a range picker; this wrapper mirrors the labelled-trigger
  * pattern of the existing MultiSelect and adds a column of preset ranges (This month, Last
- * month, Last quarter, Last year) on the left for quick selection.
+ * month, Last quarter, Last year) plus an Apply button so a tentative range only commits to
+ * the dashboard filters when the user confirms.
  */
 export function DateRangePicker({
   label,
@@ -45,9 +47,22 @@ export function DateRangePicker({
   onChange,
   dateFormat = "dd.MM.yyyy",
 }: DateRangePickerProps) {
+  const tFilters = useFixedT("dashboard:filters");
   const tPresets = useFixedT("dashboard:filters:presets");
   const labelId = useId();
   const triggerId = useId();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [draft, setDraft] = useState<DateRangeValue>(value);
+
+  // Resync the draft from the committed value as the popover opens — handled in the
+  // open-change callback (not an effect) so React can batch both updates in one render.
+  function handleOpenChange(open: boolean) {
+    if (open) {
+      setDraft(value);
+    }
+    setIsOpen(open);
+  }
 
   const summary = formatRange(value, placeholder, dateFormat);
   const presets: { key: PresetKey; label: string }[] = [
@@ -57,12 +72,22 @@ export function DateRangePicker({
     { key: "lastYear", label: tPresets("lastYear") },
   ];
 
+  function apply() {
+    onChange(draft);
+    setIsOpen(false);
+  }
+
   return (
     <div className={"ffc-multiselect"}>
       <span id={labelId} className={"ffc-multiselect__label"}>
         {label}
       </span>
-      <Popover trigger={"click"} keepOpenOnOutsideClick={false}>
+      <Popover
+        trigger={"click-manual"}
+        keepOpenOnOutsideClick={false}
+        isOpen={isOpen}
+        isOpenChange={handleOpenChange}
+      >
         <Popover.Target>
           <button
             type={"button"}
@@ -82,18 +107,25 @@ export function DateRangePicker({
                   key={preset.key}
                   type={"button"}
                   className={"ffc-date-range__preset"}
-                  onClick={() => onChange(presetRange(preset.key))}
+                  onClick={() => setDraft(presetRange(preset.key))}
                 >
                   {preset.label}
                 </button>
               ))}
             </div>
-            <DayPicker
-              mode={"range"}
-              numberOfMonths={2}
-              selected={value as DateRange}
-              onSelect={(range) => onChange(range ?? {})}
-            />
+            <div className={"ffc-date-range__calendar"}>
+              <DayPicker
+                mode={"range"}
+                numberOfMonths={2}
+                selected={draft as DateRange}
+                onSelect={(range) => setDraft(range ?? {})}
+              />
+              <div className={"ffc-date-range__actions"}>
+                <Button type={"primary"} onClick={apply}>
+                  {tFilters("apply")}
+                </Button>
+              </div>
+            </div>
           </div>
         </Popover.Content>
       </Popover>

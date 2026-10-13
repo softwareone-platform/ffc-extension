@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import Select, { MultiValue } from "react-select";
 
-import { Button } from "@swo/design-system/button";
 import { Divider } from "@swo/design-system/divider";
 import { Icon } from "@swo/design-system/icon";
 
@@ -14,7 +13,7 @@ import {
   ORGANISATION_STATUSES,
   OrganisationStatus,
 } from "../api/model";
-import { DashboardFilters, useDashboardFilters } from "./DashboardFiltersContext";
+import { useDashboardFilters } from "./DashboardFiltersContext";
 import { DateRangePicker } from "./DateRangePicker";
 
 type SelectOption<T extends string> = { value: T; label: string };
@@ -23,8 +22,9 @@ type SelectOption<T extends string> = { value: T; label: string };
  * Persistent left-column filter panel for the dashboard, modelled on the SWO `Navigation.SideNav`
  * (250px expanded / 72px collapsed with a floating circular collapse button on the right edge).
  * The date range uses `react-day-picker` and the multi-selects use `react-select` — the SWO DS
- * ships neither primitive. Changes stay in a local draft until Apply commits them to
- * `DashboardFiltersContext`.
+ * ships neither primitive. Every change commits directly to `DashboardFiltersContext` so the
+ * dashboard updates live; the previous payload stays visible via react-query's
+ * `keepPreviousData` so there's no flash while the next fetch is in flight.
  */
 export function FilterSidebar() {
   const tFilters = useFixedT("dashboard:filters");
@@ -32,7 +32,6 @@ export function FilterSidebar() {
   const tProvider = useFixedT("dashboard:filters:provider");
 
   const { filters, setFilters } = useDashboardFilters();
-  const [draft, setDraft] = useState<DashboardFilters>(filters);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const statusOptions: SelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map((status) => ({
@@ -43,10 +42,6 @@ export function FilterSidebar() {
     value: provider,
     label: tProvider(provider),
   }));
-
-  function apply() {
-    setFilters(draft);
-  }
 
   function selectedOptions<T extends string>(options: SelectOption<T>[], picks: T[]) {
     return options.filter((option) => picks.includes(option.value));
@@ -83,13 +78,13 @@ export function FilterSidebar() {
             <DateRangePicker
               label={tFilters("dateRange")}
               placeholder={tFilters("pickDateRange")}
-              value={{ from: draft.from, to: draft.to }}
+              value={{ from: filters.from, to: filters.to }}
               onChange={(range) =>
-                setDraft((current) => ({
-                  ...current,
-                  from: range.from ?? current.from,
-                  to: range.to ?? current.to,
-                }))
+                setFilters({
+                  ...filters,
+                  from: range.from ?? filters.from,
+                  to: range.to ?? filters.to,
+                })
               }
             />
           </div>
@@ -103,9 +98,9 @@ export function FilterSidebar() {
               classNamePrefix={"ffc-select"}
               placeholder={tFilters("selectStatuses")}
               options={statusOptions}
-              value={selectedOptions(statusOptions, draft.statuses)}
+              value={selectedOptions(statusOptions, filters.statuses)}
               onChange={(selected) =>
-                setDraft((current) => ({ ...current, statuses: pickValues(selected) }))
+                setFilters({ ...filters, statuses: pickValues(selected) })
               }
             />
           </div>
@@ -117,17 +112,11 @@ export function FilterSidebar() {
               classNamePrefix={"ffc-select"}
               placeholder={tFilters("selectProviders")}
               options={providerOptions}
-              value={selectedOptions(providerOptions, draft.providers)}
+              value={selectedOptions(providerOptions, filters.providers)}
               onChange={(selected) =>
-                setDraft((current) => ({ ...current, providers: pickValues(selected) }))
+                setFilters({ ...filters, providers: pickValues(selected) })
               }
             />
-          </div>
-
-          <div className={"ffc-filter-bar__actions"}>
-            <Button type={"primary"} onClick={apply}>
-              {tFilters("apply")}
-            </Button>
           </div>
         </div>
       )}

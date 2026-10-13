@@ -417,7 +417,7 @@
       "pickDateRange": "Pick a date range",
       "organisationStatus": "Organisation Status",
       "cloudProvider": "Cloud Provider",
-      "apply": "Apply Filters",
+      "apply": "Apply",
       "selectProviders": "Select providers…",
       "selectStatuses": "Select statuses…",
       "summary": "{{statusCount}} status · {{providerCount}} provider",

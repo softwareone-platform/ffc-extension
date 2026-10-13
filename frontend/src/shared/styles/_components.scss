@@ -17,9 +17,23 @@
   }
 
   &__content {
+    position: relative;
     flex: 1 1 auto;
     min-width: 0;
     padding: $space-xl;
+  }
+
+  // Semi-transparent overlay painted on top of the content while a dashboard query is
+  // in flight — leans on react-query's `keepPreviousData` so the previous payload stays
+  // rendered underneath and the overlay reads as "refreshing", not "loading from scratch".
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 2;
   }
 }
 
@@ -315,6 +329,19 @@
       background: var(--gray-1);
       color: var(--brand-primary);
     }
+  }
+
+  &__calendar {
+    display: flex;
+    flex-direction: column;
+    gap: $space-sm;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: $space-sm;
+    border-top: 1px solid $border-subtle;
   }
 }
 
