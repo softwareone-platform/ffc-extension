@@ -15,10 +15,9 @@ export function EntitlementDetailsHeader({ entitlementId, backUrl }: Readonly<Pr
     <span>
       {entity?.id}
       {entity?.id && (
-        <>
-          &nbsp;
+        <span className="entity-status">
           <Status<EntitlementRead> item={entity} />
-        </>
+        </span>
       )}
     </span>
   );
