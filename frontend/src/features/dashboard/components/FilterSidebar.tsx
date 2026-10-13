@@ -1,11 +1,10 @@
-import { useId, useState } from "react";
+import { useState } from "react";
+
+import Select, { MultiValue } from "react-select";
 
 import { Button } from "@swo/design-system/button";
-import { Checkbox } from "@swo/design-system/checkbox";
-import { DatePicker } from "@swo/design-system/date-picker";
 import { Divider } from "@swo/design-system/divider";
 import { Icon } from "@swo/design-system/icon";
-import { Popover } from "@swo/design-system/popover";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
@@ -16,84 +15,16 @@ import {
   OrganisationStatus,
 } from "../api/model";
 import { DashboardFilters, useDashboardFilters } from "./DashboardFiltersContext";
+import { DateRangePicker } from "./DateRangePicker";
 
-type MultiSelectOption<T extends string> = { value: T; label: string };
-
-type MultiSelectProps<T extends string> = {
-  label: string;
-  placeholder: string;
-  options: MultiSelectOption<T>[];
-  value: T[];
-  onChange: (next: T[]) => void;
-};
-
-/**
- * Lightweight multi-select built from DS primitives (`Popover` + `Checkbox`): a labelled
- * trigger button opens a popover with a checkbox list that stays open while the user ticks
- * multiple values. The DS `Dropdown` closes on each selection so it doesn't fit this use case.
- */
-function MultiSelect<T extends string>({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-}: MultiSelectProps<T>) {
-  const labelId = useId();
-  const triggerId = useId();
-
-  function toggle(entry: T) {
-    onChange(value.includes(entry) ? value.filter((v) => v !== entry) : [...value, entry]);
-  }
-
-  const summary =
-    value.length === 0
-      ? placeholder
-      : options
-          .filter((option) => value.includes(option.value))
-          .map((option) => option.label)
-          .join(", ");
-
-  return (
-    <div className={"ffc-multiselect"}>
-      <span id={labelId} className={"ffc-multiselect__label"}>
-        {label}
-      </span>
-      <Popover trigger={"click"} keepOpenOnOutsideClick={false}>
-        <Popover.Target>
-          <button
-            type={"button"}
-            id={triggerId}
-            className={"ffc-multiselect__trigger"}
-            aria-labelledby={`${labelId} ${triggerId}`}
-            aria-haspopup={"listbox"}
-          >
-            <span className={"ffc-multiselect__summary"}>{summary}</span>
-            <Icon name={"expand_more"} size={16} />
-          </button>
-        </Popover.Target>
-        <Popover.Content>
-          <div className={"ffc-multiselect__list"} role={"listbox"} aria-multiselectable>
-            {options.map((option) => (
-              <Checkbox
-                key={option.value}
-                label={option.label}
-                isChecked={value.includes(option.value)}
-                onChange={() => toggle(option.value)}
-              />
-            ))}
-          </div>
-        </Popover.Content>
-      </Popover>
-    </div>
-  );
-}
+type SelectOption<T extends string> = { value: T; label: string };
 
 /**
  * Persistent left-column filter panel for the dashboard, modelled on the SWO `Navigation.SideNav`
  * (250px expanded / 72px collapsed with a floating circular collapse button on the right edge).
- * Groups stack vertically — date range, organisation status, cloud provider — with Apply at the
- * bottom. Changes stay in a local draft until Apply commits them to `DashboardFiltersContext`.
+ * The date range uses `react-day-picker` and the multi-selects use `react-select` — the SWO DS
+ * ships neither primitive. Changes stay in a local draft until Apply commits them to
+ * `DashboardFiltersContext`.
  */
 export function FilterSidebar() {
   const tFilters = useFixedT("dashboard:filters");
@@ -104,16 +35,25 @@ export function FilterSidebar() {
   const [draft, setDraft] = useState<DashboardFilters>(filters);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const statusOptions: MultiSelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map(
-    (status) => ({ value: status, label: tStatus(status) }),
-  );
-  const providerOptions: MultiSelectOption<CloudProvider>[] = CLOUD_PROVIDERS.map((provider) => ({
+  const statusOptions: SelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map((status) => ({
+    value: status,
+    label: tStatus(status),
+  }));
+  const providerOptions: SelectOption<CloudProvider>[] = CLOUD_PROVIDERS.map((provider) => ({
     value: provider,
     label: tProvider(provider),
   }));
 
   function apply() {
     setFilters(draft);
+  }
+
+  function selectedOptions<T extends string>(options: SelectOption<T>[], picks: T[]) {
+    return options.filter((option) => picks.includes(option.value));
+  }
+
+  function pickValues<T extends string>(selected: MultiValue<SelectOption<T>>): T[] {
+    return selected.map((option) => option.value);
   }
 
   return (
@@ -140,39 +80,47 @@ export function FilterSidebar() {
       {!isCollapsed && (
         <div id={"ffc-filter-bar-body"} className={"ffc-filter-bar__body-inner"}>
           <div className={"ffc-filter-bar__group"}>
-            <DatePicker<Date>
-              label={tFilters("from")}
-              value={draft.from}
-              maxDate={draft.to}
-              onChange={(from) => setDraft((current) => ({ ...current, from }))}
-            />
-            <DatePicker<Date>
-              label={tFilters("to")}
-              value={draft.to}
-              minDate={draft.from}
-              onChange={(to) => setDraft((current) => ({ ...current, to }))}
+            <DateRangePicker
+              label={tFilters("dateRange")}
+              placeholder={tFilters("pickDateRange")}
+              value={{ from: draft.from, to: draft.to }}
+              onChange={(range) =>
+                setDraft((current) => ({
+                  ...current,
+                  from: range.from ?? current.from,
+                  to: range.to ?? current.to,
+                }))
+              }
             />
           </div>
 
           <Divider className={"ffc-filter-bar__divider"} />
 
           <div className={"ffc-filter-bar__group"}>
-            <MultiSelect<OrganisationStatus>
-              label={tFilters("organisationStatus")}
+            <label className={"ffc-multiselect__label"}>{tFilters("organisationStatus")}</label>
+            <Select<SelectOption<OrganisationStatus>, true>
+              isMulti
+              classNamePrefix={"ffc-select"}
               placeholder={tFilters("selectStatuses")}
               options={statusOptions}
-              value={draft.statuses}
-              onChange={(statuses) => setDraft((current) => ({ ...current, statuses }))}
+              value={selectedOptions(statusOptions, draft.statuses)}
+              onChange={(selected) =>
+                setDraft((current) => ({ ...current, statuses: pickValues(selected) }))
+              }
             />
           </div>
 
           <div className={"ffc-filter-bar__group"}>
-            <MultiSelect<CloudProvider>
-              label={tFilters("cloudProvider")}
+            <label className={"ffc-multiselect__label"}>{tFilters("cloudProvider")}</label>
+            <Select<SelectOption<CloudProvider>, true>
+              isMulti
+              classNamePrefix={"ffc-select"}
               placeholder={tFilters("selectProviders")}
               options={providerOptions}
-              value={draft.providers}
-              onChange={(providers) => setDraft((current) => ({ ...current, providers }))}
+              value={selectedOptions(providerOptions, draft.providers)}
+              onChange={(selected) =>
+                setDraft((current) => ({ ...current, providers: pickValues(selected) }))
+              }
             />
           </div>
 

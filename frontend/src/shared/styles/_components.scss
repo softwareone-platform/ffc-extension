@@ -140,28 +140,42 @@
   min-width: 180px;
 
   &__label {
-    @extend %regular1;
+    @extend %bold2;
 
-    color: $text-muted;
+    color: $text-strong;
   }
 
+  // Trigger mirrors the SWO DS `Input` component: gray-4 border, 8px radius, 14px/400 copy,
+  // 4px/8px padding, and a brand-primary hover/focus border so the whole filter sidebar reads
+  // uniformly with the rest of the DS form controls.
   &__trigger {
+    @extend %regular2;
+
     display: inline-flex;
     align-items: center;
     gap: $space-xs;
-    padding: $space-xs $space-sm;
+    padding: $space-sm $space-md;
     min-height: 32px;
     background: $surface;
-    border: 1px solid $border-subtle;
-    border-radius: 4px;
-    color: $text-strong;
+    border: 1px solid var(--gray-4);
+    border-radius: var(--radius-m);
+    color: var(--brand-type);
     cursor: pointer;
     text-align: left;
+
+    &:hover,
+    &:active {
+      border-color: var(--brand-primary);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--brand-primary);
+      box-shadow: var(--box-shadow-3);
+    }
   }
 
   &__summary {
-    @extend %regular2;
-
     flex: 1 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -174,6 +188,133 @@
     gap: $space-xs;
     padding: $space-sm;
     min-width: 200px;
+  }
+}
+
+// `react-select` theming via its `classNamePrefix` — mirrors the SWO DS `Input` so the whole
+// filter sidebar reads uniformly: gray-4 border, radius-m, 14px/400 copy, brand-primary hover
+// and focus states.
+.ffc-select {
+  @extend %regular2;
+
+  &__control {
+    min-height: 32px !important;
+    background: $surface !important;
+    border: 1px solid var(--gray-4) !important;
+    border-radius: var(--radius-m) !important;
+    box-shadow: none !important;
+    color: var(--brand-type) !important;
+
+    &:hover {
+      border-color: var(--brand-primary) !important;
+    }
+
+    &--is-focused {
+      border-color: var(--brand-primary) !important;
+      box-shadow: var(--box-shadow-3) !important;
+    }
+  }
+
+  &__value-container {
+    padding: $space-xs $space-sm !important;
+  }
+
+  &__multi-value {
+    background: var(--gray-1) !important;
+    border: 1px solid var(--gray-2) !important;
+    border-radius: var(--radius-s) !important;
+  }
+
+  &__multi-value__label {
+    @extend %regular2;
+
+    color: var(--brand-type) !important;
+    padding: 0 $space-xs !important;
+  }
+
+  &__menu {
+    background: $surface !important;
+    border: 1px solid $border-subtle !important;
+    border-radius: var(--radius-m) !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+
+  &__option {
+    cursor: pointer !important;
+
+    &--is-focused {
+      background: var(--gray-1) !important;
+    }
+
+    &--is-selected {
+      background: var(--brand-primary) !important;
+      color: var(--brand-white) !important;
+    }
+  }
+}
+
+// `react-day-picker` range calendar inside the SWO Popover — DS doesn't ship a range picker so
+// we lean on day-picker's built-in CSS and only tint the selected range to brand colours. The
+// SWO Popover container is transparent (position/z-index only), so the popover surface
+// (background + border + shadow) is applied here. The preset column on the left mirrors the
+// Google-Analytics-style picker: single-click shortcuts for common relative ranges.
+.ffc-date-range {
+  display: flex;
+  align-items: stretch;
+  padding: $space-sm;
+  background: $surface;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-card;
+  box-shadow: var(--shadow-card);
+
+  .rdp-root {
+    // Tinted brand background so range middle stands out against the white popover surface —
+    // $border-subtle (#e0e5e8) would blend; a soft brand tint reads as "in the selected range".
+    --rdp-accent-color: var(--brand-primary);
+    --rdp-accent-background-color: #e6edff;
+  }
+
+  .rdp-day_button {
+    font-weight: 500;
+  }
+
+  .rdp-selected .rdp-day_button {
+    color: var(--brand-white);
+    background-color: var(--brand-primary);
+  }
+
+  .rdp-range_middle .rdp-day_button {
+    color: var(--brand-type);
+    background-color: transparent;
+  }
+
+  &__presets {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+    padding-right: $space-sm;
+    margin-right: $space-sm;
+    border-right: 1px solid $border-subtle;
+    min-width: 140px;
+  }
+
+  &__preset {
+    @extend %regular2;
+
+    display: block;
+    width: 100%;
+    padding: $space-xs $space-sm;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: $text-strong;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--gray-1);
+      color: var(--brand-primary);
+    }
   }
 }
 

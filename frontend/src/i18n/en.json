@@ -413,8 +413,8 @@
     "filters": {
       "title": "Filter options",
       "timeLabel": "Time",
-      "from": "From",
-      "to": "To",
+      "dateRange": "Date range",
+      "pickDateRange": "Pick a date range",
       "organisationStatus": "Organisation Status",
       "cloudProvider": "Cloud Provider",
       "apply": "Apply Filters",
@@ -423,6 +423,12 @@
       "summary": "{{statusCount}} status · {{providerCount}} provider",
       "collapse": "Collapse filters",
       "expand": "Expand filters",
+      "presets": {
+        "thisMonth": "This month",
+        "lastMonth": "Last month",
+        "lastQuarter": "Last quarter",
+        "lastYear": "Last year"
+      },
       "status": {
         "active": "Active",
         "paid": "Paid",
