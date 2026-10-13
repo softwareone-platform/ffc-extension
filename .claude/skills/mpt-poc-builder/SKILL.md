@@ -121,6 +121,51 @@ The project's shared `panel-grid` class is a 12-column CSS grid. Panels default 
 
 Moved to [`docs/conventions/design-system-components.md`](../../../docs/conventions/design-system-components.md) + the **`mpt-design-system`** skill. Both apply to POC and production. The POC-specific additions below (12-column grid, scaling patterns, iteration rhythm) build on top.
 
+### Chart hover tooltips (amCharts XyChart)
+
+Stakeholders will ask "what's the value here?" on every demo. Attach tooltips on the series template, add bullets on line/area series so the hover target isn't a 2px stroke, and add a shared crosshair so the tooltip appears even when the cursor isn't dead-centre on a bar/bullet:
+
+```ts
+const tooltipText = horizontal ? "[bold]{name}[/]\n{valueX}" : "[bold]{name}[/]\n{valueY}";
+
+// Column series — tooltip on the column template itself
+columnSeries.columns.template.setAll({
+  tooltipText,
+  /* …fillOpacity, width, strokeOpacity… */
+});
+
+// Line / area series — bullets double as hover targets
+lineSeries.bullets.push(() =>
+  am5.Bullet.new(root, {
+    sprite: am5.Circle.new(root, {
+      radius: 4,
+      fill: am5.color(def.color),
+      stroke: am5.color(0xffffff),
+      strokeWidth: 2,
+      tooltipText,
+    }),
+  }),
+);
+
+// Shared series tooltip (background + text styling)
+function attachTooltip(entry: am5xy.XYSeries) {
+  entry.set("tooltip", am5.Tooltip.new(root, {
+    labelText: tooltipText,
+    autoTextColor: false,
+    getFillFromSprite: false,
+    pointerOrientation: "horizontal",
+  }));
+  const tooltip = entry.get("tooltip");
+  tooltip?.get("background")?.setAll({ fill: am5.color(0xffffff), fillOpacity: 0.95, stroke: am5.color(0xe0e5e8) });
+  tooltip?.label.setAll({ fill: am5.color(0x25282d), fontSize: 12 });
+}
+
+// Chart-level crosshair cursor so hovering a column anywhere in its category still fires the tooltip
+chart.set("cursor", am5xy.XYCursor.new(root, { behavior: "none", xAxis, yAxis }));
+```
+
+Keep `tooltipText` and `attachTooltip` module-scoped in `XyChart.tsx` so they're applied once per series created in the structural effect — not inside the data-update effect, which would re-attach on every refetch.
+
 ### Collapse / expand animation + chevron rotation
 
 For a header that reveals a form body, prefer `max-height` over the grid-rows trick — it reliably clips intrinsic-sized content:
@@ -220,15 +265,110 @@ type MetricPanelProps = {
 
 If `trend` or `aside` is provided, the component wraps them in the project's `chart-split` + `chart-split__aside` classes internally. For truly bespoke layouts (e.g. inverted split with donut on the left), use `children` — don't bend the component with an orientation prop for a single case.
 
-### Wired filter sidebar (draft/apply)
+### Wired filter sidebar (mixed live-apply + draft/apply)
 
-Local filter state only looks interactive. To make Apply real:
+Local filter state only looks interactive. To make it real, use a **mixed** apply model — not a sticky "Apply" button for everything:
 
 1. **Context** owns the applied filters (`filters`, `setFilters`).
-2. **Sidebar** keeps a `draft` state initialised from context; Apply commits `draft → setFilters`.
-3. **Query hooks** read `useFooFilters()`, include filters in the `queryKey`, and pass them into the getter. React-query refetches automatically.
-4. **Mock getter** accepts `(filters)` for signature uniformity. Apply **one visible transform** (e.g. filter one grid by status) to prove the plumbing — don't try to filter every chart. Extend as stakeholder demos require it.
-5. **Collapsed summary** shows the **applied** counts, not the draft, so the header matches what's actually visible in charts.
+2. **Simple inputs (multi-selects, single toggles) → live-apply.** Write straight to context on `onChange`. A sticky Apply button for routine picks is friction.
+3. **Compound inputs (date range) → draft + Apply inside the input's own popover.** A range is only valid once both ends are set; keep an internal draft so a half-finished pick doesn't commit a broken filter. Preset shortcuts (This month / Last month / etc.) → one-click apply + close popover; no draft for those, they're explicit intents.
+4. **Query hooks** read `useFooFilters()`, include filters in the `queryKey`, and pass them into the getter. React-query refetches automatically.
+5. **`placeholderData: keepPreviousData` is mandatory.** Without it, every filter change makes the `if (!data) return null` guard unmount the whole panel grid, amCharts restarts its load animation, and the dashboard appears to full-reload. With it, previous data stays rendered during refetch so changes feel like a refresh, not a reload.
+6. **Loading overlay** — compose from `useIsFetching({ queryKey: ["<Feature>"] })` + an absolutely-positioned div over the content, with the DS `LoadingSpinner` centred. Overlay + `keepPreviousData` together give the "refreshing on top of last data" affordance the DS doesn't ship.
+7. **Mock getter** accepts `(filters)` for signature uniformity. For "one visible transform to prove the plumbing", see the next section (**Mock-side reactivity patterns**) — a scalar + per-dimension filter pass is often less work than it looks.
+
+### Mock-side reactivity patterns
+
+"Apply one visible transform" undersells how much a POC needs — stakeholders tend to pick filters at random to kick the tyres, and if any card doesn't react they report it as broken. A **three-layer** pipeline covers almost every demo cleanly:
+
+**1. Scalar `computeScale(filters)` for KPIs + non-distribution charts.**
+
+Multiply each dimension's selected shares to a single factor, then walk the whole payload and scale every numeric field with a `transformMetrics(data, scale, months)` helper:
+
+```ts
+function computeScale(filters: DashboardFilters): number {
+  const statusScale = filters.statuses.length === 0 || filters.statuses.length === ALL_STATUSES.length
+    ? 1
+    : filters.statuses.reduce((sum, s) => sum + STATUS_SHARE[s], 0);
+  const providerScale = /* …same shape… */;
+  const dateScale = rangeMonths(filters) / BASELINE_MONTHS; // longer range → higher totals
+  return statusScale * providerScale * dateScale;
+}
+
+// Deep-walk the mock, scale numeric fields, leave labels/percentages/dates alone.
+function transformMetrics<T>(value: T, scale: number, months: number): T {
+  if (typeof value === "number") return Math.round(value * scale) as T;
+  if (typeof value === "string") {
+    // "$1,250" → "$5,000", "412" → "1,648", "98%"/"−1.2%" → left alone (ratios, not totals).
+    …
+  }
+  if (Array.isArray(value)) return maybeTailMonthlySeries(value, months, scale);
+  if (value && typeof value === "object") return mapObject(value, scale, months);
+  return value;
+}
+```
+
+**2. Monthly windowing** — tail monthly chart arrays (`{ month | period | bucket, …fields }` rows) to the actual range length, capped at the mock's series length. Without this, the x-axis is static even when values move, and users think "nothing changed" even though the headline KPIs did.
+
+```ts
+const sliced = isMonthlySeries ? mapped.slice(-months) : mapped;
+```
+
+**3. Per-dimension `filterXView(data, filters)` passes — mandatory for distribution donuts.** Uniform scaling preserves ratios, so the pie slices look identical when every slice shrinks by the same factor. Users read this as "the donut's not reacting". For each pie that maps to a filter dimension, run a dedicated pass that zeros out non-picked categories and recomputes the headline total:
+
+```ts
+function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
+  const picks = filters.statuses.filter(s => ORG_STATUS_CATEGORIES.includes(s));
+  if (picks.length === 0 || picks.length === ORG_STATUS_CATEGORIES.length) return data;
+  const includes = (cat: string) => picks.includes(cat.toLowerCase());
+  const nextDistribution = data.organizationsOverview.statusDistribution.map(slice => ({
+    ...slice,
+    value: includes(slice.category) ? slice.value : 0,
+  }));
+  const nextTotal = nextDistribution.reduce((sum, s) => sum + s.value, 0);
+  return { ...data, organizationsOverview: {
+    ...data.organizationsOverview,
+    total: nextTotal.toLocaleString("en-US"),
+    active: includes("active") ? data.organizationsOverview.active : "0",
+    /* …per-slice KPIs… */
+    statusDistribution: nextDistribution,
+  }};
+}
+```
+
+Chain the per-dimension passes after the scalar: `filterProviderView(filterOrgStatusView(scaled, filters), filters)`. Donuts and per-category KPIs collapse to the selected cohort; everything else scales naturally.
+
+**Rule of thumb:** if a card shows **ratios** (donut, stacked %), it needs a per-dimension pass. If it shows **totals** (KPI, line, stacked column of absolute values), the scalar is enough.
+
+### Outbound links carry filter state
+
+Dashboard links to other views (Organizations / Entitlements / entity detail) should hydrate the destination with the same filter cohort. Add a `with<Feature>Filters(path, filters)` helper to the filter-context file:
+
+```ts
+// features/<feature>/components/<Feature>FiltersContext.ts
+export function withDashboardFilters(path: string, filters: DashboardFilters): string {
+  const params = new URLSearchParams();
+  if (filters.statuses.length > 0) params.set("statuses", filters.statuses.join(","));
+  if (filters.providers.length > 0) params.set("providers", filters.providers.join(","));
+  params.set("from", filters.from.toISOString().slice(0, 10));
+  params.set("to", filters.to.toISOString().slice(0, 10));
+  const query = params.toString();
+  if (!query) return path;
+  const sep = path.includes("?") ? "&" : "?";
+  return `${path}${sep}${query}`;
+}
+```
+
+Tabs read it via a one-liner local helper so link call-sites stay short, and per-link params (`?status=active`) coexist with the appended filter state:
+
+```tsx
+const { filters } = useDashboardFilters();
+const link = (path: string) => withDashboardFilters(path, filters);
+…
+<KpiTile linkTo={link(`${ORGANIZATION_PATHS.root}?status=active`)} />
+```
+
+Destinations don't have to consume the params immediately — the state travels through so wiring the receiving view is a one-liner later.
 
 ### Real-API swap seam comment
 
@@ -284,3 +424,9 @@ POC sessions are visual-iteration heavy. The user rolls back layout decisions ~1
 - Using `Dropdown` for multi-value — closes on each selection; use the `Popover` + `Checkbox` multi-select recipe instead.
 - `grid-template-rows: 0fr → 1fr` for height animation — intrinsic-sized form controls leak out of the clipped row in some browsers; use `max-height` + `overflow:hidden` + `visibility` instead.
 - Re-adding an import to a file whose target was previously deleted — check with the Grep tool before trusting a paste.
+- **Uniform scalar scaling without per-category filtering for distribution donuts** — scaling every slice by the same factor preserves the pie's ratios, so the user reports "the donut's not reacting" even though the headline KPI moved. Always pair the scalar with a per-dimension `filterXView` pass (see **Mock-side reactivity patterns**).
+- **Draft + Apply for simple selects** — single-value changes don't need an Apply button; a sticky Apply on every input is friction. Reserve draft/apply for compound inputs (date range) where a partial pick would commit a broken filter.
+- **Omitting `placeholderData: keepPreviousData`** on `useQuery` under a filter sidebar — every filter change makes `if (!data) return null` unmount the panel grid and amCharts restarts its load animation. Users read it as a full-page reload. Always keep previous data visible during refetch, pair with an overlay for the "refreshing" affordance.
+- **Dropping arbitrary content into a SWO `Popover` without a surface** — `.popover__content` only sets position/z-index; no background, no border, no shadow. Content inside must bring its own `background`, `border`, `border-radius`, `box-shadow` or the popover appears unstyled against the page.
+- **Trying to use `Navigation.SideNav` for arbitrary left-column content** — it accepts `groups: SideNavItem[]` only (navigation primitive). Compose your own `<aside>` matching its visual spec (250px / 72px / `border-right` only) rather than trying to coerce form content through it.
+- **Reusing the same colour palette for two orthogonal dimensions on the same screen** (e.g. green/orange/gray for both status *and* providers) — users read the colour as the meaning, so collisions across adjacent cards confuse the eye. Give each dimension its own hue family.
