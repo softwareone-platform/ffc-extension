@@ -1,0 +1,150 @@
+# The backend and frontend suites are separate workflows so that each gets its
+# own README badge, which means there is no `needs:` to join them on. Both of
+# them trigger this workflow, and the gate job below turns those two triggers
+# into a single card once both have finished.
+name: Notify Teams on PR build
+
+on:
+  workflow_run:
+    workflows: ["Backend tests", "Frontend tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read # read the sibling workflow run for the same commit
+  pull-requests: read
+
+jobs:
+  notify-teams:
+    # Replaces the old `needs: [validate-backend, validate-frontend]`, whose
+    # implicit success() meant no card unless both suites passed. This half of
+    # the check is cheap; the gate step below covers the other suite.
+    if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Decide whether this run sends the card
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          THIS_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+
+          seen=0
+          pending=0
+          latest='[]'
+
+          # The sibling run is usually already visible; the retries only cover
+          # the case where both suites finish within a few seconds of each other
+          # and the API has not caught up yet.
+          for attempt in $(seq 1 6); do
+            runs=$(gh api "repos/$REPO/actions/runs?head_sha=$HEAD_SHA&per_page=100" \
+              --jq '[.workflow_runs[]
+                     | select(.name == "Backend tests" or .name == "Frontend tests")
+                     | {id, name, status, conclusion, updated_at, run_number}]')
+            # A re-run leaves the superseded run behind, so keep the newest per suite.
+            latest=$(jq -c '[group_by(.name)[] | max_by(.run_number)]' <<<"$runs")
+            seen=$(jq 'length' <<<"$latest")
+            pending=$(jq '[.[] | select(.status != "completed")] | length' <<<"$latest")
+            if [[ "$seen" -eq 2 && "$pending" -eq 0 ]]; then
+              break
+            fi
+            echo "Attempt $attempt: $seen/2 suites visible, $pending still running."
+            sleep 10
+          done
+
+          if [[ "$seen" -ne 2 || "$pending" -ne 0 ]]; then
+            echo "The other suite is still running; it will send the card when it finishes."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          failed=$(jq -r '[.[] | select(.conclusion != "success") | .name] | join(", ")' <<<"$latest")
+          if [[ -n "$failed" ]]; then
+            echo "Not notifying: $failed did not succeed."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Both runs reach this point, so exactly one of them has to post: the
+          # one that finished last. Run id breaks a tie on equal timestamps.
+          winner=$(jq -r 'sort_by(.updated_at, .id) | last | .id' <<<"$latest")
+          if [[ "$winner" != "$THIS_RUN_ID" ]]; then
+            echo "Run $THIS_RUN_ID did not finish last; run $winner sends the card."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Both suites passed and this run finished last; sending the card."
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Collect the pull request details
+        id: pr
+        if: ${{ steps.gate.outputs.proceed == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          set -euo pipefail
+
+          # workflow_run leaves `pull_requests` empty for pull requests opened
+          # from a fork, so fall back to a lookup by head branch.
+          number="$EVENT_PR_NUMBER"
+          if [[ -z "$number" ]]; then
+            number=$(gh pr list --repo "$REPO" --head "$HEAD_BRANCH" --state open --limit 1 \
+              --json number --jq '.[0].number // ""')
+          fi
+          if [[ -z "$number" ]]; then
+            echo "No open pull request found for branch $HEAD_BRANCH" >&2
+            exit 1
+          fi
+
+          # The old `teams` job read these from github.event.pull_request and
+          # from a `diff` step that lived in another job, so additions and
+          # deletions always arrived empty. One lookup here covers all of them.
+          pr=$(gh pr view "$number" --repo "$REPO" \
+            --json url,title,author,headRefName,baseRefName,commits,changedFiles,additions,deletions,state,mergedAt)
+
+          {
+            echo "number=$number"
+            echo "url=$(jq -r '.url' <<<"$pr")"
+            echo "author=$(jq -r '.author.login' <<<"$pr")"
+            echo "head_ref=$(jq -r '.headRefName' <<<"$pr")"
+            echo "base_ref=$(jq -r '.baseRefName' <<<"$pr")"
+            echo "commits=$(jq -r '.commits | length' <<<"$pr")"
+            echo "changed_files=$(jq -r '.changedFiles' <<<"$pr")"
+            echo "additions=$(jq -r '.additions' <<<"$pr")"
+            echo "deletions=$(jq -r '.deletions' <<<"$pr")"
+            # gh reports the state upper case; the card expects the REST spelling.
+            echo "status=$(jq -r '.state | ascii_downcase' <<<"$pr")"
+            echo "is_merged=$(jq -r '.mergedAt != null' <<<"$pr")"
+            # A title is free text; a delimited value keeps it out of the parser.
+            echo "title<<__PR_TITLE__"
+            jq -r '.title' <<<"$pr"
+            echo "__PR_TITLE__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Notify Microsoft Teams
+        if: ${{ steps.gate.outputs.proceed == 'true' }}
+        uses: softwareone-platform/notify-pr-teams-action@v4
+        with:
+          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          bot_image_url: https://raw.githubusercontent.com/softwareone-platform/ffc-extension/main/.github/workflows/assets/turing_team_pr_bot.png
+          repo: ${{ github.repository }}
+          pr_url: ${{ steps.pr.outputs.url }}
+          pr_title: ${{ steps.pr.outputs.title }}
+          pr_author: ${{ steps.pr.outputs.author }}
+          head_ref: ${{ steps.pr.outputs.head_ref }}
+          base_ref: ${{ steps.pr.outputs.base_ref }}
+          commits: ${{ steps.pr.outputs.commits }}
+          changed_files: ${{ steps.pr.outputs.changed_files }}
+          additions: ${{ steps.pr.outputs.additions }}
+          deletions: ${{ steps.pr.outputs.deletions }}
+          pr_number: ${{ steps.pr.outputs.number }}
+          pr_status: ${{ steps.pr.outputs.status }}
+          is_merged: ${{ steps.pr.outputs.is_merged }}
