@@ -4,7 +4,6 @@ import secrets
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from unittest.mock import MagicMock
 
 import httpx
 import jwt
@@ -109,7 +108,6 @@ async def test_process_order_propagates_a_failed_task_log(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -130,7 +128,7 @@ async def test_process_order_propagates_a_failed_task_log(
         status_code=httpx.codes.INTERNAL_SERVER_ERROR,
     )
     httpx_mock.add_response(
-        method="POST", url=configured_webhook.msteams_notifications_webhook_url, status_code=202
+        method="POST", url=test_settings.msteams_notifications_webhook_url, status_code=202
     )
 
     with pytest.raises(httpx.HTTPStatusError, match="500"):
@@ -160,7 +158,7 @@ async def test_process_order_propagates_a_failed_task_log(
     ]
 
     # The rejected log write is posted to Teams once, with the traceback and the event details.
-    webhook_url = configured_webhook.msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -177,7 +175,6 @@ async def test_process_order_still_propagates_the_original_error_when_teams_is_d
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -199,7 +196,7 @@ async def test_process_order_still_propagates_the_original_error_when_teams_is_d
     httpx_mock.add_exception(
         httpx.ConnectError("teams unreachable"),
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
     )
 
     with pytest.raises(httpx.HTTPStatusError, match="500"):
@@ -228,9 +225,7 @@ async def test_process_order_still_propagates_the_original_error_when_teams_is_d
     ]
 
     # Teams was tried exactly once; the connect error is logged with its traceback and swallowed.
-    assert (
-        len(httpx_mock.get_requests(url=configured_webhook.msteams_notifications_webhook_url)) == 1
-    )
+    assert len(httpx_mock.get_requests(url=test_settings.msteams_notifications_webhook_url)) == 1
     notification_failures = [
         record
         for record in caplog.records
@@ -260,7 +255,6 @@ async def test_process_order_propagates_a_failed_task_completion(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -283,7 +277,7 @@ async def test_process_order_propagates_a_failed_task_completion(
         url=f"{base_url}/system/tasks/{event.task.id}/complete",
     )
     httpx_mock.add_response(
-        method="POST", url=configured_webhook.msteams_notifications_webhook_url, status_code=202
+        method="POST", url=test_settings.msteams_notifications_webhook_url, status_code=202
     )
 
     with pytest.raises(httpx.ReadTimeout, match="timed out"):
@@ -315,7 +309,7 @@ async def test_process_order_propagates_a_failed_task_completion(
     ]
 
     # The timeout is posted to Teams once, with the traceback and the event details.
-    webhook_url = configured_webhook.msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -334,7 +328,6 @@ async def test_process_order_reports_an_unreadable_order_as_unexpected(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -353,14 +346,14 @@ async def test_process_order_reports_an_unreadable_order_as_unexpected(
         text="<html>some text</html>",
     )
     httpx_mock.add_response(
-        method="POST", url=configured_webhook.msteams_notifications_webhook_url, status_code=202
+        method="POST", url=test_settings.msteams_notifications_webhook_url, status_code=202
     )
 
     with pytest.raises(ValueError, match="Expecting value"):
         await post_order_event(event)
 
     # The failure is posted to Teams once, with the traceback and the event details.
-    webhook_url = configured_webhook.msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -411,7 +404,6 @@ async def test_process_order_reports_a_malformed_task_as_unexpected(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -427,14 +419,14 @@ async def test_process_order_reports_a_malformed_task_as_unexpected(
         json={"id": event.task.id, "parameters": {}},
     )
     httpx_mock.add_response(
-        method="POST", url=configured_webhook.msteams_notifications_webhook_url, status_code=202
+        method="POST", url=test_settings.msteams_notifications_webhook_url, status_code=202
     )
 
     with pytest.raises(KeyError, match="accountId"):
         await post_order_event(event)
 
     # The failure is posted to Teams once, with the traceback and the event details.
-    webhook_url = configured_webhook.msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -468,7 +460,6 @@ async def test_process_order_reschedules_when_claiming_the_task_fails(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -528,14 +519,13 @@ async def test_process_order_reschedules_when_claiming_the_task_fails(
         if "/integration/installations/" in request.url.path
         or "/commerce/orders/" in request.url.path
     ]
-    assert not httpx_mock.get_requests(url=configured_webhook.msteams_notifications_webhook_url)
+    assert not httpx_mock.get_requests(url=test_settings.msteams_notifications_webhook_url)
 
 
 async def test_process_order_does_not_notify_for_a_task_owned_by_another_account(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -587,14 +577,13 @@ async def test_process_order_does_not_notify_for_a_task_owned_by_another_account
         if "/integration/installations/" in request.url.path
         or "/commerce/orders/" in request.url.path
     ]
-    assert not httpx_mock.get_requests(url=configured_webhook.msteams_notifications_webhook_url)
+    assert not httpx_mock.get_requests(url=test_settings.msteams_notifications_webhook_url)
 
 
 async def test_process_order_does_not_notify_for_an_unsupported_order_type(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_order_event: Callable[[Event], Awaitable[Response]],
@@ -642,7 +631,7 @@ async def test_process_order_does_not_notify_for_an_unsupported_order_type(
         for request in httpx_mock.get_requests()
         if "/commerce/orders/" in request.url.path and request.method != "GET"
     ]
-    assert not httpx_mock.get_requests(url=configured_webhook.msteams_notifications_webhook_url)
+    assert not httpx_mock.get_requests(url=test_settings.msteams_notifications_webhook_url)
 
 
 # -- subscriptions share the lifecycle --
@@ -652,7 +641,6 @@ async def test_process_subscription_propagates_a_failed_task_log(
     mocker: MockerFixture,
     httpx_mock: HTTPXMock,
     test_settings: Settings,
-    configured_webhook: MagicMock,
     mocked_extension_ctx: ExtensionContext,
     event_factory: EventFactory,
     post_subscription_event: Callable[[Event], Awaitable[Response]],
@@ -675,7 +663,7 @@ async def test_process_subscription_propagates_a_failed_task_log(
         status_code=httpx.codes.SERVICE_UNAVAILABLE,
     )
     httpx_mock.add_response(
-        method="POST", url=configured_webhook.msteams_notifications_webhook_url, status_code=202
+        method="POST", url=test_settings.msteams_notifications_webhook_url, status_code=202
     )
 
     with pytest.raises(httpx.HTTPStatusError, match="503"):
@@ -690,7 +678,7 @@ async def test_process_subscription_propagates_a_failed_task_log(
     assert log_body["message"] == f"No subscription found for {subscription_id}."
 
     # The failure is posted to Teams once, with the traceback and the event details.
-    webhook_url = configured_webhook.msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]

@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 
 from app.cli import app
 from app.commands import fetch_datasource_expenses
-from app.conf import Settings, get_settings
+from app.conf import Settings
 from app.db.base import session_factory
 from app.db.handlers import DatasourceExpenseHandler, OrganizationHandler
 from app.db.models import DatasourceExpense, Organization
@@ -41,7 +41,7 @@ async def test_create_new_datasource_expenses_single_organization(
     real ``OptscaleClient`` (URL building, cluster secret auth, response parsing), the real
     notification code and the real DB handlers run. Every non-deleted status is processed.
     """
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -205,7 +205,7 @@ async def test_create_new_datasource_expenses_single_organization_deleted(
 ) -> None:
     """A deleted organization is skipped: Optscale
     is never called and its expenses are untouched."""
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -272,7 +272,7 @@ async def test_create_new_datasource_expenses_organization_deleted(
     ``main`` is called without an organization ID, so the deleted organization is excluded by
     the query itself.
     """
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -341,7 +341,7 @@ async def test_datasource_expenses_are_updated_for_current_month(
     the first datasource, create the missing total for the second, fill in yesterday's daily
     expenses, and leave the February row exactly as it was.
     """
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -581,7 +581,7 @@ async def test_organization_with_no_linked_organization_id(
     httpx_mock: HTTPXMock,
 ) -> None:
     """An organization without a linked Optscale organization is logged and skipped."""
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -659,7 +659,7 @@ async def test_optscale_api_returns_exception(
     expected_error_notifications: int,
 ) -> None:
     """Optscale failures are logged and store nothing; only a 500 notifies an exception."""
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -752,7 +752,7 @@ async def test_multiple_datasources_are_handled_correctly(
     Optscale and the MSTeams webhook are stubbed at the HTTP level with ``httpx_mock``, so the
     real ``OptscaleClient``, the real notification code and the real DB handlers run.
     """
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -1172,7 +1172,7 @@ async def test_main_sends_one_success_notification_for_all_organizations(
     httpx_mock: HTTPXMock,
 ) -> None:
     """A run over several organizations sends a single summary notification, not one per org."""
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -1248,7 +1248,7 @@ async def test_each_organization_commits_in_its_own_transaction(
     httpx_mock: HTTPXMock,
 ) -> None:
     """Every organization's expenses are committed by its own session, in parallel."""
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
@@ -1332,7 +1332,7 @@ async def test_one_organization_failure(
     The broken organization's daily expenses come back without the ``name`` Optscale always
     sends, which makes storing them raise inside that organization's transaction.
     """
-    webhook_url = get_settings().msteams_notifications_webhook_url
+    webhook_url = test_settings.msteams_notifications_webhook_url
     httpx_mock.add_response(
         method="POST",
         url=webhook_url,
