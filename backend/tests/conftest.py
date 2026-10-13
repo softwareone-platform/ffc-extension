@@ -127,6 +127,14 @@ def test_settings() -> Settings:
     return settings
 
 
+@pytest.fixture(scope="session", autouse=True)
+def mock_get_settings(test_settings: Settings):
+    from unittest.mock import patch
+
+    with patch("app.conf._settings", test_settings):
+        yield
+
+
 @pytest.fixture(scope="session")
 def db_engine(test_settings: Settings) -> AsyncEngine:
     return configure_db_engine(test_settings)
@@ -2192,17 +2200,6 @@ def process_result_with_error():
 def temp_charges_file():
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
         yield f.name
-
-
-MSTEAMS_FAKE_WEBHOOK_URL = "https://localhost/webhook"
-
-
-@pytest.fixture
-def configured_webhook(mocker):
-    mocked_settings = mocker.MagicMock()
-    mocked_settings.msteams_notifications_webhook_url = MSTEAMS_FAKE_WEBHOOK_URL
-    mocker.patch("app.notifications.get_settings", return_value=mocked_settings)
-    return mocked_settings
 
 
 @pytest.fixture
