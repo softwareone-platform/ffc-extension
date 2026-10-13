@@ -63,16 +63,21 @@ function computeScale(filters: DashboardFilters): number {
   // Date range scales every numeric field proportionally to its length: a shorter window
   // reads as "less activity", a longer window as "more". `BASELINE_MONTHS` keeps the default
   // range at 1× so the mock numbers match the JSON on first load.
-  const months = Math.max(1, differenceInCalendarMonths(filters.to, filters.from));
-  const dateScale = months / BASELINE_MONTHS;
+  const dateScale = rangeMonths(filters) / BASELINE_MONTHS;
   return statusScale * providerScale * dateScale;
 }
 
-// Short ranges (< 6 months) collapse chart data to the last 3 points so narrow windows read
-// as "compact"; longer ranges keep the full 6-point series. The user-visible effect is that
-// picking a shorter preset or custom range makes every monthly chart redraw with fewer bars.
-function monthWindow(filters: DashboardFilters): 3 | 6 {
-  return differenceInCalendarMonths(filters.to, filters.from) < 6 ? 3 : 6;
+// Full-month count of the selected range: a 1 Sep → 30 Sep window is 1 month, a 1 Jul → 30 Sep
+// window is 3, etc. `differenceInCalendarMonths` is boundary-based (would return 0 for a
+// same-month range), so we add 1 to count the start month as well.
+function rangeMonths(filters: DashboardFilters): number {
+  return Math.max(1, differenceInCalendarMonths(filters.to, filters.from) + 1);
+}
+
+// Number of monthly chart points to render — the actual range length, capped at the mock's
+// 12-month ceiling. A 1-month range → 1 bar, a 4-month range → 4 bars, 12 months → 12 bars.
+function monthWindow(filters: DashboardFilters): number {
+  return Math.min(12, rangeMonths(filters));
 }
 
 const MONTHLY_CATEGORIES = new Set(["month", "period", "bucket"]);
@@ -84,7 +89,7 @@ const MONTHLY_CATEGORIES = new Set(["month", "period", "bucket"]);
 //   - "$1,250"            → preserved prefix, scaled integer, re-formatted
 //   - "98%" / "-1.2%"     → left alone (percentages are ratios, not totals)
 //   - everything else     → left alone (labels, categories, IDs, dates)
-function transformMetrics<T>(value: T, scale: number, months: 3 | 6): T {
+function transformMetrics<T>(value: T, scale: number, months: number): T {
   if (typeof value === "number") {
     return Math.round(value * scale) as T;
   }
@@ -124,22 +129,109 @@ function transformMetrics<T>(value: T, scale: number, months: 3 | 6): T {
   return value;
 }
 
+// The status donut shows ratios between Active / Terminated / Deleted — a uniform scale
+// multiplier keeps those ratios identical, so the user sees "no change". After the generic
+// transform, zero out the slices and per-status KPIs that aren't in the filter picks and
+// recompute `total` from the remaining slices, so the donut and headline react visibly.
+const ORG_STATUS_CATEGORIES = ["active", "terminated", "deleted"] as const;
+
+function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
+  const orgPicks = filters.statuses.filter((status) =>
+    (ORG_STATUS_CATEGORIES as readonly string[]).includes(status),
+  );
+  // No org-status pick (empty or billing-only) → the distribution is orthogonal, leave it.
+  if (orgPicks.length === 0 || orgPicks.length === ORG_STATUS_CATEGORIES.length) {
+    return data;
+  }
+  const includes = (slice: string) =>
+    orgPicks.includes(slice.toLowerCase() as (typeof ORG_STATUS_CATEGORIES)[number]);
+
+  const nextDistribution = data.organizationsOverview.statusDistribution.map((slice) => ({
+    ...slice,
+    value: includes(slice.category) ? slice.value : 0,
+  }));
+  const nextTotal = nextDistribution.reduce((sum, slice) => sum + slice.value, 0);
+
+  return {
+    ...data,
+    organizationsOverview: {
+      ...data.organizationsOverview,
+      total: nextTotal.toLocaleString("en-US"),
+      active: includes("active") ? data.organizationsOverview.active : "0",
+      terminated: includes("terminated") ? data.organizationsOverview.terminated : "0",
+      deleted: includes("deleted") ? data.organizationsOverview.deleted : "0",
+      statusDistribution: nextDistribution,
+    },
+  };
+}
+
+// Provider-breakdown views (stacked column, per-provider donut, per-provider trend) share the
+// same shape: either a row like `{ period, azure, aws, gcp }` or a slice like
+// `{ category: "Azure", value: … }`. Walking the whole payload and zeroing out non-selected
+// provider keys makes "pick Azure only" visibly leave Azure as the sole series/slice.
+function filterProviderView<T>(data: T, filters: DashboardFilters): T {
+  if (filters.providers.length === 0 || filters.providers.length === CLOUD_PROVIDERS.length) {
+    return data;
+  }
+  const picks = new Set<string>(filters.providers);
+  return walkProviderView(data, picks) as T;
+}
+
+function walkProviderView(value: unknown, picks: Set<string>): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => walkProviderView(item, picks));
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    // Distribution slice shape: `{ category, value }` — drop the slice if its category is a
+    // provider name that wasn't picked.
+    const category = entries.find(([key]) => key === "category")?.[1];
+    if (typeof category === "string") {
+      const matchedProvider = (CLOUD_PROVIDERS as readonly string[]).find(
+        (provider) => provider.toLowerCase() === category.toLowerCase(),
+      );
+      if (matchedProvider && !picks.has(matchedProvider)) {
+        return { ...value, value: 0 };
+      }
+    }
+    const out: Record<string, unknown> = {};
+    for (const [key, nested] of entries) {
+      // Row shape: `{ period, azure, aws, gcp }` — zero out the per-provider columns the
+      // user hasn't selected so stacked bars collapse to the picked providers.
+      if ((CLOUD_PROVIDERS as readonly string[]).includes(key) && !picks.has(key)) {
+        out[key] = typeof nested === "number" ? 0 : nested;
+      } else {
+        out[key] = walkProviderView(nested, picks);
+      }
+    }
+    return out;
+  }
+  return value;
+}
+
 export function useDashboardApi() {
   const getAdoptionMetrics = useCallback(
-    (filters: DashboardFilters): Promise<AxiosResponse<AdoptionMetrics>> =>
-      mockResponse(
-        transformMetrics(adoptionMetrics as AdoptionMetrics, computeScale(filters), monthWindow(filters)),
-        MOCK_DELAY_MS,
-      ),
+    (filters: DashboardFilters): Promise<AxiosResponse<AdoptionMetrics>> => {
+      const scaled = transformMetrics(
+        adoptionMetrics as AdoptionMetrics,
+        computeScale(filters),
+        monthWindow(filters),
+      );
+      const filtered = filterProviderView(filterOrgStatusView(scaled, filters), filters);
+      return mockResponse(filtered, MOCK_DELAY_MS);
+    },
     [],
   );
 
   const getConsumptionMetrics = useCallback(
-    (filters: DashboardFilters): Promise<AxiosResponse<ConsumptionMetrics>> =>
-      mockResponse(
-        transformMetrics(consumptionMetrics as ConsumptionMetrics, computeScale(filters), monthWindow(filters)),
-        MOCK_DELAY_MS,
-      ),
+    (filters: DashboardFilters): Promise<AxiosResponse<ConsumptionMetrics>> => {
+      const scaled = transformMetrics(
+        consumptionMetrics as ConsumptionMetrics,
+        computeScale(filters),
+        monthWindow(filters),
+      );
+      return mockResponse(filterProviderView(scaled, filters), MOCK_DELAY_MS);
+    },
     [],
   );
 

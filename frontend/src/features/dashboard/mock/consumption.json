@@ -52,11 +52,17 @@
   ],
   "providerTrend": [
     { "month": "Jan", "azure": 5200, "aws": 3800, "gcp": 2100 },
+    { "month": "Feb", "azure": 5500, "aws": 3950, "gcp": 2250 },
     { "month": "Mar", "azure": 5800, "aws": 4100, "gcp": 2400 },
+    { "month": "Apr", "azure": 6100, "aws": 4350, "gcp": 2650 },
     { "month": "May", "azure": 6400, "aws": 4600, "gcp": 2900 },
+    { "month": "Jun", "azure": 6750, "aws": 4900, "gcp": 3100 },
     { "month": "Jul", "azure": 7100, "aws": 5200, "gcp": 3300 },
+    { "month": "Aug", "azure": 7500, "aws": 5400, "gcp": 3550 },
     { "month": "Sep", "azure": 7900, "aws": 5600, "gcp": 3800 },
-    { "month": "Nov", "azure": 8800, "aws": 6300, "gcp": 4200 }
+    { "month": "Oct", "azure": 8350, "aws": 5950, "gcp": 4000 },
+    { "month": "Nov", "azure": 8800, "aws": 6300, "gcp": 4200 },
+    { "month": "Dec", "azure": 9300, "aws": 6650, "gcp": 4400 }
   ],
   "topOrganizations": [
     { "organization": "Northwind Trading", "spend": 92000000 },

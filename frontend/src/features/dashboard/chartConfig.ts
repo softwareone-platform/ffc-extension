@@ -13,8 +13,8 @@ export const STATUS_DONUT_COLORS = [CHART_COLORS.green, CHART_COLORS.orange, CHA
 
 export const DATASOURCE_PROVIDER_SERIES: XySeriesDef[] = [
   { field: "azure", name: "Azure", color: CHART_COLORS.blue, kind: "column" },
-  { field: "aws", name: "AWS", color: CHART_COLORS.orange, kind: "column" },
-  { field: "gcp", name: "GCP", color: CHART_COLORS.green, kind: "column" },
+  { field: "aws", name: "AWS", color: CHART_COLORS.navy, kind: "column" },
+  { field: "gcp", name: "GCP", color: CHART_COLORS.yellow, kind: "column" },
 ];
 
 export const FUNNEL_SERIES: XySeriesDef[] = [
@@ -43,8 +43,8 @@ export const USAGE_COVERAGE_SERIES: XySeriesDef[] = [
 
 export const PROVIDER_TREND_SERIES: XySeriesDef[] = [
   { field: "azure", name: "Azure spend", color: CHART_COLORS.blue, kind: "area" },
-  { field: "aws", name: "AWS spend", color: CHART_COLORS.orange, kind: "area" },
-  { field: "gcp", name: "GCP spend", color: CHART_COLORS.green, kind: "area" },
+  { field: "aws", name: "AWS spend", color: CHART_COLORS.navy, kind: "area" },
+  { field: "gcp", name: "GCP spend", color: CHART_COLORS.yellow, kind: "area" },
 ];
 
 export const TOP_ORGANIZATIONS_SERIES: XySeriesDef[] = [

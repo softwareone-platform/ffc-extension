@@ -2,14 +2,11 @@ import { useId, useState } from "react";
 
 import {
   endOfMonth,
-  endOfQuarter,
   endOfYear,
   format,
   startOfMonth,
-  startOfQuarter,
   startOfYear,
   subMonths,
-  subQuarters,
   subYears,
 } from "date-fns";
 import { DateRange, DayPicker } from "react-day-picker";
@@ -27,7 +24,7 @@ export type DateRangePickerProps = {
   placeholder: string;
   value: DateRangeValue;
   onChange: (next: DateRangeValue) => void;
-  /** Format passed to `date-fns`. Default is `dd.MM.yyyy` → "28.11.2026". */
+  /** Format passed to `date-fns`. Default is `dd.MM.yy` → "28.11.26" (short to fit the sidebar). */
   dateFormat?: string;
 };
 
@@ -45,7 +42,7 @@ export function DateRangePicker({
   placeholder,
   value,
   onChange,
-  dateFormat = "dd.MM.yyyy",
+  dateFormat = "dd.MM.yy",
 }: DateRangePickerProps) {
   const tFilters = useFixedT("dashboard:filters");
   const tPresets = useFixedT("dashboard:filters:presets");
@@ -74,6 +71,15 @@ export function DateRangePicker({
 
   function apply() {
     onChange(draft);
+    setIsOpen(false);
+  }
+
+  // Presets are one-click shortcuts: commit the range + close the popover immediately rather
+  // than requiring a second click on Apply.
+  function applyPreset(key: PresetKey) {
+    const range = presetRange(key);
+    setDraft(range);
+    onChange(range);
     setIsOpen(false);
   }
 
@@ -107,7 +113,7 @@ export function DateRangePicker({
                   key={preset.key}
                   type={"button"}
                   className={"ffc-date-range__preset"}
-                  onClick={() => setDraft(presetRange(preset.key))}
+                  onClick={() => applyPreset(preset.key)}
                 >
                   {preset.label}
                 </button>
@@ -143,8 +149,11 @@ function presetRange(key: PresetKey): DateRangeValue {
       return { from: startOfMonth(prev), to: endOfMonth(prev) };
     }
     case "lastQuarter": {
-      const prev = subQuarters(now, 1);
-      return { from: startOfQuarter(prev), to: endOfQuarter(prev) };
+      // Last 4 full calendar months ending with the previous month (per product request).
+      return {
+        from: startOfMonth(subMonths(now, 4)),
+        to: endOfMonth(subMonths(now, 1)),
+      };
     }
     case "lastYear": {
       const prev = subYears(now, 1);

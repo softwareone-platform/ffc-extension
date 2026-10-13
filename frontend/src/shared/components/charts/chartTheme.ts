@@ -13,7 +13,9 @@ export const CHART_COLORS = {
   gray: 0x9aa5b1,
 } as const;
 
-export const PROVIDER_COLORS = [CHART_COLORS.blue, CHART_COLORS.orange, CHART_COLORS.green];
+// Keep providers in a blue-plus-yellow palette so they don't collide with the status donut's
+// green / orange / gray on the same row.
+export const PROVIDER_COLORS = [CHART_COLORS.blue, CHART_COLORS.navy, CHART_COLORS.yellow];
 
 // amCharts is used on its attribution tier here, matching the other SWO frontends (none of
 // them call addLicense either), so charts render a small "Chart by amCharts" link. Drop a

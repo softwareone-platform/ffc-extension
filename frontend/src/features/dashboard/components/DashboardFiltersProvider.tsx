@@ -7,7 +7,7 @@ function initialFilters(): DashboardFilters {
   const to = new Date();
   const from = new Date(to);
   from.setMonth(from.getMonth() - 3);
-  return { from, to, statuses: ["active"], providers: [] };
+  return { from, to, statuses: [], providers: [] };
 }
 
 export function DashboardFiltersProvider({ children }: { children: ReactNode }) {

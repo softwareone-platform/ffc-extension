@@ -25,7 +25,13 @@
       { "period": "Mar", "azure": 248, "aws": 181, "gcp": 97 },
       { "period": "Apr", "azure": 283, "aws": 206, "gcp": 112 },
       { "period": "May", "azure": 331, "aws": 248, "gcp": 128 },
-      { "period": "Jun", "azure": 402, "aws": 311, "gcp": 163 }
+      { "period": "Jun", "azure": 402, "aws": 311, "gcp": 163 },
+      { "period": "Jul", "azure": 455, "aws": 348, "gcp": 180 },
+      { "period": "Aug", "azure": 510, "aws": 390, "gcp": 198 },
+      { "period": "Sep", "azure": 562, "aws": 428, "gcp": 215 },
+      { "period": "Oct", "azure": 615, "aws": 467, "gcp": 234 },
+      { "period": "Nov", "azure": 668, "aws": 505, "gcp": 251 },
+      { "period": "Dec", "azure": 720, "aws": 540, "gcp": 268 }
     ]
   },
   "adoptionFunnel": [
@@ -34,7 +40,13 @@
     { "month": "Mar", "created": 326, "connected": 221, "dataAvailable": 168, "active": 116 },
     { "month": "Apr", "created": 352, "connected": 238, "dataAvailable": 182, "active": 125 },
     { "month": "May", "created": 384, "connected": 260, "dataAvailable": 199, "active": 134 },
-    { "month": "Jun", "created": 412, "connected": 281, "dataAvailable": 214, "active": 142 }
+    { "month": "Jun", "created": 412, "connected": 281, "dataAvailable": 214, "active": 142 },
+    { "month": "Jul", "created": 443, "connected": 302, "dataAvailable": 232, "active": 155 },
+    { "month": "Aug", "created": 475, "connected": 324, "dataAvailable": 248, "active": 168 },
+    { "month": "Sep", "created": 508, "connected": 347, "dataAvailable": 264, "active": 181 },
+    { "month": "Oct", "created": 540, "connected": 369, "dataAvailable": 280, "active": 193 },
+    { "month": "Nov", "created": 572, "connected": 391, "dataAvailable": 296, "active": 205 },
+    { "month": "Dec", "created": 605, "connected": 414, "dataAvailable": 312, "active": 218 }
   ],
   "trialVsPaid": {
     "trial": "148",
@@ -49,7 +61,13 @@
       { "month": "Mar", "trial": 112, "paid": 214 },
       { "month": "Apr", "trial": 124, "paid": 229 },
       { "month": "May", "trial": 139, "paid": 247 },
-      { "month": "Jun", "trial": 148, "paid": 264 }
+      { "month": "Jun", "trial": 148, "paid": 264 },
+      { "month": "Jul", "trial": 158, "paid": 282 },
+      { "month": "Aug", "trial": 168, "paid": 298 },
+      { "month": "Sep", "trial": 179, "paid": 316 },
+      { "month": "Oct", "trial": 189, "paid": 332 },
+      { "month": "Nov", "trial": 199, "paid": 348 },
+      { "month": "Dec", "trial": 210, "paid": 365 }
     ]
   }
 }

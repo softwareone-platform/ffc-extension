@@ -88,6 +88,54 @@
       "visible": 22,
       "optimizing": 15,
       "operationalized": 11
+    },
+    {
+      "month": "Jul",
+      "registered": 17,
+      "connected": 32,
+      "visible": 25,
+      "optimizing": 18,
+      "operationalized": 13
+    },
+    {
+      "month": "Aug",
+      "registered": 16,
+      "connected": 30,
+      "visible": 27,
+      "optimizing": 20,
+      "operationalized": 15
+    },
+    {
+      "month": "Sep",
+      "registered": 15,
+      "connected": 28,
+      "visible": 29,
+      "optimizing": 22,
+      "operationalized": 17
+    },
+    {
+      "month": "Oct",
+      "registered": 14,
+      "connected": 26,
+      "visible": 30,
+      "optimizing": 24,
+      "operationalized": 19
+    },
+    {
+      "month": "Nov",
+      "registered": 13,
+      "connected": 24,
+      "visible": 31,
+      "optimizing": 26,
+      "operationalized": 21
+    },
+    {
+      "month": "Dec",
+      "registered": 12,
+      "connected": 22,
+      "visible": 32,
+      "optimizing": 28,
+      "operationalized": 23
     }
   ],
   "rows": [
