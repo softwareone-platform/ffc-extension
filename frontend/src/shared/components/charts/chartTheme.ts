@@ -10,6 +10,7 @@ export const CHART_COLORS = {
   green: 0x3fa650,
   yellow: 0xf0c33c,
   orange: 0xe07a3f,
+  red: 0xd94848,
   gray: 0x9aa5b1,
 } as const;
 

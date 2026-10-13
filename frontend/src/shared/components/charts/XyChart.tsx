@@ -86,6 +86,31 @@ export function XyChart({
     categoryAxis.get("renderer").labels.template.setAll(labelStyle);
     valueAxis.get("renderer").labels.template.setAll(labelStyle);
 
+    // `{name}` is the series label, `{valueX}`/`{valueY}` is the value axis — vertical charts
+    // put the number on Y, horizontal charts on X.
+    const tooltipText = horizontal
+      ? "[bold]{name}[/]\n{valueX}"
+      : "[bold]{name}[/]\n{valueY}";
+
+    function attachTooltip(entry: am5xy.XYSeries) {
+      entry.set(
+        "tooltip",
+        am5.Tooltip.new(root, {
+          labelText: tooltipText,
+          autoTextColor: false,
+          getFillFromSprite: false,
+          pointerOrientation: "horizontal",
+        }),
+      );
+      const tooltip = entry.get("tooltip");
+      tooltip?.get("background")?.setAll({
+        fill: am5.color(0xffffff),
+        fillOpacity: 0.95,
+        stroke: am5.color(0xe0e5e8),
+      });
+      tooltip?.label.setAll({ fill: am5.color(0x25282d), fontSize: 12 });
+    }
+
     const createdSeries = series.map((def) => {
       const settings = {
         name: def.name,
@@ -105,7 +130,9 @@ export function XyChart({
           strokeOpacity: 0,
           fillOpacity: 1,
           width: am5.percent(60),
+          tooltipText,
         });
+        attachTooltip(columnSeries);
         return columnSeries;
       }
 
@@ -114,8 +141,33 @@ export function XyChart({
       if (def.kind === "area") {
         lineSeries.fills.template.setAll({ visible: true, fillOpacity: 0.5 });
       }
+      // Bullets give hover targets on each data point so the tooltip is easy to invoke on a
+      // line chart (otherwise users have to hit the thin stroke).
+      lineSeries.bullets.push(() =>
+        am5.Bullet.new(root, {
+          sprite: am5.Circle.new(root, {
+            radius: 4,
+            fill: am5.color(def.color),
+            stroke: am5.color(0xffffff),
+            strokeWidth: 2,
+            tooltipText,
+          }),
+        }),
+      );
+      attachTooltip(lineSeries);
       return lineSeries;
     });
+
+    // Shared crosshair cursor — snaps the active series bullet to the hovered category so the
+    // tooltip appears even if the user doesn't land exactly on a bullet or column.
+    chart.set(
+      "cursor",
+      am5xy.XYCursor.new(root, {
+        behavior: "none",
+        xAxis: horizontal ? valueAxis : categoryAxis,
+        yAxis: horizontal ? categoryAxis : valueAxis,
+      }),
+    );
 
     builtRef.current = { categoryAxis, series: createdSeries };
 

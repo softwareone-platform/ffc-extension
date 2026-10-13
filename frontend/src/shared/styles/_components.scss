@@ -268,6 +268,23 @@
   }
 }
 
+// Status / provider swatch rendered via `react-select`'s `formatOptionLabel` — appears both
+// inside the dropdown and in the selected chips so the colour meaning stays visible even
+// after a pick.
+.ffc-select-option {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+
+  &__swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex: 0 0 auto;
+  }
+}
+
 // `react-day-picker` range calendar inside the SWO Popover — DS doesn't ship a range picker so
 // we lean on day-picker's built-in CSS and only tint the selected range to brand colours. The
 // SWO Popover container is transparent (position/z-index only), so the popover surface

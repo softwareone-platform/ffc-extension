@@ -13,10 +13,29 @@ import {
   ORGANISATION_STATUSES,
   OrganisationStatus,
 } from "../api/model";
+import { PROVIDER_COLOR, STATUS_COLOR } from "../chartConfig";
 import { useDashboardFilters } from "./DashboardFiltersContext";
 import { DateRangePicker } from "./DateRangePicker";
 
-type SelectOption<T extends string> = { value: T; label: string };
+type SelectOption<T extends string> = { value: T; label: string; color: number };
+
+function toCssColor(color: number) {
+  return `#${color.toString(16).padStart(6, "0")}`;
+}
+
+// Renders the colour swatch + label used both inside the dropdown and in the selected chip —
+// one definition keeps the two in sync automatically.
+function renderOptionLabel<T extends string>(option: SelectOption<T>) {
+  return (
+    <span className={"ffc-select-option"}>
+      <span
+        className={"ffc-select-option__swatch"}
+        style={{ background: toCssColor(option.color) }}
+      />
+      {option.label}
+    </span>
+  );
+}
 
 /**
  * Persistent left-column filter panel for the dashboard, modelled on the SWO `Navigation.SideNav`
@@ -37,10 +56,12 @@ export function FilterSidebar() {
   const statusOptions: SelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map((status) => ({
     value: status,
     label: tStatus(status),
+    color: STATUS_COLOR[status],
   }));
   const providerOptions: SelectOption<CloudProvider>[] = CLOUD_PROVIDERS.map((provider) => ({
     value: provider,
     label: tProvider(provider),
+    color: PROVIDER_COLOR[provider],
   }));
 
   function selectedOptions<T extends string>(options: SelectOption<T>[], picks: T[]) {
@@ -99,6 +120,7 @@ export function FilterSidebar() {
               placeholder={tFilters("selectStatuses")}
               options={statusOptions}
               value={selectedOptions(statusOptions, filters.statuses)}
+              formatOptionLabel={renderOptionLabel}
               onChange={(selected) =>
                 setFilters({ ...filters, statuses: pickValues(selected) })
               }
@@ -113,6 +135,7 @@ export function FilterSidebar() {
               placeholder={tFilters("selectProviders")}
               options={providerOptions}
               value={selectedOptions(providerOptions, filters.providers)}
+              formatOptionLabel={renderOptionLabel}
               onChange={(selected) =>
                 setFilters({ ...filters, providers: pickValues(selected) })
               }
