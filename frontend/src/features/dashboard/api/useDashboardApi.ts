@@ -134,6 +134,7 @@ function transformMetrics<T>(value: T, scale: number, months: number): T {
 // transform, zero out the slices and per-status KPIs that aren't in the filter picks and
 // recompute `total` from the remaining slices, so the donut and headline react visibly.
 const ORG_STATUS_CATEGORIES = ["active", "terminated", "deleted"] as const;
+const BILLING_STATUS_CATEGORIES = ["paid", "trial"] as const;
 
 function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
   const orgPicks = filters.statuses.filter((status) =>
@@ -209,6 +210,46 @@ function walkProviderView(value: unknown, picks: Set<string>): unknown {
   return value;
 }
 
+// Mirror of `filterOrgStatusView` for the Trial vs Paid panel. When the user picks only one
+// of the billing statuses, zero out the other series/slice so the donut and the monthly
+// trend chart collapse to the picked side.
+function filterTrialVsPaidView(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
+  const billingPicks = filters.statuses.filter((status) =>
+    (BILLING_STATUS_CATEGORIES as readonly string[]).includes(status),
+  );
+  if (
+    billingPicks.length === 0 ||
+    billingPicks.length === BILLING_STATUS_CATEGORIES.length
+  ) {
+    return data;
+  }
+  const paidPicked = billingPicks.includes("paid");
+  const trialPicked = billingPicks.includes("trial");
+
+  const nextDistribution = data.trialVsPaid.distribution.map((slice) => {
+    const key = slice.category.toLowerCase();
+    const visible = (key === "paid" && paidPicked) || (key === "trial" && trialPicked);
+    return { ...slice, value: visible ? slice.value : 0 };
+  });
+
+  const nextTrend = data.trialVsPaid.monthlyTrend.map((row) => ({
+    ...row,
+    paid: paidPicked ? row.paid : 0,
+    trial: trialPicked ? row.trial : 0,
+  }));
+
+  return {
+    ...data,
+    trialVsPaid: {
+      ...data.trialVsPaid,
+      paid: paidPicked ? data.trialVsPaid.paid : "0",
+      trial: trialPicked ? data.trialVsPaid.trial : "0",
+      distribution: nextDistribution,
+      monthlyTrend: nextTrend,
+    },
+  };
+}
+
 export function useDashboardApi() {
   const getAdoptionMetrics = useCallback(
     (filters: DashboardFilters): Promise<AxiosResponse<AdoptionMetrics>> => {
@@ -217,7 +258,10 @@ export function useDashboardApi() {
         computeScale(filters),
         monthWindow(filters),
       );
-      const filtered = filterProviderView(filterOrgStatusView(scaled, filters), filters);
+      const filtered = filterProviderView(
+        filterTrialVsPaidView(filterOrgStatusView(scaled, filters), filters),
+        filters,
+      );
       return mockResponse(filtered, MOCK_DELAY_MS);
     },
     [],

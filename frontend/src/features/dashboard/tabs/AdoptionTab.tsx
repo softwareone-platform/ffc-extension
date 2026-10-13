@@ -15,15 +15,22 @@ import {
   TRIAL_VS_PAID_DONUT_COLORS,
   TRIAL_VS_PAID_TREND_SERIES,
 } from "../chartConfig";
+import {
+  useDashboardFilters,
+  withDashboardFilters,
+} from "../components/DashboardFiltersContext";
 import { MetricPanel } from "../components/MetricPanel";
 
 export function AdoptionTab() {
   const tAdoption = useFixedT("dashboard:adoption");
   const { data } = useAdoptionMetricsApi();
+  const { filters } = useDashboardFilters();
 
   if (!data) {
     return null;
   }
+
+  const link = (path: string) => withDashboardFilters(path, filters);
 
   const statusLegendItems = STATUS_LEGEND_KEYS.map((key, index) => ({
     name: tAdoption(`overview:${key}`),
@@ -34,18 +41,18 @@ export function AdoptionTab() {
   // stage links to a URL that encodes the intended cohort so wiring the real query strings is
   // a search-and-replace once the backend exposes them.
   const funnelLegendItems = [
-    { ...FUNNEL_SERIES[0], linkTo: ORGANIZATION_PATHS.root },
+    { ...FUNNEL_SERIES[0], linkTo: link(ORGANIZATION_PATHS.root) },
     {
       ...FUNNEL_SERIES[1],
-      linkTo: `${ORGANIZATION_PATHS.root}?datasourceStatus=connected`,
+      linkTo: link(`${ORGANIZATION_PATHS.root}?datasourceStatus=connected`),
     },
     {
       ...FUNNEL_SERIES[2],
-      linkTo: `${ORGANIZATION_PATHS.root}?dataAvailability=available`,
+      linkTo: link(`${ORGANIZATION_PATHS.root}?dataAvailability=available`),
     },
     {
       ...FUNNEL_SERIES[3],
-      linkTo: `${ORGANIZATION_PATHS.root}?platformUsage=active`,
+      linkTo: link(`${ORGANIZATION_PATHS.root}?platformUsage=active`),
     },
   ];
 
@@ -55,24 +62,24 @@ export function AdoptionTab() {
         <KpiTile
           label={tAdoption("overview:total")}
           value={data.organizationsOverview.total}
-          linkTo={ORGANIZATION_PATHS.root}
+          linkTo={link(ORGANIZATION_PATHS.root)}
         />
         <KpiTile
           label={tAdoption("overview:active")}
           value={data.organizationsOverview.active}
           trend={"up"}
-          linkTo={`${ORGANIZATION_PATHS.root}?status=active`}
+          linkTo={link(`${ORGANIZATION_PATHS.root}?status=active`)}
         />
         <KpiTile
           label={tAdoption("overview:terminated")}
           value={data.organizationsOverview.terminated}
-          linkTo={`${ORGANIZATION_PATHS.root}?status=terminated`}
+          linkTo={link(`${ORGANIZATION_PATHS.root}?status=terminated`)}
         />
         <KpiTile
           label={tAdoption("overview:deleted")}
           value={data.organizationsOverview.deleted}
           trend={"down"}
-          linkTo={`${ORGANIZATION_PATHS.root}?status=deleted`}
+          linkTo={link(`${ORGANIZATION_PATHS.root}?status=deleted`)}
         />
       </div>
 
@@ -128,12 +135,12 @@ export function AdoptionTab() {
             {
               label: tAdoption("trialVsPaid:paid"),
               value: data.trialVsPaid.paid,
-              linkTo: `${ENTITLEMENT_PATHS.root}?billing=paid`,
+              linkTo: link(`${ENTITLEMENT_PATHS.root}?billing=paid`),
             },
             {
               label: tAdoption("trialVsPaid:trial"),
               value: data.trialVsPaid.trial,
-              linkTo: `${ENTITLEMENT_PATHS.root}?billing=trial`,
+              linkTo: link(`${ENTITLEMENT_PATHS.root}?billing=trial`),
             },
           ]}
           trend={
