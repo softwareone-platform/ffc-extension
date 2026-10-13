@@ -23,22 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # workflow_run checks out the default branch by default, but Sonar has to
-      # analyse the commit that was actually tested.
-      - name: Checkout the tested commit
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 0
-
-      # workflow_run jobs can read secrets even for pull requests from forks, so
-      # the local Docker action is taken from the default branch instead of from
-      # the code under review.
-      - name: Checkout the trusted action source
-        uses: actions/checkout@v4
-        with:
-          path: .trusted-actions
-
       - name: Resolve which side to scan
         id: side
         env:
@@ -130,13 +114,58 @@ jobs:
             echo "__PR_TITLE__"
           } >> "$GITHUB_OUTPUT"
 
+      # Downloaded outside the workspace, because the checkout below cleans it.
       - name: Download coverage from the test run
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.side.outputs.artifact }}
-          path: ${{ steps.side.outputs.artifact_path }}
+          path: ${{ runner.temp }}/coverage
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Sonar has to analyse the commit that was actually tested. For a
+      # pull_request run that is the merge commit, while workflow_run only
+      # reports the PR head: analysing the head against merge-commit line
+      # numbers misplaces the hits and reports covered lines as uncovered.
+      # Artifacts from before tested-sha.txt existed fall back to head_sha.
+      - name: Resolve the tested commit
+        id: tested
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          sha_file="$RUNNER_TEMP/coverage/tested-sha.txt"
+          if [[ -s "$sha_file" ]]; then
+            sha=$(tr -d '[:space:]' < "$sha_file")
+            rm "$sha_file"
+          else
+            echo "No tested-sha.txt in the artifact; falling back to the head commit."
+            sha="$HEAD_SHA"
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tested.outputs.sha }}
+          fetch-depth: 0
+
+      # workflow_run jobs can read secrets even for pull requests from forks, so
+      # the local Docker action is taken from the default branch instead of from
+      # the code under review. It has to come after the checkout above, which
+      # would otherwise clean it away.
+      - name: Checkout the trusted action source
+        uses: actions/checkout@v4
+        with:
+          path: .trusted-actions
+
+      - name: Place the coverage report
+        env:
+          ARTIFACT_PATH: ${{ steps.side.outputs.artifact_path }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_PATH"
+          cp -r "$RUNNER_TEMP/coverage/." "$ARTIFACT_PATH/"
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@v6
