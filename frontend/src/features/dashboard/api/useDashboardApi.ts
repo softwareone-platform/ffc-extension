@@ -15,43 +15,18 @@ import { DashboardFilters } from "../components/DashboardFiltersContext";
 import adoptionMetrics from "../mock/adoption.json";
 import consumptionMetrics from "../mock/consumption.json";
 import maturityMetrics from "../mock/maturity.json";
-import {
-  AdoptionMetrics,
-  BILLING_STATUSES,
-  BillingStatus,
-  ConsumptionMetrics,
-  MaturityMetrics,
-} from "./model";
-
-function isBillingStatus(value: string): value is BillingStatus {
-  return (BILLING_STATUSES as readonly string[]).includes(value);
-}
-
-// Picks like "active"/"terminated"/"deleted" don't exist on the orgs-without-datasources rows,
-// so a selection that contains none of {paid, trial} is treated as "no billing filter" rather
-// than "no results".
-function filterAdoption(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
-  const billingPicks = filters.statuses.filter(isBillingStatus);
-  if (billingPicks.length === 0) {
-    return data;
-  }
-  return {
-    ...data,
-    organizationsWithoutDatasources: data.organizationsWithoutDatasources.filter((row) =>
-      billingPicks.includes(row.status),
-    ),
-  };
-}
+import { AdoptionMetrics, ConsumptionMetrics, MaturityMetrics } from "./model";
 
 export function useDashboardApi() {
+  // Each getter accepts the filter payload for signature uniformity, but the mock responses
+  // don't apply any transform yet. Extend here when a stakeholder demo needs a specific chart
+  // to react.
   const getAdoptionMetrics = useCallback(
-    (filters: DashboardFilters): Promise<AxiosResponse<AdoptionMetrics>> =>
-      mockResponse(filterAdoption(adoptionMetrics as AdoptionMetrics, filters)),
+    (_filters: DashboardFilters): Promise<AxiosResponse<AdoptionMetrics>> =>
+      mockResponse(adoptionMetrics as AdoptionMetrics),
     [],
   );
 
-  // Consumption + maturity accept filters for signature uniformity but don't apply any mock-side
-  // transform yet. Extend here when a stakeholder demo needs a specific chart to react.
   const getConsumptionMetrics = useCallback(
     (_filters: DashboardFilters): Promise<AxiosResponse<ConsumptionMetrics>> =>
       mockResponse(consumptionMetrics),

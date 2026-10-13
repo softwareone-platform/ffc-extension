@@ -421,6 +421,8 @@
       "selectProviders": "Select providers…",
       "selectStatuses": "Select statuses…",
       "summary": "{{statusCount}} status · {{providerCount}} provider",
+      "collapse": "Collapse filters",
+      "expand": "Expand filters",
       "status": {
         "active": "Active",
         "paid": "Paid",
@@ -453,23 +455,9 @@
       "statusBreakdown": {
         "title": "Organizations by Status"
       },
-      "withoutDatasources": {
-        "title": "Organizations Without Datasources",
-        "description": "Customers who created an organization but never completed onboarding — newest first.",
-        "columns": {
-          "organizationName": "Organization Name",
-          "creationDate": "Creation Date",
-          "status": "Trial / Paid",
-          "daysSinceCreation": "Days Since Creation"
-        },
-        "status": {
-          "trial": "Trial",
-          "paid": "Paid"
-        }
-      },
       "funnel": {
         "title": "Adoption Funnel",
-        "description": "Where customers drop off between creating an organization and reaching active FFC usage."
+        "description": "Monthly trend of customers at each stage from creation through to active FFC usage."
       },
       "trialVsPaid": {
         "title": "Trial vs Paid",

@@ -90,11 +90,10 @@ function MultiSelect<T extends string>({
 }
 
 /**
- * Global filter strip sitting above the dashboard tabs. Collapsed by default — a compact
- * header shows the active-filter counts and a chevron; expanded reveals a row of controls:
- * date range (From + To as one group, separated from the rest by a divider), then two
- * labelled multi-selects for organisation status and cloud provider. Changes stay in a local
- * draft until Apply commits them to `DashboardFiltersContext`.
+ * Persistent left-column filter panel for the dashboard, modelled on the SWO `Navigation.SideNav`
+ * (250px expanded / 72px collapsed with a floating circular collapse button on the right edge).
+ * Groups stack vertically — date range, organisation status, cloud provider — with Apply at the
+ * bottom. Changes stay in a local draft until Apply commits them to `DashboardFiltersContext`.
  */
 export function FilterSidebar() {
   const tFilters = useFixedT("dashboard:filters");
@@ -102,8 +101,8 @@ export function FilterSidebar() {
   const tProvider = useFixedT("dashboard:filters:provider");
 
   const { filters, setFilters } = useDashboardFilters();
-  const [isCollapsed, setIsCollapsed] = useState(true);
   const [draft, setDraft] = useState<DashboardFilters>(filters);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const statusOptions: MultiSelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map(
     (status) => ({ value: status, label: tStatus(status) }),
@@ -118,49 +117,41 @@ export function FilterSidebar() {
   }
 
   return (
-    <section className={"ffc-filter-bar"} data-testid={"ffc-filter-bar"}>
+    <aside
+      className={`ffc-filter-bar${isCollapsed ? " ffc-filter-bar--collapsed" : ""}`}
+      data-testid={"ffc-filter-bar"}
+    >
       <button
         type={"button"}
-        className={"ffc-filter-bar__header"}
+        className={"ffc-filter-bar__collapse-button"}
         aria-expanded={!isCollapsed}
         aria-controls={"ffc-filter-bar-body"}
+        aria-label={tFilters(isCollapsed ? "expand" : "collapse")}
         onClick={() => setIsCollapsed((current) => !current)}
       >
-        <Icon
-          name={"arrow_forward_ios"}
-          size={14}
-          className={`ffc-filter-bar__chevron${isCollapsed ? "" : " ffc-filter-bar__chevron--open"}`}
-        />
-        <span className={"ffc-filter-bar__title"}>{tFilters("title")}</span>
-        <span className={"ffc-filter-bar__summary"}>
-          {tFilters("summary", {
-            statusCount: filters.statuses.length,
-            providerCount: filters.providers.length,
-          })}
-        </span>
+        <Icon name={isCollapsed ? "arrow_forward_ios" : "arrow_back_ios"} size={12} />
       </button>
 
-      <div
-        id={"ffc-filter-bar-body"}
-        className={`ffc-filter-bar__body${isCollapsed ? "" : " ffc-filter-bar__body--open"}`}
-        aria-hidden={isCollapsed}
-      >
-        <div className={"ffc-filter-bar__body-inner"}>
+      <div className={"ffc-filter-bar__header"}>
+        <Icon name={"settings"} size={20} className={"ffc-filter-bar__icon"} />
+        {!isCollapsed && <span className={"ffc-filter-bar__title"}>{tFilters("title")}</span>}
+      </div>
+
+      {!isCollapsed && (
+        <div id={"ffc-filter-bar-body"} className={"ffc-filter-bar__body-inner"}>
           <div className={"ffc-filter-bar__group"}>
-            <div className={"ffc-filter-bar__group-controls"}>
-              <DatePicker<Date>
-                label={tFilters("from")}
-                value={draft.from}
-                maxDate={draft.to}
-                onChange={(from) => setDraft((current) => ({ ...current, from }))}
-              />
-              <DatePicker<Date>
-                label={tFilters("to")}
-                value={draft.to}
-                minDate={draft.from}
-                onChange={(to) => setDraft((current) => ({ ...current, to }))}
-              />
-            </div>
+            <DatePicker<Date>
+              label={tFilters("from")}
+              value={draft.from}
+              maxDate={draft.to}
+              onChange={(from) => setDraft((current) => ({ ...current, from }))}
+            />
+            <DatePicker<Date>
+              label={tFilters("to")}
+              value={draft.to}
+              minDate={draft.from}
+              onChange={(to) => setDraft((current) => ({ ...current, to }))}
+            />
           </div>
 
           <Divider className={"ffc-filter-bar__divider"} />
@@ -191,7 +182,7 @@ export function FilterSidebar() {
             </Button>
           </div>
         </div>
-      </div>
-    </section>
+      )}
+    </aside>
   );
 }

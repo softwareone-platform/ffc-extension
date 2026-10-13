@@ -28,70 +28,13 @@
       { "period": "Jun", "azure": 402, "aws": 311, "gcp": 163 }
     ]
   },
-  "organizationsWithoutDatasources": [
-    {
-      "id": "org-ww-901",
-      "organizationName": "Wide World Importers",
-      "creationDate": "2026-09-28",
-      "status": "trial",
-      "daysSinceCreation": 3
-    },
-    {
-      "id": "org-tt-834",
-      "organizationName": "Tailspin Toys",
-      "creationDate": "2026-09-22",
-      "status": "paid",
-      "daysSinceCreation": 9
-    },
-    {
-      "id": "org-ff-712",
-      "organizationName": "Fourth Coffee",
-      "creationDate": "2026-09-10",
-      "status": "trial",
-      "daysSinceCreation": 21
-    },
-    {
-      "id": "org-cs-688",
-      "organizationName": "Contoso Suites",
-      "creationDate": "2026-09-01",
-      "status": "paid",
-      "daysSinceCreation": 30
-    },
-    {
-      "id": "org-lp-611",
-      "organizationName": "Lucerne Publishing",
-      "creationDate": "2026-08-18",
-      "status": "trial",
-      "daysSinceCreation": 44
-    },
-    {
-      "id": "org-mt-544",
-      "organizationName": "Margie's Travel",
-      "creationDate": "2026-08-03",
-      "status": "trial",
-      "daysSinceCreation": 59
-    },
-    {
-      "id": "org-sfa-498",
-      "organizationName": "School of Fine Art",
-      "creationDate": "2026-07-14",
-      "status": "paid",
-      "daysSinceCreation": 79
-    },
-    {
-      "id": "org-sv-402",
-      "organizationName": "Southridge Video",
-      "creationDate": "2026-06-02",
-      "status": "trial",
-      "daysSinceCreation": 121
-    }
-  ],
   "adoptionFunnel": [
-    { "stage": "Organization Created", "count": 412 },
-    { "stage": "Datasource Connected", "count": 281 },
-    { "stage": "Consumption Data Available", "count": 236 },
-    { "stage": "Usage Data Available", "count": 184 },
-    { "stage": "Active Platform Usage", "count": 142 }
+    { "month": "Jan", "created": 268, "connected": 182, "dataAvailable": 134, "active": 92 },
+    { "month": "Feb", "created": 299, "connected": 204, "dataAvailable": 151, "active": 104 },
+    { "month": "Mar", "created": 326, "connected": 221, "dataAvailable": 168, "active": 116 },
+    { "month": "Apr", "created": 352, "connected": 238, "dataAvailable": 182, "active": 125 },
+    { "month": "May", "created": 384, "connected": 260, "dataAvailable": 199, "active": 134 },
+    { "month": "Jun", "created": 412, "connected": 281, "dataAvailable": 214, "active": 142 }
   ],
   "trialVsPaid": {
     "trial": "148",

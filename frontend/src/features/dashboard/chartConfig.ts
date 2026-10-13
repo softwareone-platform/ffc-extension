@@ -18,7 +18,10 @@ export const DATASOURCE_PROVIDER_SERIES: XySeriesDef[] = [
 ];
 
 export const FUNNEL_SERIES: XySeriesDef[] = [
-  { field: "count", name: "Organizations", color: CHART_COLORS.blue, kind: "column" },
+  { field: "created", name: "Organization Created", color: CHART_COLORS.blue, kind: "line" },
+  { field: "connected", name: "Datasource Connected", color: CHART_COLORS.green, kind: "line" },
+  { field: "dataAvailable", name: "Data Available", color: CHART_COLORS.yellow, kind: "line" },
+  { field: "active", name: "Active Platform Usage", color: CHART_COLORS.orange, kind: "line" },
 ];
 
 export const TRIAL_VS_PAID_DONUT_COLORS = [CHART_COLORS.green, CHART_COLORS.yellow];

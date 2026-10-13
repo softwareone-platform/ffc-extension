@@ -4,107 +4,108 @@
 // Shared analytics/dashboard building blocks. Typography comes from the design-token
 // placeholders (%regular1, %bold2, …) so sizes stay on the SWO type scale.
 
-// Vertical workspace shell: filter bar + tabs + content stack.
+// Workspace shell: persistent filter column on the left, tab content on the right.
 .ffc-workspace {
   display: flex;
   flex-direction: column;
-  gap: $space-sm;
 
   &__main {
     display: flex;
-    flex-direction: column;
-    gap: $space-sm;
+    flex-direction: row;
+    align-items: stretch;
     min-width: 0;
+  }
+
+  &__content {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: $space-xl;
   }
 }
 
-// Horizontal filter strip above the tabs. Collapsed by default; the header stays visible so
-// the active-filter summary and the chevron are always accessible without reflowing the main
-// content.
+// Flush the dashboard against the DS `Navigation.Content` edges so the filter sidebar meets
+// the viewport. The DS class is hashed, so match any className containing `navigation__content`
+// that owns a `.ffc-workspace` subtree — scoping the override to dashboard pages only.
+[class*="navigation__content"]:has(> .ffc-workspace) {
+  padding: 0;
+}
+
+// Vertical filter panel pinned to the left column. Dimensions mirror the SWO
+// `Navigation.SideNav`: 250px expanded, 72px collapsed, with a floating circular toggle on
+// the right edge. Groups stack top-to-bottom; the Apply button sits at the bottom.
 .ffc-filter-bar {
   display: flex;
   flex-direction: column;
-  margin-bottom: $space-md;
-  background: transparent;
-  border: 1px solid $border-subtle;
-  border-radius: $radius-card;
-  transition: background-color 0.25s ease;
+  flex: 0 0 250px;
+  width: 250px;
+  position: relative;
+  background: $surface;
+  border-right: 1px solid $border-subtle;
+  transition:
+    flex-basis 0.3s ease,
+    width 0.3s ease;
 
-  // When any descendant body carries the `--open` modifier the whole filter bar paints
-  // white; the colour fades in / out via the shared transition.
-  &:has(.ffc-filter-bar__body--open) {
+  &--collapsed {
+    flex: 0 0 72px;
+    width: 72px;
+  }
+
+  &__collapse-button {
+    position: absolute;
+    top: $space-xl;
+    right: -12px;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
     background: $surface;
+    border: 1px solid $border-subtle;
+    border-radius: 50%;
+    color: $text-strong;
+    cursor: pointer;
+    z-index: 1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+    &:hover {
+      background: $border-subtle;
+    }
   }
 
   &__header {
     display: flex;
     align-items: center;
     gap: $space-sm;
-    padding: $space-xs $space-md;
-    background: transparent;
-    border: 0;
-    cursor: pointer;
+    padding: $space-xl $space-xl $space-md;
     color: $text-strong;
-    text-align: left;
-    width: 100%;
+  }
+
+  // When collapsed the header shrinks to 72px with just the gear icon centred — the title
+  // span is removed from the DOM, so this rule only has to re-centre the single child.
+  &--collapsed &__header {
+    justify-content: center;
+    padding: $space-xl 0 $space-md;
+  }
+
+  &__icon {
+    flex: 0 0 auto;
   }
 
   &__title {
-    @extend %bold2;
-  }
-
-  &__summary {
-    @extend %regular1;
-
-    color: $text-muted;
-    flex: 1 1 auto;
-  }
-
-  &__chevron {
-    flex: 0 0 auto;
-    transform-origin: center;
-    transition: transform 0.2s ease;
-
-    // Rotates the forward chevron 90° so it points down when the filter bar is expanded —
-    // same icon in both states, just reoriented.
-    &--open {
-      transform: rotate(90deg);
-    }
-  }
-
-  // Collapsible body. `max-height: 0 → <generous>` with `overflow: hidden` keeps the body
-  // fully clipped when closed (controls, borders and padding all hidden) and re-enables
-  // overflow once open so DatePicker/MultiSelect popovers can escape.
-  &__body {
-    max-height: 0;
-    overflow: hidden;
-    transition:
-      max-height 0.25s ease,
-      visibility 0s linear 0.25s;
-    visibility: hidden;
-
-    &--open {
-      max-height: 640px;
-      overflow: visible;
-      visibility: visible;
-      transition:
-        max-height 0.25s ease,
-        visibility 0s linear 0s;
-    }
+    @extend %bold4;
   }
 
   &__body-inner {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: stretch;
     gap: $space-md;
-    padding: $space-sm $space-md $space-md;
+    padding: 0 $space-xl $space-xl;
   }
 
   &__group {
     display: flex;
     flex-direction: column;
-    gap: $space-xs;
+    gap: $space-sm;
     min-width: 0;
   }
 
@@ -114,21 +115,15 @@
     color: $text-muted;
   }
 
-  &__group-controls {
-    display: flex;
-    align-items: center;
-    gap: $space-sm;
-
-    &--wrap {
-      flex-wrap: wrap;
-    }
-  }
-
   &__actions {
     display: flex;
-    align-items: flex-end;
+    align-items: stretch;
     gap: $space-sm;
-    margin-left: auto;
+    margin-top: $space-xs;
+
+    > * {
+      flex: 1 1 auto;
+    }
   }
 
   &__divider {
@@ -440,6 +435,19 @@
     height: 10px;
     border-radius: 2px;
     flex: 0 0 auto;
+  }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-xs;
+    color: var(--brand-primary);
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--brand-primary);
+      text-decoration: underline;
+    }
   }
 }
 

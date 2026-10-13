@@ -16,7 +16,6 @@ import {
   TRIAL_VS_PAID_TREND_SERIES,
 } from "../chartConfig";
 import { MetricPanel } from "../components/MetricPanel";
-import { OrganizationsWithoutDatasourcesGrid } from "./OrganizationsWithoutDatasourcesGrid";
 
 export function AdoptionTab() {
   const tAdoption = useFixedT("dashboard:adoption");
@@ -30,6 +29,25 @@ export function AdoptionTab() {
     name: tAdoption(`overview:${key}`),
     color: STATUS_DONUT_COLORS[index],
   }));
+
+  // Mocked filter params: the Organizations page doesn't accept these yet, but each funnel
+  // stage links to a URL that encodes the intended cohort so wiring the real query strings is
+  // a search-and-replace once the backend exposes them.
+  const funnelLegendItems = [
+    { ...FUNNEL_SERIES[0], linkTo: ORGANIZATION_PATHS.root },
+    {
+      ...FUNNEL_SERIES[1],
+      linkTo: `${ORGANIZATION_PATHS.root}?datasourceStatus=connected`,
+    },
+    {
+      ...FUNNEL_SERIES[2],
+      linkTo: `${ORGANIZATION_PATHS.root}?dataAvailability=available`,
+    },
+    {
+      ...FUNNEL_SERIES[3],
+      linkTo: `${ORGANIZATION_PATHS.root}?platformUsage=active`,
+    },
+  ];
 
   return (
     <div className={"ffc-tab-stack"}>
@@ -141,19 +159,11 @@ export function AdoptionTab() {
         >
           <XyChart
             data={data.adoptionFunnel}
-            categoryField={"stage"}
+            categoryField={"month"}
             series={FUNNEL_SERIES}
             height={CHART_HEIGHT.lg}
-            horizontal
           />
-        </MetricPanel>
-
-        <MetricPanel
-          title={tAdoption("withoutDatasources:title")}
-          className={"ffc-panel--full"}
-          description={tAdoption("withoutDatasources:description")}
-        >
-          <OrganizationsWithoutDatasourcesGrid rows={data.organizationsWithoutDatasources} />
+          <ChartLegend items={funnelLegendItems} layout={"horizontal"} />
         </MetricPanel>
       </div>
     </div>
