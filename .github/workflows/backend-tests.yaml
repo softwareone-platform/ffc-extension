@@ -67,9 +67,17 @@ jobs:
           FFC_EXT_POSTGRES_USER: postgres
           FFC_EXT_POSTGRES_PASSWORD: mysecurepass#
 
+      # On pull_request the checkout is the merge commit, not the PR head that
+      # workflow_run reports, so the Sonar workflow needs to be told which
+      # commit the coverage line numbers belong to.
+      - name: Record the tested commit
+        run: git rev-parse HEAD > backend/tested-sha.txt
+
       - name: Upload backend coverage
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
-          path: backend/coverage.xml
+          path: |
+            backend/coverage.xml
+            backend/tested-sha.txt
           if-no-files-found: error
