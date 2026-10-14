@@ -21,8 +21,13 @@ export function App() {
       <Route
         index
         element={
+          // `replace` is required: the plug runs in an iframe whose history entries join the
+          // portal's session history. A push here leaves `/` behind the landing page, so the
+          // browser Back button lands on `/`, which redirects forward again and traps the user
+          // inside the extension instead of returning to the previous portal page.
           <Navigate
             to={role === "affiliate" ? PATHS.entitlements.root : PATHS.organizations.root}
+            replace
           />
         }
       />
