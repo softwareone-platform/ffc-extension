@@ -34,6 +34,9 @@ OrganizationRepository = Annotated[
 AccountRepository = Annotated[
     handlers.AccountHandler, Depends(HandlerFactory(handlers.AccountHandler))
 ]
+ClientAccountRepository = Annotated[
+    handlers.ClientAccountHandler, Depends(HandlerFactory(handlers.ClientAccountHandler))
+]
 UserRepository = Annotated[handlers.UserHandler, Depends(HandlerFactory(handlers.UserHandler))]
 AccountUserRepository = Annotated[
     handlers.AccountUserHandler, Depends(HandlerFactory(handlers.AccountUserHandler))

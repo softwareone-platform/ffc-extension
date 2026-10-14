@@ -15,6 +15,7 @@ from faker import Faker
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
+from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -25,16 +26,23 @@ from app.api_clients.api_modifier import APIModifierClient
 from app.api_clients.base import BaseAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth
 from app.api_clients.optscale import OptscaleAuthClient, OptscaleClient
+from app.auth.context import AuthenticationContext, auth_context
 from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
 from app.conf import Settings, get_settings
 from app.db.base import configure_db_engine, session_factory
-from app.db.handlers import EntitlementHandler, OrganizationHandler, TerminationFeedbackHandler
+from app.db.handlers import (
+    ClientAccountHandler,
+    EntitlementHandler,
+    OrganizationHandler,
+    TerminationFeedbackHandler,
+)
 from app.db.models import (
     Account,
     AccountUser,
     Actor,
     Base,
+    ClientAccount,
     DatasourceExpense,
     Entitlement,
     Organization,
@@ -46,6 +54,7 @@ from app.enums import (
     AccountStatus,
     AccountType,
     AccountUserStatus,
+    ActorType,
     DatasourceType,
     EntitlementStatus,
     OrganizationStatus,
@@ -363,6 +372,32 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
 
 
 @pytest.fixture
+def client_account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[ClientAccount]:
+    async def _client_account(
+        name: str | None = None,
+        icon: str | None = None,
+        external_id: str | None = None,
+        created_by: Actor | None = None,
+        updated_by: Actor | None = None,
+        deleted_at: datetime | None = None,
+    ) -> ClientAccount:
+        client_account = ClientAccount(
+            name=name or faker.company(),
+            icon=icon,
+            external_id=external_id or f"ACC-{faker.numerify('####-####')}",
+            created_by=created_by,
+            updated_by=updated_by,
+            deleted_at=deleted_at,
+        )
+        db_session.add(client_account)
+        await db_session.commit()
+        await db_session.refresh(client_account)
+        return client_account
+
+    return _client_account
+
+
+@pytest.fixture
 async def build_test_organization(organization_factory):
     organization_data = await organization_factory(
         name="SoftwareOne (Test Environment)",
@@ -634,6 +669,19 @@ def gcp_jwt_token(system_jwt_token_factory: Callable[[System], str], gcp_extensi
 @pytest.fixture
 async def ffc_extension(system_factory: ModelFactory[System], admin_account: Account) -> System:
     return await system_factory(external_id="TKN-0000-0000", owner=admin_account)
+
+
+@pytest.fixture
+async def ffc_extension_auth_context(
+    ffc_extension: System, admin_account: Account
+) -> AsyncGenerator[AuthenticationContext]:
+    """Sets the auth context to the FFC extension system for the duration of the test."""
+    context = AuthenticationContext(
+        account=admin_account, actor_type=ActorType.SYSTEM, system=ffc_extension
+    )
+    token = auth_context.set(context)
+    yield context
+    auth_context.reset(token)
 
 
 @pytest.fixture
@@ -2451,8 +2499,51 @@ def order_event_handler(
         organization_repo=OrganizationHandler(db_session),
         entitlement_repo=EntitlementHandler(db_session),
         termination_feedback_repo=TerminationFeedbackHandler(db_session),
+        client_account_repo=ClientAccountHandler(db_session),
         settings=test_settings,
     )
+
+
+@pytest.fixture
+def organization_provisioning_mocker(
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    purchase_order: dict[str, Any],
+) -> Callable[..., None]:
+    """
+    Register the marketplace and OptScale responses `get_or_create_organization` needs
+    for `purchase_order`; with `provision=False` only the read calls are registered.
+    """
+
+    def _mock(provision: bool = True) -> None:
+        agreement_id = purchase_order["agreement"]["id"]
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
+            match_params={"select": "subscriptions.lines"},
+            json=purchase_order,
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+            match_params={"select": "authorization"},
+            json={"id": agreement_id, "authorization": {"id": "AUT-3727-1184", "currency": "USD"}},
+            is_reusable=True,
+        )
+        if provision:
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{test_settings.api_modifier_base_url}/organizations",
+                json={"id": "OPT-ORG-0001"},
+                status_code=201,
+            )
+            httpx_mock.add_response(
+                method="PUT",
+                url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+                json={"id": agreement_id},
+            )
+
+    return _mock
 
 
 @pytest.fixture
