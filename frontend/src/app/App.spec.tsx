@@ -42,6 +42,22 @@ describe("App", () => {
     expect(await screen.findByTestId("organizations")).toBeInTheDocument();
   });
 
+  it.each<[AccountType, string]>([
+    ["affiliate", "entitlements"],
+    ["admin", "organizations"],
+  ])(
+    "replaces the index history entry for role '%s' so browser Back leaves the extension",
+    async (role, landingTestId) => {
+      expect.assertions(1);
+      renderAppAt("/", role);
+
+      expect(await screen.findByTestId(landingTestId)).toHaveAttribute(
+        "data-navigation-type",
+        "REPLACE",
+      );
+    },
+  );
+
   it("renders nested organizations routes under MainLayout", async () => {
     expect.assertions(3);
     renderAppAt("/organizations/anything", "admin");
