@@ -9,7 +9,7 @@ from typing import Any
 
 from app.api_clients.mpt import MPTClient
 from app.api_clients.optscale import UserDoesNotExist
-from app.db.models import Organization
+from app.db.models import ClientAccount, Organization
 from app.dependencies.api_clients import (
     APIModifierClient,
     InstallationClient,
@@ -18,6 +18,7 @@ from app.dependencies.api_clients import (
 )
 from app.dependencies.core import AppSettings
 from app.dependencies.db import (
+    ClientAccountRepository,
     EntitlementRepository,
     OrganizationRepository,
     TerminationFeedbackRepository,
@@ -88,6 +89,7 @@ class OrderProcessor(EventProcessor, ABC):
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
         termination_feedback_repo: TerminationFeedbackRepository,
+        client_account_repo: ClientAccountRepository,
         settings: AppSettings,
         order: dict[str, Any],
     ):
@@ -99,6 +101,7 @@ class OrderProcessor(EventProcessor, ABC):
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
         self.termination_feedback_repo = termination_feedback_repo
+        self.client_account_repo = client_account_repo
         self.settings = settings
         self.order = order
         self.template_cache = {}
@@ -226,11 +229,30 @@ class OrderProcessor(EventProcessor, ABC):
         }
         return await self._store_order_parameters_updates(updates_parameters)
 
+    async def update_or_create_client_account(self) -> ClientAccount:
+        """Create the order's client account, or refresh its name and icon if it exists."""
+        client = self.order["client"]
+        client_account, created = await self.client_account_repo.update_or_create(
+            external_id=client["id"],
+            defaults={"name": client["name"], "icon": client.get("icon")},
+        )
+        logger.info(
+            "%s: client account %s %s with id %s",
+            self.order["id"],
+            client["id"],
+            "created" if created else "already exists",
+            client_account.id,
+        )
+        return client_account
+
     async def get_or_create_organization(
         self,
         employee_id: str,
     ) -> Organization:
-        """Get or create the organization and link it back to the marketplace agreement."""
+        """
+        Get or create the organization, link it to the order's client account and
+        link it back to the marketplace agreement.
+        """
         agreement_id = self.order["agreement"]["id"]
         agreement = await self.installation_client.get_agreement(
             agreement_id, select=["authorization"]
@@ -239,6 +261,7 @@ class OrderProcessor(EventProcessor, ABC):
         org_name = get_ordering_parameter(self.order, PARAM_ORGANIZATION_NAME)["value"]
         org_currency = get_ordering_parameter(self.order, PARAM_CURRENCY)["value"]
         billing_currency = agreement["authorization"]["currency"]  # marketplace billing currency
+        client_account = await self.update_or_create_client_account()
 
         organization, created = await self.organization_repo.get_or_create(
             operations_external_id=agreement_id,
@@ -246,8 +269,13 @@ class OrderProcessor(EventProcessor, ABC):
                 "name": org_name,
                 "currency": org_currency,
                 "billing_currency": billing_currency,
+                "client_account": client_account,
             },
         )
+        if organization.client_account_id != client_account.id:
+            organization = await self.organization_repo.update(
+                organization, {"client_account": client_account}
+            )
 
         if created or not organization.linked_organization_id:
             organization_on_optscale = await self.api_modifier_client.create_organization(
@@ -602,6 +630,7 @@ class OrderEventHandler(EventHandler):
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
         termination_feedback_repo: TerminationFeedbackRepository,
+        client_account_repo: ClientAccountRepository,
         settings: AppSettings,
     ):
         self.api_modifier_client = api_modifier_client
@@ -612,6 +641,7 @@ class OrderEventHandler(EventHandler):
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
         self.termination_feedback_repo = termination_feedback_repo
+        self.client_account_repo = client_account_repo
         self.settings = settings
 
     async def _claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> None:
@@ -649,6 +679,7 @@ class OrderEventHandler(EventHandler):
             organization_repo=self.organization_repo,
             entitlement_repo=self.entitlement_repo,
             termination_feedback_repo=self.termination_feedback_repo,
+            client_account_repo=self.client_account_repo,
             order=order,
             settings=self.settings,
         )

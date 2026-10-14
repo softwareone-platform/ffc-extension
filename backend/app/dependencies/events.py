@@ -12,6 +12,7 @@ from app.dependencies.api_clients import (
 from app.dependencies.auth import CurrentAuthContext
 from app.dependencies.core import AppSettings
 from app.dependencies.db import (
+    ClientAccountRepository,
     EntitlementRepository,
     OrganizationRepository,
     TerminationFeedbackRepository,
@@ -31,6 +32,7 @@ def get_order_event_handler(
     organization_repo: OrganizationRepository,
     entitlement_repo: EntitlementRepository,
     termination_feedback_repo: TerminationFeedbackRepository,
+    client_account_repo: ClientAccountRepository,
     settings: AppSettings,
 ) -> _OrderEventHandler:
     return _OrderEventHandler(
@@ -42,6 +44,7 @@ def get_order_event_handler(
         organization_repo=organization_repo,
         entitlement_repo=entitlement_repo,
         termination_feedback_repo=termination_feedback_repo,
+        client_account_repo=client_account_repo,
         settings=settings,
     )
 

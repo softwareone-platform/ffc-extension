@@ -45,6 +45,7 @@ FKEY_ORGANIZATION = "organizations.id"
 FKEY_ACTOR = "actors.id"
 FKEY_ACCOUNT = "accounts.id"
 FKEY_USER = "users.id"
+FKEY_CLIENT_ACCOUNT = "client_accounts.id"
 
 
 class Base(DeclarativeBase):
@@ -238,6 +239,29 @@ class AccountUser(Base, AuditableMixin, HumanReadablePKMixin):
     )
 
 
+class ClientAccount(Base, AuditableMixin, HumanReadablePKMixin):
+    __tablename__ = "client_accounts"
+
+    PK_PREFIX = "FCAC"
+    PK_NUM_LENGTH = 8
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    icon: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    external_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    organizations: Mapped[list[Organization]] = relationship(
+        back_populates="client_account", lazy="raise"
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_client_accounts_external_id_for_non_deleted",
+            external_id,
+            unique=True,
+            postgresql_where=sa.text("deleted_at IS NULL"),
+        ),
+    )
+
+
 class Organization(Base, AuditableMixin, HumanReadablePKMixin):
     __tablename__ = "organizations"
 
@@ -266,6 +290,12 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
         back_populates="organization",
         uselist=False,
         lazy="joined",
+    )
+    client_account_id: Mapped[str | None] = mapped_column(
+        ForeignKey(FKEY_CLIENT_ACCOUNT), nullable=True, index=True
+    )
+    client_account: Mapped[ClientAccount | None] = relationship(
+        back_populates="organizations", foreign_keys=[client_account_id], lazy="joined"
     )
 
     __table_args__ = (
