@@ -1,9 +1,6 @@
 import { useCallback, useMemo } from "react";
 
-import { AxiosRequestConfig } from "axios";
-
 import { RqlQuery } from "@swo/rql-client";
-import { Entity } from "@swo/service";
 
 import { http } from "@mpt-extension/sdk";
 
@@ -13,6 +10,7 @@ import {
   EmployeeRead,
   OrganizationRead,
 } from "~api/ffc-api-model";
+import { useEntityApi } from "~shared/hooks/useEntityApi";
 import { getCustomQueryString } from "~shared/utils/rqlHelper";
 
 import { EditOrganizationForm } from "../list/edit-organization-modal/EditOrganization.Schema";
@@ -26,35 +24,9 @@ export interface ListResponse<T> {
 const rootPath = "/ops/v1/organizations";
 
 export function useOrganizationsApi() {
-  const list = useCallback(
-    async (
-      query: RqlQuery<Entity<OrganizationRead>>,
-      config?: AxiosRequestConfig<ListResponse<Entity<OrganizationRead>>>,
-    ) => {
-      return http<ListResponse<Entity<OrganizationRead>>>({
-        method: "GET",
-        url: rootPath + getCustomQueryString<Entity<OrganizationRead>>(query),
-        ...config,
-      });
-    },
-    [],
-  );
+  const { get, list, remove: deleteOrganization } = useEntityApi<OrganizationRead>(rootPath);
 
-  const get = useCallback(async (entityId: string, query?: RqlQuery<OrganizationRead>) => {
-    return http<OrganizationRead>({
-      method: "GET",
-      url: `${rootPath}/${entityId}` + getCustomQueryString<OrganizationRead>(query),
-    });
-  }, []);
-
-  const deleteOrganization = useCallback(async (entityId: string) => {
-    return http<OrganizationRead>({
-      method: "DELETE",
-      url: `${rootPath}/${entityId}`,
-    });
-  }, []);
-
-  const editOrganization = useCallback(async (entityId: string, data: EditOrganizationForm) => {
+  const editOrganization = useCallback((entityId: string, data: EditOrganizationForm) => {
     return http<OrganizationRead>({
       method: "PUT",
       url: `${rootPath}/${entityId}`,
@@ -63,7 +35,7 @@ export function useOrganizationsApi() {
   }, []);
 
   const listOrganizationEmployees = useCallback(
-    async (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
+    (organizationId: string, query?: RqlQuery<EmployeeRead>) => {
       return http({
         method: "GET",
         url: `${rootPath}/${organizationId}/employees` + getCustomQueryString<EmployeeRead>(query),
@@ -72,7 +44,7 @@ export function useOrganizationsApi() {
     [],
   );
   const listOrganizationDataSources = useCallback(
-    async (organizationId: string, query?: RqlQuery<DatasourceRead>) => {
+    (organizationId: string, query?: RqlQuery<DatasourceRead>) => {
       return http({
         method: "GET",
         url:
@@ -83,7 +55,7 @@ export function useOrganizationsApi() {
   );
 
   const forceReimportDatasource = useCallback(
-    async (organizationId: string, datasourceId: string, data?: DatasourceForceReimport) => {
+    (organizationId: string, datasourceId: string, data?: DatasourceForceReimport) => {
       return http<void>({
         method: "POST",
         url: `${rootPath}/${organizationId}/datasources/${datasourceId}/force-reimport`,

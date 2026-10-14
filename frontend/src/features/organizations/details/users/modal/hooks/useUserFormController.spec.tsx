@@ -93,7 +93,7 @@ describe("useUserFormController", () => {
     const { result } = renderController("org-1", onClose);
 
     act(() => {
-      result.current.handleCancel();
+      result.current.cancel();
     });
 
     expect(mockReset).toHaveBeenCalled();

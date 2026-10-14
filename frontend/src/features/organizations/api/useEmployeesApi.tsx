@@ -21,7 +21,7 @@ const rootPath = "/ops/v1/organizations";
 
 export function useEmployeesApi() {
   const list = useCallback(
-    async (
+    (
       organizationId: string,
       query?: RqlQuery<EmployeeRead>,
       config?: AxiosRequestConfig<ListResponse<Entity<EmployeeRead>>>,
@@ -35,7 +35,7 @@ export function useEmployeesApi() {
     [],
   );
 
-  const addAdmin = useCallback(async (organizationId: string, data: AddUserForm) => {
+  const addAdmin = useCallback((organizationId: string, data: AddUserForm) => {
     return http<EmployeeRead>({
       method: "POST",
       url: `${rootPath}/${organizationId}/add-admin`,
@@ -43,7 +43,7 @@ export function useEmployeesApi() {
     });
   }, []);
 
-  const promoteToAdmin = useCallback(async (organizationId: string, employeeId: string) => {
+  const promoteToAdmin = useCallback((organizationId: string, employeeId: string) => {
     return http<EmployeeRead>({
       method: "POST",
       url: `${rootPath}/${organizationId}/employees/${employeeId}/make-admin`,

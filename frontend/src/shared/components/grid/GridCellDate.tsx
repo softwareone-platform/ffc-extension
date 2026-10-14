@@ -5,7 +5,7 @@ import { DisplayValue, useFormatDate } from "@swo/design-system/utils";
 import { useFormatTime } from "~shared/hooks/useFormatTime";
 
 export interface GridCellDateProps {
-  value?: Date | string | null;
+  readonly value?: Date | string | null;
 }
 
 export function GridCellDate({ value }: GridCellDateProps) {
