@@ -5,6 +5,32 @@ import * as am5xy from "@amcharts/amcharts5/xy";
 
 import { createChartRoot } from "./chartTheme";
 
+// Monthly rows key the category as an ISO 8601 UTC month start (`2025-01-01T00:00:00Z`).
+// Formatting in UTC keeps that month start from rendering as the previous month in negative
+// UTC offsets.
+const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T/;
+const AXIS_DATE_FORMAT = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" });
+const TOOLTIP_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+// Extra field written onto every row so tooltips can show the formatted category via a
+// `{categoryLabel}` placeholder (amCharts resolves placeholders against the row's data context).
+const CATEGORY_LABEL_FIELD = "categoryLabel";
+
+/** Formats ISO datetime categories (`"Jan"` / `"Jan 2025"`); other categories pass through. */
+function formatCategory(value: unknown, format: Intl.DateTimeFormat): string {
+  if (typeof value === "string" && ISO_DATETIME.test(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return format.format(date);
+    }
+  }
+  return value == null ? "" : String(value);
+}
+
 export type XySeriesKind = "line" | "area" | "column";
 
 export type XySeriesDef = {
@@ -86,11 +112,18 @@ export function XyChart({
     categoryAxis.get("renderer").labels.template.setAll(labelStyle);
     valueAxis.get("renderer").labels.template.setAll(labelStyle);
 
-    // `{name}` is the series label, `{valueX}`/`{valueY}` is the value axis — vertical charts
-    // put the number on Y, horizontal charts on X.
-    const tooltipText = horizontal
-      ? "[bold]{name}[/]\n{valueX}"
-      : "[bold]{name}[/]\n{valueY}";
+    // Axis labels are created with the placeholder text `"{category}"`, so the adapter reads the
+    // real category off the label's data item instead of the incoming text.
+    categoryAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
+      const dataItem = target.dataItem as am5.DataItem<am5xy.ICategoryAxisDataItem> | undefined;
+      const category = dataItem?.get("category");
+      return category ? formatCategory(category, AXIS_DATE_FORMAT) : text;
+    });
+
+    // `{categoryLabel}` is the formatted category, `{name}` the series label and
+    // `{valueX}`/`{valueY}` the value axis — vertical charts put the number on Y, horizontal
+    // charts on X.
+    const tooltipText = `{${CATEGORY_LABEL_FIELD}}\n[bold]{name}:[/] ${horizontal ? "{valueX}" : "{valueY}"}`;
 
     function attachTooltip(entry: am5xy.XYSeries) {
       entry.set(
@@ -183,9 +216,13 @@ export function XyChart({
       return;
     }
 
-    built.categoryAxis.data.setAll(data);
-    built.series.forEach((entry) => entry.data.setAll(data));
-  }, [data]);
+    const rows = data.map((row) => ({
+      ...row,
+      [CATEGORY_LABEL_FIELD]: formatCategory(row[categoryField], TOOLTIP_DATE_FORMAT),
+    }));
+    built.categoryAxis.data.setAll(rows);
+    built.series.forEach((entry) => entry.data.setAll(rows));
+  }, [data, categoryField]);
 
   return <div ref={containerRef} style={{ width: "100%", height }} />;
 }

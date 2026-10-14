@@ -1,76 +1,79 @@
 {
   "monthlySpend": {
-    "currentMonth": "$1,250",
-    "previousMonth": "$1,538",
-    "monthOverMonthChange": "-1.2%"
+    "currentMonth": 20350,
+    "previousMonth": 19300,
+    "monthOverMonthChange": 5.4
   },
   "coverage": {
-    "consumption": "98%",
-    "coverage": "73%",
-    "usage": "62%"
+    "consumptionCoverage": 92,
+    "datasourceCoverage": 68,
+    "usageCoverage": 88
   },
   "spendTrend": [
-    { "month": "Jan", "spend": 12400 },
-    { "month": "Feb", "spend": 13100 },
-    { "month": "Mar", "spend": 12700 },
-    { "month": "Apr", "spend": 14200 },
-    { "month": "May", "spend": 15600 },
-    { "month": "Jun", "spend": 15100 },
-    { "month": "Jul", "spend": 17300 },
-    { "month": "Aug", "spend": 18900 },
-    { "month": "Sep", "spend": 18200 },
-    { "month": "Oct", "spend": 20400 },
-    { "month": "Nov", "spend": 22100 },
-    { "month": "Dec", "spend": 24800 }
+    { "month": "2025-01-01T00:00:00Z", "spend": 11100 },
+    { "month": "2025-02-01T00:00:00Z", "spend": 11700 },
+    { "month": "2025-03-01T00:00:00Z", "spend": 12300 },
+    { "month": "2025-04-01T00:00:00Z", "spend": 13100 },
+    { "month": "2025-05-01T00:00:00Z", "spend": 13900 },
+    { "month": "2025-06-01T00:00:00Z", "spend": 14750 },
+    { "month": "2025-07-01T00:00:00Z", "spend": 15600 },
+    { "month": "2025-08-01T00:00:00Z", "spend": 16450 },
+    { "month": "2025-09-01T00:00:00Z", "spend": 17300 },
+    { "month": "2025-10-01T00:00:00Z", "spend": 18300 },
+    { "month": "2025-11-01T00:00:00Z", "spend": 19300 },
+    { "month": "2025-12-01T00:00:00Z", "spend": 20350 }
   ],
   "usageCoverageTrend": [
-    { "month": "Jan", "coverage": 38 },
-    { "month": "Feb", "coverage": 44 },
-    { "month": "Mar", "coverage": 51 },
-    { "month": "Apr", "coverage": 55 },
-    { "month": "May", "coverage": 58 },
-    { "month": "Jun", "coverage": 61 },
-    { "month": "Jul", "coverage": 66 },
-    { "month": "Aug", "coverage": 71 },
-    { "month": "Sep", "coverage": 74 },
-    { "month": "Oct", "coverage": 79 },
-    { "month": "Nov", "coverage": 83 },
-    { "month": "Dec", "coverage": 88 }
+    { "month": "2025-01-01T00:00:00Z", "coverage": 38 },
+    { "month": "2025-02-01T00:00:00Z", "coverage": 44 },
+    { "month": "2025-03-01T00:00:00Z", "coverage": 51 },
+    { "month": "2025-04-01T00:00:00Z", "coverage": 55 },
+    { "month": "2025-05-01T00:00:00Z", "coverage": 58 },
+    { "month": "2025-06-01T00:00:00Z", "coverage": 61 },
+    { "month": "2025-07-01T00:00:00Z", "coverage": 66 },
+    { "month": "2025-08-01T00:00:00Z", "coverage": 71 },
+    { "month": "2025-09-01T00:00:00Z", "coverage": 74 },
+    { "month": "2025-10-01T00:00:00Z", "coverage": 79 },
+    { "month": "2025-11-01T00:00:00Z", "coverage": 83 },
+    { "month": "2025-12-01T00:00:00Z", "coverage": 88 }
   ],
   "coverageDistribution": [
-    { "category": "Covered", "value": 73 },
-    { "category": "Not covered", "value": 27 }
+    { "category": "Covered", "value": 414 },
+    { "category": "Not covered", "value": 191 }
   ],
   "usageDistribution": [
-    { "category": "Covered", "value": 62 },
-    { "category": "Not covered", "value": 38 }
+    { "category": "Covered", "value": 532 },
+    { "category": "Not covered", "value": 73 }
   ],
   "providerDistribution": [
-    { "category": "Azure", "value": 46 },
-    { "category": "AWS", "value": 33 },
-    { "category": "GCP", "value": 21 }
+    { "category": "Azure", "value": 9300 },
+    { "category": "AWS", "value": 6650 },
+    { "category": "GCP", "value": 4400 }
   ],
   "providerTrend": [
-    { "month": "Jan", "azure": 5200, "aws": 3800, "gcp": 2100 },
-    { "month": "Feb", "azure": 5500, "aws": 3950, "gcp": 2250 },
-    { "month": "Mar", "azure": 5800, "aws": 4100, "gcp": 2400 },
-    { "month": "Apr", "azure": 6100, "aws": 4350, "gcp": 2650 },
-    { "month": "May", "azure": 6400, "aws": 4600, "gcp": 2900 },
-    { "month": "Jun", "azure": 6750, "aws": 4900, "gcp": 3100 },
-    { "month": "Jul", "azure": 7100, "aws": 5200, "gcp": 3300 },
-    { "month": "Aug", "azure": 7500, "aws": 5400, "gcp": 3550 },
-    { "month": "Sep", "azure": 7900, "aws": 5600, "gcp": 3800 },
-    { "month": "Oct", "azure": 8350, "aws": 5950, "gcp": 4000 },
-    { "month": "Nov", "azure": 8800, "aws": 6300, "gcp": 4200 },
-    { "month": "Dec", "azure": 9300, "aws": 6650, "gcp": 4400 }
+    { "month": "2025-01-01T00:00:00Z", "azure": 5200, "aws": 3800, "gcp": 2100 },
+    { "month": "2025-02-01T00:00:00Z", "azure": 5500, "aws": 3950, "gcp": 2250 },
+    { "month": "2025-03-01T00:00:00Z", "azure": 5800, "aws": 4100, "gcp": 2400 },
+    { "month": "2025-04-01T00:00:00Z", "azure": 6100, "aws": 4350, "gcp": 2650 },
+    { "month": "2025-05-01T00:00:00Z", "azure": 6400, "aws": 4600, "gcp": 2900 },
+    { "month": "2025-06-01T00:00:00Z", "azure": 6750, "aws": 4900, "gcp": 3100 },
+    { "month": "2025-07-01T00:00:00Z", "azure": 7100, "aws": 5200, "gcp": 3300 },
+    { "month": "2025-08-01T00:00:00Z", "azure": 7500, "aws": 5400, "gcp": 3550 },
+    { "month": "2025-09-01T00:00:00Z", "azure": 7900, "aws": 5600, "gcp": 3800 },
+    { "month": "2025-10-01T00:00:00Z", "azure": 8350, "aws": 5950, "gcp": 4000 },
+    { "month": "2025-11-01T00:00:00Z", "azure": 8800, "aws": 6300, "gcp": 4200 },
+    { "month": "2025-12-01T00:00:00Z", "azure": 9300, "aws": 6650, "gcp": 4400 }
   ],
   "topOrganizations": [
-    { "organization": "Northwind Trading", "spend": 92000000 },
-    { "organization": "Contoso Industries", "spend": 71000000 },
-    { "organization": "Fabrikam Group", "spend": 58000000 },
-    { "organization": "Adventure Works", "spend": 44000000 },
-    { "organization": "Tailspin Toys", "spend": 31000000 },
-    { "organization": "Wide World Imports", "spend": 22000000 },
-    { "organization": "Proseware Inc", "spend": 14000000 }
+    { "organization": "Northwind Trading", "spend": 92000 },
+    { "organization": "Contoso Industries", "spend": 71000 },
+    { "organization": "Fabrikam Group", "spend": 58000 },
+    { "organization": "Adventure Works", "spend": 44000 },
+    { "organization": "Tailspin Toys", "spend": 31000 },
+    { "organization": "Wide World Imports", "spend": 22000 },
+    { "organization": "Proseware Inc", "spend": 14000 },
+    { "organization": "Lucerne Publishing", "spend": 11500 },
+    { "organization": "Margie's Travel", "spend": 9200 },
+    { "organization": "School of Fine Art", "spend": 6800 }
   ]
 }

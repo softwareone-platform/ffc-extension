@@ -453,9 +453,9 @@
       },
       "datasources": {
         "title": "Datasource Adoption",
-        "total": "Total Datasources",
-        "withDatasources": "Organizations with Datasources",
-        "withoutDatasources": "Organizations without Datasources",
+        "datasourceCount": "Total Datasources",
+        "orgsWithDatasources": "Organizations with Datasources",
+        "orgsWithoutDatasources": "Organizations without Datasources",
         "providerDistribution": "Provider distribution"
       },
       "statusBreakdown": {
@@ -482,12 +482,12 @@
       },
       "coverage": {
         "title": "Consumption Coverage",
-        "consumption": "Consumption Coverage",
-        "consumptionCaption": "Coverage",
-        "coverage": "Datasource Coverage",
-        "coverageCaption": "Coverage",
-        "usage": "Usage Coverage",
-        "usageCaption": "Coverage"
+        "consumptionCoverage": "Consumption Coverage",
+        "consumptionCoverageCaption": "Coverage",
+        "datasourceCoverage": "Datasource Coverage",
+        "datasourceCoverageCaption": "Coverage",
+        "usageCoverage": "Usage Coverage",
+        "usageCoverageCaption": "Coverage"
       },
       "spendTrend": {
         "title": "Spend Trend",

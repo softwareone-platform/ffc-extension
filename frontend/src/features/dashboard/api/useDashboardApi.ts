@@ -80,35 +80,37 @@ function monthWindow(filters: DashboardFilters): number {
   return Math.min(12, rangeMonths(filters));
 }
 
-const MONTHLY_CATEGORIES = new Set(["month", "period", "bucket"]);
+// Only genuinely monthly keys — `byLevel` rows use `bucket: "Level N"` and must not be tailed.
+const MONTHLY_CATEGORIES = new Set(["month", "period"]);
+
+// Keys that must never be multiplied by the scalar. Covers:
+//   `monthOverMonthChange` — signed percent on `monthlySpend`
+//   `consumptionCoverage` / `datasourceCoverage` / `usageCoverage` — percent KPIs
+//   `coverage` — the whole `consumption.coverage` sub-object (all children are percents) **and**
+//                the per-row `{ coverage: 38 }` field inside `usageCoverageTrend`
+//   `rows` — per-organisation maturity records; `level` indexes `MATURITY_LEVELS`,
+//            `dataSources` is a per-org count, so neither is a population total
+// When the walker meets one of these keys it copies the value verbatim instead of recursing.
+const NON_SCALED_KEYS = new Set([
+  "monthOverMonthChange",
+  "consumptionCoverage",
+  "datasourceCoverage",
+  "usageCoverage",
+  "coverage",
+  "rows",
+]);
 
 // Deeply clone the mock object while multiplying numeric fields by `scale` and tailing monthly
-// chart arrays to the last `monthWindow` entries. Supports:
-//   - raw numbers         → scaled integer
-//   - "412" / "1,234"     → scaled integer, formatted with thousands separator
-//   - "$1,250"            → preserved prefix, scaled integer, re-formatted
-//   - "98%" / "-1.2%"     → left alone (percentages are ratios, not totals)
-//   - everything else     → left alone (labels, categories, IDs, dates)
+// chart arrays to the last `months` entries. All KPIs/currency values live as raw numbers in
+// the mocks now (display formatting is a UI concern), so the walker has one job: scale any
+// number it finds that isn't shielded by `NON_SCALED_KEYS`.
 function transformMetrics<T>(value: T, scale: number, months: number): T {
   if (typeof value === "number") {
     return Math.round(value * scale) as T;
   }
-  if (typeof value === "string") {
-    const currencyMatch = value.match(/^\$([\d,]+(?:\.\d+)?)$/);
-    if (currencyMatch) {
-      const num = Number(currencyMatch[1].replace(/,/g, ""));
-      return `$${Math.round(num * scale).toLocaleString("en-US")}` as unknown as T;
-    }
-    const integerMatch = value.match(/^-?\d{1,3}(?:,\d{3})*$/) || value.match(/^-?\d+$/);
-    if (integerMatch) {
-      const num = Number(value.replace(/,/g, ""));
-      return Math.round(num * scale).toLocaleString("en-US") as unknown as T;
-    }
-    return value;
-  }
   if (Array.isArray(value)) {
     const mapped = value.map((item) => transformMetrics(item, scale, months));
-    // Monthly chart arrays carry a `month`/`period`/`bucket` key on each row — tail to the
+    // Monthly chart arrays carry a `month`/`period` key on each row — tail to the
     // requested window so date-range changes visibly redraw.
     const isMonthlySeries =
       mapped.length > 0 &&
@@ -122,10 +124,11 @@ function transformMetrics<T>(value: T, scale: number, months: number): T {
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(value)) {
-      out[key] = transformMetrics(nested, scale, months);
+      out[key] = NON_SCALED_KEYS.has(key) ? nested : transformMetrics(nested, scale, months);
     }
     return out as T;
   }
+  // Strings (ISO datetimes, category names) pass through unchanged.
   return value;
 }
 
@@ -157,10 +160,10 @@ function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): 
     ...data,
     organizationsOverview: {
       ...data.organizationsOverview,
-      total: nextTotal.toLocaleString("en-US"),
-      active: includes("active") ? data.organizationsOverview.active : "0",
-      terminated: includes("terminated") ? data.organizationsOverview.terminated : "0",
-      deleted: includes("deleted") ? data.organizationsOverview.deleted : "0",
+      total: nextTotal,
+      active: includes("active") ? data.organizationsOverview.active : 0,
+      terminated: includes("terminated") ? data.organizationsOverview.terminated : 0,
+      deleted: includes("deleted") ? data.organizationsOverview.deleted : 0,
       statusDistribution: nextDistribution,
     },
   };
@@ -217,10 +220,7 @@ function filterTrialVsPaidView(data: AdoptionMetrics, filters: DashboardFilters)
   const billingPicks = filters.statuses.filter((status) =>
     (BILLING_STATUS_CATEGORIES as readonly string[]).includes(status),
   );
-  if (
-    billingPicks.length === 0 ||
-    billingPicks.length === BILLING_STATUS_CATEGORIES.length
-  ) {
+  if (billingPicks.length === 0 || billingPicks.length === BILLING_STATUS_CATEGORIES.length) {
     return data;
   }
   const paidPicked = billingPicks.includes("paid");
@@ -242,8 +242,8 @@ function filterTrialVsPaidView(data: AdoptionMetrics, filters: DashboardFilters)
     ...data,
     trialVsPaid: {
       ...data.trialVsPaid,
-      paid: paidPicked ? data.trialVsPaid.paid : "0",
-      trial: trialPicked ? data.trialVsPaid.trial : "0",
+      paid: paidPicked ? data.trialVsPaid.paid : 0,
+      trial: trialPicked ? data.trialVsPaid.trial : 0,
       distribution: nextDistribution,
       monthlyTrend: nextTrend,
     },
@@ -282,7 +282,11 @@ export function useDashboardApi() {
   const getMaturityMetrics = useCallback(
     (filters: DashboardFilters): Promise<AxiosResponse<MaturityMetrics>> =>
       mockResponse(
-        transformMetrics(maturityMetrics as MaturityMetrics, computeScale(filters), monthWindow(filters)),
+        transformMetrics(
+          maturityMetrics as MaturityMetrics,
+          computeScale(filters),
+          monthWindow(filters),
+        ),
         MOCK_DELAY_MS,
       ),
     [],

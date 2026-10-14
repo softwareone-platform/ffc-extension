@@ -1,9 +1,8 @@
+import { PATHS as ENTITLEMENT_PATHS } from "~features/entitlements/paths";
+import { PATHS as ORGANIZATION_PATHS } from "~features/organizations/paths";
 import { ChartLegend, DonutChart, PROVIDER_COLORS, XyChart } from "~shared/components/charts";
 import { KpiTile } from "~shared/components/panel";
 import { useFixedT } from "~shared/hooks/useFixedT";
-
-import { PATHS as ENTITLEMENT_PATHS } from "~features/entitlements/paths";
-import { PATHS as ORGANIZATION_PATHS } from "~features/organizations/paths";
 
 import { useAdoptionMetricsApi } from "../api";
 import {
@@ -15,11 +14,10 @@ import {
   TRIAL_VS_PAID_DONUT_COLORS,
   TRIAL_VS_PAID_TREND_SERIES,
 } from "../chartConfig";
-import {
-  useDashboardFilters,
-  withDashboardFilters,
-} from "../components/DashboardFiltersContext";
+import { useDashboardFilters, withDashboardFilters } from "../components/DashboardFiltersContext";
 import { MetricPanel } from "../components/MetricPanel";
+
+const formatCount = (n: number) => n.toLocaleString("en-US");
 
 export function AdoptionTab() {
   const tAdoption = useFixedT("dashboard:adoption");
@@ -61,33 +59,30 @@ export function AdoptionTab() {
       <div className={"ffc-kpi-row ffc-kpi-row--four"}>
         <KpiTile
           label={tAdoption("overview:total")}
-          value={data.organizationsOverview.total}
+          value={formatCount(data.organizationsOverview.total)}
           linkTo={link(ORGANIZATION_PATHS.root)}
         />
         <KpiTile
           label={tAdoption("overview:active")}
-          value={data.organizationsOverview.active}
+          value={formatCount(data.organizationsOverview.active)}
           trend={"up"}
           linkTo={link(`${ORGANIZATION_PATHS.root}?status=active`)}
         />
         <KpiTile
           label={tAdoption("overview:terminated")}
-          value={data.organizationsOverview.terminated}
+          value={formatCount(data.organizationsOverview.terminated)}
           linkTo={link(`${ORGANIZATION_PATHS.root}?status=terminated`)}
         />
         <KpiTile
           label={tAdoption("overview:deleted")}
-          value={data.organizationsOverview.deleted}
+          value={formatCount(data.organizationsOverview.deleted)}
           trend={"down"}
           linkTo={link(`${ORGANIZATION_PATHS.root}?status=deleted`)}
         />
       </div>
 
       <div className={"ffc-panel-grid"}>
-        <MetricPanel
-          title={tAdoption("statusBreakdown:title")}
-          className={"ffc-panel--span-4"}
-        >
+        <MetricPanel title={tAdoption("statusBreakdown:title")} className={"ffc-panel--span-4"}>
           <DonutChart
             data={data.organizationsOverview.statusDistribution}
             colors={STATUS_DONUT_COLORS}
@@ -100,14 +95,17 @@ export function AdoptionTab() {
           title={tAdoption("datasources:title")}
           className={"ffc-panel--span-8"}
           kpis={[
-            { label: tAdoption("datasources:total"), value: data.datasources.total },
             {
-              label: tAdoption("datasources:withDatasources"),
-              value: data.datasources.withDatasources,
+              label: tAdoption("datasources:datasourceCount"),
+              value: formatCount(data.datasources.datasourceCount),
             },
             {
-              label: tAdoption("datasources:withoutDatasources"),
-              value: data.datasources.withoutDatasources,
+              label: tAdoption("datasources:orgsWithDatasources"),
+              value: formatCount(data.datasources.orgsWithDatasources),
+            },
+            {
+              label: tAdoption("datasources:orgsWithoutDatasources"),
+              value: formatCount(data.datasources.orgsWithoutDatasources),
               trend: "down",
             },
           ]}
@@ -134,12 +132,12 @@ export function AdoptionTab() {
           kpis={[
             {
               label: tAdoption("trialVsPaid:paid"),
-              value: data.trialVsPaid.paid,
+              value: formatCount(data.trialVsPaid.paid),
               linkTo: link(`${ENTITLEMENT_PATHS.root}?billing=paid`),
             },
             {
               label: tAdoption("trialVsPaid:trial"),
-              value: data.trialVsPaid.trial,
+              value: formatCount(data.trialVsPaid.trial),
               linkTo: link(`${ENTITLEMENT_PATHS.root}?billing=trial`),
             },
           ]}

@@ -36,7 +36,11 @@ General API-hook conventions live in [`docs/conventions/api-hooks.md`](../../../
 
 The POC variant below applies to **mock-driven metrics endpoints** — one getter per metric (`getAdoptionMetrics`, …), react-query key `["<Feature>", "<Resource>"]` because metric aggregates aren't entity-centric. The shape is otherwise identical, so the swap to real HTTP is still a one-line change.
 
-**Mock JSON — must mirror the real API shape.** Dates ISO (`YYYY-MM-DD`) for sortable fields, display formatting happens in the cell. Numeric metrics stay numeric; preformatted strings only when the API itself returns strings.
+**Mock JSON — must mirror the real API shape.**
+
+- **Raw numbers only.** KPIs, currency and percentages are plain numbers (`20350`, `5.4`, `88`), never display strings (`"$1,250"`, `"98%"`, `"412"`). Formatting (`$`, `%`, thousands separators, sign) happens in the tab/cell. Preformatted strings only when the real API itself returns strings.
+- **Dates are ISO 8601 UTC datetimes** (`2025-12-01T00:00:00Z`) — row fields (`lastActivity`) *and* monthly chart keys (`{ "month": "2025-01-01T00:00:00Z", … }`, the month start). Never `"Jan"` or `DD MMM YYYY`. Grid and chart display rules: see the Date columns / Date categories sections in [`design-system-components.md`](../../../docs/conventions/design-system-components.md).
+- **Related figures reconcile.** KPI = tail of its trend series (`currentMonth === spendTrend.at(-1).spend`), donut slices sum to the headline total, coverage % matches the covered / not-covered split, sub-counts add up (`active + terminated + deleted === total`). Stakeholders cross-check numbers across cards in a demo; a mismatch reads as a bug. Document each invariant as a TSDoc comment on the field in `api/model.ts`.
 
 **Low-level API hook** (`api/useFooApi.ts` pattern). The POC needs a tiny `mockResponse` helper that wraps the JSON fixture in an `AxiosResponse` shape — the project does not ship one, so add it under the POC feature folder (or in `~shared/utils/` if you expect other features to need it):
 
@@ -126,7 +130,9 @@ Moved to [`docs/conventions/design-system-components.md`](../../../docs/conventi
 Stakeholders will ask "what's the value here?" on every demo. Attach tooltips on the series template, add bullets on line/area series so the hover target isn't a 2px stroke, and add a shared crosshair so the tooltip appears even when the cursor isn't dead-centre on a bar/bullet:
 
 ```ts
-const tooltipText = horizontal ? "[bold]{name}[/]\n{valueX}" : "[bold]{name}[/]\n{valueY}";
+// `{categoryLabel}` is the formatted category (`Jan 2025` for ISO month keys) — written onto
+// each row in the data-update effect; see "Date categories" in design-system-components.md.
+const tooltipText = `{categoryLabel}\n[bold]{name}:[/] ${horizontal ? "{valueX}" : "{valueY}"}`;
 
 // Column series — tooltip on the column template itself
 columnSeries.columns.template.setAll({
@@ -295,20 +301,30 @@ function computeScale(filters: DashboardFilters): number {
   return statusScale * providerScale * dateScale;
 }
 
-// Deep-walk the mock, scale numeric fields, leave labels/percentages/dates alone.
+// Keys whose values must never be scaled — copied verbatim, not recursed into:
+//   ratios / percentages (`monthOverMonthChange`, `*Coverage`, the `coverage` sub-object)
+//   per-entity records (`rows`) — lookup indexes like maturity `level` (4 × 2 = 8 crashes
+//   `MATURITY_LEVELS[8]`), per-org counts, and timestamps aren't population totals
+const NON_SCALED_KEYS = new Set(["monthOverMonthChange", "consumptionCoverage", "coverage", "rows"]);
+
+// Deep-walk the mock and scale every number not shielded by NON_SCALED_KEYS. Mocks hold raw
+// numbers (see the Mock JSON rules above), so there's no string parsing; strings (ISO dates,
+// category names) pass through.
 function transformMetrics<T>(value: T, scale: number, months: number): T {
   if (typeof value === "number") return Math.round(value * scale) as T;
-  if (typeof value === "string") {
-    // "$1,250" → "$5,000", "412" → "1,648", "98%"/"−1.2%" → left alone (ratios, not totals).
-    …
-  }
   if (Array.isArray(value)) return maybeTailMonthlySeries(value, months, scale);
-  if (value && typeof value === "object") return mapObject(value, scale, months);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, nested] of Object.entries(value)) {
+      out[key] = NON_SCALED_KEYS.has(key) ? nested : transformMetrics(nested, scale, months);
+    }
+    return out as T;
+  }
   return value;
 }
 ```
 
-**2. Monthly windowing** — tail monthly chart arrays (`{ month | period | bucket, …fields }` rows) to the actual range length, capped at the mock's series length. Without this, the x-axis is static even when values move, and users think "nothing changed" even though the headline KPIs did.
+**2. Monthly windowing** — tail monthly chart arrays (`{ month | period, …fields }` rows) to the actual range length, capped at the mock's series length. Without this, the x-axis is static even when values move, and users think "nothing changed" even though the headline KPIs did. Key the detection on **genuinely monthly** fields only — a non-time bucket row like `{ bucket: "Level 1", … }` must not be tailed, or a 1-month range collapses the chart to its last category.
 
 ```ts
 const sliced = isMonthlySeries ? mapped.slice(-months) : mapped;
@@ -328,8 +344,8 @@ function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): 
   const nextTotal = nextDistribution.reduce((sum, s) => sum + s.value, 0);
   return { ...data, organizationsOverview: {
     ...data.organizationsOverview,
-    total: nextTotal.toLocaleString("en-US"),
-    active: includes("active") ? data.organizationsOverview.active : "0",
+    total: nextTotal,
+    active: includes("active") ? data.organizationsOverview.active : 0,
     /* …per-slice KPIs… */
     statusDistribution: nextDistribution,
   }};
@@ -398,7 +414,7 @@ Const tuples + derived unions for domain values (`ORGANISATION_STATUSES`, `CLOUD
 
 1. **Component sourcing** — scan Storybook for each UI element; ask on partial match before inventing.
 2. **Types first** — add `type`s / enums to `api/model.ts` before the hook or JSON.
-3. **Mock JSON** — exact shape of the type, realistic values, ISO dates for sortable fields.
+3. **Mock JSON** — exact shape of the type, realistic values, raw numbers, ISO 8601 UTC datetimes (`2025-12-01T00:00:00Z`) for dates and monthly keys, related figures reconcile across cards.
 4. **API hooks** — low-level getter in `useFeatureApi`, react-query wrapper per resource, index barrel export.
 5. **Tab/component** — consume the hook, `if (!data) return null`, module-scope any amCharts config.
 6. **i18n** — all strings via `useFixedT`, keys alphabetised.
@@ -428,5 +444,8 @@ POC sessions are visual-iteration heavy. The user rolls back layout decisions ~1
 - **Draft + Apply for simple selects** — single-value changes don't need an Apply button; a sticky Apply on every input is friction. Reserve draft/apply for compound inputs (date range) where a partial pick would commit a broken filter.
 - **Omitting `placeholderData: keepPreviousData`** on `useQuery` under a filter sidebar — every filter change makes `if (!data) return null` unmount the panel grid and amCharts restarts its load animation. Users read it as a full-page reload. Always keep previous data visible during refetch, pair with an overlay for the "refreshing" affordance.
 - **Dropping arbitrary content into a SWO `Popover` without a surface** — `.popover__content` only sets position/z-index; no background, no border, no shadow. Content inside must bring its own `background`, `border`, `border-radius`, `box-shadow` or the popover appears unstyled against the page.
+- **Preformatted display strings in mock JSON** (`"$1,250"`, `"98%"`, `"Jan"`, `"13 Apr 2021"`) — forces the mock walker to parse strings back into numbers, can't be sorted or filtered, and won't match the real API. Keep raw numbers + ISO datetimes; format at render.
+- **Scaling per-entity records with the filter scalar** — the deep walker will happily multiply a row's `level`, counts or timestamps. Shield `rows` (and any lookup index) via `NON_SCALED_KEYS`; per-entity values aren't population totals.
+- **Formatting date categories from the axis label's incoming `text`** — amCharts passes the `"{category}"` placeholder, not the value, so the formatter never matches and ISO keys render raw. Read `target.dataItem.get("category")` (see `mpt-design-system`).
 - **Trying to use `Navigation.SideNav` for arbitrary left-column content** — it accepts `groups: SideNavItem[]` only (navigation primitive). Compose your own `<aside>` matching its visual spec (250px / 72px / `border-right` only) rather than trying to coerce form content through it.
 - **Reusing the same colour palette for two orthogonal dimensions on the same screen** (e.g. green/orange/gray for both status *and* providers) — users read the colour as the meaning, so collisions across adjacent cards confuse the eye. Give each dimension its own hue family.

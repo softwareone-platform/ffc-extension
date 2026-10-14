@@ -127,9 +127,18 @@ string too; use `number` instead.
 
 ### Date columns
 
-Store ISO (`YYYY-MM-DD`) in the row data; format in the cell with
-`useFormatDate` from `~shared/hooks/useFormatDate`. That keeps the stored
-value sortable and lets the display formatter respect the user's locale.
+Store ISO 8601 UTC datetimes (`2025-12-01T00:00:00Z`) in the row data — the
+same shape the API and the `~test-utils` factories use. Render with the shared
+`GridCellDate` (`~shared/components/grid/GridCellDate`, date + time), or with
+`useFormatDate` from `~shared/hooks/useFormatDate` inside a `GridCellSimple`
+for date-only. That keeps the stored value sortable and lets the display
+formatter respect the user's locale.
+
+ISO strings in one fixed format sort and filter correctly as plain strings,
+so a `type: "date"` field needs nothing extra. Any other storage (epoch
+numbers, `DD MMM YYYY` display strings) needs a `transformFilterOperation` on
+the field — the DS date filter emits an ISO string, and comparing it against
+another shape silently matches nothing.
 
 ### Status / threshold chips in cells
 
@@ -208,6 +217,31 @@ function SpendPanel({ data }: Props) {
   return <XyChart data={data} categoryField={"month"} series={SPEND_SERIES} />;
 }
 ```
+
+### Date categories
+
+Monthly rows key the category as the ISO 8601 UTC month start
+(`{ "month": "2025-01-01T00:00:00Z", "spend": 11100 }`) — never a display
+string like `"Jan"`. `XyChart` owns the formatting: axis label `Jan`, tooltip
+`Jan 2025`, via `Intl.DateTimeFormat` with `timeZone: "UTC"` so a midnight-UTC
+month start doesn't render as the previous month for users west of UTC.
+
+**amCharts gotcha:** category-axis labels are created with the placeholder
+text `"{category}"` and populated later, so a `text` adapter only ever sees
+the placeholder. Read the real value off the label's data item:
+
+```ts
+categoryAxis.get("renderer").labels.template.adapters.add("text", (text, target) => {
+  const dataItem = target.dataItem as am5.DataItem<am5xy.ICategoryAxisDataItem> | undefined;
+  const category = dataItem?.get("category");
+  return category ? formatCategory(category, AXIS_DATE_FORMAT) : text;
+});
+```
+
+Tooltips get the formatted value through an extra `categoryLabel` field
+written onto each row in the data-update effect (`{categoryLabel}` resolves
+against the row's data context). Non-date categories (`"Level 1"`, org names)
+pass through unchanged.
 
 ### Palette
 

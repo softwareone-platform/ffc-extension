@@ -13,6 +13,11 @@ import {
 } from "../chartConfig";
 import { MetricPanel } from "../components/MetricPanel";
 
+const formatCurrency = (n: number) => `$${n.toLocaleString("en-US")}`;
+const formatPercent = (n: number) => `${n}%`;
+const formatSignedPercent = (n: number) =>
+  `${n > 0 ? "+" : ""}${n.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
 export function ConsumptionTab() {
   const tConsumption = useFixedT("dashboard:consumption");
   const { data } = useConsumptionMetricsApi();
@@ -28,17 +33,17 @@ export function ConsumptionTab() {
         kpis={[
           {
             label: tConsumption("monthlySpend:currentMonth"),
-            value: data.monthlySpend.currentMonth,
+            value: formatCurrency(data.monthlySpend.currentMonth),
           },
           {
             label: tConsumption("monthlySpend:previousMonth"),
-            value: data.monthlySpend.previousMonth,
+            value: formatCurrency(data.monthlySpend.previousMonth),
           },
           {
             label: tConsumption("monthlySpend:change"),
-            value: data.monthlySpend.monthOverMonthChange,
+            value: formatSignedPercent(data.monthlySpend.monthOverMonthChange),
             caption: tConsumption("monthlySpend:changeCaption"),
-            trend: "down",
+            trend: data.monthlySpend.monthOverMonthChange >= 0 ? "up" : "down",
           },
         ]}
       />
@@ -47,19 +52,19 @@ export function ConsumptionTab() {
         title={tConsumption("coverage:title")}
         kpis={[
           {
-            label: tConsumption("coverage:consumption"),
-            value: data.coverage.consumption,
-            caption: tConsumption("coverage:consumptionCaption"),
+            label: tConsumption("coverage:consumptionCoverage"),
+            value: formatPercent(data.coverage.consumptionCoverage),
+            caption: tConsumption("coverage:consumptionCoverageCaption"),
           },
           {
-            label: tConsumption("coverage:coverage"),
-            value: data.coverage.coverage,
-            caption: tConsumption("coverage:coverageCaption"),
+            label: tConsumption("coverage:datasourceCoverage"),
+            value: formatPercent(data.coverage.datasourceCoverage),
+            caption: tConsumption("coverage:datasourceCoverageCaption"),
           },
           {
-            label: tConsumption("coverage:usage"),
-            value: data.coverage.usage,
-            caption: tConsumption("coverage:usageCaption"),
+            label: tConsumption("coverage:usageCoverage"),
+            value: formatPercent(data.coverage.usageCoverage),
+            caption: tConsumption("coverage:usageCoverageCaption"),
           },
         ]}
       />

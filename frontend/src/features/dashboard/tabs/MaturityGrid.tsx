@@ -10,6 +10,7 @@ import {
   useGridInMemory,
 } from "@swo/design-system/grid";
 
+import { GridCellDate } from "~shared/components/grid/GridCellDate";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { MaturityRow } from "../api/model";
@@ -29,10 +30,7 @@ export function MaturityGrid({ rows }: { rows: MaturityRow[] }) {
     function flagCell(value: boolean) {
       return (
         <GridCellSimple>
-          <Chip
-            label={value ? tFlags("yes") : tFlags("no")}
-            color={value ? "success" : "gray"}
-          />
+          <Chip label={value ? tFlags("yes") : tFlags("no")} color={value ? "success" : "gray"} />
         </GridCellSimple>
       );
     }
@@ -78,7 +76,7 @@ export function MaturityGrid({ rows }: { rows: MaturityRow[] }) {
       {
         name: "lastActivity",
         title: tColumns("lastActivity"),
-        cell: (item) => <GridCellSimple>{item.lastActivity}</GridCellSimple>,
+        cell: (item) => <GridCellDate value={item.lastActivity} />,
       },
     ];
   }, [tColumns, tLevels, tFlags]);

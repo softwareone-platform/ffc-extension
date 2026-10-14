@@ -1,73 +1,145 @@
 {
   "organizationsOverview": {
-    "total": "412",
-    "active": "328",
-    "terminated": "54",
-    "deleted": "30",
+    "total": 605,
+    "active": 482,
+    "terminated": 79,
+    "deleted": 44,
     "statusDistribution": [
-      { "category": "Active", "value": 328 },
-      { "category": "Terminated", "value": 54 },
-      { "category": "Deleted", "value": 30 }
+      { "category": "Active", "value": 482 },
+      { "category": "Terminated", "value": 79 },
+      { "category": "Deleted", "value": 44 }
     ]
   },
   "datasources": {
-    "total": "876",
-    "withDatasources": "281",
-    "withoutDatasources": "131",
+    "datasourceCount": 1528,
+    "orgsWithDatasources": 414,
+    "orgsWithoutDatasources": 191,
     "providerDistribution": [
-      { "category": "Azure", "value": 402 },
-      { "category": "AWS", "value": 311 },
-      { "category": "GCP", "value": 163 }
+      { "category": "Azure", "value": 720 },
+      { "category": "AWS", "value": 540 },
+      { "category": "GCP", "value": 268 }
     ],
     "byProvider": [
-      { "period": "Jan", "azure": 180, "aws": 142, "gcp": 71 },
-      { "period": "Feb", "azure": 212, "aws": 158, "gcp": 82 },
-      { "period": "Mar", "azure": 248, "aws": 181, "gcp": 97 },
-      { "period": "Apr", "azure": 283, "aws": 206, "gcp": 112 },
-      { "period": "May", "azure": 331, "aws": 248, "gcp": 128 },
-      { "period": "Jun", "azure": 402, "aws": 311, "gcp": 163 },
-      { "period": "Jul", "azure": 455, "aws": 348, "gcp": 180 },
-      { "period": "Aug", "azure": 510, "aws": 390, "gcp": 198 },
-      { "period": "Sep", "azure": 562, "aws": 428, "gcp": 215 },
-      { "period": "Oct", "azure": 615, "aws": 467, "gcp": 234 },
-      { "period": "Nov", "azure": 668, "aws": 505, "gcp": 251 },
-      { "period": "Dec", "azure": 720, "aws": 540, "gcp": 268 }
+      { "period": "2025-01-01T00:00:00Z", "azure": 180, "aws": 142, "gcp": 71 },
+      { "period": "2025-02-01T00:00:00Z", "azure": 212, "aws": 158, "gcp": 82 },
+      { "period": "2025-03-01T00:00:00Z", "azure": 248, "aws": 181, "gcp": 97 },
+      { "period": "2025-04-01T00:00:00Z", "azure": 283, "aws": 206, "gcp": 112 },
+      { "period": "2025-05-01T00:00:00Z", "azure": 331, "aws": 248, "gcp": 128 },
+      { "period": "2025-06-01T00:00:00Z", "azure": 402, "aws": 311, "gcp": 163 },
+      { "period": "2025-07-01T00:00:00Z", "azure": 455, "aws": 348, "gcp": 180 },
+      { "period": "2025-08-01T00:00:00Z", "azure": 510, "aws": 390, "gcp": 198 },
+      { "period": "2025-09-01T00:00:00Z", "azure": 562, "aws": 428, "gcp": 215 },
+      { "period": "2025-10-01T00:00:00Z", "azure": 615, "aws": 467, "gcp": 234 },
+      { "period": "2025-11-01T00:00:00Z", "azure": 668, "aws": 505, "gcp": 251 },
+      { "period": "2025-12-01T00:00:00Z", "azure": 720, "aws": 540, "gcp": 268 }
     ]
   },
   "adoptionFunnel": [
-    { "month": "Jan", "created": 268, "connected": 182, "dataAvailable": 134, "active": 92 },
-    { "month": "Feb", "created": 299, "connected": 204, "dataAvailable": 151, "active": 104 },
-    { "month": "Mar", "created": 326, "connected": 221, "dataAvailable": 168, "active": 116 },
-    { "month": "Apr", "created": 352, "connected": 238, "dataAvailable": 182, "active": 125 },
-    { "month": "May", "created": 384, "connected": 260, "dataAvailable": 199, "active": 134 },
-    { "month": "Jun", "created": 412, "connected": 281, "dataAvailable": 214, "active": 142 },
-    { "month": "Jul", "created": 443, "connected": 302, "dataAvailable": 232, "active": 155 },
-    { "month": "Aug", "created": 475, "connected": 324, "dataAvailable": 248, "active": 168 },
-    { "month": "Sep", "created": 508, "connected": 347, "dataAvailable": 264, "active": 181 },
-    { "month": "Oct", "created": 540, "connected": 369, "dataAvailable": 280, "active": 193 },
-    { "month": "Nov", "created": 572, "connected": 391, "dataAvailable": 296, "active": 205 },
-    { "month": "Dec", "created": 605, "connected": 414, "dataAvailable": 312, "active": 218 }
+    {
+      "month": "2025-01-01T00:00:00Z",
+      "created": 268,
+      "connected": 182,
+      "dataAvailable": 134,
+      "active": 92
+    },
+    {
+      "month": "2025-02-01T00:00:00Z",
+      "created": 299,
+      "connected": 204,
+      "dataAvailable": 151,
+      "active": 104
+    },
+    {
+      "month": "2025-03-01T00:00:00Z",
+      "created": 326,
+      "connected": 221,
+      "dataAvailable": 168,
+      "active": 116
+    },
+    {
+      "month": "2025-04-01T00:00:00Z",
+      "created": 352,
+      "connected": 238,
+      "dataAvailable": 182,
+      "active": 125
+    },
+    {
+      "month": "2025-05-01T00:00:00Z",
+      "created": 384,
+      "connected": 260,
+      "dataAvailable": 199,
+      "active": 134
+    },
+    {
+      "month": "2025-06-01T00:00:00Z",
+      "created": 412,
+      "connected": 281,
+      "dataAvailable": 214,
+      "active": 142
+    },
+    {
+      "month": "2025-07-01T00:00:00Z",
+      "created": 443,
+      "connected": 302,
+      "dataAvailable": 232,
+      "active": 155
+    },
+    {
+      "month": "2025-08-01T00:00:00Z",
+      "created": 475,
+      "connected": 324,
+      "dataAvailable": 248,
+      "active": 168
+    },
+    {
+      "month": "2025-09-01T00:00:00Z",
+      "created": 508,
+      "connected": 347,
+      "dataAvailable": 264,
+      "active": 181
+    },
+    {
+      "month": "2025-10-01T00:00:00Z",
+      "created": 540,
+      "connected": 369,
+      "dataAvailable": 280,
+      "active": 193
+    },
+    {
+      "month": "2025-11-01T00:00:00Z",
+      "created": 572,
+      "connected": 391,
+      "dataAvailable": 296,
+      "active": 205
+    },
+    {
+      "month": "2025-12-01T00:00:00Z",
+      "created": 605,
+      "connected": 414,
+      "dataAvailable": 312,
+      "active": 218
+    }
   ],
   "trialVsPaid": {
-    "trial": "148",
-    "paid": "264",
+    "trial": 210,
+    "paid": 365,
     "distribution": [
-      { "category": "Paid", "value": 264 },
-      { "category": "Trial", "value": 148 }
+      { "category": "Paid", "value": 365 },
+      { "category": "Trial", "value": 210 }
     ],
     "monthlyTrend": [
-      { "month": "Jan", "trial": 92, "paid": 184 },
-      { "month": "Feb", "trial": 101, "paid": 198 },
-      { "month": "Mar", "trial": 112, "paid": 214 },
-      { "month": "Apr", "trial": 124, "paid": 229 },
-      { "month": "May", "trial": 139, "paid": 247 },
-      { "month": "Jun", "trial": 148, "paid": 264 },
-      { "month": "Jul", "trial": 158, "paid": 282 },
-      { "month": "Aug", "trial": 168, "paid": 298 },
-      { "month": "Sep", "trial": 179, "paid": 316 },
-      { "month": "Oct", "trial": 189, "paid": 332 },
-      { "month": "Nov", "trial": 199, "paid": 348 },
-      { "month": "Dec", "trial": 210, "paid": 365 }
+      { "month": "2025-01-01T00:00:00Z", "trial": 92, "paid": 184 },
+      { "month": "2025-02-01T00:00:00Z", "trial": 101, "paid": 198 },
+      { "month": "2025-03-01T00:00:00Z", "trial": 112, "paid": 214 },
+      { "month": "2025-04-01T00:00:00Z", "trial": 124, "paid": 229 },
+      { "month": "2025-05-01T00:00:00Z", "trial": 139, "paid": 247 },
+      { "month": "2025-06-01T00:00:00Z", "trial": 148, "paid": 264 },
+      { "month": "2025-07-01T00:00:00Z", "trial": 158, "paid": 282 },
+      { "month": "2025-08-01T00:00:00Z", "trial": 168, "paid": 298 },
+      { "month": "2025-09-01T00:00:00Z", "trial": 179, "paid": 316 },
+      { "month": "2025-10-01T00:00:00Z", "trial": 189, "paid": 332 },
+      { "month": "2025-11-01T00:00:00Z", "trial": 199, "paid": 348 },
+      { "month": "2025-12-01T00:00:00Z", "trial": 210, "paid": 365 }
     ]
   }
 }

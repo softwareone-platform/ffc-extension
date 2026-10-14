@@ -1,10 +1,10 @@
 {
   "distribution": [
-    { "category": "Level 0", "value": 18 },
-    { "category": "Level 1", "value": 34 },
-    { "category": "Level 2", "value": 22 },
-    { "category": "Level 3", "value": 15 },
-    { "category": "Level 4", "value": 11 }
+    { "category": "Level 0", "value": 109 },
+    { "category": "Level 1", "value": 206 },
+    { "category": "Level 2", "value": 133 },
+    { "category": "Level 3", "value": 91 },
+    { "category": "Level 4", "value": 66 }
   ],
   "byLevel": [
     {
@@ -42,7 +42,7 @@
   ],
   "progression": [
     {
-      "month": "Jan",
+      "month": "2025-01-01T00:00:00Z",
       "registered": 30,
       "connected": 22,
       "visible": 12,
@@ -50,7 +50,7 @@
       "operationalized": 2
     },
     {
-      "month": "Feb",
+      "month": "2025-02-01T00:00:00Z",
       "registered": 28,
       "connected": 25,
       "visible": 15,
@@ -58,7 +58,7 @@
       "operationalized": 3
     },
     {
-      "month": "Mar",
+      "month": "2025-03-01T00:00:00Z",
       "registered": 25,
       "connected": 28,
       "visible": 18,
@@ -66,7 +66,7 @@
       "operationalized": 5
     },
     {
-      "month": "Apr",
+      "month": "2025-04-01T00:00:00Z",
       "registered": 22,
       "connected": 30,
       "visible": 21,
@@ -74,7 +74,7 @@
       "operationalized": 7
     },
     {
-      "month": "May",
+      "month": "2025-05-01T00:00:00Z",
       "registered": 19,
       "connected": 31,
       "visible": 24,
@@ -82,7 +82,7 @@
       "operationalized": 9
     },
     {
-      "month": "Jun",
+      "month": "2025-06-01T00:00:00Z",
       "registered": 18,
       "connected": 34,
       "visible": 22,
@@ -90,7 +90,7 @@
       "operationalized": 11
     },
     {
-      "month": "Jul",
+      "month": "2025-07-01T00:00:00Z",
       "registered": 17,
       "connected": 32,
       "visible": 25,
@@ -98,7 +98,7 @@
       "operationalized": 13
     },
     {
-      "month": "Aug",
+      "month": "2025-08-01T00:00:00Z",
       "registered": 16,
       "connected": 30,
       "visible": 27,
@@ -106,7 +106,7 @@
       "operationalized": 15
     },
     {
-      "month": "Sep",
+      "month": "2025-09-01T00:00:00Z",
       "registered": 15,
       "connected": 28,
       "visible": 29,
@@ -114,7 +114,7 @@
       "operationalized": 17
     },
     {
-      "month": "Oct",
+      "month": "2025-10-01T00:00:00Z",
       "registered": 14,
       "connected": 26,
       "visible": 30,
@@ -122,7 +122,7 @@
       "operationalized": 19
     },
     {
-      "month": "Nov",
+      "month": "2025-11-01T00:00:00Z",
       "registered": 13,
       "connected": 24,
       "visible": 31,
@@ -130,7 +130,7 @@
       "operationalized": 21
     },
     {
-      "month": "Dec",
+      "month": "2025-12-01T00:00:00Z",
       "registered": 12,
       "connected": 22,
       "visible": 32,
@@ -147,57 +147,147 @@
       "hasConsumption": false,
       "hasUsage": false,
       "hasRecommendations": false,
-      "lastActivity": "13 Apr 2021"
+      "lastActivity": "2024-02-15T00:00:00Z"
     },
     {
       "id": "org-2",
+      "organizationName": "Blue Yonder Airlines",
+      "level": 0,
+      "dataSources": 0,
+      "hasConsumption": false,
+      "hasUsage": false,
+      "hasRecommendations": false,
+      "lastActivity": "2024-04-22T00:00:00Z"
+    },
+    {
+      "id": "org-3",
+      "organizationName": "VanArsdel Ltd",
+      "level": 0,
+      "dataSources": 1,
+      "hasConsumption": false,
+      "hasUsage": false,
+      "hasRecommendations": false,
+      "lastActivity": "2024-07-18T00:00:00Z"
+    },
+    {
+      "id": "org-4",
       "organizationName": "Contoso Industries",
       "level": 1,
       "dataSources": 1,
       "hasConsumption": false,
       "hasUsage": true,
       "hasRecommendations": false,
-      "lastActivity": "13 Apr 2021"
+      "lastActivity": "2024-11-05T00:00:00Z"
     },
     {
-      "id": "org-3",
+      "id": "org-5",
       "organizationName": "Fabrikam Group",
       "level": 1,
       "dataSources": 2,
       "hasConsumption": false,
       "hasUsage": true,
       "hasRecommendations": false,
-      "lastActivity": "13 Apr 2021"
+      "lastActivity": "2025-02-10T00:00:00Z"
     },
     {
-      "id": "org-4",
+      "id": "org-6",
+      "organizationName": "Lucerne Publishing",
+      "level": 1,
+      "dataSources": 2,
+      "hasConsumption": true,
+      "hasUsage": false,
+      "hasRecommendations": false,
+      "lastActivity": "2025-04-18T00:00:00Z"
+    },
+    {
+      "id": "org-7",
+      "organizationName": "Woodgrove Bank",
+      "level": 1,
+      "dataSources": 3,
+      "hasConsumption": false,
+      "hasUsage": true,
+      "hasRecommendations": false,
+      "lastActivity": "2025-06-12T00:00:00Z"
+    },
+    {
+      "id": "org-8",
       "organizationName": "Adventure Works",
       "level": 2,
       "dataSources": 3,
       "hasConsumption": true,
       "hasUsage": true,
       "hasRecommendations": false,
-      "lastActivity": "16 Apr 2023"
+      "lastActivity": "2025-08-22T00:00:00Z"
     },
     {
-      "id": "org-5",
+      "id": "org-9",
+      "organizationName": "Litware Inc",
+      "level": 2,
+      "dataSources": 4,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": false,
+      "lastActivity": "2025-10-14T00:00:00Z"
+    },
+    {
+      "id": "org-10",
+      "organizationName": "Margie's Travel",
+      "level": 2,
+      "dataSources": 4,
+      "hasConsumption": true,
+      "hasUsage": false,
+      "hasRecommendations": true,
+      "lastActivity": "2025-11-30T00:00:00Z"
+    },
+    {
+      "id": "org-11",
       "organizationName": "Tailspin Toys",
       "level": 3,
       "dataSources": 6,
       "hasConsumption": true,
       "hasUsage": true,
       "hasRecommendations": true,
-      "lastActivity": "12 Apr 2023"
+      "lastActivity": "2026-01-15T00:00:00Z"
     },
     {
-      "id": "org-6",
+      "id": "org-12",
+      "organizationName": "Trey Research",
+      "level": 3,
+      "dataSources": 7,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": true,
+      "lastActivity": "2026-04-20T00:00:00Z"
+    },
+    {
+      "id": "org-13",
+      "organizationName": "Proseware Inc",
+      "level": 3,
+      "dataSources": 7,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": true,
+      "lastActivity": "2026-07-08T00:00:00Z"
+    },
+    {
+      "id": "org-14",
       "organizationName": "Wide World Imports",
       "level": 4,
       "dataSources": 9,
       "hasConsumption": true,
       "hasUsage": true,
       "hasRecommendations": true,
-      "lastActivity": "12 Apr 2023"
+      "lastActivity": "2026-09-11T00:00:00Z"
+    },
+    {
+      "id": "org-15",
+      "organizationName": "School of Fine Art",
+      "level": 4,
+      "dataSources": 11,
+      "hasConsumption": true,
+      "hasUsage": true,
+      "hasRecommendations": true,
+      "lastActivity": "2026-10-05T00:00:00Z"
     }
   ]
 }
