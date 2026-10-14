@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
 
 import { GridEvents, UseAsyncGridConfig, useGridAsync } from "@swo/design-system/grid";
-import { Entity } from "@swo/service";
 
 import { OrganizationRead } from "~api/ffc-api-model";
 import { useGridIdentity } from "~shared/hooks/useGridIdentity";
@@ -48,7 +47,7 @@ export function useGridConfig(
         ...gridInfoDialogConfig,
         ...asyncOptions,
         onEvent: onGridActionEvent,
-      }) as UseAsyncGridConfig<Entity<OrganizationRead>>,
+      }) as UseAsyncGridConfig<OrganizationRead>,
     [identity, columns, views, fields, asyncOptions, gridInfoDialogConfig, onGridActionEvent],
   );
 

@@ -1,118 +1,22 @@
 {
-  "organization": {
-    "details": {
-      "general": {
-        "title": "General",
-        "properties": {
-          "name": "Name",
-          "operations_external_id": "Operations external ID",
-          "linked_organization_id": "Linked organization ID",
-          "currency": "Currency",
-          "billing_currency": "Billing currency"
-        }
-      },
-      "expenses": {
-        "title": "Expenses",
-        "properties": {
-          "limit": "Limit",
-          "forecastThisMonth": "Expenses this month forecast",
-          "expensesThisMonth": "Expenses this month",
-          "expensesLastMonth": "Expenses last month",
-          "possibleSavings": "Possible monthly savings"
-        }
-      },
-      "dataSources": {
-        "title": "Data Sources"
-      },
-      "users": {
-        "title": "Users"
-      },
-      "events": {
-        "title": "Events"
-      }
+  "entitlement": {
+    "details": { "general": { "title": "General" }, "events": { "title": "Events" } },
+    "create_info": "Provide the details for the new entitlement.",
+    "add_entitlement": "Add entitlement",
+    "save": "Add",
+    "properties": { "name": "Name", "description": "Description", "contactEmail": "Contact email" },
+    "placeholders": {
+      "name": "Acme Corp.",
+      "description": "Short description",
+      "contactEmail": "admin@acme.com"
     },
-    "dataSources": {
-      "force_import": {
-        "title": "Force data import",
-        "submit": "Force import",
-        "confirm_line1": "Are you sure you want to force a data import for:",
-        "properties": {
-          "id": "Id",
-          "name": "Name",
-          "linked_datasource_id": "Linked datasource ID:"
-        },
-        "confirm_line2": "*If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
-        "confirm_line3": "The import is queued with high priority and takes time to complete.",
-        "use_last_import_at": "Import from a specific date*",
-        "last_import_at": "Import expenses from",
-        "last_import_at_placeholder": "Select a date",
-        "last_import_at_description": "Expenses are reimported starting from this date."
-      },
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to force import."
-      }
-    },
-    "users": {
-      "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to add user.",
-        "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
-        "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
-        "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
-        "add_admin_failed_with_code_409": "Failed to add user: Conflict. The user may already be an admin of this organization.",
-        "add_admin_failed_with_code_422": "Failed to add user: Missing required fields. The user may already be an admin of this organization.",
-        "add_admin_failed_with_code_500": "Failed to add user: Internal server error. Please try again later.",
-        "add_admin_failed_with_code_502": "Failed to add user: Internal server error. Please try again later.",
-        "add_admin_failed_with_code_unknown": "Failed to add user: An unknown error occurred. Please try again."
-      },
-      "add": "Add",
-      "add_user": "Add user",
-      "cancel": "Cancel",
-      "save": "Save"
-    }
-  },
-  "organizations": {
-    "make_admin": {
-      "title": "Make user admin",
-      "promote_to_admin": "Promote to admin",
-      "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
-      "make_admin_warning_line2": "This action cannot be undone.",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to make user an admin."
-      }
-    },
-    "edit": {
-      "title": "Edit organization",
-      "edit_organization_info": "Update the details for the organization",
-      "save": "Save",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to edit organization.",
-        "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
-        "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
-        "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
-        "organization_edit_failed_with_code_403": "Failed to edit organization: Forbidden. You don't have permission to perform this action.",
-        "organization_edit_failed_with_code_404": "Failed to edit organization: Not found. The specified organization does not exist."
-      }
-    },
-    "delete_organization": {
-      "title": "Delete organization",
-      "not_deletable": "This organization cannot be deleted before {{date}}.",
-      "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
-      "delete_organization_warning_line2": "This action cannot be undone.",
-      "delete": "Delete",
-      "cancel": "Cancel",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to delete organization."
-      }
-    }
+    "errors": { "create_failed": "Failed to add entitlement. Please try again." }
   },
   "entitlements": {
     "addWizard": {
       "title": "Add entitlement",
       "steps": {
-        "affiliate": {
-          "title": "Affiliate"
-        },
+        "affiliate": { "title": "Affiliate" },
         "dataSource": {
           "title": "Data Source",
           "field": {
@@ -150,22 +54,14 @@
         }
       },
       "validations": {
-        "affiliate": {
-          "required": "Affiliate is required"
-        },
-        "name": {
-          "required": "Entitlement name is required"
-        },
+        "affiliate": { "required": "Affiliate is required" },
+        "name": { "required": "Entitlement name is required" },
         "dataSource": {
           "id": { "required": "Data Source ID is required" },
-          "affiliate_external_id": {
-            "required": "Affiliate external ID is required"
-          }
+          "affiliate_external_id": { "required": "Affiliate external ID is required" }
         }
       },
-      "error": {
-        "failed_with_code": "Error {{code}}: Failed to add entitlement."
-      }
+      "error": { "failed_with_code": "Error {{code}}: Failed to add entitlement." }
     },
     "terminate_entitlement": {
       "title": "Terminate entitlement",
@@ -175,11 +71,7 @@
       "terminate": "Terminate",
       "cancel": "Cancel"
     },
-    "entitlement_action": {
-      "errors": {
-        "failed_with_code": "Error {{code}}: Action failed."
-      }
-    },
+    "entitlement_action": { "errors": { "failed_with_code": "Error {{code}}: Action failed." } },
     "delete_entitlement": {
       "title": "Delete entitlement",
       "delete_entitlement_warning_line1": "Are you sure you want to delete entitlement {{entitlementId}}?",
@@ -188,27 +80,120 @@
       "cancel": "Cancel"
     }
   },
+  "errorPage": { "error-handler": { "errorPageCard": { "retry": "Retry", "home": "Go Home" } } },
+  "organization": {
+    "details": {
+      "general": {
+        "title": "General",
+        "properties": {
+          "name": "Name",
+          "operations_external_id": "Operations external ID",
+          "linked_organization_id": "Linked organization ID",
+          "currency": "Currency",
+          "billing_currency": "Billing currency"
+        }
+      },
+      "expenses": {
+        "title": "Expenses",
+        "properties": {
+          "limit": "Limit",
+          "forecastThisMonth": "Expenses this month forecast",
+          "expensesThisMonth": "Expenses this month",
+          "expensesLastMonth": "Expenses last month",
+          "possibleSavings": "Possible monthly savings"
+        }
+      },
+      "dataSources": { "title": "Data Sources" },
+      "users": { "title": "Users" },
+      "events": { "title": "Events" }
+    },
+    "dataSources": {
+      "force_import": {
+        "title": "Force data import",
+        "submit": "Force import",
+        "confirm_line1": "Are you sure you want to force a data import for:",
+        "properties": {
+          "id": "Id",
+          "name": "Name",
+          "linked_datasource_id": "Linked datasource ID:"
+        },
+        "confirm_line2": "*If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
+        "confirm_line3": "The import is queued with high priority and takes time to complete.",
+        "use_last_import_at": "Import from a specific date*",
+        "last_import_at": "Import expenses from",
+        "last_import_at_placeholder": "Select a date",
+        "last_import_at_description": "Expenses are reimported starting from this date."
+      },
+      "errors": { "failed_with_code": "Error {{code}}: Failed to force import." }
+    },
+    "users": {
+      "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to add user.",
+        "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
+        "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
+        "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
+        "add_admin_failed_with_code_409": "Failed to add user: Conflict. The user may already be an admin of this organization.",
+        "add_admin_failed_with_code_422": "Failed to add user: Missing required fields. The user may already be an admin of this organization.",
+        "add_admin_failed_with_code_500": "Failed to add user: Internal server error. Please try again later.",
+        "add_admin_failed_with_code_502": "Failed to add user: Internal server error. Please try again later.",
+        "add_admin_failed_with_code_unknown": "Failed to add user: An unknown error occurred. Please try again."
+      },
+      "add": "Add",
+      "add_user": "Add user",
+      "cancel": "Cancel",
+      "save": "Save"
+    }
+  },
+  "organizations": {
+    "make_admin": {
+      "title": "Make user admin",
+      "promote_to_admin": "Promote to admin",
+      "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
+      "make_admin_warning_line2": "This action cannot be undone.",
+      "errors": { "failed_with_code": "Error {{code}}: Failed to make user an admin." }
+    },
+    "edit": {
+      "title": "Edit organization",
+      "edit_organization_info": "Update the details for the organization",
+      "save": "Save",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to edit organization.",
+        "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
+        "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
+        "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
+        "organization_edit_failed_with_code_403": "Failed to edit organization: Forbidden. You don't have permission to perform this action.",
+        "organization_edit_failed_with_code_404": "Failed to edit organization: Not found. The specified organization does not exist."
+      }
+    },
+    "delete_organization": {
+      "title": "Delete organization",
+      "not_deletable": "This organization cannot be deleted before {{date}}.",
+      "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
+      "delete_organization_warning_line2": "This action cannot be undone.",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "errors": { "failed_with_code": "Error {{code}}: Failed to delete organization." }
+    }
+  },
   "shared": {
     "error": {
       "title": {
         "403": "Unauthorized Page",
-        "Forbidden": "Unauthorized Page",
         "404": "404 Not Found",
-        "NotFound": "404 Not Found",
         "500": "500 Internal Server Error",
+        "Forbidden": "Unauthorized Page",
+        "NotFound": "404 Not Found",
         "InternalServerError": "500 Internal Server Error"
       },
       "description": {
-        "forbidden": "Access to this module is not allowed for the current user",
         "403": "You do not have permission to access this resource.",
         "404": "The requested resource could not be found.",
+        "forbidden": "Access to this module is not allowed for the current user",
         "internalServerError": "An unexpected error occurred."
       }
     },
-    "nav": {
-      "organizations": "Organizations",
-      "entitlements": "Entitlements"
-    },
+    "nav": { "organizations": "Organizations", "entitlements": "Entitlements" },
     "actions": {
       "activate": "Activate",
       "add": "Add",
@@ -282,14 +267,8 @@
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
         "datasourceId": "Data Source ID",
-        "entitlement": {
-          "name": "Entitlement Name",
-          "id": "Entitlement ID"
-        },
-        "affiliate": {
-          "name": "Affiliate Name",
-          "id": "Affiliate ID"
-        },
+        "entitlement": { "name": "Entitlement Name", "id": "Entitlement ID" },
+        "affiliate": { "name": "Affiliate Name", "id": "Affiliate ID" },
         "is_admin": "User Type",
         "lastLogin": "Last Login",
         "createdAt": "Created At",
@@ -314,18 +293,9 @@
         "gcp_tenant": "GCP tenant",
         "unknown": "Unknown"
       },
-      "userTypes": {
-        "admin": "Admin",
-        "user": "User"
-      },
-      "infoDialog": {
-        "noData": {
-          "description": "There is no data available to display."
-        }
-      },
-      "actions": {
-        "add": "Add"
-      }
+      "userTypes": { "admin": "Admin", "user": "User" },
+      "infoDialog": { "noData": { "description": "There is no data available to display." } },
+      "actions": { "add": "Add" }
     },
     "details": {
       "additionalIds": "Additional IDs",
@@ -361,40 +331,6 @@
       "event": "Event",
       "triggeredBy": "Triggered by",
       "dateAndTime": "Date and time"
-    }
-  },
-  "entitlement": {
-    "details": {
-      "general": {
-        "title": "General"
-      },
-      "events": {
-        "title": "Events"
-      }
-    },
-    "create_info": "Provide the details for the new entitlement.",
-    "add_entitlement": "Add entitlement",
-    "save": "Add",
-    "properties": {
-      "name": "Name",
-      "description": "Description",
-      "contactEmail": "Contact email"
-    },
-    "placeholders": {
-      "name": "Acme Corp.",
-      "description": "Short description",
-      "contactEmail": "admin@acme.com"
-    },
-    "errors": {
-      "create_failed": "Failed to add entitlement. Please try again."
-    }
-  },
-  "errorPage": {
-    "error-handler": {
-      "errorPageCard": {
-        "retry": "Retry",
-        "home": "Go Home"
-      }
     }
   }
 }

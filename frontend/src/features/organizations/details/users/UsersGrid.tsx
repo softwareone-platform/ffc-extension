@@ -12,7 +12,7 @@ import { useIsUserAddAllowed } from "./hooks/useIsAddUserAllowed";
 import { UserMakeAdminModal } from "./make-admin-modal/UserMakeAdminModal";
 import { useGridConfig } from "./UsersGrid.config";
 
-export function UsersGrid({ organizationId }: { organizationId: string }) {
+export function UsersGrid({ organizationId }: { readonly organizationId: string }) {
   const { refresh, ...gridProps } = useGridConfig(organizationId, onAction);
 
   const addUserModal = useModalToggle({ onSuccess: refresh });

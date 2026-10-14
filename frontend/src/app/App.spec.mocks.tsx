@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
 
-import { mockUserRoleModule, mockUseUserRole } from "~test-utils/mocks/userRole";
+import { mockUserRoleModule } from "~test-utils/mocks/userRole";
 
-export { mockUseUserRole };
+export { mockUseUserRole } from "~test-utils/mocks/userRole";
 
 jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
