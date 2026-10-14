@@ -18,6 +18,8 @@ import consumptionMetrics from "../mock/consumption.json";
 import maturityMetrics from "../mock/maturity.json";
 import {
   AdoptionMetrics,
+  BILLING_STATUSES,
+  BillingStatus,
   CLOUD_PROVIDERS,
   CloudProvider,
   ConsumptionMetrics,
@@ -32,13 +34,17 @@ const MOCK_DELAY_MS = 600;
 
 // Approximate population share for each dimension. Multiplying selected shares gives a scalar
 // that scales every numeric field in the mock responses — enough for a stakeholder demo where
-// the whole dashboard visibly reacts to filter changes.
+// the whole dashboard visibly reacts to filter changes. Each dimension's shares sum to 1 and
+// mirror the mock: 482 / 79 / 44 of 605 orgs, 365 paid / 210 trial of 575 entitlements.
 const STATUS_SHARE: Record<OrganisationStatus, number> = {
-  active: 0.6,
-  paid: 0.2,
-  trial: 0.1,
-  terminated: 0.07,
-  deleted: 0.03,
+  active: 0.8,
+  terminated: 0.13,
+  deleted: 0.07,
+};
+
+const BILLING_SHARE: Record<BillingStatus, number> = {
+  paid: 0.63,
+  trial: 0.37,
 };
 
 const PROVIDER_SHARE: Record<CloudProvider, number> = {
@@ -56,6 +62,11 @@ function computeScale(filters: DashboardFilters): number {
     filters.statuses.length === 0 || filters.statuses.length === ORGANISATION_STATUSES.length
       ? 1
       : filters.statuses.reduce((sum, status) => sum + STATUS_SHARE[status], 0);
+  const billingScale =
+    filters.billingStatuses.length === 0 ||
+    filters.billingStatuses.length === BILLING_STATUSES.length
+      ? 1
+      : filters.billingStatuses.reduce((sum, status) => sum + BILLING_SHARE[status], 0);
   const providerScale =
     filters.providers.length === 0 || filters.providers.length === CLOUD_PROVIDERS.length
       ? 1
@@ -64,7 +75,7 @@ function computeScale(filters: DashboardFilters): number {
   // reads as "less activity", a longer window as "more". `BASELINE_MONTHS` keeps the default
   // range at 1× so the mock numbers match the JSON on first load.
   const dateScale = rangeMonths(filters) / BASELINE_MONTHS;
-  return statusScale * providerScale * dateScale;
+  return statusScale * billingScale * providerScale * dateScale;
 }
 
 // Full-month count of the selected range: a 1 Sep → 30 Sep window is 1 month, a 1 Jul → 30 Sep
@@ -136,19 +147,13 @@ function transformMetrics<T>(value: T, scale: number, months: number): T {
 // multiplier keeps those ratios identical, so the user sees "no change". After the generic
 // transform, zero out the slices and per-status KPIs that aren't in the filter picks and
 // recompute `total` from the remaining slices, so the donut and headline react visibly.
-const ORG_STATUS_CATEGORIES = ["active", "terminated", "deleted"] as const;
-const BILLING_STATUS_CATEGORIES = ["paid", "trial"] as const;
-
 function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
-  const orgPicks = filters.statuses.filter((status) =>
-    (ORG_STATUS_CATEGORIES as readonly string[]).includes(status),
-  );
-  // No org-status pick (empty or billing-only) → the distribution is orthogonal, leave it.
-  if (orgPicks.length === 0 || orgPicks.length === ORG_STATUS_CATEGORIES.length) {
+  const orgPicks = filters.statuses;
+  // No pick or every status picked → nothing to collapse.
+  if (orgPicks.length === 0 || orgPicks.length === ORGANISATION_STATUSES.length) {
     return data;
   }
-  const includes = (slice: string) =>
-    orgPicks.includes(slice.toLowerCase() as (typeof ORG_STATUS_CATEGORIES)[number]);
+  const includes = (slice: string) => (orgPicks as readonly string[]).includes(slice.toLowerCase());
 
   const nextDistribution = data.organizationsOverview.statusDistribution.map((slice) => ({
     ...slice,
@@ -213,14 +218,12 @@ function walkProviderView(value: unknown, picks: Set<string>): unknown {
   return value;
 }
 
-// Mirror of `filterOrgStatusView` for the Trial vs Paid panel. When the user picks only one
-// of the billing statuses, zero out the other series/slice so the donut and the monthly
-// trend chart collapse to the picked side.
+// Mirror of `filterOrgStatusView` for the Trial vs Paid panel, driven by the Billing Status
+// filter. When the user picks only one billing status, zero out the other series/slice so the
+// donut and the monthly trend chart collapse to the picked side.
 function filterTrialVsPaidView(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
-  const billingPicks = filters.statuses.filter((status) =>
-    (BILLING_STATUS_CATEGORIES as readonly string[]).includes(status),
-  );
-  if (billingPicks.length === 0 || billingPicks.length === BILLING_STATUS_CATEGORIES.length) {
+  const billingPicks = filters.billingStatuses;
+  if (billingPicks.length === 0 || billingPicks.length === BILLING_STATUSES.length) {
     return data;
   }
   const paidPicked = billingPicks.includes("paid");

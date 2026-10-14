@@ -35,25 +35,6 @@ export function AdoptionTab() {
     color: STATUS_DONUT_COLORS[index],
   }));
 
-  // Mocked filter params: the Organizations page doesn't accept these yet, but each funnel
-  // stage links to a URL that encodes the intended cohort so wiring the real query strings is
-  // a search-and-replace once the backend exposes them.
-  const funnelLegendItems = [
-    { ...FUNNEL_SERIES[0], linkTo: link(ORGANIZATION_PATHS.root) },
-    {
-      ...FUNNEL_SERIES[1],
-      linkTo: link(`${ORGANIZATION_PATHS.root}?datasourceStatus=connected`),
-    },
-    {
-      ...FUNNEL_SERIES[2],
-      linkTo: link(`${ORGANIZATION_PATHS.root}?dataAvailability=available`),
-    },
-    {
-      ...FUNNEL_SERIES[3],
-      linkTo: link(`${ORGANIZATION_PATHS.root}?platformUsage=active`),
-    },
-  ];
-
   return (
     <div className={"ffc-tab-stack"}>
       <div className={"ffc-kpi-row ffc-kpi-row--four"}>
@@ -168,7 +149,7 @@ export function AdoptionTab() {
             series={FUNNEL_SERIES}
             height={CHART_HEIGHT.lg}
           />
-          <ChartLegend items={funnelLegendItems} layout={"horizontal"} />
+          <ChartLegend items={FUNNEL_SERIES} layout={"horizontal"} />
         </MetricPanel>
       </div>
     </div>

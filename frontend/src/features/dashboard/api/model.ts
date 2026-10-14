@@ -2,10 +2,12 @@
  * Dashboard domain enumerations. The `*_STATUSES`/`*_PROVIDERS` tuples back both the type
  * unions and the runtime option lists rendered in the filter sidebar.
  */
-export const ORGANISATION_STATUSES = ["active", "paid", "trial", "terminated", "deleted"] as const;
+export const ORGANISATION_STATUSES = ["active", "terminated", "deleted"] as const;
+export const BILLING_STATUSES = ["paid", "trial"] as const;
 export const CLOUD_PROVIDERS = ["azure", "aws", "gcp"] as const;
 
 export type OrganisationStatus = (typeof ORGANISATION_STATUSES)[number];
+export type BillingStatus = (typeof BILLING_STATUSES)[number];
 export type CloudProvider = (typeof CLOUD_PROVIDERS)[number];
 
 /**

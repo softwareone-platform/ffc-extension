@@ -8,12 +8,14 @@ import { Icon } from "@swo/design-system/icon";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import {
+  BILLING_STATUSES,
+  BillingStatus,
   CLOUD_PROVIDERS,
   CloudProvider,
   ORGANISATION_STATUSES,
   OrganisationStatus,
 } from "../api/model";
-import { PROVIDER_COLOR, STATUS_COLOR } from "../chartConfig";
+import { BILLING_COLOR, PROVIDER_COLOR, STATUS_COLOR } from "../chartConfig";
 import { useDashboardFilters } from "./DashboardFiltersContext";
 import { DateRangePicker } from "./DateRangePicker";
 
@@ -48,6 +50,7 @@ function renderOptionLabel<T extends string>(option: SelectOption<T>) {
 export function FilterSidebar() {
   const tFilters = useFixedT("dashboard:filters");
   const tStatus = useFixedT("dashboard:filters:status");
+  const tBilling = useFixedT("dashboard:filters:billing");
   const tProvider = useFixedT("dashboard:filters:provider");
 
   const { filters, setFilters } = useDashboardFilters();
@@ -57,6 +60,11 @@ export function FilterSidebar() {
     value: status,
     label: tStatus(status),
     color: STATUS_COLOR[status],
+  }));
+  const billingOptions: SelectOption<BillingStatus>[] = BILLING_STATUSES.map((status) => ({
+    value: status,
+    label: tBilling(status),
+    color: BILLING_COLOR[status],
   }));
   const providerOptions: SelectOption<CloudProvider>[] = CLOUD_PROVIDERS.map((provider) => ({
     value: provider,
@@ -121,8 +129,21 @@ export function FilterSidebar() {
               options={statusOptions}
               value={selectedOptions(statusOptions, filters.statuses)}
               formatOptionLabel={renderOptionLabel}
+              onChange={(selected) => setFilters({ ...filters, statuses: pickValues(selected) })}
+            />
+          </div>
+
+          <div className={"ffc-filter-bar__group"}>
+            <label className={"ffc-multiselect__label"}>{tFilters("billingStatus")}</label>
+            <Select<SelectOption<BillingStatus>, true>
+              isMulti
+              classNamePrefix={"ffc-select"}
+              placeholder={tFilters("selectBillingStatuses")}
+              options={billingOptions}
+              value={selectedOptions(billingOptions, filters.billingStatuses)}
+              formatOptionLabel={renderOptionLabel}
               onChange={(selected) =>
-                setFilters({ ...filters, statuses: pickValues(selected) })
+                setFilters({ ...filters, billingStatuses: pickValues(selected) })
               }
             />
           </div>
@@ -136,9 +157,7 @@ export function FilterSidebar() {
               options={providerOptions}
               value={selectedOptions(providerOptions, filters.providers)}
               formatOptionLabel={renderOptionLabel}
-              onChange={(selected) =>
-                setFilters({ ...filters, providers: pickValues(selected) })
-              }
+              onChange={(selected) => setFilters({ ...filters, providers: pickValues(selected) })}
             />
           </div>
         </div>
