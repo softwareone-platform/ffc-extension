@@ -3,18 +3,28 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app import Settings
-from app.events.orders.error import ERR_ADMIN_CONTACT, ERR_CURRENCY, ERR_ORGANIZATION_NAME
+from app.enums import TerminationReason
+from app.events.orders.error import (
+    ERR_ADMIN_CONTACT,
+    ERR_CURRENCY,
+    ERR_ORGANIZATION_NAME,
+    ERR_TERMINATION_COMMENTS,
+    ERR_TERMINATION_REASON_NOT_VALID,
+)
 from app.parameters import (
     PARAM_ADMIN_CONTACT,
     PARAM_BILLED_PERCENTAGE,
     PARAM_CURRENCY,
     PARAM_DUE_DATE,
     PARAM_ORGANIZATION_NAME,
+    PARAM_TERMINATION_COMMENTS,
+    PARAM_TERMINATION_REASON,
     PARAM_TRIAL_END_DATE,
     PARAM_TRIAL_START_DATE,
     get_due_date,
     get_fulfillment_parameter,
     get_ordering_parameter,
+    get_termination_comments,
     set_ordering_parameter_error,
 )
 
@@ -53,7 +63,7 @@ def get_billing_defaults_updates(order: dict[str, Any], settings: Settings) -> d
     return updates
 
 
-def check_order_parameters(order: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+def check_purchase_order_parameters(order: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     """
     Check that all required ordering parameters have a value.
     For each missing parameter, attach its error to the order. Returns the
@@ -77,3 +87,28 @@ def check_order_parameters(order: dict[str, Any]) -> tuple[dict[str, Any], bool]
             order = set_ordering_parameter_error(order, external_id, errors[external_id].to_dict())
             validation_succeeded = False
     return order, validation_succeeded
+
+
+def check_termination_order_parameters(order: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    """
+    Check the termination feedback ordering parameters.
+    A reason that isn't a known TerminationReason (the product definition doesn't match
+    the extension) gets an error on the reason parameter.
+    When the termination reason is `other`, the comments are required: if they are
+    empty, attach the error to the comments parameter. Returns the (possibly
+    annotated) order and a flag indicating whether validation succeeded.
+    """
+    reason = get_ordering_parameter(order, PARAM_TERMINATION_REASON).get("value")
+    if reason and reason not in TerminationReason:
+        order = set_ordering_parameter_error(
+            order,
+            PARAM_TERMINATION_REASON,
+            ERR_TERMINATION_REASON_NOT_VALID.to_dict(reason=reason),
+        )
+        return order, False
+    if reason == TerminationReason.OTHER and not get_termination_comments(order):
+        order = set_ordering_parameter_error(
+            order, PARAM_TERMINATION_COMMENTS, ERR_TERMINATION_COMMENTS.to_dict()
+        )
+        return order, False
+    return order, True

@@ -1,9 +1,10 @@
 import asyncio
+import enum
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 import typer
 
@@ -32,8 +33,12 @@ DEFAULT_STATUS_LIST = [
     EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 ]
-# The values of DEFAULT_STATUS_LIST spelled out: `Literal` only accepts literal values.
-StatusOption = Literal["Active", "Expired", "Terminated"]
+
+
+class SubscriptionStatusOption(enum.StrEnum):
+    ACTIVE = ACTIVE_SUBSCRIPTION_STATUS
+    EXPIRED = EXPIRED_SUBSCRIPTION_STATUS
+    TERMINATED = TERMINATED_SUBSCRIPTION_STATUS
 
 
 @dataclass
@@ -389,7 +394,7 @@ def command(
         ),
     ] = None,
     status: Annotated[
-        StatusOption | None,
+        SubscriptionStatusOption | None,
         typer.Option(
             "--status",
             "-s",

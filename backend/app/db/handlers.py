@@ -24,6 +24,7 @@ from app.db.models import (
     Entitlement,
     Organization,
     System,
+    TerminationFeedback,
     TimestampMixin,
     User,
 )
@@ -32,6 +33,7 @@ from app.enums import (
     AccountUserStatus,
     EntitlementStatus,
     OrganizationStatus,
+    TerminationReason,
 )
 
 
@@ -460,7 +462,7 @@ class EntitlementHandler(ModelHandler[Entitlement]):
         )
 
         response = await self.session.execute(stmt)
-        return dict(list(response.tuples()))
+        return dict(response.all())
 
     async def redeem(
         self,
@@ -529,6 +531,33 @@ class OrganizationHandler(ModelHandler[Organization]):
                 "terminated_at": datetime.now(UTC),
             },
         )
+
+
+class TerminationFeedbackHandler(ModelHandler[TerminationFeedback]):
+    """
+    Handles CRUD operations for the TerminationFeedback model.
+    """
+
+    async def upsert_for_organization(
+        self,
+        organization: Organization,
+        reason: TerminationReason,
+        comments: str | None = None,
+    ) -> TerminationFeedback:
+        """
+        Creates the TerminationFeedback of the given organization or, if it already exists,
+        replaces its reason and comments with the given ones.
+        """
+        feedback = await self.first(
+            where_clauses=[TerminationFeedback.organization_id == organization.id]
+        )
+        if feedback is None:
+            return await self.create(
+                TerminationFeedback(
+                    organization_id=organization.id, reason=reason, comments=comments
+                )
+            )
+        return await self.update(feedback, data={"reason": reason, "comments": comments})
 
 
 class SystemHandler(ModelHandler[System]):

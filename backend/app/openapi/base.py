@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.dependencies.models import Dependant
@@ -31,7 +32,7 @@ def iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
             yield from iter_api_routes(sub)
 
 
-def generate_openapi_spec(app: FastAPI, settings: Settings):
+def generate_openapi_spec(app: FastAPI, settings: Settings) -> dict[str, Any]:
     if app.openapi_schema:  # pragma: no cover
         return app.openapi_schema
 

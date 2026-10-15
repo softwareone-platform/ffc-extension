@@ -196,8 +196,6 @@ def setup_app():
     def openapi() -> dict[str, Any]:
         return generate_openapi_spec(app, settings)
 
-    # FastAPI documents replacing `app.openapi` like this, but ty sees a method being
-    # overwritten on the instance.
     app.openapi = openapi  # ty: ignore[invalid-assignment]
 
     setup_fastapi_instrumentor(
