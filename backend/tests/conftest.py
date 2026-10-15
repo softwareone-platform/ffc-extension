@@ -61,6 +61,7 @@ from app.enums import (
     SystemStatus,
     UserStatus,
 )
+from app.events.accounts.processing import ClientAccountEventHandler
 from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     ORDER_TYPE_CHANGE,
@@ -80,7 +81,13 @@ from app.events.subscriptions.processing import SubscriptionEventHandler
 from app.fastapi import setup_app
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
-from tests.types import ModelFactory, MPTSubscriptionFactory, OrderFactory
+from tests.types import (
+    ModelFactory,
+    MPTAccountFactory,
+    MPTAccountMocker,
+    MPTSubscriptionFactory,
+    OrderFactory,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -2631,3 +2638,66 @@ def subscription_event_handler(
         entitlement_repo=EntitlementHandler(db_session),
         account=subscription_account,
     )
+
+
+# ---------------------------------------------------------------------------
+# Client account event processing
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mpt_account_factory() -> MPTAccountFactory:
+    """Return a builder for the account payload the marketplace returns."""
+
+    def _account(
+        account_id: str = "ACC-4444-4444",
+        name: str = "Contoso",
+        icon: str | None = "/v1/accounts/accounts/ACC-4444-4444/icon",
+        account_type: str = "Client",
+    ) -> dict[str, Any]:
+        return {"id": account_id, "name": name, "icon": icon, "type": account_type}
+
+    return _account
+
+
+@pytest.fixture
+def mock_get_account(httpx_mock: HTTPXMock, test_settings: Settings) -> MPTAccountMocker:
+    """Make the marketplace answer `get_account` with the given payload."""
+
+    def _mock(account: dict[str, Any]) -> None:
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.mpt_api_base_url}/accounts/accounts/{account['id']}",
+            json=account,
+        )
+
+    return _mock
+
+
+@pytest.fixture
+def client_account_event_handler(
+    db_session: AsyncSession,
+    mpt_client: MPTClient,
+) -> ClientAccountEventHandler:
+    """Return a `ClientAccountEventHandler` bound to the test session."""
+    return ClientAccountEventHandler(
+        installation_client=mpt_client,
+        ext_client=mpt_client,
+        client_account_repo=ClientAccountHandler(db_session),
+    )
+
+
+@pytest.fixture
+def post_client_account_event(
+    mpt_api_client: AsyncClient, ffc_jwt_token: str
+) -> Callable[[Event], Awaitable[Response]]:
+    """Return a helper that posts an event to the client accounts endpoint as the extension."""
+
+    async def _post(event: Event) -> Response:
+        return await mpt_api_client.post(
+            "/events/accounts/clients",
+            headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+            json=event.model_dump(mode="json", by_alias=True),
+        )
+
+    return _post
