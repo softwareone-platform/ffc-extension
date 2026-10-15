@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import binascii
@@ -25,6 +27,7 @@ from app.db.base import configure_db_engine, session_factory
 from app.db.handlers import AccountHandler
 from app.db.models import Account
 from app.enums import AccountStatus, AccountType
+from app.exceptions import InvalidDataSourceIdError
 
 logger = logging.getLogger(__name__)
 
@@ -233,3 +236,10 @@ def get_jwt_token_expires(token: str) -> datetime:
         return datetime.fromtimestamp(claims["exp"], tz=UTC)
     except (KeyError, ValueError) as exc:
         raise ValueError("Invalid JWT token") from exc
+
+
+def validate_datasource_id_format(owner: Account, datasource_id: str) -> None:
+    provider = owner.cloud_provider
+    if provider is None or provider.matches_datasource_id(datasource_id):
+        return
+    raise InvalidDataSourceIdError(datasource_id, provider.name)

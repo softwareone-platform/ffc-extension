@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
 from app.db.handlers import EntitlementHandler
-from app.db.models import Account, Entitlement
+from app.db.models import Account, CloudProvider, Entitlement
 from app.enums import AccountType, EntitlementStatus
 from app.events.exceptions import HandlerHTTPError
 from app.events.processing import ProcessingStatus
@@ -479,3 +480,158 @@ async def test_get_entitlement_ignores_another_account_entitlement(
     processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
 
     assert await processor.get_entitlement() is None
+
+
+# -- datasource id format --
+PROVIDER_CASES = [
+    pytest.param("aws_cloud_provider_factory", "123456789012", "spiderman", id="aws"),
+    pytest.param(
+        "azure_cloud_provider_factory",
+        "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+        "123456789012",
+        id="azure",
+    ),
+]
+
+REJECTED_ID_CASES = [
+    *PROVIDER_CASES,
+    pytest.param(
+        "azure_cloud_provider_factory",
+        "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+        "0A1B2C3D-4E5F-6071-8293-A4B5C6D7E8F9",
+        id="azure-upper",
+    ),
+]
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), REJECTED_ID_CASES)
+async def test_active_subscription_rejects_a_datasource_id_the_provider_does_not_accept(
+    request: pytest.FixtureRequest,
+    subscription_event_handler: SubscriptionEventHandler,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_get_subscription: SubscriptionMocker,
+    subscription_account: Account,
+    db_session: AsyncSession,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """An id that does not match the owner's provider format closes the task with an error."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    await cloud_provider_factory(subscription_account)
+    mock_get_subscription(
+        mpt_subscription_factory(status=ACTIVE_SUBSCRIPTION_STATUS, datasource_id=rejected_id)
+    )
+    processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    assert result.severity == "Error"
+    assert result.message == f"The format of the datasource id {rejected_id} is not valid."
+    assert await get_entitlements(db_session, subscription_account) == []
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), PROVIDER_CASES)
+async def test_active_subscription_creates_an_entitlement_when_the_id_matches_the_provider(
+    request: pytest.FixtureRequest,
+    subscription_event_handler: SubscriptionEventHandler,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_get_subscription: SubscriptionMocker,
+    subscription_account: Account,
+    db_session: AsyncSession,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """An id matching the owner's provider format is accepted and an entitlement is issued."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    await cloud_provider_factory(subscription_account)
+    mock_get_subscription(
+        mpt_subscription_factory(status=ACTIVE_SUBSCRIPTION_STATUS, datasource_id=matching_id)
+    )
+    processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
+
+    result = await processor.process()
+
+    entitlements = await get_entitlements(db_session, subscription_account)
+    assert len(entitlements) == 1
+    assert entitlements[0].datasource_id == matching_id
+    assert result.severity == "Info"
+    assert result.message == f"The entitlement {entitlements[0].id} was created."
+
+
+@pytest.mark.parametrize("external_ids", [{}, {"vendor": ""}], ids=["missing", "empty"])
+async def test_active_subscription_rejects_a_missing_datasource_id(
+    subscription_event_handler: SubscriptionEventHandler,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_get_subscription: SubscriptionMocker,
+    subscription_account: Account,
+    db_session: AsyncSession,
+    external_ids: dict[str, Any],
+) -> None:
+    """A subscription without a vendor external id is not valid: error logged, nothing created."""
+    subscription = mpt_subscription_factory(status=ACTIVE_SUBSCRIPTION_STATUS)
+    subscription["externalIds"] = external_ids
+    mock_get_subscription(subscription)
+    processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    assert result.severity == "Error"
+    assert "The value of the 'vendor.externalid' is emtpy." == result.message
+    assert await get_entitlements(db_session, subscription_account) == []
+
+
+# -- human readable primary keys --
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), PROVIDER_CASES)
+async def test_active_subscription_stores_the_entitlement_with_its_pk_prefix(
+    request: pytest.FixtureRequest,
+    subscription_event_handler: SubscriptionEventHandler,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_get_subscription: SubscriptionMocker,
+    subscription_account: Account,
+    db_session: AsyncSession,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """The entitlement issued for a valid datasource id gets an `FENT-` primary key."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    await cloud_provider_factory(subscription_account)
+    mock_get_subscription(
+        mpt_subscription_factory(status=ACTIVE_SUBSCRIPTION_STATUS, datasource_id=matching_id)
+    )
+    processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
+
+    await processor.process()
+
+    entitlements = await get_entitlements(db_session, subscription_account)
+    assert len(entitlements) == 1
+    stored = entitlements[0]
+    assert stored.id.startswith(f"{Entitlement.PK_PREFIX}-")
+    assert re.fullmatch(Entitlement.build_id_regex(), stored.id)
+    assert stored.datasource_id == matching_id
+
+
+@pytest.mark.parametrize(
+    "factory_name",
+    ["aws_cloud_provider_factory", "azure_cloud_provider_factory"],
+    ids=["aws", "azure"],
+)
+async def test_cloud_provider_is_stored_with_its_pk_prefix(
+    request: pytest.FixtureRequest,
+    subscription_account: Account,
+    factory_name: str,
+) -> None:
+    """A persisted cloud provider gets an `FCLP-` primary key and is bound to its account."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+
+    provider = await cloud_provider_factory(subscription_account)
+
+    assert provider.id.startswith(f"{CloudProvider.PK_PREFIX}-")
+    assert re.fullmatch(CloudProvider.build_id_regex(), provider.id)
+    assert subscription_account.cloud_provider is provider

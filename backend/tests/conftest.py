@@ -43,6 +43,7 @@ from app.db.models import (
     Actor,
     Base,
     ClientAccount,
+    CloudProvider,
     DatasourceExpense,
     Entitlement,
     Organization,
@@ -600,6 +601,54 @@ def datasource_expense_factory(
         return datasource_expense
 
     return _datasource_expense
+
+
+@pytest.fixture
+def aws_cloud_provider_factory(db_session: AsyncSession) -> ModelFactory[CloudProvider]:
+    async def _cloud_provider(
+        account: Account,
+        name: str = "AWS Test Provider",
+        icon: str = "aws",
+        datasource_id_format: str = r"^[0-9]{12}$",
+    ) -> CloudProvider:
+        provider = CloudProvider(
+            account=account,
+            name=name,
+            icon=icon,
+            datasource_id_format=datasource_id_format,
+        )
+        db_session.add(provider)
+        await db_session.commit()
+        await db_session.refresh(provider)
+        await db_session.refresh(account)
+        return provider
+
+    return _cloud_provider
+
+
+@pytest.fixture
+def azure_cloud_provider_factory(db_session: AsyncSession) -> ModelFactory[CloudProvider]:
+    async def _cloud_provider(
+        account: Account,
+        name: str = "Azure Test Provider",
+        icon: str = "azure",
+        datasource_id_format: str = (
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        ),
+    ) -> CloudProvider:
+        provider = CloudProvider(
+            account=account,
+            name=name,
+            icon=icon,
+            datasource_id_format=datasource_id_format,
+        )
+        db_session.add(provider)
+        await db_session.commit()
+        await db_session.refresh(provider)
+        await db_session.refresh(account)
+        return provider
+
+    return _cloud_provider
 
 
 @pytest.fixture
