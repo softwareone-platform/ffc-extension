@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.dependencies.api_clients import (
-    APIModifierClient,
     ExtensionClient,
+    FFCAPIClient,
     InstallationClient,
     OptscaleAuthClient,
     OptscaleClient,
@@ -27,7 +27,7 @@ from app.events.subscriptions.processing import (
 
 
 def get_order_event_handler(
-    api_modifier_client: APIModifierClient,
+    ffc_api_client: FFCAPIClient,
     installation_client: InstallationClient,
     ext_client: ExtensionClient,
     optscale_auth_client: OptscaleAuthClient,
@@ -39,7 +39,7 @@ def get_order_event_handler(
     settings: AppSettings,
 ) -> _OrderEventHandler:
     return _OrderEventHandler(
-        api_modifier_client=api_modifier_client,
+        ffc_api_client=ffc_api_client,
         installation_client=installation_client,
         ext_client=ext_client,
         optscale_auth_client=optscale_auth_client,
