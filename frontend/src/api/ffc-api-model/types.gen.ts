@@ -171,6 +171,24 @@ export type AccountRead = {
      * AccountType
      */
     type: 'admin' | 'operations' | 'affiliate';
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
     /**
      * AccountStats
      */
@@ -218,6 +236,24 @@ export type AccountReference = {
      * An external identifier for the account
      */
     external_id: string;
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
 };
 
 /**
@@ -311,6 +347,24 @@ export type AccountUserReferenceWithAccount = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
 };
 
@@ -655,6 +709,28 @@ export type ClientAccountReference = {
      * Icon
      */
     icon?: string | null;
+};
+
+/**
+ * CloudProviderRead
+ */
+export type CloudProviderRead = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon: string;
+    /**
+     * Datasource Id Format
+     */
+    datasource_id_format: string;
+    /**
+     * Id
+     */
+    id: string;
 };
 
 /**
@@ -1391,6 +1467,24 @@ export type EntitlementRead = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     /**
      * EntitlementStatus
@@ -1889,6 +1983,24 @@ export type LimitOffsetPageAccountRead = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -2277,6 +2389,24 @@ export type LimitOffsetPageEntitlementRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -2756,6 +2886,24 @@ export type LimitOffsetPageUserRead = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
         } | null;
     }>;
@@ -2800,6 +2948,24 @@ export type Me = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     system: {
         /**
@@ -3353,6 +3519,24 @@ export type UserRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
     } | null;
 };
@@ -4106,6 +4290,24 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
             /**
              * EntitlementStatus
@@ -4374,6 +4576,24 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4668,6 +4888,24 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4902,6 +5140,24 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -6781,6 +7037,24 @@ export type GetAccountsOpsV1AccountsGetResponses = {
              * AccountType
              */
             type: 'admin' | 'operations' | 'affiliate';
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
             /**
              * AccountStats
              */
@@ -7030,6 +7304,24 @@ export type CreateAccountOpsV1AccountsPostResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7250,6 +7542,24 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7483,6 +7793,24 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7703,6 +8031,24 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                      * An external identifier for the account
                      */
                     external_id: string;
+                    cloud_provider?: {
+                        /**
+                         * Name
+                         */
+                        name: string;
+                        /**
+                         * Icon
+                         */
+                        icon: string;
+                        /**
+                         * Datasource Id Format
+                         */
+                        datasource_id_format: string;
+                        /**
+                         * Id
+                         */
+                        id: string;
+                    } | null;
                 };
             } | null;
         }>;
@@ -7760,6 +8106,24 @@ export type MeOpsV1MeGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         system: {
             /**

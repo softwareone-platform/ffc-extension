@@ -20,8 +20,10 @@ from app.events.subscriptions.constants import (
     TERMINATED_SUBSCRIPTION_STATUS,
 )
 from app.events.subscriptions.utils import get_datasource_id
+from app.exceptions import InvalidDataSourceIdError
 from app.notifications import ColumnHeader, NotificationDetails, send_error, send_info
 from app.telemetry import capture_telemetry_cli_command
+from app.utils import validate_datasource_id_format
 
 logger = logging.getLogger(__name__)
 
@@ -120,11 +122,12 @@ async def sync_subscription(
                 error="Subscription has more than one new and/or active entitlement.",
             )
         if len(entitlements) == 0:
+            datasource_id = get_datasource_id(subscription)
             created = await entitlement_handler.create(
                 Entitlement(
                     name=subscription["name"],
                     affiliate_external_id=sub_id,
-                    datasource_id=get_datasource_id(subscription),
+                    datasource_id=datasource_id,
                     status=EntitlementStatus.NEW,
                     owner=account,
                 )
@@ -200,6 +203,28 @@ async def sync_page(
                                 subscription_id=subscription["id"],
                                 account_id=account_id,
                                 message="Subscription is not valid.",
+                                error=error,
+                            )
+                        )
+                        continue
+                    try:
+                        validate_datasource_id_format(owner=account, datasource_id=datasource_id)
+                    except InvalidDataSourceIdError:
+                        logger.warning(
+                            "The subscription has been skipped because the datasource id format is "
+                            "not valid."
+                        )
+                        error = (
+                            "The subscription has been skipped because the datasource id format "
+                            "is not valid."
+                        )
+
+                        results.append(
+                            SyncResult(
+                                subscription_id=subscription["id"],
+                                account_id=account.id,
+                                message=f"The format of the datasource id {datasource_id} is not "
+                                f"valid.",
                                 error=error,
                             )
                         )
