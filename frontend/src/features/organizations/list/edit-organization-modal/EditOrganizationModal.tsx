@@ -22,7 +22,7 @@ export function EditOrganizationModal({
   organization,
 }: Readonly<Props>) {
   const tOrganization = useFixedT("organizations:edit");
-  const { handleCancel, submit, isPending, error, control } = useOrganizationsController({
+  const { cancel, submit, isPending, error, control } = useOrganizationsController({
     onClose,
     organization,
   });
@@ -33,7 +33,7 @@ export function EditOrganizationModal({
       onClose={onClose}
       title={tOrganization("title")}
       className={className}
-      onCancel={handleCancel}
+      onCancel={cancel}
       onSubmit={() => submit()}
       submitLabel={tOrganization("save")}
       isSubmitting={isPending}

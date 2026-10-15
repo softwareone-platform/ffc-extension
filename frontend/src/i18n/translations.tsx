@@ -7,8 +7,8 @@ const i18n: ReturnType<typeof i18next.createInstance> = i18next.createInstance()
 
 i18n.use(
   resourcesToBackend(async (language: string) => {
-    const validLanguage = languageCodes.find((l) => l.includes(language));
-    if (!validLanguage) return;
+    const isValidLanguage = languageCodes.some((l) => l.includes(language));
+    if (!isValidLanguage) return;
 
     // Only English ships today; non-English languages fall back via `fallbackLng`.
     // To add a locale, replace this with a static import map keyed on `language`.
@@ -20,7 +20,8 @@ i18n.use(
 i18n.on("failedLoading", (lng, _ns, msg) =>
   console.error(`[i18n] Failed to load language ${lng} with error:`, msg),
 );
-i18n.init({
+
+void i18n.init({
   lng: "en",
   fallbackLng: "en",
   interpolation: {

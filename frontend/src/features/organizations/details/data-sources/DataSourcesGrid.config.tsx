@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
 
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridColumnDefinition,
+  GridEvents,
+  GridFieldDefinition,
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";
@@ -79,7 +80,7 @@ export function useColumns(): Columns {
         title: tColumns("parent_id"),
         fields: ["parent_id", "parent.id", "parent.name", "parent.type"],
         cell: (item: DatasourceRead) => {
-          return item.parent && item.parent.id ? (
+          return item.parent?.id ? (
             <GridCellSimple>
               <EntityReferenceCell
                 primaryContent={item.parent?.name}

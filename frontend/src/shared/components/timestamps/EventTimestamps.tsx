@@ -19,11 +19,9 @@ export type EntityEvent = {
 };
 
 export interface TimestampsProps {
-  events: EntityEvent[];
-  columnNames?: string[];
-  componentTitle?: string;
-  isToHideUrl?: boolean;
-  denseMode?: boolean;
+  readonly events: EntityEvent[];
+  readonly columnNames?: string[];
+  readonly componentTitle?: string;
 }
 
 export function EventTimestamps({ events, columnNames = [], componentTitle }: TimestampsProps) {
@@ -53,8 +51,8 @@ export function EventTimestamps({ events, columnNames = [], componentTitle }: Ti
             </Button>
           </div>
         </div>
-        {(expanded ? events : [events[0]]).map((event, i) => (
-          <div key={i} className={styles["row"]}>
+        {(expanded ? events : [events[0]]).map((event) => (
+          <div key={event.name} className={styles["row"]}>
             <div className={styles["name"]}>
               <Ellipsis>{event.name}</Ellipsis>
             </div>
