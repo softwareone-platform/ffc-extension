@@ -14,10 +14,18 @@ jest.mock("~app/layouts", () => ({
   ),
 }));
 
+// The feature mocks expose how they were reached (`PUSH` / `REPLACE` / `POP`) so specs can assert
+// the index redirect doesn't push a history entry (a push traps the browser Back button).
 jest.mock("~features/organizations/Organizations", () => ({
-  Organizations: () => <div data-testid="organizations" />,
+  Organizations: () => {
+    const { useNavigationType } = jest.requireActual("react-router-dom");
+    return <div data-testid="organizations" data-navigation-type={useNavigationType()} />;
+  },
 }));
 
 jest.mock("~features/entitlements/Entitlements", () => ({
-  Entitlements: () => <div data-testid="entitlements" />,
+  Entitlements: () => {
+    const { useNavigationType } = jest.requireActual("react-router-dom");
+    return <div data-testid="entitlements" data-navigation-type={useNavigationType()} />;
+  },
 }));
