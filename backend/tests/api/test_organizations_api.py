@@ -555,13 +555,13 @@ async def test_update_organization_external_id_unique_for_non_deleted_objects(
     (
         "updated_name",
         "expected_status_code",
-        "should_call_api_modifier",
-        "api_modifier_status_code",
+        "should_call_optscale",
+        "optscale_status_code",
     ),
     [
         pytest.param("", 422, False, None, id="too_short"),
         pytest.param("super_long_name" * 20, 422, False, None, id="too_long"),
-        pytest.param("updated_name", 502, True, 500, id="api_modifier_error"),
+        pytest.param("updated_name", 502, True, 500, id="optscale_error"),
         pytest.param("updated_name", 200, True, 200, id="just_right"),
     ],
 )
@@ -572,8 +572,8 @@ async def test_update_organization_name(
     db_session: AsyncSession,
     updated_name: str,
     expected_status_code: int,
-    should_call_api_modifier: bool,
-    api_modifier_status_code: int | None,
+    should_call_optscale: bool,
+    optscale_status_code: int | None,
 ):
     db_org = await organization_factory(
         name="initial_name",
@@ -582,14 +582,14 @@ async def test_update_organization_name(
         linked_organization_id="ORG-123",
     )
 
-    if should_call_api_modifier:
-        assert api_modifier_status_code is not None
+    if should_call_optscale:
+        assert optscale_status_code is not None
 
         httpx_mock.add_response(
             method="PATCH",
             headers={"Authorization": admin_client.headers["Authorization"]},
             url=f"https://opt-api.ffc.com/organizations/{db_org.linked_organization_id}",
-            status_code=api_modifier_status_code,
+            status_code=optscale_status_code,
             json={
                 "id": db_org.linked_organization_id,
                 "name": updated_name,
@@ -601,7 +601,7 @@ async def test_update_organization_name(
         json={"name": updated_name},
     )
 
-    assert bool(httpx_mock.get_request()) == should_call_api_modifier
+    assert bool(httpx_mock.get_request()) == should_call_optscale
     assert response.status_code == expected_status_code
     await db_session.refresh(db_org)
 
@@ -616,9 +616,9 @@ async def test_update_organization_name(
 
 
 @pytest.mark.parametrize(
-    ("api_modifier_status_code", "expected_status_code"),
+    ("optscale_status_code", "expected_status_code"),
     [
-        pytest.param(500, 502, id="api_modifier_error"),
+        pytest.param(500, 502, id="optscale_error"),
         pytest.param(200, 200, id="success"),
     ],
 )
@@ -627,7 +627,7 @@ async def test_update_organization_both_fields(
     admin_client: AsyncClient,
     httpx_mock: HTTPXMock,
     db_session: AsyncSession,
-    api_modifier_status_code: int,
+    optscale_status_code: int,
     expected_status_code: int,
 ):
     db_org = await organization_factory(
@@ -641,7 +641,7 @@ async def test_update_organization_both_fields(
         method="PATCH",
         headers={"Authorization": admin_client.headers["Authorization"]},
         url=f"https://opt-api.ffc.com/organizations/{db_org.linked_organization_id}",
-        status_code=api_modifier_status_code,
+        status_code=optscale_status_code,
         json={
             "id": db_org.linked_organization_id,
             "name": "updated_name",

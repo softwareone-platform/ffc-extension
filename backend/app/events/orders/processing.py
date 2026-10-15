@@ -11,7 +11,7 @@ from app.api_clients.mpt import MPTClient
 from app.api_clients.optscale import UserDoesNotExist
 from app.db.models import ClientAccount, Organization
 from app.dependencies.api_clients import (
-    APIModifierClient,
+    FFCAPIClient,
     InstallationClient,
     OptscaleAuthClient,
     OptscaleClient,
@@ -81,7 +81,7 @@ class OrderProcessor(EventProcessor, ABC):
 
     def __init__(
         self,
-        api_modifier_client: APIModifierClient,
+        ffc_api_client: FFCAPIClient,
         installation_client: InstallationClient,
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
@@ -93,7 +93,7 @@ class OrderProcessor(EventProcessor, ABC):
         settings: AppSettings,
         order: dict[str, Any],
     ):
-        self.api_modifier_client = api_modifier_client
+        self.ffc_api_client = ffc_api_client
         self.installation_client = installation_client
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
@@ -278,7 +278,7 @@ class OrderProcessor(EventProcessor, ABC):
             )
 
         if created or not organization.linked_organization_id:
-            organization_on_optscale = await self.api_modifier_client.create_organization(
+            organization_on_optscale = await self.ffc_api_client.create_organization(
                 org_name=org_name, user_id=employee_id, currency=org_currency
             )
             optscale_organization = organization_on_optscale.json()
@@ -318,7 +318,7 @@ class OrderProcessor(EventProcessor, ABC):
             is_new = False
             logger.info("Employee exists with id %s for order %s", employee_id, self.order["id"])
         except UserDoesNotExist:
-            response = await self.api_modifier_client.create_user(
+            response = await self.ffc_api_client.create_user(
                 email=email,
                 display_name=f"{administrator['firstName']} {administrator['lastName']}",
                 password=secrets.token_urlsafe(128),
@@ -622,7 +622,7 @@ PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
 class OrderEventHandler(EventHandler):
     def __init__(
         self,
-        api_modifier_client: APIModifierClient,
+        ffc_api_client: FFCAPIClient,
         installation_client: InstallationClient,
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
@@ -633,7 +633,7 @@ class OrderEventHandler(EventHandler):
         client_account_repo: ClientAccountRepository,
         settings: AppSettings,
     ):
-        self.api_modifier_client = api_modifier_client
+        self.ffc_api_client = ffc_api_client
         self.installation_client = installation_client
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
@@ -671,7 +671,7 @@ class OrderEventHandler(EventHandler):
             logger.warning("%s The order type %s is not supported.", order_type, order_type)
             raise UnsupportedOrderTypeError(order_type)
         return processor_cls(
-            api_modifier_client=self.api_modifier_client,
+            ffc_api_client=self.ffc_api_client,
             installation_client=self.installation_client,
             ext_client=self.ext_client,
             optscale_auth_client=self.optscale_auth_client,

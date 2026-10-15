@@ -874,7 +874,7 @@ async def test_get_or_create_organization(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
         status_code=201,
         match_json={
@@ -1009,7 +1009,7 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0002"},
         match_json={
             "org_name": "ACME Inc",
@@ -1215,7 +1215,7 @@ async def test_create_employee_with_no_existing_user(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         json={
             "id": employee_id,
             "display_name": "Spider Man",
@@ -1545,7 +1545,7 @@ async def test_purchase_order_process_completes_order(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
         match_json={"org_name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
     )
@@ -1664,7 +1664,7 @@ async def test_purchase_order_process_new_user_branch(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         json={"id": "employee-id", "email": "pl@example.com"},
         match_json={
             "email": "pl@example.com",
@@ -1680,7 +1680,7 @@ async def test_purchase_order_process_new_user_branch(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
         match_json={"org_name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
     )

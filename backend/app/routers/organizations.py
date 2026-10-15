@@ -13,7 +13,6 @@ from app.api_clients.optscale import UserDoesNotExist
 from app.db.handlers import ConstraintViolationError, NotFoundError
 from app.db.models import AdditionalAdminRequest, Organization
 from app.dependencies.api_clients import (
-    APIModifierClient,
     FFCAPIClient,
     OptscaleAuthClient,
     OptscaleClient,
@@ -317,7 +316,7 @@ async def update_organization(
     if external_id_changed:
         # If the external ID is changed, we need to first change it in the DB as there is a unique
         # constraint on it and if it fails, then we can immediately return an error response and not
-        # even make an API call to the API modifier
+        # even make an API call to Optscale
 
         with wrap_exc_in_http_response(
             ConstraintViolationError,
@@ -413,7 +412,7 @@ async def add_additional_admin(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     optscale_client: OptscaleClient,
     optscale_auth_client: OptscaleAuthClient,
-    api_modifier_client: APIModifierClient,
+    ffc_api_client: FFCAPIClient,
     additional_admin_repo: AdditionalAdminRequestRepository,
     data: AdditionalAdminRequestCreate,
 ):
@@ -435,7 +434,7 @@ async def add_additional_admin(
             response = await optscale_auth_client.get_existing_user_info(data.email)
             user_data = response.json()["user_info"]
         except UserDoesNotExist:
-            response = await api_modifier_client.create_user(
+            response = await ffc_api_client.create_user(
                 email=data.email,
                 display_name=data.display_name,
                 password=secrets.token_urlsafe(128),
