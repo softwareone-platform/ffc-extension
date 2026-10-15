@@ -13,14 +13,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from app.auth.context import AuthenticationContext
 from app.conf import Settings
 from app.db.handlers import (
     AccountHandler,
+    ClientAccountHandler,
     EntitlementHandler,
     OrganizationHandler,
     TerminationFeedbackHandler,
 )
-from app.db.models import Account, Entitlement, Organization, TerminationFeedback
+from app.db.models import Account, ClientAccount, Entitlement, Organization, TerminationFeedback
 from app.enums import (
     AccountStatus,
     AccountType,
@@ -1036,6 +1038,91 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
 
     assert "Organization on OptScale created with id OPT-ORG-0002" in caplog.text
     assert "Organization already exists with id" not in caplog.text
+
+
+async def test_get_or_create_organization_creates_client_account(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    ffc_extension_auth_context: AuthenticationContext,
+) -> None:
+    """A new organization is linked to a `ClientAccount` created from the order's client."""
+    organization_provisioning_mocker()
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    client = purchase_order["client"]
+    client_account = await db_session.scalar(
+        select(ClientAccount).where(ClientAccount.external_id == client["id"])
+    )
+    assert client_account is not None
+    assert client_account.name == client["name"]
+    assert client_account.icon == client["icon"]
+    assert client_account.created_by == ffc_extension_auth_context.system
+    assert client_account.updated_by == ffc_extension_auth_context.system
+    assert organization.client_account_id == client_account.id
+
+
+async def test_get_or_create_organization_reuses_existing_client_account(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    client_account_factory: ModelFactory[ClientAccount],
+    db_session: AsyncSession,
+) -> None:
+    """An existing `ClientAccount` is refreshed from the order's client and linked."""
+    client = purchase_order["client"]
+    existing = await client_account_factory(name="Old Name", external_id=client["id"])
+    organization_provisioning_mocker()
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert organization.client_account_id == existing.id
+    await db_session.refresh(existing)
+    assert existing.name == client["name"]
+    assert await ClientAccountHandler(db_session).count() == 1
+
+
+async def test_get_or_create_organization_repeated_does_not_duplicate_client_account(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+) -> None:
+    """Processing the same order twice links the organization to a single `ClientAccount`."""
+    organization_provisioning_mocker()
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    first = await processor.get_or_create_organization(employee_id="employee-id")
+    second = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert second.id == first.id
+    assert second.client_account_id == first.client_account_id
+    assert await ClientAccountHandler(db_session).count() == 1
+
+
+async def test_get_or_create_organization_links_client_account_to_existing_organization(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """An existing organization without a client account gets linked to the order's client."""
+    existing_organization = await organization_factory(
+        operations_external_id=purchase_order["agreement"]["id"],
+        linked_organization_id="already-linked-optscale-org-id",
+    )
+    organization_provisioning_mocker(provision=False)
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert organization.id == existing_organization.id
+    assert organization.client_account is not None
+    assert organization.client_account.external_id == purchase_order["client"]["id"]
 
 
 # -- create_employee --

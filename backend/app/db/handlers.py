@@ -20,6 +20,7 @@ from app.db.models import (
     AccountUser,
     AdditionalAdminRequest,
     AuditableMixin,
+    ClientAccount,
     DatasourceExpense,
     Entitlement,
     Organization,
@@ -135,6 +136,39 @@ class ModelHandler[M: BaseModel]:
         params.update(defaults)
 
         obj = await self.create(self.model_cls(**params))
+        return obj, True
+
+    async def update_or_create(
+        self,
+        *,
+        defaults: dict[str, Any] | None = None,
+        extra_conditions: list[ColumnExpressionArgument] | None = None,
+        **filters: Any,
+    ) -> tuple[M, bool]:
+        """
+        Looks up an object matching the given filters and updates it with `defaults`,
+        or creates a new one from `filters` and `defaults` if none exists.
+
+        The update is skipped when `defaults` don't change any field, so repeated
+        calls with the same values don't bump `updated_at`/`updated_by`.
+
+        Returns a `(obj, created)` tuple.
+        """
+        defaults = defaults or {}
+        obj = await self.first(
+            where_clauses=[
+                *(getattr(self.model_cls, key) == value for key, value in filters.items()),
+                *(extra_conditions or []),
+            ]
+        )
+
+        if obj:
+            changes = {key: value for key, value in defaults.items() if getattr(obj, key) != value}
+            if changes:
+                obj = await self.update(obj, changes)
+            return obj, False
+
+        obj = await self.create(self.model_cls(**filters, **defaults))
         return obj, True
 
     async def update(self, id_or_obj: str | M, data: dict[str, Any] | None = None) -> M:
@@ -587,6 +621,37 @@ class AccountHandler(ModelHandler[Account]):
             joinedload(Account.updated_by),
             joinedload(Account.deleted_by),
         ]
+
+
+class ClientAccountHandler(ModelHandler[ClientAccount]):
+    """
+    Handles CRUD operations for the ClientAccount model.
+    """
+
+    def __init__(self, session):
+        super().__init__(session)
+        self.default_options = [
+            joinedload(ClientAccount.created_by),
+            joinedload(ClientAccount.updated_by),
+            joinedload(ClientAccount.deleted_by),
+        ]
+
+    async def update_or_create(
+        self,
+        *,
+        defaults: dict[str, Any] | None = None,
+        extra_conditions: list[ColumnExpressionArgument] | None = None,
+        **filters: Any,
+    ) -> tuple[ClientAccount, bool]:
+        """
+        Same as `ModelHandler.update_or_create` but soft-deleted client accounts are
+        never matched, so a new one is created in their place.
+        """
+        return await super().update_or_create(
+            defaults=defaults,
+            extra_conditions=[ClientAccount.deleted_at.is_(None), *(extra_conditions or [])],
+            **filters,
+        )
 
 
 class UserHandler(ModelHandler[User]):
