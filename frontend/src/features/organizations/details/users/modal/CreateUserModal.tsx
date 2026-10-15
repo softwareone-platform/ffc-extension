@@ -16,7 +16,7 @@ type Props = {
 
 export function CreateUserModal({ isOpen, onClose, organizationId, className }: Readonly<Props>) {
   const tUsers = useFixedT("organization:users");
-  const { control, error, isPending, submit, handleCancel } = useUserFormController({
+  const { control, error, isPending, submit, cancel } = useUserFormController({
     onClose,
     organizationId,
   });
@@ -27,7 +27,7 @@ export function CreateUserModal({ isOpen, onClose, organizationId, className }: 
       onClose={onClose}
       title={tUsers("add_user")}
       className={className}
-      onCancel={handleCancel}
+      onCancel={cancel}
       onSubmit={() => submit()}
       submitLabel={tUsers("save")}
       isSubmitting={isPending}

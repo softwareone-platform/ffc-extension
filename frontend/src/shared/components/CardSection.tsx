@@ -5,7 +5,7 @@ import { MediumText } from "@swo/design-system/text";
 import style from "./CardSection.module.scss";
 
 export interface CardSectionProps extends PropsWithChildren {
-  title: string;
+  readonly title: string;
 }
 
 export function CardSection({ children, title }: CardSectionProps) {

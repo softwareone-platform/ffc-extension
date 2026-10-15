@@ -7,7 +7,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { Modal } from "@swo/design-system/modal";
 import { Wizard, WizardContextProps } from "@swo/design-system/wizard";
 
-import { EntitlementCreated, useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
+import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
 import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -24,7 +24,7 @@ import "./CreateEntitlementWizard.scss";
 
 import { AxiosError, AxiosResponse } from "axios";
 
-import { EntitlementCreate } from "~api/ffc-api-model";
+import { EntitlementCreate, EntitlementRead } from "~api/ffc-api-model";
 
 type Props = {
   isOpen: boolean;
@@ -39,7 +39,7 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   const { save } = useEntitlementsApi();
   const { getErrorMessage } = useErrorDetails("entitlements:addWizard:error");
   const { mutateAsync, isPending } = useMutation<
-    AxiosResponse<EntitlementCreated>,
+    AxiosResponse<EntitlementRead>,
     AxiosError,
     EntitlementCreate
   >({

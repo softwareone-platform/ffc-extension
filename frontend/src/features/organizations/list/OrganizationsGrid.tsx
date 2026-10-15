@@ -1,6 +1,5 @@
 import { Card } from "@swo/design-system/card";
 import { Grid } from "@swo/design-system/grid";
-import { Entity } from "@swo/service";
 
 import { OrganizationRead } from "~api/ffc-api-model";
 import type { OrganizationAction } from "~features/organizations/api/model";
@@ -33,7 +32,7 @@ export function OrganizationsGrid() {
   return (
     <>
       <Card testId={"ffc-extension__organizations-grid"} title={tProperties("organizations")}>
-        <Grid<Entity<OrganizationRead>> {...gridProps} />
+        <Grid<OrganizationRead> {...gridProps} />
       </Card>
       <EditOrganizationModal
         className="edit-organization-modal"

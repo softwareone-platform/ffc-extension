@@ -6,18 +6,16 @@ import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemNotification } from "~test-utils/mocks/designSystemNotification";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
-import {
-  mockInlineErrorNotification,
-  mockSharedInlineErrorNotification,
-} from "~test-utils/mocks/inlineErrorNotification";
+import { mockSharedInlineErrorNotification } from "~test-utils/mocks/inlineErrorNotification";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
-import { mockModal, mockSharedModal } from "~test-utils/mocks/modal";
+import { mockSharedModal } from "~test-utils/mocks/modal";
 
 import type { useForceImportController } from "../hooks/useForceImportController";
 
 type MockDatePickerProps = ComponentProps<typeof DatePicker>;
 
-export { mockModal, mockInlineErrorNotification };
+export { mockInlineErrorNotification } from "~test-utils/mocks/inlineErrorNotification";
+export { mockModal } from "~test-utils/mocks/modal";
 
 export const mockDatePicker = jest.fn() as jest.MockedFunction<
   (props: MockDatePickerProps) => void

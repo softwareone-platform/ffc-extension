@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
 
-import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
+  GridEvents,
+  GridFieldDefinition,
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";

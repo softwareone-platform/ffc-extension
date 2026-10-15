@@ -60,13 +60,13 @@ describe("safe-storage", () => {
     window.localStorage.setItem("second", "two");
 
     expect(window.localStorage.getItem("key")).toBe("value");
-    expect(window.localStorage.length).toBe(2);
+    expect(window.localStorage).toHaveLength(2);
     expect(window.localStorage.key(0)).toBe("key");
     expect(window.localStorage.key(1)).toBe("second");
     window.localStorage.removeItem("key");
-    expect(window.localStorage.length).toBe(1);
+    expect(window.localStorage).toHaveLength(1);
     window.localStorage.clear();
-    expect(window.localStorage.length).toBe(0);
+    expect(window.localStorage).toHaveLength(0);
     expect(window.sessionStorage).toBe(sessionStorage);
   });
 

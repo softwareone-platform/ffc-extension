@@ -19,11 +19,15 @@ export type MPTContextValue = {
   data?: MPTData;
 };
 
-const MPTContextStore = createContext<MPTContextValue>({});
+const EMPTY_CONTEXT: MPTContextValue = {};
+
+const MPTContextStore = createContext<MPTContextValue>(EMPTY_CONTEXT);
 
 function HostContextBridge({ children }: PropsWithChildren) {
   const raw = useMPTContext() as MPTContextValue | undefined;
-  return <MPTContextStore.Provider value={raw ?? {}}>{children}</MPTContextStore.Provider>;
+  return (
+    <MPTContextStore.Provider value={raw ?? EMPTY_CONTEXT}>{children}</MPTContextStore.Provider>
+  );
 }
 
 // Poll for `globalThis.__MPT__` (injected by the host around mount time).
@@ -52,7 +56,7 @@ export function MPTContextProvider({ children }: PropsWithChildren) {
   const hasHost = useHasMPTHost();
 
   if (!hasHost) {
-    return <MPTContextStore.Provider value={{}}>{children}</MPTContextStore.Provider>;
+    return <MPTContextStore.Provider value={EMPTY_CONTEXT}>{children}</MPTContextStore.Provider>;
   }
 
   return <HostContextBridge>{children}</HostContextBridge>;

@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
 
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
-import { GridEvents, GridFieldDefinition } from "@swo/design-system/grid";
 import {
   GridCellSimple,
   GridColumnDefinition,
+  GridEvents,
+  GridFieldDefinition,
   UseAsyncGridConfig,
   useGridAsync,
 } from "@swo/design-system/grid";

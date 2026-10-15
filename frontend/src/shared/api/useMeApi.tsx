@@ -9,7 +9,7 @@ import { Me } from "~api/ffc-api-model";
 
 const rootPath = "/ops/v1/me";
 export function useMeApi() {
-  const get = useCallback(async (config?: AxiosRequestConfig<Me>) => {
+  const get = useCallback((config?: AxiosRequestConfig<Me>) => {
     return http<Me>({
       method: "GET",
       url: rootPath,
