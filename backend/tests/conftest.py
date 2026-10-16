@@ -22,8 +22,8 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
-from app.api_clients.api_modifier import APIModifierClient
 from app.api_clients.base import BaseAPIClient
+from app.api_clients.ffc_api import FFCAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth
 from app.api_clients.optscale import OptscaleAuthClient, OptscaleClient
 from app.auth.context import AuthenticationContext, auth_context
@@ -132,8 +132,6 @@ def test_settings() -> Settings:
     settings.optscale_rest_api_base_url = "https://opt-api.ffc.com"
     settings.optscale_auth_api_base_url = "https://opt-auth.ffc.com"
     settings.optscale_ffc_api_base_url = "https://opt-ffc-api.ffc.com"
-    settings.api_modifier_base_url = "https://api-modifier.ffc.com"
-    settings.api_modifier_jwt_secret = "test_jwt_secrettest_jwt_secrettest_jwt_secretpyt"
     settings.opentelemetry_exporter = None
     settings.cli_rich_logging = False
     settings.msteams_notifications_webhook_url = "https://example.com/webhook"
@@ -253,6 +251,12 @@ def mpt_client(test_settings: Settings) -> MPTClient:
     client = MPTClient(auth=MPTExtensionAuth())
     client.settings = test_settings
     return client
+
+
+@pytest.fixture
+def ffc_api_client(test_settings: Settings) -> FFCAPIClient:
+    """A `FFCAPIClient` pinned to test settings."""
+    return FFCAPIClient(test_settings)
 
 
 @pytest.fixture
@@ -2498,7 +2502,7 @@ def order_event_handler(
     """Return a `OrderEventHandler` whose client yields the given order."""
 
     return OrderEventHandler(
-        api_modifier_client=APIModifierClient(test_settings),
+        ffc_api_client=FFCAPIClient(test_settings),
         installation_client=mpt_client,
         ext_client=mpt_client,
         optscale_auth_client=OptscaleAuthClient(test_settings),
@@ -2540,7 +2544,7 @@ def organization_provisioning_mocker(
         if provision:
             httpx_mock.add_response(
                 method="POST",
-                url=f"{test_settings.api_modifier_base_url}/organizations",
+                url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
                 json={"id": "OPT-ORG-0001"},
                 status_code=201,
             )
