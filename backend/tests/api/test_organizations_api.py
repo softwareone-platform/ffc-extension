@@ -8,7 +8,7 @@ from pytest_httpx import HTTPXMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
-from app.db.models import Organization, System, TerminationFeedback
+from app.db.models import ClientAccount, Organization, System, TerminationFeedback
 from app.enums import OrganizationStatus, TerminationReason
 from tests.types import ModelFactory
 
@@ -202,6 +202,101 @@ async def test_get_all_organizations_include_deletable_at(
     # the active organization is not terminated, so the field is dropped by the serialization
     assert "deletable_at" not in items[active_organization.id]
     assert items[terminated_organization.id]["deletable_at"] == "2026-09-01T00:00:00Z"
+
+
+async def test_get_all_organizations_include_client(
+    organization_factory: ModelFactory[Organization],
+    client_account_factory: ModelFactory[ClientAccount],
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+) -> None:
+    """The listing endpoint exposes the organization's client account, omitted when unset."""
+    client_account = await client_account_factory(
+        name="Red Hat Inc.", external_id="ACC-1234-5678", icon="/icons/red-hat.png"
+    )
+    organization_with_client = await organization_factory(
+        operations_external_id="EXTERNAL_ID_1", client_account=client_account
+    )
+    organization_without_client = await organization_factory(operations_external_id="EXTERNAL_ID_2")
+
+    response = await api_client.get(
+        "/organizations",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+    )
+
+    assert response.status_code == 200
+    items = {item["id"]: item for item in response.json()["items"]}
+    assert items[organization_with_client.id]["client"] == {
+        "id": client_account.id,
+        "name": "Red Hat Inc.",
+        "external_id": "ACC-1234-5678",
+        "icon": "/icons/red-hat.png",
+    }
+    assert "client" not in items[organization_without_client.id]
+
+
+@pytest.mark.parametrize("field", ["id", "external_id", "name"])
+async def test_get_organizations_with_client_filter(
+    organization_factory: ModelFactory[Organization],
+    client_account_factory: ModelFactory[ClientAccount],
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+    field: str,
+) -> None:
+    """Organizations can be filtered by their client account's `id`, `external_id` and `name`."""
+    client_account = await client_account_factory(name="Red Hat", external_id="ACC-1111-1111")
+    other_client_account = await client_account_factory(
+        name="Microsoft", external_id="ACC-2222-2222"
+    )
+    organization = await organization_factory(
+        operations_external_id="EXTERNAL_ID_1", client_account=client_account
+    )
+    await organization_factory(
+        operations_external_id="EXTERNAL_ID_2", client_account=other_client_account
+    )
+    await organization_factory(operations_external_id="EXTERNAL_ID_3")
+
+    response = await api_client.get(
+        f"/organizations?eq(client.{field},{getattr(client_account, field)})",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == organization.id
+
+
+@pytest.mark.parametrize("field", ["id", "external_id", "name"])
+async def test_get_organizations_ordered_by_client(
+    organization_factory: ModelFactory[Organization],
+    client_account_factory: ModelFactory[ClientAccount],
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+    field: str,
+) -> None:
+    """Organizations can be sorted by their client account's `id`, `external_id` and `name`."""
+    first_client_account = await client_account_factory(name="Alpha", external_id="ACC-1111-1111")
+    second_client_account = await client_account_factory(name="Beta", external_id="ACC-2222-2222")
+    first_organization = await organization_factory(
+        operations_external_id="EXTERNAL_ID_1", client_account=first_client_account
+    )
+    second_organization = await organization_factory(
+        operations_external_id="EXTERNAL_ID_2", client_account=second_client_account
+    )
+
+    response = await api_client.get(
+        f"/organizations?order_by(-client.{field})",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+    )
+
+    assert response.status_code == 200
+    expected = sorted(
+        [first_organization, second_organization],
+        key=lambda org: getattr(org.client_account, field),
+        reverse=True,
+    )
+    assert [item["id"] for item in response.json()["items"]] == [org.id for org in expected]
 
 
 async def test_get_organization_with_not_valid_filter(

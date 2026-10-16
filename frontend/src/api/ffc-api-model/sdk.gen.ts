@@ -46,6 +46,10 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * |linked_datasource_id|eq, ilike, in, like, ne, out|yes|
  * |month|eq, gt, gte, in, lt, lte, ne, out|yes|
  * |organization.billing_currency|eq, ilike, in, like, ne, out|yes|
+ * |organization.client.external_id|eq, ilike, in, like, ne, out|yes|
+ * |organization.client.id|eq, ilike, in, like, ne, out|yes|
+ * |organization.client.name|eq, ilike, in, like, ne, out|yes|
+ * |organization.client|eq, ne|no|
  * |organization.currency|eq, ilike, in, like, ne, out|yes|
  * |organization.events.created.at|eq, gt, gte, lt, lte, ne|yes|
  * |organization.events.created.by.id|eq, ilike, in, like, ne, out|yes|
@@ -103,6 +107,10 @@ export const listDatasourceExpensesOpsV1ExpensesGet = <ThrowOnError extends bool
  * |events.deleted.by|eq, ne|no|
  * |events.redeemed.at|eq, gt, gte, lt, lte, ne|yes|
  * |events.redeemed.by.billing_currency|eq, ilike, in, like, ne, out|yes|
+ * |events.redeemed.by.client.external_id|eq, ilike, in, like, ne, out|yes|
+ * |events.redeemed.by.client.id|eq, ilike, in, like, ne, out|yes|
+ * |events.redeemed.by.client.name|eq, ilike, in, like, ne, out|yes|
+ * |events.redeemed.by.client|eq, ne|no|
  * |events.redeemed.by.currency|eq, ilike, in, like, ne, out|yes|
  * |events.redeemed.by.events.created.at|eq, gt, gte, lt, lte, ne|yes|
  * |events.redeemed.by.events.created.by.id|eq, ilike, in, like, ne, out|yes|
@@ -222,6 +230,10 @@ export const terminateEntitlementOpsV1EntitlementsIdTerminatePost = <ThrowOnErro
  * | Field | Operators | Order By |
  * |-------|-----------|----------|
  * |billing_currency|eq, ilike, in, like, ne, out|yes|
+ * |client.external_id|eq, ilike, in, like, ne, out|yes|
+ * |client.id|eq, ilike, in, like, ne, out|yes|
+ * |client.name|eq, ilike, in, like, ne, out|yes|
+ * |client|eq, ne|no|
  * |currency|eq, ilike, in, like, ne, out|yes|
  * |events.created.at|eq, gt, gte, lt, lte, ne|yes|
  * |events.created.by.id|eq, ilike, in, like, ne, out|yes|

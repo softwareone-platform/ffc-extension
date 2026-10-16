@@ -362,6 +362,7 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
         updated_by: Actor | None = None,
         terminated_at: datetime | None = None,
         status: OrganizationStatus = OrganizationStatus.ACTIVE,
+        client_account: ClientAccount | None = None,
     ) -> Organization:
         organization = Organization(
             name=name or faker.company(),
@@ -373,6 +374,7 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
             updated_by=updated_by,
             status=status,
             terminated_at=terminated_at,
+            client_account=client_account,
         )
         db_session.add(organization)
         await db_session.commit()
