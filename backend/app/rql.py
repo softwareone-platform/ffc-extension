@@ -8,6 +8,7 @@ from app.db.models import (
     Account,
     AccountUser,
     Actor,
+    ClientAccount,
     DatasourceExpense,
     Entitlement,
     Organization,
@@ -71,6 +72,14 @@ class SystemRules(ModelRQLRules, AuditableMixin):
     status = FieldRule()
 
 
+class ClientAccountRules(ModelRQLRules):
+    __model__ = ClientAccount
+
+    id = FieldRule()
+    name = FieldRule()
+    external_id = FieldRule()
+
+
 class OrganizationRules(ModelRQLRules, AuditableMixin):
     __model__ = Organization
 
@@ -81,6 +90,7 @@ class OrganizationRules(ModelRQLRules, AuditableMixin):
     status = FieldRule()
     operations_external_id = FieldRule()
     linked_organization_id = FieldRule()
+    client_account = RelationshipRule(alias="client", rules=ClientAccountRules())
     terminated_at = FieldRule(alias="events.terminated.at")
     terminated_by = RelationshipRule(alias="events.terminated.by", rules=ActorRules())
 
