@@ -108,16 +108,6 @@ class OptscaleClient(BaseAPIClient):
         response.raise_for_status()
         return response
 
-    async def fetch_datasource_by_id(self, datasource_id: UUID | str) -> httpx.Response:
-        response = await self.httpx_client.get(
-            f"/cloud_accounts/{datasource_id}",
-            params={
-                "details": "true",
-            },
-        )
-        response.raise_for_status()
-        return response
-
     async def update_datasource(
         self,
         datasource_id: UUID | str,

@@ -1,12 +1,20 @@
 import uuid
 from datetime import UTC, date, datetime, time
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 import pycountry
-from pydantic import ConfigDict, Field, computed_field, field_validator
+from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 
-from app.enums import DatasourceType, OrganizationStatus, TerminationReason
+from app.enums import (
+    AwsAccountType,
+    AwsAuthenticationType,
+    AwsExportType,
+    DatasourceImportStatus,
+    DatasourceType,
+    OrganizationStatus,
+    TerminationReason,
+)
 from app.schemas.core import (
     AuditEventsSchema,
     AuditFieldSchema,
@@ -168,6 +176,120 @@ class DatasourceRead(DatasourceBase):
     resources_charged_this_month: int = Field(validation_alias="resources")
     expenses_so_far_this_month: float = Field(validation_alias="cost")
     expenses_forecast_this_month: float = Field(validation_alias="forecast")
+
+
+class DatasourceUpstreamSchema(BaseSchema):
+    # Mirrors an FFC API payload: ignore unknown fields so upstream additions don't break us.
+    model_config = ConfigDict(extra="ignore")
+
+
+class AzureSubscriptionDetails(DatasourceUpstreamSchema):
+    connected_at: datetime | None = None
+    parent: DatasourceBase | None = None
+    subscription_id: Annotated[
+        str | None, Field(examples=["5f3a1c2e-9d4b-4e8a-b1f7-2c6d8e0a3b5f"])
+    ] = None
+    tenant_id: Annotated[str | None, Field(examples=["8b1d7e4a-3c2f-4a9b-8e6d-1f0a5c7b9d2e"])] = (
+        None
+    )
+    client_id: Annotated[str | None, Field(examples=["c2a9f0b3-7e1d-4b6a-9c8f-3d5e2a1b0c4f"])] = (
+        None
+    )
+
+
+class AzureTenantDetails(DatasourceUpstreamSchema):
+    connected_at: datetime | None = None
+    tenant_id: Annotated[str | None, Field(examples=["8b1d7e4a-3c2f-4a9b-8e6d-1f0a5c7b9d2e"])] = (
+        None
+    )
+    client_id: Annotated[str | None, Field(examples=["c2a9f0b3-7e1d-4b6a-9c8f-3d5e2a1b0c4f"])] = (
+        None
+    )
+
+
+class AwsDetails(DatasourceUpstreamSchema):
+    """
+    `assumed_role_name` is returned only for assumed role authentication,
+    `access_key_id` only for access key authentication and the export fields
+    only for management/standalone accounts.
+    """
+
+    connected_at: datetime | None = None
+    account_id: Annotated[str | None, Field(examples=["203589795269"])] = None
+    account_type: AwsAccountType
+    authentication_type: AwsAuthenticationType
+    assumed_role_name: Annotated[str | None, Field(examples=["FinOpsReadOnly"])] = None
+    access_key_id: Annotated[str | None, Field(examples=["AKIAIOSFODNN7EXAMPLE"])] = None
+    export_type: AwsExportType | None = None
+    use_edp_discount: bool | None = None
+    export_name: Annotated[str | None, Field(examples=["optscale-export"])] = None
+    bucket_name: Annotated[str | None, Field(examples=["optscale-bucket"])] = None
+    bucket_prefix: Annotated[str | None, Field(examples=["reports"])] = None
+    region_name: Annotated[str | None, Field(examples=["eu-central-1"])] = None
+    included_regions: Annotated[list[str] | None, Field(examples=[["eu-central-1"]])] = None
+    excluded_regions: Annotated[list[str] | None, Field(examples=[["us-east-1"]])] = None
+
+
+class GcpDetails(DatasourceUpstreamSchema):
+    connected_at: datetime | None = None
+    project_id: Annotated[str | None, Field(examples=["my-gcp-project"])] = None
+    billing_dataset_name: Annotated[str | None, Field(examples=["billing_export"])] = None
+    billing_table_name: Annotated[
+        str | None, Field(examples=["gcp_billing_export_v1_0123AB_456CDE_789EFG"])
+    ] = None
+    billing_project_id: Annotated[str | None, Field(examples=["my-billing-project"])] = None
+
+
+DatasourceDetails = AzureSubscriptionDetails | AzureTenantDetails | AwsDetails | GcpDetails
+
+DATASOURCE_DETAILS_SCHEMAS: dict[DatasourceType, type[DatasourceUpstreamSchema]] = {
+    DatasourceType.AZURE_CNR: AzureSubscriptionDetails,
+    DatasourceType.AZURE_TENANT: AzureTenantDetails,
+    DatasourceType.AWS_CNR: AwsDetails,
+    DatasourceType.GCP_CNR: GcpDetails,
+}
+
+
+class DatasourceBillingInfo(DatasourceUpstreamSchema):
+    last_report_processed_at: datetime | None = None
+    last_attempt_at: datetime | None = None
+    last_report_updated_at: datetime | None = None
+    status: DatasourceImportStatus
+    error: Annotated[str | None, Field(examples=["Bucket not found"])] = None
+
+
+class DatasourceMetricsInfo(DatasourceUpstreamSchema):
+    last_retrieval_at: datetime | None = None
+    last_attempt_at: datetime | None = None
+    status: DatasourceImportStatus
+    error: str | None = None
+
+
+class DatasourceDiscoveryItem(DatasourceUpstreamSchema):
+    resource_type: Annotated[str | None, Field(examples=["instance"])] = None
+    enabled: bool | None = None
+    last_discovery_at: datetime | None = None
+    last_error_at: datetime | None = None
+    status: DatasourceImportStatus
+    error: str | None = None
+
+
+class DatasourceDetailRead(DatasourceRead):
+    details: DatasourceDetails | None = None
+    billing: DatasourceBillingInfo
+    metrics: DatasourceMetricsInfo
+    discovery: list[DatasourceDiscoveryItem] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_details(cls, data: Any) -> Any:
+        # The upstream details carry no type tag and their shapes overlap (e.g. an Azure tenant
+        # payload is also a valid Azure subscription one): pick the schema from the datasource type.
+        if not isinstance(data, dict) or not isinstance(data.get("details"), dict):
+            return data
+
+        schema = DATASOURCE_DETAILS_SCHEMAS.get(DatasourceType(data.get("type")))
+        return {**data, "details": schema.model_validate(data["details"]) if schema else None}
 
 
 class DatasourceForceReimport(BaseSchema):
