@@ -500,6 +500,28 @@ export type AuditFieldSchema = {
 };
 
 /**
+ * ClientAccountReference
+ */
+export type ClientAccountReference = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * External Id
+     */
+    external_id: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+};
+
+/**
  * DatasourceBase
  */
 export type DatasourceBase = {
@@ -1907,6 +1929,27 @@ export type LimitOffsetPageOrganizationRead = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -2419,6 +2462,27 @@ export type OrganizationRead = {
      * OrganizationStatus
      */
     status: 'active' | 'terminated' | 'deleted';
+    /**
+     * The client account the organization belongs to, if any.
+     */
+    client?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * External Id
+         */
+        external_id: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
+    } | null;
     /**
      * OrganizationEventsSchema
      */
@@ -2943,6 +3007,27 @@ export type LimitOffsetPageOrganizationReadWritable = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -3117,6 +3202,27 @@ export type OrganizationReadWritable = {
      * OrganizationStatus
      */
     status: 'active' | 'terminated' | 'deleted';
+    /**
+     * The client account the organization belongs to, if any.
+     */
+    client?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * External Id
+         */
+        external_id: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
+    } | null;
     /**
      * OrganizationEventsSchema
      */
@@ -4448,6 +4554,27 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
              */
             status: 'active' | 'terminated' | 'deleted';
             /**
+             * The client account the organization belongs to, if any.
+             */
+            client?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * External Id
+                 */
+                external_id: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
+            } | null;
+            /**
              * OrganizationEventsSchema
              */
             events: {
@@ -4746,6 +4873,27 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -4982,6 +5130,27 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
          * OrganizationStatus
          */
         status: 'active' | 'terminated' | 'deleted';
+        /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
         /**
          * OrganizationEventsSchema
          */

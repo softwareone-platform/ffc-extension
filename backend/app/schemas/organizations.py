@@ -89,11 +89,26 @@ class TerminationFeedbackRead(IdSchema):
     ] = None
 
 
+class ClientAccountReference(IdSchema):
+    name: Annotated[str, Field(max_length=255, examples=["Red Hat Inc."])]
+    external_id: Annotated[str, Field(max_length=255, examples=["ACC-1234-5678"])]
+    icon: Annotated[
+        str | None, Field(max_length=255, examples=["/v1/accounts/ACC-1234-5678/icon"])
+    ] = None
+
+
 class OrganizationRead(IdSchema, OrganizationBase):
     linked_organization_id: Annotated[
         str | None, Field(max_length=255, examples=["ee7ebfaf-a222-4209-aecc-67861694a488"])
     ] = None
     status: OrganizationStatus
+    client: Annotated[
+        ClientAccountReference | None,
+        Field(
+            validation_alias="client_account",
+            description="The client account the organization belongs to, if any.",
+        ),
+    ] = None
     events: OrganizationEventsSchema
     expenses_info: OrganizationExpensesInfo | None = None
     termination_feedback: Annotated[
