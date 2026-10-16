@@ -9,42 +9,61 @@ from app.db.models import Organization
 from app.enums import DatasourceType
 from tests.types import ModelFactory
 
-# ===========================
-# Optscale API Mock responses
-# ===========================
+# ==========================
+# FFC API Mock responses
+# ==========================
 
 
-def optscale_aws_cnr_datasource_get_by_id_response_data():
+def ffc_api_aws_cnr_datasource_detail_response_data():
     return {
-        "account_id": "1dc9b339-fadb-432e-86df-423c38a0fcb8",
         "id": "5cded1eb-4d7e-4df9-b76f-fc33b5df9eb3",
-        "last_getting_metric_attempt_at": 0,
-        "last_getting_metric_attempt_error": None,
-        "last_getting_metrics_at": 0,
-        "last_import_at": 1756684800,  # 2025-09-01T00:00:00Z
-        "last_import_attempt_at": 0,
-        "last_import_attempt_error": None,
         "name": "swotest02",
-        "parent_id": None,
         "type": "aws_cnr",
+        "account_id": "203589795269",
+        "parent": None,
+        "tags": [],
+        "last_import_at": 1756684800,  # 2025-09-01T00:00:00Z
+        "last_import_modified_at": 0,
+        "last_import_attempt_at": 1756684800,
+        "last_import_attempt_error": None,
+        "cost": 99.88,
+        "forecast": 1234.56,
+        "resources": 5,
         "details": {
-            "cost": 99.88,
-            "discovery_infos": [],
-            "forecast": 1234.56,
-            "last_month_cost": 0,
-            "resources": 5,
-        },
-        "config": {
-            "access_key_id": "[REDACTED]",
-            "linked": False,
+            "connected_at": "2025-08-01T00:00:00Z",
+            "account_id": "203589795269",
+            "account_type": "management_standalone",
+            "authentication_type": "access_key",
+            "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+            "export_type": "standard_data_export",
             "use_edp_discount": False,
-            "cur_version": 2,
+            "export_name": "optscale-billing-export",
             "bucket_name": "optscale-billing-bucket",
             "bucket_prefix": "reports",
-            "config_scheme": "create_report",
-            "region_name": False,
-            "report_name": "optscale-billing-export",
         },
+        "billing": {
+            "last_report_processed_at": "2025-09-01T00:00:00Z",
+            "last_attempt_at": "2025-09-01T00:00:00Z",
+            "last_report_updated_at": None,
+            "status": "completed",
+            "error": None,
+        },
+        "metrics": {
+            "last_retrieval_at": None,
+            "last_attempt_at": "2025-09-01T00:00:00Z",
+            "status": "failed",
+            "error": "Access denied",
+        },
+        "discovery": [
+            {
+                "resource_type": "instance",
+                "enabled": True,
+                "last_discovery_at": "2025-09-01T00:00:00Z",
+                "last_error_at": None,
+                "status": "completed",
+                "error": None,
+            },
+        ],
     }
 
 
@@ -221,11 +240,11 @@ async def test_get_datasource_by_id_success(
         linked_organization_id=str(uuid.uuid4()),
     )
 
-    datasource_data = optscale_aws_cnr_datasource_get_by_id_response_data()
+    datasource_data = ffc_api_aws_cnr_datasource_detail_response_data()
 
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_data['id']}?details=true",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_data['id']}",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         json=datasource_data,
     )
@@ -235,6 +254,7 @@ async def test_get_datasource_by_id_success(
     )
 
     assert response.status_code == 200
+    # Null fields are omitted from the response.
     assert response.json() == {
         "id": datasource_data["id"],
         "name": datasource_data["name"],
@@ -242,13 +262,109 @@ async def test_get_datasource_by_id_success(
         "resources_charged_this_month": 5,
         "expenses_so_far_this_month": 99.88,
         "expenses_forecast_this_month": 1234.56,
-        "datasource_id": "1dc9b339-fadb-432e-86df-423c38a0fcb8",
+        "datasource_id": "203589795269",
         "last_import_at": "2025-09-01T00:00:00Z",
-        # Optscale does not report these two for this datasource: they fall back to the epoch.
         "last_import_modified_at": "1970-01-01T00:00:00Z",
-        "last_import_attempt_at": "1970-01-01T00:00:00Z",
-        # last_import_attempt_error is None and therefore omitted from the response.
+        "last_import_attempt_at": "2025-09-01T00:00:00Z",
+        "details": {
+            "connected_at": "2025-08-01T00:00:00Z",
+            "account_id": "203589795269",
+            "account_type": "management_standalone",
+            "authentication_type": "access_key",
+            "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+            "export_type": "standard_data_export",
+            "use_edp_discount": False,
+            "export_name": "optscale-billing-export",
+            "bucket_name": "optscale-billing-bucket",
+            "bucket_prefix": "reports",
+        },
+        "billing": {
+            "last_report_processed_at": "2025-09-01T00:00:00Z",
+            "last_attempt_at": "2025-09-01T00:00:00Z",
+            "status": "completed",
+        },
+        "metrics": {
+            "last_attempt_at": "2025-09-01T00:00:00Z",
+            "status": "failed",
+            "error": "Access denied",
+        },
+        "discovery": [
+            {
+                "resource_type": "instance",
+                "enabled": True,
+                "last_discovery_at": "2025-09-01T00:00:00Z",
+                "status": "completed",
+            },
+        ],
     }
+
+
+async def test_get_datasource_by_id_picks_details_schema_from_type(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+):
+    org = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()),
+    )
+
+    # An Azure tenant details payload is also a valid Azure subscription one:
+    # the datasource type must drive which schema is used.
+    datasource_data = {
+        **ffc_api_aws_cnr_datasource_detail_response_data(),
+        "type": "azure_tenant",
+        "details": {
+            "connected_at": "2025-08-01T00:00:00Z",
+            "tenant_id": "8b1d7e4a-3c2f-4a9b-8e6d-1f0a5c7b9d2e",
+            "client_id": "c2a9f0b3-7e1d-4b6a-9c8f-3d5e2a1b0c4f",
+        },
+    }
+
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_data['id']}",
+        json=datasource_data,
+    )
+
+    response = await admin_client.get(
+        f"/organizations/{org.id}/datasources/{datasource_data['id']}",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["details"] == datasource_data["details"]
+
+
+async def test_get_datasource_by_id_for_unsupported_type_omits_details(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+):
+    org = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()),
+    )
+
+    datasource_data = {
+        **ffc_api_aws_cnr_datasource_detail_response_data(),
+        "type": "kubernetes_cnr",
+        "details": None,
+    }
+
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_data['id']}",
+        json=datasource_data,
+    )
+
+    response = await admin_client.get(
+        f"/organizations/{org.id}/datasources/{datasource_data['id']}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["type"] == DatasourceType.UNKNOWN.value
+    assert "details" not in data
 
 
 async def test_get_datasource_by_id_for_missing_organization(
@@ -276,7 +392,7 @@ async def test_get_datasource_by_id_for_missing_datasource(
     datasource_id = str(uuid.uuid4())
     httpx_mock.add_response(
         method="GET",
-        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}?details=true",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
         status_code=404,
     )
@@ -285,8 +401,33 @@ async def test_get_datasource_by_id_for_missing_datasource(
         f"/organizations/{org.id}/datasources/{datasource_id}",
     )
 
+    assert response.status_code == 404
+    assert response.json() == {"detail": f"Datasource with ID `{datasource_id}` wasn't found."}
+
+
+async def test_get_datasource_by_id_with_ffc_api_error(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+):
+    org = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()),
+    )
+
+    datasource_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        status_code=500,
+    )
+
+    response = await admin_client.get(
+        f"/organizations/{org.id}/datasources/{datasource_id}",
+    )
+
     assert response.status_code == 502
-    assert f"Error fetching cloud account with ID {datasource_id}" in response.json()["detail"]
+    assert f"Error fetching datasource with ID {datasource_id}" in response.json()["detail"]
 
 
 async def test_get_datasource_by_id_for_organization_with_no_organization_id(
