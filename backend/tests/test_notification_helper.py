@@ -4,7 +4,7 @@ import httpx
 import pytest
 from freezegun import freeze_time
 from pytest_httpx import HTTPXMock
-from pytest_mock import MockerFixture, MockType
+from pytest_mock import MockerFixture
 
 from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
@@ -13,6 +13,7 @@ from app.billing.notification_helper import (
     check_results,
     send_notifications,
 )
+from app.conf import Settings
 
 # Skip the inter-message pacing delay for every test in this file; chunked
 # sends would otherwise block on the real sleep between messages.
@@ -66,13 +67,13 @@ def _posted_card_rows(requests: list[httpx.Request]) -> list[list[tuple[str, ...
 
 
 async def test_send_notifications_success_splits_into_multiple_messages(
-    configured_webhook: MockType, httpx_mock: HTTPXMock
+    test_settings: Settings, httpx_mock: HTTPXMock
 ) -> None:
     """A large success result set must produce more than one real HTTP POST
     to the configured Teams webhook, with each message titled `(i of N)`."""
     httpx_mock.add_response(
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
         status_code=202,
         is_reusable=True,
     )
@@ -91,13 +92,13 @@ async def test_send_notifications_success_splits_into_multiple_messages(
 
 @freeze_time("2025-09-08")
 async def test_send_notifications_error_splits_into_multiple_messages(
-    configured_webhook: MockType, httpx_mock: HTTPXMock
+    test_settings: Settings, httpx_mock: HTTPXMock
 ) -> None:
     """A large error result set (after the cutoff day) must split into
     multiple ERROR notifications, all really sent to Teams."""
     httpx_mock.add_response(
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
         status_code=202,
         is_reusable=True,
     )
@@ -117,13 +118,13 @@ async def test_send_notifications_error_splits_into_multiple_messages(
 
 @freeze_time("2025-09-01")
 async def test_send_notifications_in_progress_splits_into_multiple_messages(
-    configured_webhook: MockType, httpx_mock: HTTPXMock
+    test_settings: Settings, httpx_mock: HTTPXMock
 ) -> None:
     """Before the cutoff day, errors are reported as IN_PROGRESS and must
     still be chunked across multiple real messages."""
     httpx_mock.add_response(
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
         status_code=202,
         is_reusable=True,
     )
@@ -142,13 +143,13 @@ async def test_send_notifications_in_progress_splits_into_multiple_messages(
 
 
 async def test_send_notifications_small_payload_sends_single_message(
-    configured_webhook: MockType, httpx_mock: HTTPXMock
+    test_settings: Settings, httpx_mock: HTTPXMock
 ) -> None:
     """A small result set must produce exactly one real HTTP POST and the
     title must NOT contain a `(i of N)` suffix."""
     httpx_mock.add_response(
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
         status_code=202,
         is_reusable=True,
     )
@@ -163,13 +164,13 @@ async def test_send_notifications_small_payload_sends_single_message(
 
 
 async def test_send_notifications_each_part_carries_subset_of_rows(
-    configured_webhook: MockType, httpx_mock: HTTPXMock
+    test_settings: Settings, httpx_mock: HTTPXMock
 ) -> None:
     """Every authorization_id in the input must appear in exactly one of
     the sent messages, with no duplicates and no losses across the chunks."""
     httpx_mock.add_response(
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
         status_code=202,
         is_reusable=True,
     )
@@ -192,13 +193,13 @@ async def test_send_notifications_each_part_carries_subset_of_rows(
 
 
 async def test_send_notifications_truncates_long_message(
-    configured_webhook: MockType, httpx_mock: HTTPXMock
+    test_settings: Settings, httpx_mock: HTTPXMock
 ) -> None:
     """Messages longer than MAX_MESSAGE_CHARS must be truncated before they
     reach the rendered row, so any content past the cap never lands in Teams."""
     httpx_mock.add_response(
         method="POST",
-        url=configured_webhook.msteams_notifications_webhook_url,
+        url=test_settings.msteams_notifications_webhook_url,
         status_code=202,
         is_reusable=True,
     )

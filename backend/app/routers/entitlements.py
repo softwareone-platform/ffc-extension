@@ -31,8 +31,8 @@ from app.utils import wrap_http_error_in_502
 def common_extra_conditions(auth_ctx: CurrentAuthContext) -> list[ColumnExpressionArgument]:
     conditions: list[ColumnExpressionArgument] = []
 
-    if auth_ctx.account.type == AccountType.AFFILIATE:  # type: ignore
-        conditions.append(Entitlement.owner == auth_ctx.account)  # type: ignore
+    if auth_ctx.account.type == AccountType.AFFILIATE:
+        conditions.append(Entitlement.owner == auth_ctx.account)
         conditions.append(Entitlement.status != EntitlementStatus.DELETED)
 
     return conditions
@@ -81,13 +81,13 @@ async def create_entitlement(
     auth_context: CurrentAuthContext,
 ):
     owner = None
-    if auth_context.account.type == AccountType.AFFILIATE:  # type: ignore
+    if auth_context.account.type == AccountType.AFFILIATE:
         if data.owner:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Affiliate accounts cannot provide an owner for an Entitlement.",
             )
-        owner = auth_context.account  # type: ignore
+        owner = auth_context.account
         if data.redeem_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
