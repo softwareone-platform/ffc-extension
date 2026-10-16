@@ -105,3 +105,35 @@ async def test_create_methods_raise_on_error_status(
 
     with pytest.raises(httpx.HTTPStatusError, match="400 Bad Request"):
         await getattr(ffc_api_client, method_name)(**kwargs)
+
+
+async def test_fetch_datasource_for_organization_gets_admin_organization_datasource(
+    ffc_api_client: FFCAPIClient, test_settings: Settings, httpx_mock: HTTPXMock
+) -> None:
+    """`fetch_datasource_for_organization` GETs the organization datasource with cluster secret."""
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/ORG-1/datasources/DS-1"
+        ),
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": "DS-1"},
+    )
+
+    response = await ffc_api_client.fetch_datasource_for_organization(
+        organization_id="ORG-1", datasource_id="DS-1"
+    )
+
+    assert response.json() == {"id": "DS-1"}
+
+
+async def test_fetch_datasource_for_organization_raises_on_error_status(
+    ffc_api_client: FFCAPIClient, httpx_mock: HTTPXMock
+) -> None:
+    """`fetch_datasource_for_organization` raises when the FFC API returns an error."""
+    httpx_mock.add_response(method="GET", status_code=404)
+
+    with pytest.raises(httpx.HTTPStatusError, match="404 Not Found"):
+        await ffc_api_client.fetch_datasource_for_organization(
+            organization_id="ORG-1", datasource_id="DS-1"
+        )
