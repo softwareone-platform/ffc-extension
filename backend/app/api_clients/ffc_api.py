@@ -74,7 +74,7 @@ class FFCAPIClient(BaseAPIClient):
         response = await self.httpx_client.post(
             "/admin/organizations",
             json={
-                "org_name": org_name,
+                "name": org_name,
                 "user_id": user_id,
                 "currency": currency,
             },

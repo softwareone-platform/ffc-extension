@@ -67,7 +67,7 @@ async def test_create_organization_posts_payload_to_admin_organizations(
         method="POST",
         url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
-        match_json={"org_name": "ACME", "user_id": "USR-1", "currency": "EUR"},
+        match_json={"name": "ACME", "user_id": "USR-1", "currency": "EUR"},
         json={"id": "ORG-1"},
         status_code=201,
     )
