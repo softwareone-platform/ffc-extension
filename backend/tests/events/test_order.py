@@ -878,7 +878,7 @@ async def test_get_or_create_organization(
         json={"id": "OPT-ORG-0001"},
         status_code=201,
         match_json={
-            "org_name": "ACME Inc",
+            "name": "ACME Inc",
             "user_id": "employee-id",
             "currency": "USD",
         },
@@ -1012,7 +1012,7 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
         url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0002"},
         match_json={
-            "org_name": "ACME Inc",
+            "name": "ACME Inc",
             "user_id": "employee-id",
             "currency": "USD",
         },
@@ -1547,7 +1547,7 @@ async def test_purchase_order_process_completes_order(
         method="POST",
         url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
-        match_json={"org_name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
+        match_json={"name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
     )
     httpx_mock.add_response(
         method="PUT",
@@ -1682,7 +1682,7 @@ async def test_purchase_order_process_new_user_branch(
         method="POST",
         url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
-        match_json={"org_name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
+        match_json={"name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
     )
     # the vendor external id is the generated organization id, asserted after the call
     httpx_mock.add_response(
