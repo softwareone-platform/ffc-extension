@@ -42,6 +42,8 @@ def command():
         "system_handler": handlers.SystemHandler(session),
         "organization_handler": handlers.OrganizationHandler(session),
         "datasource_expense_handler": handlers.DatasourceExpenseHandler(session),
+        "client_account_handler": handlers.ClientAccountHandler(session),
+        "termination_feedback_handler": handlers.TerminationFeedbackHandler(session),
     }
 
     table = Table(

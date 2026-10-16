@@ -19,6 +19,10 @@ events:
     path: "/events/commerce/subscriptions"
     task: true
 {% endif %}
+  - event: platform.accounts.account.updated
+    condition: "eq(type,Client)"
+    path: "/events/accounts/clients"
+    task: true
 webhooks:
   - type: ValidateChangeOrderDraft
     description: Validate draft change orders.
@@ -37,3 +41,4 @@ plugs:
   icon: query_stats
   socket: portal.root
   href: "/static/StandaloneRoot-{{ settings.extension_version }}.js"
+  condition: "ne(auth.account.type,Operations)"
