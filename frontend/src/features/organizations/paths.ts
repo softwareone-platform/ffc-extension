@@ -9,6 +9,7 @@ export const SEGMENTS = {
   events: "events",
   dataSources: "data-sources",
   users: "users",
+  termination: "termination",
 } as const;
 
 export const PATHS = {
@@ -18,5 +19,6 @@ export const PATHS = {
   events: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.events}`,
   dataSources: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.dataSources}`,
   users: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.users}`,
+  termination: (id: string) => `/${SEGMENTS.root}/${id}/${SEGMENTS.termination}`,
   detailMatch: `/${SEGMENTS.root}/${SEGMENTS.idParam}/*`,
 } as const;
