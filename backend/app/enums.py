@@ -75,6 +75,31 @@ class DatasourceType(enum.StrEnum):
 
 
 @enum.unique
+class DatasourceImportStatus(enum.StrEnum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
+@enum.unique
+class AwsAccountType(enum.StrEnum):
+    MEMBER = "member"
+    MANAGEMENT_STANDALONE = "management_standalone"
+
+
+@enum.unique
+class AwsAuthenticationType(enum.StrEnum):
+    ASSUMED_ROLE = "assumed_role"
+    ACCESS_KEY = "access_key"
+
+
+@enum.unique
+class AwsExportType(enum.StrEnum):
+    LEGACY_CUR_EXPORT = "legacy_cur_export"
+    STANDARD_DATA_EXPORT = "standard_data_export"
+
+
+@enum.unique
 class OrganizationStatus(enum.StrEnum):
     ACTIVE = "active"
     TERMINATED = "terminated"

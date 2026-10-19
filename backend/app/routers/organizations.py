@@ -23,7 +23,7 @@ from app.dependencies.db import (
     OrganizationRepository,
 )
 from app.dependencies.path import OrganizationId
-from app.enums import AccountType, DatasourceType, OrganizationStatus
+from app.enums import AccountType, OrganizationStatus
 from app.openapi import examples
 from app.pagination import LimitOffsetPage, LimitOffsetParams, paginate
 from app.rql import OrganizationRules, RQLPassthrough, RQLQuery
@@ -32,6 +32,7 @@ from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
     AdditionalAdminRequestCreate,
     AdditionalAdminRequestRead,
+    DatasourceDetailRead,
     DatasourceForceReimport,
     DatasourceRead,
     OrganizationRead,
@@ -157,35 +158,31 @@ async def get_datasources_by_organization_id(
 
 @router.get(
     "/{organization_id}/datasources/{datasource_id}",
-    response_model=DatasourceRead,
+    response_model=DatasourceDetailRead,
     dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_datasource_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
-    optscale_client: OptscaleClient,
+    ffc_api_client: FFCAPIClient,
 ):
-    validate_linked_organization_id(organization)
+    linked_organization_id = validate_linked_organization_id(organization)
 
-    with wrap_http_error_in_502(f"Error fetching cloud account with ID {datasource_id}"):
-        response = await optscale_client.fetch_datasource_by_id(datasource_id)
+    with wrap_http_error_in_502(f"Error fetching datasource with ID {datasource_id}"):
+        try:
+            response = await ffc_api_client.fetch_datasource_for_organization(
+                organization_id=linked_organization_id,
+                datasource_id=datasource_id,
+            )
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != httpx.codes.NOT_FOUND:
+                raise
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Datasource with ID `{datasource_id}` wasn't found.",
+            ) from e
 
-    datasource = response.json()
-
-    return DatasourceRead(
-        id=datasource["id"],
-        name=datasource["name"],
-        type=DatasourceType(datasource["type"]),
-        parent_id=datasource["parent_id"],
-        resources_charged_this_month=datasource["details"]["resources"],
-        expenses_so_far_this_month=datasource["details"]["cost"],
-        expenses_forecast_this_month=datasource["details"]["forecast"],
-        datasource_id=datasource["account_id"],
-        last_import_at=datasource.get("last_import_at", 0),
-        last_import_modified_at=datasource.get("last_import_modified_at", 0),
-        last_import_attempt_at=datasource.get("last_import_attempt_at", 0),
-        last_import_attempt_error=datasource.get("last_import_attempt_error"),
-    )
+    return DatasourceDetailRead(**response.json())
 
 
 @router.post(

@@ -500,6 +500,142 @@ export type AuditFieldSchema = {
 };
 
 /**
+ * AwsAccountType
+ */
+export type AwsAccountType = 'member' | 'management_standalone';
+
+/**
+ * AwsAuthenticationType
+ */
+export type AwsAuthenticationType = 'assumed_role' | 'access_key';
+
+/**
+ * AwsDetails
+ *
+ * `assumed_role_name` is returned only for assumed role authentication,
+ * `access_key_id` only for access key authentication and the export fields
+ * only for management/standalone accounts.
+ */
+export type AwsDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Account Id
+     */
+    account_id?: string | null;
+    /**
+     * AwsAccountType
+     */
+    account_type: 'member' | 'management_standalone';
+    /**
+     * AwsAuthenticationType
+     */
+    authentication_type: 'assumed_role' | 'access_key';
+    /**
+     * Assumed Role Name
+     */
+    assumed_role_name?: string | null;
+    /**
+     * Access Key Id
+     */
+    access_key_id?: string | null;
+    export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+    /**
+     * Use Edp Discount
+     */
+    use_edp_discount?: boolean | null;
+    /**
+     * Export Name
+     */
+    export_name?: string | null;
+    /**
+     * Bucket Name
+     */
+    bucket_name?: string | null;
+    /**
+     * Bucket Prefix
+     */
+    bucket_prefix?: string | null;
+    /**
+     * Region Name
+     */
+    region_name?: string | null;
+    /**
+     * Included Regions
+     */
+    included_regions?: Array<string> | null;
+    /**
+     * Excluded Regions
+     */
+    excluded_regions?: Array<string> | null;
+};
+
+/**
+ * AwsExportType
+ */
+export type AwsExportType = 'legacy_cur_export' | 'standard_data_export';
+
+/**
+ * AzureSubscriptionDetails
+ */
+export type AzureSubscriptionDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    parent?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * DatasourceType
+         */
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
+    } | null;
+    /**
+     * Subscription Id
+     */
+    subscription_id?: string | null;
+    /**
+     * Tenant Id
+     */
+    tenant_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+};
+
+/**
+ * AzureTenantDetails
+ */
+export type AzureTenantDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Tenant Id
+     */
+    tenant_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+};
+
+/**
  * ClientAccountReference
  */
 export type ClientAccountReference = {
@@ -541,6 +677,336 @@ export type DatasourceBase = {
      * Datasource Id
      */
     datasource_id?: string | null;
+};
+
+/**
+ * DatasourceBillingInfo
+ */
+export type DatasourceBillingInfo = {
+    /**
+     * Last Report Processed At
+     */
+    last_report_processed_at?: string | null;
+    /**
+     * Last Attempt At
+     */
+    last_attempt_at?: string | null;
+    /**
+     * Last Report Updated At
+     */
+    last_report_updated_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
+};
+
+/**
+ * DatasourceDetailRead
+ */
+export type DatasourceDetailRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * DatasourceType
+     */
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    /**
+     * Datasource Id
+     */
+    datasource_id?: string | null;
+    parent?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * DatasourceType
+         */
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
+    } | null;
+    /**
+     * Parent Id
+     */
+    parent_id?: string | null;
+    /**
+     * Last Import At
+     */
+    last_import_at?: string;
+    /**
+     * Last Import Modified At
+     */
+    last_import_modified_at?: string;
+    /**
+     * Last Import Attempt At
+     */
+    last_import_attempt_at?: string;
+    /**
+     * Last Import Attempt Error
+     */
+    last_import_attempt_error?: string | null;
+    /**
+     * Resources Charged This Month
+     */
+    resources_charged_this_month: number;
+    /**
+     * Expenses So Far This Month
+     */
+    expenses_so_far_this_month: number;
+    /**
+     * Expenses Forecast This Month
+     */
+    expenses_forecast_this_month: number;
+    /**
+     * Details
+     */
+    details?: {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        parent?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * DatasourceType
+             */
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            /**
+             * Datasource Id
+             */
+            datasource_id?: string | null;
+        } | null;
+        /**
+         * Subscription Id
+         */
+        subscription_id?: string | null;
+        /**
+         * Tenant Id
+         */
+        tenant_id?: string | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Tenant Id
+         */
+        tenant_id?: string | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Account Id
+         */
+        account_id?: string | null;
+        /**
+         * AwsAccountType
+         */
+        account_type: 'member' | 'management_standalone';
+        /**
+         * AwsAuthenticationType
+         */
+        authentication_type: 'assumed_role' | 'access_key';
+        /**
+         * Assumed Role Name
+         */
+        assumed_role_name?: string | null;
+        /**
+         * Access Key Id
+         */
+        access_key_id?: string | null;
+        export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+        /**
+         * Use Edp Discount
+         */
+        use_edp_discount?: boolean | null;
+        /**
+         * Export Name
+         */
+        export_name?: string | null;
+        /**
+         * Bucket Name
+         */
+        bucket_name?: string | null;
+        /**
+         * Bucket Prefix
+         */
+        bucket_prefix?: string | null;
+        /**
+         * Region Name
+         */
+        region_name?: string | null;
+        /**
+         * Included Regions
+         */
+        included_regions?: Array<string> | null;
+        /**
+         * Excluded Regions
+         */
+        excluded_regions?: Array<string> | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Project Id
+         */
+        project_id?: string | null;
+        /**
+         * Billing Dataset Name
+         */
+        billing_dataset_name?: string | null;
+        /**
+         * Billing Table Name
+         */
+        billing_table_name?: string | null;
+        /**
+         * Billing Project Id
+         */
+        billing_project_id?: string | null;
+    } | null;
+    /**
+     * DatasourceBillingInfo
+     */
+    billing: {
+        /**
+         * Last Report Processed At
+         */
+        last_report_processed_at?: string | null;
+        /**
+         * Last Attempt At
+         */
+        last_attempt_at?: string | null;
+        /**
+         * Last Report Updated At
+         */
+        last_report_updated_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    };
+    /**
+     * DatasourceMetricsInfo
+     */
+    metrics: {
+        /**
+         * Last Retrieval At
+         */
+        last_retrieval_at?: string | null;
+        /**
+         * Last Attempt At
+         */
+        last_attempt_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    };
+    /**
+     * Discovery
+     */
+    discovery?: Array<{
+        /**
+         * Resource Type
+         */
+        resource_type?: string | null;
+        /**
+         * Enabled
+         */
+        enabled?: boolean | null;
+        /**
+         * Last Discovery At
+         */
+        last_discovery_at?: string | null;
+        /**
+         * Last Error At
+         */
+        last_error_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    }>;
+};
+
+/**
+ * DatasourceDiscoveryItem
+ */
+export type DatasourceDiscoveryItem = {
+    /**
+     * Resource Type
+     */
+    resource_type?: string | null;
+    /**
+     * Enabled
+     */
+    enabled?: boolean | null;
+    /**
+     * Last Discovery At
+     */
+    last_discovery_at?: string | null;
+    /**
+     * Last Error At
+     */
+    last_error_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
 };
 
 /**
@@ -687,6 +1153,33 @@ export type DatasourceForceReimport = {
      * Date, in ISO format, to set as the datasource's last import timestamp before scheduling the reimport. When omitted it defaults to the epoch (0), which reimports all the available expenses.
      */
     last_import_at?: string | null;
+};
+
+/**
+ * DatasourceImportStatus
+ */
+export type DatasourceImportStatus = 'completed' | 'failed' | 'unknown';
+
+/**
+ * DatasourceMetricsInfo
+ */
+export type DatasourceMetricsInfo = {
+    /**
+     * Last Retrieval At
+     */
+    last_retrieval_at?: string | null;
+    /**
+     * Last Attempt At
+     */
+    last_attempt_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
 };
 
 /**
@@ -1182,6 +1675,32 @@ export type EntitlementsEventsSchema = {
             name: string;
         } | null;
     } | null;
+};
+
+/**
+ * GcpDetails
+ */
+export type GcpDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Project Id
+     */
+    project_id?: string | null;
+    /**
+     * Billing Dataset Name
+     */
+    billing_dataset_name?: string | null;
+    /**
+     * Billing Table Name
+     */
+    billing_table_name?: string | null;
+    /**
+     * Billing Project Id
+     */
+    billing_project_id?: string | null;
 };
 
 /**
@@ -5502,7 +6021,7 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
 
 export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses = {
     /**
-     * DatasourceRead
+     * DatasourceDetailRead
      *
      * Successful Response
      */
@@ -5573,6 +6092,208 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
          * Expenses Forecast This Month
          */
         expenses_forecast_this_month: number;
+        /**
+         * Details
+         */
+        details?: {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            parent?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * DatasourceType
+                 */
+                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+                /**
+                 * Datasource Id
+                 */
+                datasource_id?: string | null;
+            } | null;
+            /**
+             * Subscription Id
+             */
+            subscription_id?: string | null;
+            /**
+             * Tenant Id
+             */
+            tenant_id?: string | null;
+            /**
+             * Client Id
+             */
+            client_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Tenant Id
+             */
+            tenant_id?: string | null;
+            /**
+             * Client Id
+             */
+            client_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Account Id
+             */
+            account_id?: string | null;
+            /**
+             * AwsAccountType
+             */
+            account_type: 'member' | 'management_standalone';
+            /**
+             * AwsAuthenticationType
+             */
+            authentication_type: 'assumed_role' | 'access_key';
+            /**
+             * Assumed Role Name
+             */
+            assumed_role_name?: string | null;
+            /**
+             * Access Key Id
+             */
+            access_key_id?: string | null;
+            export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+            /**
+             * Use Edp Discount
+             */
+            use_edp_discount?: boolean | null;
+            /**
+             * Export Name
+             */
+            export_name?: string | null;
+            /**
+             * Bucket Name
+             */
+            bucket_name?: string | null;
+            /**
+             * Bucket Prefix
+             */
+            bucket_prefix?: string | null;
+            /**
+             * Region Name
+             */
+            region_name?: string | null;
+            /**
+             * Included Regions
+             */
+            included_regions?: Array<string> | null;
+            /**
+             * Excluded Regions
+             */
+            excluded_regions?: Array<string> | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Project Id
+             */
+            project_id?: string | null;
+            /**
+             * Billing Dataset Name
+             */
+            billing_dataset_name?: string | null;
+            /**
+             * Billing Table Name
+             */
+            billing_table_name?: string | null;
+            /**
+             * Billing Project Id
+             */
+            billing_project_id?: string | null;
+        } | null;
+        /**
+         * DatasourceBillingInfo
+         */
+        billing: {
+            /**
+             * Last Report Processed At
+             */
+            last_report_processed_at?: string | null;
+            /**
+             * Last Attempt At
+             */
+            last_attempt_at?: string | null;
+            /**
+             * Last Report Updated At
+             */
+            last_report_updated_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        };
+        /**
+         * DatasourceMetricsInfo
+         */
+        metrics: {
+            /**
+             * Last Retrieval At
+             */
+            last_retrieval_at?: string | null;
+            /**
+             * Last Attempt At
+             */
+            last_attempt_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        };
+        /**
+         * Discovery
+         */
+        discovery?: Array<{
+            /**
+             * Resource Type
+             */
+            resource_type?: string | null;
+            /**
+             * Enabled
+             */
+            enabled?: boolean | null;
+            /**
+             * Last Discovery At
+             */
+            last_discovery_at?: string | null;
+            /**
+             * Last Error At
+             */
+            last_error_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        }>;
     };
 };
 
