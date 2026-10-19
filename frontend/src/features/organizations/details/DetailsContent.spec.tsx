@@ -107,6 +107,31 @@ describe("OrganizationDetailsContent", () => {
     expect(paths).toEqual(["general", "data-sources", "users", "events"]);
   });
 
+  it("shows the termination tab last when the organization has termination feedback", () => {
+    primeEntity({ id: "org-1", termination_feedback: { id: "tf-1", reason: "other" } });
+
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
+      routePath: "/organizations/:organizationId/*",
+    });
+
+    const paths = mockTopBar.mock.lastCall![0].items!.map((item) => item.path);
+    expect(paths).toEqual(["general", "data-sources", "users", "events", "termination"]);
+  });
+
+  it.each([
+    ["is null", null],
+    ["is missing", undefined],
+  ])("hides the termination tab when the termination feedback %s", (_, terminationFeedback) => {
+    primeEntity({ id: "org-1", termination_feedback: terminationFeedback });
+
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
+      routePath: "/organizations/:organizationId/*",
+    });
+
+    const paths = mockTopBar.mock.lastCall![0].items!.map((item) => item.path);
+    expect(paths).not.toContain("termination");
+  });
+
   it("passes the loaded entity into the OrganizationsProvider", () => {
     const entity = { id: "org-1", name: "Acme" } as OrganizationRead;
     primeEntity(entity);
