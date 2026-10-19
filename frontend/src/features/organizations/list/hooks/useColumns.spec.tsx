@@ -1,7 +1,9 @@
 import { renderHook, screen } from "@testing-library/react";
 
+import { NO_VALUE } from "@swo/design-system/utils";
+
 import type { AccountType } from "~api/ffc-api-model";
-import { columnByName, makeOrganization, renderColumnCell } from "~test-utils";
+import { columnByName, makeClientAccount, makeOrganization, renderColumnCell } from "~test-utils";
 
 import { mockGetActions, mockStatus, mockUseUserRole } from "./useColumns.spec.mocks";
 
@@ -13,6 +15,7 @@ const COLUMN_FIELDS = [
   ["billing_currency", ["billing_currency"]],
   ["linked_organization_id", ["linked_organization_id"]],
   ["operations_external_id", ["operations_external_id"]],
+  ["client", ["client.name", "client.id", "client.external_id"]],
   ["updated_at", ["events.updated.at"]],
   ["created_at", ["events.created.at"]],
   ["terminated_at", ["events.terminated.at"]],
@@ -60,6 +63,55 @@ describe("useColumns (organizations list)", () => {
 
     expect(screen.getByTestId("title")).toHaveTextContent("Acme");
     expect(screen.getByTestId("subtitle")).toHaveTextContent("org-1 | linked-1");
+  });
+
+  it("renders the client column with name, external_id and a square icon avatar", () => {
+    const { result } = renderHook(() => useColumns());
+    const client = makeClientAccount({
+      name: "Client Co",
+      external_id: "cli-ext-1",
+      icon: "a.png",
+    });
+
+    renderColumnCell(result.current, "client", makeOrganization({ client }));
+
+    expect(screen.getByTestId("primary")).toHaveTextContent("Client Co");
+    expect(screen.getByTestId("secondary")).toHaveTextContent("cli-ext-1");
+    expect(screen.getByTestId("avatar")).toHaveAttribute("data-image-src", "/public/a.png");
+  });
+
+  it("renders the client column without an avatar when the client has no icon", () => {
+    const { result } = renderHook(() => useColumns());
+
+    renderColumnCell(
+      result.current,
+      "client",
+      makeOrganization({ client: makeClientAccount({ icon: null }) }),
+    );
+
+    expect(screen.getByTestId("entity-reference-cell")).toBeInTheDocument();
+    expect(screen.queryByTestId("avatar")).not.toBeInTheDocument();
+  });
+
+  it("falls back to NO_VALUE as client secondary content when external_id is empty", () => {
+    const { result } = renderHook(() => useColumns());
+
+    renderColumnCell(
+      result.current,
+      "client",
+      makeOrganization({ client: makeClientAccount({ external_id: "" }) }),
+    );
+
+    expect(screen.getByTestId("secondary")).toHaveTextContent(NO_VALUE);
+  });
+
+  it("renders NO_VALUE in the client column when the organization has no client", () => {
+    const { result } = renderHook(() => useColumns());
+
+    renderColumnCell(result.current, "client", makeOrganization({ client: null }));
+
+    expect(screen.getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
+    expect(screen.queryByTestId("entity-reference-cell")).not.toBeInTheDocument();
   });
 
   it.each([
