@@ -1678,6 +1678,11 @@ export type EntitlementsEventsSchema = {
 };
 
 /**
+ * EventLevel
+ */
+export type EventLevel = 'INFO' | 'WARNING' | 'ERROR' | 'UNKNOWN';
+
+/**
  * GcpDetails
  */
 export type GcpDetails = {
@@ -2412,6 +2417,89 @@ export type LimitOffsetPageEntitlementRead = {
 };
 
 /**
+ * LimitOffsetPage[OrganizationEventRead]
+ */
+export type LimitOffsetPageOrganizationEventRead = {
+    /**
+     * Items
+     */
+    items: Array<{
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Time
+         */
+        time: string;
+        /**
+         * EventLevel
+         */
+        level: 'INFO' | 'WARNING' | 'ERROR' | 'UNKNOWN';
+        /**
+         * Evt Class
+         */
+        evt_class: string;
+        /**
+         * Object Id
+         */
+        object_id?: string | null;
+        /**
+         * Object Type
+         */
+        object_type?: string | null;
+        /**
+         * Object Name
+         */
+        object_name?: string | null;
+        /**
+         * Description
+         */
+        description?: string | null;
+        /**
+         * Ack
+         */
+        ack: boolean;
+        /**
+         * Acknowledged
+         */
+        acknowledged?: string | null;
+        /**
+         * Acknowledged By
+         */
+        acknowledged_by?: string | null;
+        /**
+         * Acknowledged User
+         */
+        acknowledged_user?: string | null;
+        /**
+         * Resolution
+         */
+        resolution?: string | null;
+        /**
+         * Initiator Id
+         */
+        initiator_id?: string | null;
+        /**
+         * Initiator Name
+         */
+        initiator_name?: string | null;
+    }>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Limit
+     */
+    limit: number | null;
+    /**
+     * Offset
+     */
+    offset: number;
+};
+
+/**
  * LimitOffsetPage[OrganizationRead]
  */
 export type LimitOffsetPageOrganizationRead = {
@@ -2833,6 +2921,72 @@ export type Me = {
          */
         id: string;
     } | null;
+};
+
+/**
+ * OrganizationEventRead
+ */
+export type OrganizationEventRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Time
+     */
+    time: string;
+    /**
+     * EventLevel
+     */
+    level: 'INFO' | 'WARNING' | 'ERROR' | 'UNKNOWN';
+    /**
+     * Evt Class
+     */
+    evt_class: string;
+    /**
+     * Object Id
+     */
+    object_id?: string | null;
+    /**
+     * Object Type
+     */
+    object_type?: string | null;
+    /**
+     * Object Name
+     */
+    object_name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Ack
+     */
+    ack: boolean;
+    /**
+     * Acknowledged
+     */
+    acknowledged?: string | null;
+    /**
+     * Acknowledged By
+     */
+    acknowledged_by?: string | null;
+    /**
+     * Acknowledged User
+     */
+    acknowledged_user?: string | null;
+    /**
+     * Resolution
+     */
+    resolution?: string | null;
+    /**
+     * Initiator Id
+     */
+    initiator_id?: string | null;
+    /**
+     * Initiator Name
+     */
+    initiator_name?: string | null;
 };
 
 /**
@@ -6372,6 +6526,155 @@ export type ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDa
 };
 
 export type ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponse = ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponses[keyof ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponses];
+
+export type GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetData = {
+    body?: never;
+    path: {
+        /**
+         * Organization Id
+         */
+        organization_id: string;
+    };
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Offset
+         */
+        offset?: number;
+    };
+    url: '/ops/v1/organizations/{organization_id}/events';
+};
+
+export type GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetErrors = {
+    /**
+     * HTTPValidationError
+     *
+     * Validation Error
+     */
+    422: {
+        /**
+         * Detail
+         */
+        detail?: Array<{
+            /**
+             * Location
+             */
+            loc: Array<string | number>;
+            /**
+             * Message
+             */
+            msg: string;
+            /**
+             * Error Type
+             */
+            type: string;
+            /**
+             * Input
+             */
+            input?: unknown;
+            /**
+             * Context
+             */
+            ctx?: {
+                [key: string]: unknown;
+            };
+        }>;
+    };
+};
+
+export type GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetError = GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetErrors[keyof GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetErrors];
+
+export type GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetResponses = {
+    /**
+     * LimitOffsetPage[OrganizationEventRead]
+     *
+     * Successful Response
+     */
+    200: {
+        /**
+         * Items
+         */
+        items: Array<{
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Time
+             */
+            time: string;
+            /**
+             * EventLevel
+             */
+            level: 'INFO' | 'WARNING' | 'ERROR' | 'UNKNOWN';
+            /**
+             * Evt Class
+             */
+            evt_class: string;
+            /**
+             * Object Id
+             */
+            object_id?: string | null;
+            /**
+             * Object Type
+             */
+            object_type?: string | null;
+            /**
+             * Object Name
+             */
+            object_name?: string | null;
+            /**
+             * Description
+             */
+            description?: string | null;
+            /**
+             * Ack
+             */
+            ack: boolean;
+            /**
+             * Acknowledged
+             */
+            acknowledged?: string | null;
+            /**
+             * Acknowledged By
+             */
+            acknowledged_by?: string | null;
+            /**
+             * Acknowledged User
+             */
+            acknowledged_user?: string | null;
+            /**
+             * Resolution
+             */
+            resolution?: string | null;
+            /**
+             * Initiator Id
+             */
+            initiator_id?: string | null;
+            /**
+             * Initiator Name
+             */
+            initiator_name?: string | null;
+        }>;
+        /**
+         * Total
+         */
+        total: number;
+        /**
+         * Limit
+         */
+        limit: number | null;
+        /**
+         * Offset
+         */
+        offset: number;
+    };
+};
+
+export type GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetResponse = GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetResponses[keyof GetEventsByOrganizationIdOpsV1OrganizationsOrganizationIdEventsGetResponses];
 
 export type GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetData = {
     body?: never;
