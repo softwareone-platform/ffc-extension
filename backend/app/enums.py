@@ -100,6 +100,18 @@ class AwsExportType(enum.StrEnum):
 
 
 @enum.unique
+class EventLevel(enum.StrEnum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    UNKNOWN = "UNKNOWN"
+
+    @classmethod
+    def _missing_(cls, value):
+        return cls.UNKNOWN
+
+
+@enum.unique
 class OrganizationStatus(enum.StrEnum):
     ACTIVE = "active"
     TERMINATED = "terminated"
