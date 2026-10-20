@@ -35,6 +35,7 @@ from app.schemas.organizations import (
     DatasourceDetailRead,
     DatasourceForceReimport,
     DatasourceRead,
+    OrganizationEventRead,
     OrganizationRead,
     OrganizationUpdate,
 )
@@ -210,6 +211,35 @@ async def force_reimport_datasource(
             },
         )
         await optscale_client.force_reimport_datasource(datasource_id)
+
+
+@router.get(
+    "/{organization_id}/events",
+    response_model=LimitOffsetPage[OrganizationEventRead],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
+)
+async def get_events_by_organization_id(
+    organization: Annotated[Organization, Depends(fetch_organization_or_404)],
+    ffc_api_client: FFCAPIClient,
+    params: Annotated[LimitOffsetParams, Depends()],
+    rql: Annotated[str | None, Depends(RQLPassthrough())],
+):
+    linked_organization_id = validate_linked_organization_id(organization)
+
+    with wrap_http_error_in_502(f"Error fetching events for organization {organization.name}"):
+        response = await ffc_api_client.fetch_events_for_organization(
+            organization_id=linked_organization_id,
+            limit=params.limit,
+            offset=params.offset,
+            rql=rql,
+        )
+
+    events = response.json()
+    return create_page(
+        [OrganizationEventRead(**event) for event in events["items"]],
+        params=params,
+        total=events["total"],
+    )
 
 
 @router.get(
