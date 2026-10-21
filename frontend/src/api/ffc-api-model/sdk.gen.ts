@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostData, AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostErrors, AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostResponses, CreateAccountOpsV1AccountsPostData, CreateAccountOpsV1AccountsPostErrors, CreateAccountOpsV1AccountsPostResponses, CreateEntitlementOpsV1EntitlementsPostData, CreateEntitlementOpsV1EntitlementsPostErrors, CreateEntitlementOpsV1EntitlementsPostResponses, CreateOrganizationOpsV1OrganizationsPostData, CreateOrganizationOpsV1OrganizationsPostErrors, CreateOrganizationOpsV1OrganizationsPostResponses, DeleteEntitlementByIdOpsV1EntitlementsIdDeleteData, DeleteEntitlementByIdOpsV1EntitlementsIdDeleteErrors, DeleteEntitlementByIdOpsV1EntitlementsIdDeleteResponses, DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteData, DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteErrors, DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteResponses, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostData, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostErrors, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponses, GetAccountByIdOpsV1AccountsIdGetData, GetAccountByIdOpsV1AccountsIdGetErrors, GetAccountByIdOpsV1AccountsIdGetResponses, GetAccountsOpsV1AccountsGetData, GetAccountsOpsV1AccountsGetResponses, GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetData, GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetErrors, GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses, GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDatasourcesGetData, GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDatasourcesGetErrors, GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDatasourcesGetResponses, GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetData, GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetErrors, GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetResponses, GetEntitlementByIdOpsV1EntitlementsIdGetData, GetEntitlementByIdOpsV1EntitlementsIdGetErrors, GetEntitlementByIdOpsV1EntitlementsIdGetResponses, GetEntitlementsOpsV1EntitlementsGetData, GetEntitlementsOpsV1EntitlementsGetResponses, GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetData, GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetErrors, GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses, GetOrganizationsOpsV1OrganizationsGetData, GetOrganizationsOpsV1OrganizationsGetResponses, ListAccountUsersOpsV1AccountsIdUsersGetData, ListAccountUsersOpsV1AccountsIdUsersGetErrors, ListAccountUsersOpsV1AccountsIdUsersGetResponses, ListDatasourceExpensesOpsV1ExpensesGetData, ListDatasourceExpensesOpsV1ExpensesGetResponses, MakeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesUserIdMakeAdminPostData, MakeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesUserIdMakeAdminPostErrors, MakeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesUserIdMakeAdminPostResponses, MeOpsV1MeGetData, MeOpsV1MeGetResponses, ProcessOrderEventsCommerceOrdersPostData, ProcessOrderEventsCommerceOrdersPostErrors, ProcessOrderEventsCommerceOrdersPostResponses, ProcessSubscriptionEventsCommerceSubscriptionsPostData, ProcessSubscriptionEventsCommerceSubscriptionsPostErrors, ProcessSubscriptionEventsCommerceSubscriptionsPostResponses, RedeemEntitlementOpsV1EntitlementsIdRedeemPostData, RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors, RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses, TerminateEntitlementOpsV1EntitlementsIdTerminatePostData, TerminateEntitlementOpsV1EntitlementsIdTerminatePostErrors, TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses, UpdateAccountOpsV1AccountsIdPutData, UpdateAccountOpsV1AccountsIdPutErrors, UpdateAccountOpsV1AccountsIdPutResponses, UpdateOrganizationOpsV1OrganizationsOrganizationIdPutData, UpdateOrganizationOpsV1OrganizationsOrganizationIdPutErrors, UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses, ValidateOrderEventsCommerceOrdersValidatePostData, ValidateOrderEventsCommerceOrdersValidatePostErrors, ValidateOrderEventsCommerceOrdersValidatePostResponses } from './types.gen';
+import type { AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostData, AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostErrors, AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostResponses, CreateAccountOpsV1AccountsPostData, CreateAccountOpsV1AccountsPostErrors, CreateAccountOpsV1AccountsPostResponses, CreateEntitlementOpsV1EntitlementsPostData, CreateEntitlementOpsV1EntitlementsPostErrors, CreateEntitlementOpsV1EntitlementsPostResponses, DeleteEntitlementByIdOpsV1EntitlementsIdDeleteData, DeleteEntitlementByIdOpsV1EntitlementsIdDeleteErrors, DeleteEntitlementByIdOpsV1EntitlementsIdDeleteResponses, DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteData, DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteErrors, DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteResponses, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostData, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostErrors, ForceReimportDatasourceOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdForceReimportPostResponses, GetAccountByIdOpsV1AccountsIdGetData, GetAccountByIdOpsV1AccountsIdGetErrors, GetAccountByIdOpsV1AccountsIdGetResponses, GetAccountsOpsV1AccountsGetData, GetAccountsOpsV1AccountsGetResponses, GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetData, GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetErrors, GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses, GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDatasourcesGetData, GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDatasourcesGetErrors, GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDatasourcesGetResponses, GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetData, GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetErrors, GetEmployeesByOrganizationIdOpsV1OrganizationsOrganizationIdEmployeesGetResponses, GetEntitlementByIdOpsV1EntitlementsIdGetData, GetEntitlementByIdOpsV1EntitlementsIdGetErrors, GetEntitlementByIdOpsV1EntitlementsIdGetResponses, GetEntitlementsOpsV1EntitlementsGetData, GetEntitlementsOpsV1EntitlementsGetResponses, GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetData, GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetErrors, GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses, GetOrganizationsOpsV1OrganizationsGetData, GetOrganizationsOpsV1OrganizationsGetResponses, ListAccountUsersOpsV1AccountsIdUsersGetData, ListAccountUsersOpsV1AccountsIdUsersGetErrors, ListAccountUsersOpsV1AccountsIdUsersGetResponses, ListDatasourceExpensesOpsV1ExpensesGetData, ListDatasourceExpensesOpsV1ExpensesGetResponses, MakeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesUserIdMakeAdminPostData, MakeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesUserIdMakeAdminPostErrors, MakeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesUserIdMakeAdminPostResponses, MeOpsV1MeGetData, MeOpsV1MeGetResponses, TerminateEntitlementOpsV1EntitlementsIdTerminatePostData, TerminateEntitlementOpsV1EntitlementsIdTerminatePostErrors, TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses, UpdateAccountOpsV1AccountsIdPutData, UpdateAccountOpsV1AccountsIdPutErrors, UpdateAccountOpsV1AccountsIdPutResponses, UpdateOrganizationOpsV1OrganizationsOrganizationIdPutData, UpdateOrganizationOpsV1OrganizationsOrganizationIdPutErrors, UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -215,19 +215,6 @@ export const terminateEntitlementOpsV1EntitlementsIdTerminatePost = <ThrowOnErro
 });
 
 /**
- * Redeem Entitlement
- */
-export const redeemEntitlementOpsV1EntitlementsIdRedeemPost = <ThrowOnError extends boolean = false>(options: Options<RedeemEntitlementOpsV1EntitlementsIdRedeemPostData, ThrowOnError>) => (options.client ?? client).post<RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses, RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ops/v1/entitlements/{id}/redeem',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
  * Get Organizations
  *
  * ## Available RQL filters
@@ -266,19 +253,6 @@ export const getOrganizationsOpsV1OrganizationsGet = <ThrowOnError extends boole
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/ops/v1/organizations',
     ...options
-});
-
-/**
- * Create Organization
- */
-export const createOrganizationOpsV1OrganizationsPost = <ThrowOnError extends boolean = false>(options: Options<CreateOrganizationOpsV1OrganizationsPostData, ThrowOnError>) => (options.client ?? client).post<CreateOrganizationOpsV1OrganizationsPostResponses, CreateOrganizationOpsV1OrganizationsPostErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/ops/v1/organizations',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
 });
 
 /**
@@ -486,43 +460,4 @@ export const meOpsV1MeGet = <ThrowOnError extends boolean = false>(options?: Opt
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/ops/v1/me',
     ...options
-});
-
-/**
- * Validate Order
- */
-export const validateOrderEventsCommerceOrdersValidatePost = <ThrowOnError extends boolean = false>(options: Options<ValidateOrderEventsCommerceOrdersValidatePostData, ThrowOnError>) => (options.client ?? client).post<ValidateOrderEventsCommerceOrdersValidatePostResponses, ValidateOrderEventsCommerceOrdersValidatePostErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/events/commerce/orders/validate',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Process Order
- */
-export const processOrderEventsCommerceOrdersPost = <ThrowOnError extends boolean = false>(options: Options<ProcessOrderEventsCommerceOrdersPostData, ThrowOnError>) => (options.client ?? client).post<ProcessOrderEventsCommerceOrdersPostResponses, ProcessOrderEventsCommerceOrdersPostErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/events/commerce/orders',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Process Subscription
- */
-export const processSubscriptionEventsCommerceSubscriptionsPost = <ThrowOnError extends boolean = false>(options: Options<ProcessSubscriptionEventsCommerceSubscriptionsPostData, ThrowOnError>) => (options.client ?? client).post<ProcessSubscriptionEventsCommerceSubscriptionsPostResponses, ProcessSubscriptionEventsCommerceSubscriptionsPostErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/events/commerce/subscriptions',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
 });
