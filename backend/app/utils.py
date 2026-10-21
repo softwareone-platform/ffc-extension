@@ -53,6 +53,25 @@ def get_organization_deletable_at(terminated_at: datetime) -> datetime:
     return datetime.combine(deletable_date, time.min, tzinfo=UTC)
 
 
+def get_organization_terminated_before(deletable_by: datetime) -> datetime:
+    """
+    Inverse of `get_organization_deletable_at`: computes the moment before which an
+    organization must have been terminated for it to be deletable at `deletable_by`.
+
+    Since `deletable_at` is always midnight UTC of the 1st day of a month,
+    `deletable_at <= deletable_by` holds exactly when the organization has been terminated
+    before midnight UTC of the 1st day of the month preceding the one of `deletable_by`.
+
+    Args:
+        deletable_by (datetime): the moment by which the organization must be deletable.
+
+    Returns:
+        datetime: the timezone aware (UTC) moment organizations must be terminated before.
+    """
+    terminated_before = deletable_by.astimezone(UTC).date() - relativedelta(months=1, day=1)
+    return datetime.combine(terminated_before, time.min, tzinfo=UTC)
+
+
 def compute_daily_expenses(
     cumulative_expenses: dict[int, Decimal], last_day_of_month: int
 ) -> dict[int, Decimal]:
