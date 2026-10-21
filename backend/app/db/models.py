@@ -6,6 +6,7 @@ Account, Organization, Entitlement, etc.
 from __future__ import annotations
 
 import datetime
+import re
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -149,6 +150,11 @@ class Account(Base, HumanReadablePKMixin, AuditableMixin):
         default=AccountStatus.ACTIVE,
         server_default=AccountStatus.ACTIVE.value,
     )
+    cloud_provider: Mapped[CloudProvider | None] = relationship(
+        back_populates="account",
+        uselist=False,
+        lazy="joined",
+    )
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     users: Mapped[list[AccountUser]] = relationship(back_populates="account")
     new_entitlements_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
@@ -162,6 +168,26 @@ class Account(Base, HumanReadablePKMixin, AuditableMixin):
             return self.users[0]
         except Exception:
             return None
+
+
+class CloudProvider(Base, HumanReadablePKMixin, AuditableMixin):
+    __tablename__ = "cloud_providers"
+
+    PK_PREFIX = "FCLP"
+    PK_NUM_LENGTH = 4
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    icon: Mapped[str] = mapped_column(String(64), nullable=False)
+    datasource_id_format: Mapped[str] = mapped_column(String(512), nullable=False)
+    account_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ACCOUNT), nullable=False)
+    account: Mapped[Account] = relationship(
+        back_populates="cloud_provider", foreign_keys=[account_id]
+    )
+
+    __table_args__ = (UniqueConstraint(account_id, name="uq_cloud_providers_account_id"),)
+
+    def matches_datasource_id(self, datasource_id: str) -> bool:
+        return re.fullmatch(self.datasource_id_format, datasource_id) is not None
 
 
 class System(Actor, AuditableMixin):

@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import Field, computed_field
 
 from app.enums import AccountIntegration, AccountStatus, AccountType
+from app.schemas.cloud_providers import CloudProviderRead
 from app.schemas.core import BaseSchema, CommonEventsSchema, IdSchema
 
 
@@ -63,6 +64,7 @@ class AccountReference(IdSchema):
             description="An external identifier for the account",
         ),
     ]
+    cloud_provider: CloudProviderRead | None = None
 
 
 # Importing here to avoid circular imports
@@ -77,6 +79,7 @@ class AccountRead(IdSchema, CommonEventsSchema, AccountBase):
     integration: AccountIntegration | None = None
     status: AccountStatus
     type: AccountType
+    cloud_provider: CloudProviderRead | None = None
 
     @computed_field  # type: ignore[misc]
     @property
