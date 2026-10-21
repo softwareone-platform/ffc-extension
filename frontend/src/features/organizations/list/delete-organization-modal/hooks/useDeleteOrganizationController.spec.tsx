@@ -100,7 +100,7 @@ describe("useDeleteOrganizationController", () => {
     const { result } = renderController(onClose);
 
     act(() => {
-      result.current.handleCancel();
+      result.current.cancel();
     });
 
     expect(onClose).toHaveBeenCalledWith();
@@ -111,7 +111,7 @@ describe("useDeleteOrganizationController", () => {
 
     expect(() => {
       act(() => {
-        result.current.handleCancel();
+        result.current.cancel();
       });
     }).not.toThrow();
   });

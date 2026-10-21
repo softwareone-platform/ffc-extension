@@ -31,4 +31,10 @@ describe("InlineErrorNotification", () => {
     expect(screen.getByText("Second line")).toHaveTextContent("Second line");
     expect(screen.getByText("First line")).toContainHTML("<strong>First line</strong>");
   });
+
+  it("renders repeated error lines without dropping duplicates", () => {
+    render(<InlineErrorNotification error={"Header\nSame line\nSame line"} />);
+
+    expect(screen.getAllByText("Same line")).toHaveLength(2);
+  });
 });

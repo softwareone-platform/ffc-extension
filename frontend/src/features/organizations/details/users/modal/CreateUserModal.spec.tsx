@@ -37,7 +37,7 @@ function primeController(overrides: Partial<Controller> = {}): Controller {
     error: null,
     isPending: false,
     submit: jest.fn().mockResolvedValue(undefined),
-    handleCancel: jest.fn(),
+    cancel: jest.fn(),
     ...overrides,
   };
   mockUseUserFormController.mockReturnValue(controller);
@@ -62,13 +62,13 @@ describe("CreateUserModal", () => {
     expect(mockModal.mock.lastCall![0]).toMatchObject({ isSubmitting: true });
   });
 
-  it("wires Modal onCancel to controller.handleCancel", () => {
+  it("wires Modal onCancel to controller.cancel", () => {
     const controller = primeController();
 
     render(<CreateUserModal isOpen onClose={jest.fn()} organizationId="org-1" />);
     triggerModalCancel(mockModal);
 
-    expect(controller.handleCancel).toHaveBeenCalledTimes(1);
+    expect(controller.cancel).toHaveBeenCalledTimes(1);
   });
 
   it("wires Modal onSubmit to controller.submit", async () => {

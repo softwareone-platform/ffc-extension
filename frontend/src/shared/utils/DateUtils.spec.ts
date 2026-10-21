@@ -1,4 +1,10 @@
-import { getAllowedDeletionDate, isDeletionAllowed, isEpoch, toIsoDateString } from "./DateUtils";
+import {
+  getAllowedDeletionDate,
+  getDate,
+  isDeletionAllowed,
+  isEpoch,
+  toIsoDateString,
+} from "./DateUtils";
 
 describe("DateUtils", () => {
   it.each([
@@ -42,5 +48,16 @@ describe("DateUtils", () => {
     ["2026-01-15T10:30:00Z", false],
   ] as const)("isEpoch(%s)", (value, expected) => {
     expect(isEpoch(value)).toBe(expected);
+  });
+
+  it.each([
+    [undefined, null],
+    ["", null],
+    ["not-a-date", null],
+    [new Date("invalid"), null],
+    ["2026-01-15T10:30:00Z", "2026-01-15T10:30:00.000Z"],
+    [new Date("2026-01-15T10:30:00Z"), "2026-01-15T10:30:00.000Z"],
+  ] as const)("getDate(%s)", (value, expected) => {
+    expect(getDate(value)?.toISOString() ?? null).toBe(expected);
   });
 });
