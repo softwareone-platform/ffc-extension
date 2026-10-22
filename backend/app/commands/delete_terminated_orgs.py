@@ -12,7 +12,13 @@ from app.db.base import session_factory
 from app.db.handlers import OrganizationHandler
 from app.db.models import Organization
 from app.enums import OrganizationStatus
-from app.notifications import NotificationDetails, send_info, send_warning
+from app.notifications import (
+    ColumnHeader,
+    HorizontalAlignment,
+    NotificationDetails,
+    send_info,
+    send_warning,
+)
 from app.telemetry import capture_telemetry_cli_command
 from app.utils import get_organization_terminated_before
 
@@ -23,11 +29,20 @@ RESULT_FAILED = "❌"  # ❌
 MAX_ERROR_LENGTH = 200
 
 NOTIFICATION_HEADER = (
-    "Organization ID",
-    "Operations external ID",
-    "Client account external ID",
-    "Termination date",
-    "Result",
+    ColumnHeader("Organization ID", width="150px", horizontal_alignment=HorizontalAlignment.CENTER),
+    ColumnHeader(
+        "Operations external ID", width="150px", horizontal_alignment=HorizontalAlignment.CENTER
+    ),
+    ColumnHeader(
+        "Client account external ID",
+        width="150px",
+        horizontal_alignment=HorizontalAlignment.CENTER,
+    ),
+    ColumnHeader(
+        "Termination date", width="100px", horizontal_alignment=HorizontalAlignment.CENTER
+    ),
+    ColumnHeader("Status", width="50px", horizontal_alignment=HorizontalAlignment.CENTER),
+    ColumnHeader("Message", width="stretch"),
 )
 
 
@@ -45,13 +60,13 @@ class DeletionResult:
         return self.error is None
 
     def to_row(self) -> tuple[str, ...]:
-        result = RESULT_DELETED if self.succeeded else f"{RESULT_FAILED} {self.error}"
         return (
             self.organization_id,
             self.operations_external_id,
             self.client_account_external_id,
             self.termination_date.isoformat(),
-            result,
+            RESULT_DELETED if self.succeeded else RESULT_FAILED,
+            self.error or "",
         )
 
 

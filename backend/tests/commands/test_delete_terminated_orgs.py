@@ -12,16 +12,17 @@ from app.commands import delete_terminated_orgs
 from app.conf import Settings
 from app.db.models import ClientAccount, Organization
 from app.enums import OrganizationStatus
-from app.notifications import NotificationDetails
+from app.notifications import ColumnHeader, NotificationDetails
 from tests.types import ModelFactory
 
-HEADER = (
-    "Organization ID",
-    "Operations external ID",
-    "Client account external ID",
-    "Termination date",
-    "Result",
-)
+HEADER = [
+    ("Organization ID", "150px"),
+    ("Operations external ID", "150px"),
+    ("Client account external ID", "150px"),
+    ("Termination date", "100px"),
+    ("Status", "50px"),
+    ("Message", "stretch"),
+]
 
 # Terminated on 2026-01-15 -> deletable_at 2026-03-01 -> +180 days = 2026-08-28T00:00:00Z
 TERMINATED_AT = datetime(2026, 1, 15, 10, 0, tzinfo=UTC)
@@ -211,10 +212,12 @@ async def test_main_sends_info_notification_with_deleted_organizations(
     assert text == (
         "2 of 2 terminated organizations past their 180 days grace period have been deleted."
     )
-    assert details.header == HEADER
+    assert [
+        (col.text, col.width) if isinstance(col, ColumnHeader) else col for col in details.header
+    ] == HEADER
     assert details.rows == [
-        (not_linked.id, "AGR-0002", "-", "2026-01-10", "✅"),
-        (with_account.id, "AGR-0001", "ACC-1111-2222", "2026-01-15", "✅"),
+        (not_linked.id, "AGR-0002", "-", "2026-01-10", "✅", ""),
+        (with_account.id, "AGR-0001", "ACC-1111-2222", "2026-01-15", "✅", ""),
     ]
 
 
@@ -260,9 +263,10 @@ async def test_main_continues_after_a_failed_deletion(
     )
     failed_row, succeeded_row = details.rows
     assert failed_row[0] == failing.id
-    assert failed_row[4].startswith("❌ HTTPStatusError: Client error '400 Bad Request'")
-    assert len(failed_row[4]) <= delete_terminated_orgs.MAX_ERROR_LENGTH + 2
-    assert succeeded_row == (succeeding.id, "AGR-0002", "-", "2026-01-15", "✅")
+    assert failed_row[4] == "❌"
+    assert failed_row[5].startswith("HTTPStatusError: Client error '400 Bad Request'")
+    assert len(failed_row[5]) <= delete_terminated_orgs.MAX_ERROR_LENGTH
+    assert succeeded_row == (succeeding.id, "AGR-0002", "-", "2026-01-15", "✅", "")
 
 
 @time_machine.travel(GRACE_PERIOD_END, tick=False)
@@ -295,7 +299,7 @@ async def test_main_deletes_from_db_when_linked_organization_is_not_found(
     ) in caplog.messages
     mocked_send_info.assert_awaited_once()
     details: NotificationDetails = mocked_send_info.await_args.kwargs["details"]
-    assert details.rows == [(org.id, "AGR-0001", "-", "2026-01-15", "✅")]
+    assert details.rows == [(org.id, "AGR-0001", "-", "2026-01-15", "✅", "")]
 
 
 @time_machine.travel(GRACE_PERIOD_END, tick=False)
@@ -353,4 +357,4 @@ async def test_main_reports_termination_date_in_utc(
     await delete_terminated_orgs.main(test_settings)
 
     details: NotificationDetails = mocked_send_info.await_args.kwargs["details"]
-    assert details.rows == [(org.id, "AGR-0001", "-", "2026-01-11", "✅")]
+    assert details.rows == [(org.id, "AGR-0001", "-", "2026-01-11", "✅", "")]
