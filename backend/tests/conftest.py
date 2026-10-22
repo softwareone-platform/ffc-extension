@@ -2783,3 +2783,21 @@ def post_client_account_event(
         )
 
     return _post
+
+
+# ---------------------------------------------------------------------------
+# create-client-accounts-for-existing-organizations command
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_installation_client(
+    mocker: MockerFixture, mpt_client: MPTClient, mocked_extension_ctx: ExtensionContext
+) -> MPTClient:
+    """Make the backfill command resolve its installation client without an identity file."""
+    mocker.patch.object(ExtensionContext, "from_identity_file", return_value=mocked_extension_ctx)
+    mocker.patch(
+        "app.commands.create_client_accounts_for_existing_organizations.get_installation_client",
+        return_value=mpt_client,
+    )
+    return mpt_client
