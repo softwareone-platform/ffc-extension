@@ -10,6 +10,7 @@ from app.commands import (
     serve,
     set_entitlements_tag,
     shell,
+    sync_orgs_client_account,
     sync_subscriptions,
 )
 
@@ -26,4 +27,5 @@ __all__ = [
     "cleanup_obsolete_datasource_expenses",
     "delete_terminated_orgs",
     "sync_subscriptions",
+    "sync_orgs_client_account",
 ]
