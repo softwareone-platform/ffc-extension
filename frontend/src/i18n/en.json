@@ -251,7 +251,8 @@
         "operations_external_id": "Operations Additional ID",
         "billing_currency": "Billing Currency",
         "linked_organization_id": "Linked Organization ID",
-        "deletable_at": "Deletable Since"
+        "deletable_at": "Deletable Since",
+        "client": "Client"
       },
       "fields": {
         "id": "ID",
@@ -283,7 +284,10 @@
         "linked_datasource_name": "Linked Data Source Name",
         "linked_datasource_type": "Linked Data Source Type",
         "organization_id": "Organization ID",
-        "organization_name": "Organization Name"
+        "organization_name": "Organization Name",
+        "client_name": "Client Name",
+        "client_id": "Client ID",
+        "client_external_id": "Client External ID"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
