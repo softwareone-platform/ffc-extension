@@ -3,7 +3,9 @@ import type { ComponentProps } from "react";
 import type { Link } from "react-router-dom";
 
 import { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
+import { mockDesignSystemAvatar } from "~test-utils/mocks/designSystemAvatar";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
+import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 import { mockGridCellDynamicActions } from "~test-utils/mocks/gridCellDynamicActions";
 import { mockUserRoleModule } from "~test-utils/mocks/userRole";
 
@@ -17,6 +19,8 @@ export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof
 export const mockStatus = jest.fn() as jest.MockedFunction<(props: MockStatusProps) => void>;
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
+jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
+jest.mock("@swo/design-system/avatar", () => mockDesignSystemAvatar);
 
 jest.mock("~shared/components/entity-status-chip/EntityStatusChip", () => ({
   Status: (props: MockStatusProps) => {

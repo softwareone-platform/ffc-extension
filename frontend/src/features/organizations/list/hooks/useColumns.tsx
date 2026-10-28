@@ -2,13 +2,15 @@ import { useMemo } from "react";
 
 import { Link } from "react-router-dom";
 
+import { Avatar } from "@swo/design-system/avatar";
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
   GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
 } from "@swo/design-system/grid";
-import { DisplayValue } from "@swo/design-system/utils";
+import { DisplayValue, NO_VALUE } from "@swo/design-system/utils";
 import { Paths } from "@swo/rql-client";
 
 import { OrganizationRead } from "~api/ffc-api-model";
@@ -78,6 +80,30 @@ export function useColumns(): Columns {
         cell: (item: OrganizationRead) => (
           <GridCellSimple>{item.operations_external_id}</GridCellSimple>
         ),
+        initialWidth: 200,
+      },
+      {
+        name: "client",
+        title: tColumns("client"),
+        fields: ["client.name", "client.id", "client.external_id"],
+        cell: (item: OrganizationRead) => {
+          return item.client?.id ? (
+            <GridCellSimple>
+              <EntityReferenceCell
+                primaryContent={item.client?.name}
+                secondaryContent={item.client?.external_id || NO_VALUE}
+                secondaryContentMaxHeight={50}
+                icon={
+                  item.client?.icon ? (
+                    <Avatar size={32} shape="square" imageSrc={"/public/" + item.client?.icon} />
+                  ) : undefined
+                }
+              />
+            </GridCellSimple>
+          ) : (
+            <GridCellSimple>{NO_VALUE}</GridCellSimple>
+          );
+        },
         initialWidth: 200,
       },
       {
