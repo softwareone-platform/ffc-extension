@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -26,7 +27,7 @@ from app.commands.sync_subscriptions import (
 )
 from app.conf import Settings
 from app.db.handlers import EntitlementHandler
-from app.db.models import Account, Entitlement
+from app.db.models import Account, CloudProvider, Entitlement
 from app.enums import AccountStatus, AccountType, EntitlementStatus
 from app.events.subscriptions.constants import (
     ACTIVE_SUBSCRIPTION_STATUS,
@@ -781,3 +782,150 @@ async def test_main_status_argument(
 
     assert mocked_sync_account.await_args is not None
     assert mocked_sync_account.await_args.args[1] == expected
+
+
+# -- datasource id format --
+
+# (fixture name, an id the provider accepts, an id it rejects). The rejected id is the other
+# provider's shape, which shows the format is per provider and not just "non-empty".
+PROVIDER_CASES = [
+    pytest.param("aws_cloud_provider_factory", "123456789012", "spiderman", id="aws"),
+    pytest.param(
+        "azure_cloud_provider_factory",
+        "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+        "123456789012",
+        id="azure",
+    ),
+]
+
+REJECTED_ID_CASES = [
+    *PROVIDER_CASES,
+    pytest.param(
+        "azure_cloud_provider_factory",
+        "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+        "0A1B2C3D-4E5F-6071-8293-A4B5C6D7E8F9",
+        id="azure-upper",
+    ),
+]
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), REJECTED_ID_CASES)
+async def test_sync_page_skips_subscriptions_with_an_invalid_datasource_id(
+    request: pytest.FixtureRequest,
+    mpt_client: MPTClient,
+    mock_subscriptions_api: SubscriptionsPageMocker,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    db_session: AsyncSession,
+    caplog: pytest.LogCaptureFixture,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """An id that does not match the provider format is reported as invalid and left untouched."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    await cloud_provider_factory(subscription_account)
+    invalid = mpt_subscription_factory(subscription_id="SUB-0000-0001", datasource_id=rejected_id)
+    valid = mpt_subscription_factory(datasource_id=matching_id)
+    mock_subscriptions_api([invalid, valid])
+
+    with caplog.at_level("WARNING"):
+        results = await sync_page(
+            mpt_client,
+            "and(...)",
+            offset=0,
+            page_size=50,
+            account_id=subscription_account.id,
+            dry_run=False,
+            semaphore=asyncio.Semaphore(1),
+        )
+
+    assert [result.subscription_id for result in results] == ["SUB-0000-0001", SUBSCRIPTION_ID]
+    skipped = results[0]
+    assert skipped.succeeded is False
+    assert skipped.account_id == subscription_account.id
+    assert skipped.message == f"The format of the datasource id {rejected_id} is not valid."
+    assert skipped.error == (
+        "The subscription has been skipped because the datasource id format is not valid."
+    )
+
+    entitlements = await get_entitlements(db_session, subscription_account)
+    assert [entitlement.datasource_id for entitlement in entitlements] == [matching_id]
+    assert (
+        "The subscription has been skipped because the datasource id format is not valid."
+        in caplog.text
+    )
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), PROVIDER_CASES)
+async def test_sync_page_creates_an_entitlement_when_the_id_matches_the_provider(
+    request: pytest.FixtureRequest,
+    mpt_client: MPTClient,
+    mock_subscriptions_api: SubscriptionsPageMocker,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    db_session: AsyncSession,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """An id matching the owner's provider format goes through the normal create path."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    await cloud_provider_factory(subscription_account)
+    mock_subscriptions_api([mpt_subscription_factory(datasource_id=matching_id)])
+
+    results = await sync_page(
+        mpt_client,
+        "and(...)",
+        offset=0,
+        page_size=50,
+        account_id=subscription_account.id,
+        dry_run=False,
+        semaphore=asyncio.Semaphore(1),
+    )
+
+    assert len(results) == 1
+    assert results[0].succeeded is True
+    entitlements = await get_entitlements(db_session, subscription_account)
+    assert [entitlement.datasource_id for entitlement in entitlements] == [matching_id]
+    assert results[0].message == f"Created new entitlement {entitlements[0].id}."
+
+
+# -- human readable primary keys --
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), PROVIDER_CASES)
+async def test_sync_page_stores_the_entitlement_and_provider_with_their_pk_prefix(
+    request: pytest.FixtureRequest,
+    mpt_client: MPTClient,
+    mock_subscriptions_api: SubscriptionsPageMocker,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    db_session: AsyncSession,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """The synced entitlement gets an `FENT-` key, the provider an `FCLP-` key, the id is kept."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    provider = await cloud_provider_factory(subscription_account)
+    mock_subscriptions_api([mpt_subscription_factory(datasource_id=matching_id)])
+
+    await sync_page(
+        mpt_client,
+        "and(...)",
+        offset=0,
+        page_size=50,
+        account_id=subscription_account.id,
+        dry_run=False,
+        semaphore=asyncio.Semaphore(1),
+    )
+
+    entitlements = await get_entitlements(db_session, subscription_account)
+    assert len(entitlements) == 1
+    stored = entitlements[0]
+    assert stored.id.startswith(f"{Entitlement.PK_PREFIX}-")
+    assert re.fullmatch(Entitlement.build_id_regex(), stored.id)
+    assert stored.datasource_id == matching_id
+    assert provider.id.startswith(f"{CloudProvider.PK_PREFIX}-")
+    assert re.fullmatch(CloudProvider.build_id_regex(), provider.id)

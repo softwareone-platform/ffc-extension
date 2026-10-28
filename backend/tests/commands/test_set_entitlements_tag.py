@@ -128,6 +128,42 @@ async def test_set_entitlements_tag_error_creating_tag(
     assert "Created 0/1 tags" in caplog.text
 
 
+async def test_set_entitlements_tag_skips_entitlements_without_datasource(
+    test_settings: Settings,
+    db_session: AsyncSession,
+    entitlement_factory: ModelFactory[Entitlement],
+    httpx_mock: HTTPXMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Active entitlements without a linked datasource are neither looked up nor tagged."""
+    await entitlement_factory(status=EntitlementStatus.ACTIVE, linked_datasource_id=None)
+    ent = await entitlement_factory(
+        status=EntitlementStatus.ACTIVE,
+        linked_datasource_id="ds-1",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags?limit=100&and(eq(name,entitlement),in(value,({ent.id})))",
+        json={"items": [], "limit": 100, "offset": 0},
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags",
+        match_json={
+            "resource_id": "ds-1",
+            "resource_type": TagType.DATA_SOURCE,
+            "name": "entitlement",
+            "value": ent.id,
+        },
+        status_code=201,
+    )
+
+    with caplog.at_level("INFO"):
+        await set_entitlements_tag(test_settings)
+
+    assert "Created 1/1 tags" in caplog.text
+
+
 def test_set_entitlements_tag_command(
     mocker: MockerFixture,
     test_settings: Settings,

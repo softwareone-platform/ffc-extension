@@ -439,21 +439,21 @@ def test_iter_card_messages_no_json_dumps_during_measurement(mocker: MockerFixtu
 
 
 def test_chunk_rows_by_size_raises_when_single_row_exceeds_capacity() -> None:
-    rows = [("AUTH",)]
+    rows: list[tuple[str, ...]] = [("AUTH",)]
     row_sizes = [MSTEAMS_PAYLOAD_LIMIT + 100]
     with pytest.raises(ValueError, match="exceeds per-chunk capacity"):
         _chunk_rows_by_size(rows, row_sizes, base_size=100)
 
 
 def test_chunk_rows_by_size_single_chunk_when_all_fit() -> None:
-    rows = [("a",), ("b",), ("c",)]
+    rows: list[tuple[str, ...]] = [("a",), ("b",), ("c",)]
     row_sizes = [10, 10, 10]
     chunks = _chunk_rows_by_size(rows, row_sizes, base_size=100)
     assert chunks == [rows]
 
 
 def test_chunk_rows_by_size_splits_by_capacity() -> None:
-    rows = [("a",), ("b",), ("c",), ("d",)]
+    rows: list[tuple[str, ...]] = [("a",), ("b",), ("c",), ("d",)]
     row_sizes = [10_000, 10_000, 10_000, 10_000]
     chunks = _chunk_rows_by_size(rows, row_sizes, base_size=1000)
     assert len(chunks) > 1

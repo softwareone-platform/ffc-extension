@@ -14,6 +14,7 @@ from app.dependencies.db import (
 )
 from app.dependencies.path import EntitlementId
 from app.enums import AccountStatus, AccountType, EntitlementStatus
+from app.exceptions import InvalidDataSourceIdError
 from app.pagination import LimitOffsetPage, paginate
 from app.rql import EntitlementRules, RQLQuery
 from app.schemas.core import convert_model_to_schema, convert_schema_to_model
@@ -21,7 +22,7 @@ from app.schemas.entitlements import (
     EntitlementCreate,
     EntitlementRead,
 )
-from app.utils import wrap_http_error_in_502
+from app.utils import validate_datasource_id_format, wrap_http_error_in_502
 
 # ============
 # Dependencies
@@ -31,8 +32,8 @@ from app.utils import wrap_http_error_in_502
 def common_extra_conditions(auth_ctx: CurrentAuthContext) -> list[ColumnExpressionArgument]:
     conditions: list[ColumnExpressionArgument] = []
 
-    if auth_ctx.account.type == AccountType.AFFILIATE:  # type: ignore
-        conditions.append(Entitlement.owner == auth_ctx.account)  # type: ignore
+    if auth_ctx.account.type == AccountType.AFFILIATE:
+        conditions.append(Entitlement.owner == auth_ctx.account)
         conditions.append(Entitlement.status != EntitlementStatus.DELETED)
 
     return conditions
@@ -81,18 +82,19 @@ async def create_entitlement(
     auth_context: CurrentAuthContext,
 ):
     owner = None
-    if auth_context.account.type == AccountType.AFFILIATE:  # type: ignore
+    if auth_context.account.type == AccountType.AFFILIATE:
         if data.owner:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Affiliate accounts cannot provide an owner for an Entitlement.",
             )
-        owner = auth_context.account  # type: ignore
+        owner = auth_context.account
         if data.redeem_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Affiliate accounts cannot provide a redeem_at for an Entitlement.",
             )
+
     else:
         if not data.owner:
             raise HTTPException(
@@ -109,6 +111,10 @@ async def create_entitlement(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"No Active Affiliate Account has been found with ID {data.owner.id}.",
             )
+    try:
+        validate_datasource_id_format(owner=owner, datasource_id=data.datasource_id)
+    except InvalidDataSourceIdError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     existing_entitlement = await entitlement_repo.first(
         where_clauses=[
@@ -122,7 +128,7 @@ async def create_entitlement(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
                 f"An Entitlement in status '{existing_entitlement.status.value}' "
-                f"already exist for the data source {data.datasource_id}"
+                f"already exist for the data source {data.datasource_id}."
             ),
         )
 

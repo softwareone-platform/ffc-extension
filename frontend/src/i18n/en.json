@@ -105,7 +105,28 @@
       },
       "dataSources": { "title": "Data Sources" },
       "users": { "title": "Users" },
-      "events": { "title": "Events" }
+      "events": { "title": "Events" },
+      "termination": {
+        "title": "Termination",
+        "feedback_title": "Termination feedback",
+        "feedbackMissing": "Something went wrong. Termination feedback is missing.",
+        "properties": {
+          "reason": "Reason",
+          "comment": "Comment"
+        },
+        "reason": {
+          "missing_features": "Missing features or functionality",
+          "too_complex": "The product is too complex or difficult to use",
+          "cost_or_pricing": "Cost or pricing concerns",
+          "data_accuracy": "Issues with data accuracy or reliability",
+          "switching_tool": "Switching to another tool or solution",
+          "need_ended": "The project or need has ended",
+          "internal_changes": "Internal changes, such as reorganization or budget cuts",
+          "unsatisfactory_support": "Unsatisfactory support",
+          "other": "Other",
+          "unknown": "Unknown"
+        }
+      }
     },
     "dataSources": {
       "force_import": {

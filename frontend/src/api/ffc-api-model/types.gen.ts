@@ -171,6 +171,24 @@ export type AccountRead = {
      * AccountType
      */
     type: 'admin' | 'operations' | 'affiliate';
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
     /**
      * AccountStats
      */
@@ -218,6 +236,24 @@ export type AccountReference = {
      * An external identifier for the account
      */
     external_id: string;
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
 };
 
 /**
@@ -311,6 +347,24 @@ export type AccountUserReferenceWithAccount = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
 };
 
@@ -500,6 +554,186 @@ export type AuditFieldSchema = {
 };
 
 /**
+ * AwsAccountType
+ */
+export type AwsAccountType = 'member' | 'management_standalone';
+
+/**
+ * AwsAuthenticationType
+ */
+export type AwsAuthenticationType = 'assumed_role' | 'access_key';
+
+/**
+ * AwsDetails
+ *
+ * `assumed_role_name` is returned only for assumed role authentication,
+ * `access_key_id` only for access key authentication and the export fields
+ * only for management/standalone accounts.
+ */
+export type AwsDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Account Id
+     */
+    account_id?: string | null;
+    /**
+     * AwsAccountType
+     */
+    account_type: 'member' | 'management_standalone';
+    /**
+     * AwsAuthenticationType
+     */
+    authentication_type: 'assumed_role' | 'access_key';
+    /**
+     * Assumed Role Name
+     */
+    assumed_role_name?: string | null;
+    /**
+     * Access Key Id
+     */
+    access_key_id?: string | null;
+    export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+    /**
+     * Use Edp Discount
+     */
+    use_edp_discount?: boolean | null;
+    /**
+     * Export Name
+     */
+    export_name?: string | null;
+    /**
+     * Bucket Name
+     */
+    bucket_name?: string | null;
+    /**
+     * Bucket Prefix
+     */
+    bucket_prefix?: string | null;
+    /**
+     * Region Name
+     */
+    region_name?: string | null;
+    /**
+     * Included Regions
+     */
+    included_regions?: Array<string> | null;
+    /**
+     * Excluded Regions
+     */
+    excluded_regions?: Array<string> | null;
+};
+
+/**
+ * AwsExportType
+ */
+export type AwsExportType = 'legacy_cur_export' | 'standard_data_export';
+
+/**
+ * AzureSubscriptionDetails
+ */
+export type AzureSubscriptionDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    parent?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * DatasourceType
+         */
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
+    } | null;
+    /**
+     * Subscription Id
+     */
+    subscription_id?: string | null;
+    /**
+     * Tenant Id
+     */
+    tenant_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+};
+
+/**
+ * AzureTenantDetails
+ */
+export type AzureTenantDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Tenant Id
+     */
+    tenant_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+};
+
+/**
+ * ClientAccountReference
+ */
+export type ClientAccountReference = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * External Id
+     */
+    external_id: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+};
+
+/**
+ * CloudProviderRead
+ */
+export type CloudProviderRead = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon: string;
+    /**
+     * Datasource Id Format
+     */
+    datasource_id_format: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
  * DatasourceBase
  */
 export type DatasourceBase = {
@@ -519,6 +753,336 @@ export type DatasourceBase = {
      * Datasource Id
      */
     datasource_id?: string | null;
+};
+
+/**
+ * DatasourceBillingInfo
+ */
+export type DatasourceBillingInfo = {
+    /**
+     * Last Report Processed At
+     */
+    last_report_processed_at?: string | null;
+    /**
+     * Last Attempt At
+     */
+    last_attempt_at?: string | null;
+    /**
+     * Last Report Updated At
+     */
+    last_report_updated_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
+};
+
+/**
+ * DatasourceDetailRead
+ */
+export type DatasourceDetailRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * DatasourceType
+     */
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    /**
+     * Datasource Id
+     */
+    datasource_id?: string | null;
+    parent?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * DatasourceType
+         */
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
+    } | null;
+    /**
+     * Parent Id
+     */
+    parent_id?: string | null;
+    /**
+     * Last Import At
+     */
+    last_import_at?: string;
+    /**
+     * Last Import Modified At
+     */
+    last_import_modified_at?: string;
+    /**
+     * Last Import Attempt At
+     */
+    last_import_attempt_at?: string;
+    /**
+     * Last Import Attempt Error
+     */
+    last_import_attempt_error?: string | null;
+    /**
+     * Resources Charged This Month
+     */
+    resources_charged_this_month: number;
+    /**
+     * Expenses So Far This Month
+     */
+    expenses_so_far_this_month: number;
+    /**
+     * Expenses Forecast This Month
+     */
+    expenses_forecast_this_month: number;
+    /**
+     * Details
+     */
+    details?: {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        parent?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * DatasourceType
+             */
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            /**
+             * Datasource Id
+             */
+            datasource_id?: string | null;
+        } | null;
+        /**
+         * Subscription Id
+         */
+        subscription_id?: string | null;
+        /**
+         * Tenant Id
+         */
+        tenant_id?: string | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Tenant Id
+         */
+        tenant_id?: string | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Account Id
+         */
+        account_id?: string | null;
+        /**
+         * AwsAccountType
+         */
+        account_type: 'member' | 'management_standalone';
+        /**
+         * AwsAuthenticationType
+         */
+        authentication_type: 'assumed_role' | 'access_key';
+        /**
+         * Assumed Role Name
+         */
+        assumed_role_name?: string | null;
+        /**
+         * Access Key Id
+         */
+        access_key_id?: string | null;
+        export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+        /**
+         * Use Edp Discount
+         */
+        use_edp_discount?: boolean | null;
+        /**
+         * Export Name
+         */
+        export_name?: string | null;
+        /**
+         * Bucket Name
+         */
+        bucket_name?: string | null;
+        /**
+         * Bucket Prefix
+         */
+        bucket_prefix?: string | null;
+        /**
+         * Region Name
+         */
+        region_name?: string | null;
+        /**
+         * Included Regions
+         */
+        included_regions?: Array<string> | null;
+        /**
+         * Excluded Regions
+         */
+        excluded_regions?: Array<string> | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Project Id
+         */
+        project_id?: string | null;
+        /**
+         * Billing Dataset Name
+         */
+        billing_dataset_name?: string | null;
+        /**
+         * Billing Table Name
+         */
+        billing_table_name?: string | null;
+        /**
+         * Billing Project Id
+         */
+        billing_project_id?: string | null;
+    } | null;
+    /**
+     * DatasourceBillingInfo
+     */
+    billing: {
+        /**
+         * Last Report Processed At
+         */
+        last_report_processed_at?: string | null;
+        /**
+         * Last Attempt At
+         */
+        last_attempt_at?: string | null;
+        /**
+         * Last Report Updated At
+         */
+        last_report_updated_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    };
+    /**
+     * DatasourceMetricsInfo
+     */
+    metrics: {
+        /**
+         * Last Retrieval At
+         */
+        last_retrieval_at?: string | null;
+        /**
+         * Last Attempt At
+         */
+        last_attempt_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    };
+    /**
+     * Discovery
+     */
+    discovery?: Array<{
+        /**
+         * Resource Type
+         */
+        resource_type?: string | null;
+        /**
+         * Enabled
+         */
+        enabled?: boolean | null;
+        /**
+         * Last Discovery At
+         */
+        last_discovery_at?: string | null;
+        /**
+         * Last Error At
+         */
+        last_error_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    }>;
+};
+
+/**
+ * DatasourceDiscoveryItem
+ */
+export type DatasourceDiscoveryItem = {
+    /**
+     * Resource Type
+     */
+    resource_type?: string | null;
+    /**
+     * Enabled
+     */
+    enabled?: boolean | null;
+    /**
+     * Last Discovery At
+     */
+    last_discovery_at?: string | null;
+    /**
+     * Last Error At
+     */
+    last_error_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
 };
 
 /**
@@ -668,21 +1232,30 @@ export type DatasourceForceReimport = {
 };
 
 /**
- * DatasourceInfo
+ * DatasourceImportStatus
  */
-export type DatasourceInfo = {
+export type DatasourceImportStatus = 'completed' | 'failed' | 'unknown';
+
+/**
+ * DatasourceMetricsInfo
+ */
+export type DatasourceMetricsInfo = {
     /**
-     * Id
+     * Last Retrieval At
      */
-    id: string;
+    last_retrieval_at?: string | null;
     /**
-     * Name
+     * Last Attempt At
      */
-    name: string;
+    last_attempt_at?: string | null;
     /**
-     * DatasourceType
+     * DatasourceImportStatus
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
 };
 
 /**
@@ -761,30 +1334,6 @@ export type DatasourceRead = {
  * DatasourceType
  */
 export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
-
-/**
- * Details
- */
-export type Details = {
-    /**
-     * Eventtype
-     *
-     * The type of the event. Maps to the “routing.event” property of the EventMessage.
-     */
-    eventType: string;
-    /**
-     * Enqueuetime
-     *
-     * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-     */
-    enqueueTime: string;
-    /**
-     * Deliverytime
-     *
-     * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-     */
-    deliveryTime: string;
-};
 
 /**
  * EmployeeRead
@@ -918,6 +1467,24 @@ export type EntitlementRead = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     /**
      * EntitlementStatus
@@ -1036,38 +1603,6 @@ export type EntitlementRead = {
                 name: string;
             } | null;
         } | null;
-    };
-};
-
-/**
- * EntitlementRedeemInput
- */
-export type EntitlementRedeemInput = {
-    /**
-     * IdSchema
-     */
-    organization: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    /**
-     * DatasourceInfo
-     */
-    datasource: {
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * DatasourceType
-         */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
     };
 };
 
@@ -1237,88 +1772,29 @@ export type EntitlementsEventsSchema = {
 };
 
 /**
- * Event
+ * GcpDetails
  */
-export type Event = {
+export type GcpDetails = {
     /**
-     * Id
-     *
-     * Unique message ID, can be used to correlate with platform logs.
+     * Connected At
      */
-    id: string;
+    connected_at?: string | null;
     /**
-     * Object
+     * Project Id
      */
-    object: {
-        /**
-         * Id
-         *
-         * Unique object ID, maps to the platform object ID property.
-         */
-        id: string;
-        /**
-         * Name
-         *
-         * Object name, maps to the platform object name property.
-         */
-        name: string;
-        /**
-         * Objecttype
-         *
-         * The object's type, maps to the “routing.entity” property of the EventMessage.
-         */
-        objectType: string;
-    };
+    project_id?: string | null;
     /**
-     * Details
+     * Billing Dataset Name
      */
-    details: {
-        /**
-         * Eventtype
-         *
-         * The type of the event. Maps to the “routing.event” property of the EventMessage.
-         */
-        eventType: string;
-        /**
-         * Enqueuetime
-         *
-         * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-         */
-        enqueueTime: string;
-        /**
-         * Deliverytime
-         *
-         * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-         */
-        deliveryTime: string;
-    };
+    billing_dataset_name?: string | null;
     /**
-     * Information about the event's related task. Maps to the task created by Task Orchestrator.
+     * Billing Table Name
      */
-    task?: {
-        /**
-         * Id
-         *
-         * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
-         */
-        id: string;
-    } | null;
-};
-
-/**
- * EventResponse
- */
-export type EventResponse = {
+    billing_table_name?: string | null;
     /**
-     * Response
+     * Billing Project Id
      */
-    response: 'OK' | 'Delay' | 'Cancel';
-    /**
-     * Delay
-     *
-     * The minimum delay the Extensions Service must wait before sending the event again.
-     */
-    delay?: number | null;
+    billing_project_id?: string | null;
 };
 
 /**
@@ -1507,6 +1983,24 @@ export type LimitOffsetPageAccountRead = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -1895,6 +2389,24 @@ export type LimitOffsetPageEntitlementRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -2066,6 +2578,27 @@ export type LimitOffsetPageOrganizationRead = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -2173,6 +2706,25 @@ export type LimitOffsetPageOrganizationRead = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -2334,6 +2886,24 @@ export type LimitOffsetPageUserRead = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
         } | null;
     }>;
@@ -2378,6 +2948,24 @@ export type Me = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     system: {
         /**
@@ -2411,56 +2999,6 @@ export type Me = {
          */
         id: string;
     } | null;
-};
-
-/**
- * Object
- */
-export type Object = {
-    /**
-     * Id
-     *
-     * Unique object ID, maps to the platform object ID property.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * Object name, maps to the platform object name property.
-     */
-    name: string;
-    /**
-     * Objecttype
-     *
-     * The object's type, maps to the “routing.entity” property of the EventMessage.
-     */
-    objectType: string;
-};
-
-/**
- * OrganizationCreate
- */
-export type OrganizationCreate = {
-    /**
-     * Name
-     */
-    name: string;
-    /**
-     * Currency
-     */
-    currency: string;
-    /**
-     * Billing Currency
-     */
-    billing_currency: string;
-    /**
-     * Operations External Id
-     */
-    operations_external_id: string;
-    /**
-     * User Id
-     */
-    user_id: string;
 };
 
 /**
@@ -2610,6 +3148,27 @@ export type OrganizationRead = {
      */
     status: 'active' | 'terminated' | 'deleted';
     /**
+     * The client account the organization belongs to, if any.
+     */
+    client?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * External Id
+         */
+        external_id: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
+    } | null;
+    /**
      * OrganizationEventsSchema
      */
     events: {
@@ -2719,6 +3278,25 @@ export type OrganizationRead = {
         possible_monthly_saving?: string;
     } | null;
     /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
+    } | null;
+    /**
      * Deletable At
      *
      * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -2782,16 +3360,29 @@ export type SystemReference = {
 };
 
 /**
- * Task
+ * TerminationFeedbackRead
  */
-export type Task = {
+export type TerminationFeedbackRead = {
     /**
      * Id
-     *
-     * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
      */
     id: string;
+    /**
+     * TerminationReason
+     */
+    reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+    /**
+     * Comments
+     *
+     * Additional comments; always provided when the reason is `other`.
+     */
+    comments?: string | null;
 };
+
+/**
+ * TerminationReason
+ */
+export type TerminationReason = 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
 
 /**
  * UserRead
@@ -2928,6 +3519,24 @@ export type UserRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
     } | null;
 };
@@ -3101,6 +3710,27 @@ export type LimitOffsetPageOrganizationReadWritable = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -3209,6 +3839,25 @@ export type LimitOffsetPageOrganizationReadWritable = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
     }>;
     /**
      * Total
@@ -3256,6 +3905,27 @@ export type OrganizationReadWritable = {
      * OrganizationStatus
      */
     status: 'active' | 'terminated' | 'deleted';
+    /**
+     * The client account the organization belongs to, if any.
+     */
+    client?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * External Id
+         */
+        external_id: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
+    } | null;
     /**
      * OrganizationEventsSchema
      */
@@ -3364,6 +4034,25 @@ export type OrganizationReadWritable = {
          * Possible Monthly Saving
          */
         possible_monthly_saving?: string;
+    } | null;
+    /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
     } | null;
 };
 
@@ -3601,6 +4290,24 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
             /**
              * EntitlementStatus
@@ -3869,6 +4576,24 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4163,6 +4888,24 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4397,6 +5140,24 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4521,270 +5282,6 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
 
 export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponse = TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses[keyof TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses];
 
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostData = {
-    /**
-     * EntitlementRedeemInput
-     */
-    body: {
-        /**
-         * IdSchema
-         */
-        organization: {
-            /**
-             * Id
-             */
-            id: string;
-        };
-        /**
-         * DatasourceInfo
-         */
-        datasource: {
-            /**
-             * Id
-             */
-            id: string;
-            /**
-             * Name
-             */
-            name: string;
-            /**
-             * DatasourceType
-             */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
-        };
-    };
-    path: {
-        /**
-         * Id
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/ops/v1/entitlements/{id}/redeem';
-};
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostError = RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors[keyof RedeemEntitlementOpsV1EntitlementsIdRedeemPostErrors];
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses = {
-    /**
-     * EntitlementRead
-     *
-     * Successful Response
-     */
-    200: {
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Affiliate External Id
-         */
-        affiliate_external_id: string;
-        /**
-         * Datasource Id
-         */
-        datasource_id: string;
-        /**
-         * Redeem At
-         */
-        redeem_at?: string | null;
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Datasource Id
-         */
-        linked_datasource_id?: string | null;
-        /**
-         * Linked Datasource Name
-         */
-        linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
-        /**
-         * AccountReference
-         */
-        owner: {
-            /**
-             * Id
-             */
-            id: string;
-            /**
-             * Name
-             */
-            name: string;
-            /**
-             * AccountType
-             */
-            type: 'admin' | 'operations' | 'affiliate';
-            integration: 'aws' | 'google' | 'microsoft' | 'softwareone' | null;
-            /**
-             * External Id
-             *
-             * An external identifier for the account
-             */
-            external_id: string;
-        };
-        /**
-         * EntitlementStatus
-         */
-        status: 'new' | 'active' | 'terminated' | 'deleted';
-        /**
-         * EntitlementsEventsSchema
-         */
-        events: {
-            /**
-             * AuditFieldSchema
-             */
-            created: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            /**
-             * AuditFieldSchema
-             */
-            updated: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            deleted?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-            redeemed?: {
-                /**
-                 * At
-                 */
-                at: string;
-                /**
-                 * OrganizationReference
-                 */
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * Name
-                     */
-                    name: string;
-                    /**
-                     * Operations External Id
-                     */
-                    operations_external_id: string;
-                };
-            } | null;
-            terminated?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-        };
-    };
-};
-
-export type RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponse = RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses[keyof RedeemEntitlementOpsV1EntitlementsIdRedeemPostResponses];
-
 export type GetOrganizationsOpsV1OrganizationsGetData = {
     body?: never;
     path?: never;
@@ -4831,6 +5328,27 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
              * OrganizationStatus
              */
             status: 'active' | 'terminated' | 'deleted';
+            /**
+             * The client account the organization belongs to, if any.
+             */
+            client?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * External Id
+                 */
+                external_id: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
+            } | null;
             /**
              * OrganizationEventsSchema
              */
@@ -4941,6 +5459,25 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                 possible_monthly_saving?: string;
             } | null;
             /**
+             * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+             */
+            termination_feedback?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * TerminationReason
+                 */
+                reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+                /**
+                 * Comments
+                 *
+                 * Additional comments; always provided when the reason is `other`.
+                 */
+                comments?: string | null;
+            } | null;
+            /**
              * Deletable At
              *
              * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -4963,231 +5500,6 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
 };
 
 export type GetOrganizationsOpsV1OrganizationsGetResponse = GetOrganizationsOpsV1OrganizationsGetResponses[keyof GetOrganizationsOpsV1OrganizationsGetResponses];
-
-export type CreateOrganizationOpsV1OrganizationsPostData = {
-    /**
-     * OrganizationCreate
-     */
-    body: {
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Currency
-         */
-        currency: string;
-        /**
-         * Billing Currency
-         */
-        billing_currency: string;
-        /**
-         * Operations External Id
-         */
-        operations_external_id: string;
-        /**
-         * User Id
-         */
-        user_id: string;
-    };
-    path?: never;
-    query?: never;
-    url: '/ops/v1/organizations';
-};
-
-export type CreateOrganizationOpsV1OrganizationsPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type CreateOrganizationOpsV1OrganizationsPostError = CreateOrganizationOpsV1OrganizationsPostErrors[keyof CreateOrganizationOpsV1OrganizationsPostErrors];
-
-export type CreateOrganizationOpsV1OrganizationsPostResponses = {
-    /**
-     * OrganizationRead
-     *
-     * Organization
-     */
-    201: {
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Currency
-         */
-        currency: string;
-        /**
-         * Billing Currency
-         */
-        billing_currency: string;
-        /**
-         * Operations External Id
-         */
-        operations_external_id: string;
-        /**
-         * Id
-         */
-        id: string;
-        /**
-         * Linked Organization Id
-         */
-        linked_organization_id?: string | null;
-        /**
-         * OrganizationStatus
-         */
-        status: 'active' | 'terminated' | 'deleted';
-        /**
-         * OrganizationEventsSchema
-         */
-        events: {
-            /**
-             * AuditFieldSchema
-             */
-            created: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            /**
-             * AuditFieldSchema
-             */
-            updated: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            };
-            deleted?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-            terminated?: {
-                /**
-                 * At
-                 */
-                at: string;
-                by: {
-                    /**
-                     * Id
-                     */
-                    id: string;
-                    /**
-                     * ActorType
-                     */
-                    type: 'user' | 'system';
-                    /**
-                     * Name
-                     */
-                    name: string;
-                } | null;
-            } | null;
-        };
-        expenses_info?: {
-            /**
-             * Limit
-             */
-            limit?: string;
-            /**
-             * Expenses This Month
-             */
-            expenses_this_month?: string;
-            /**
-             * Expenses This Month Forecast
-             */
-            expenses_this_month_forecast?: string;
-            /**
-             * Possible Monthly Saving
-             */
-            possible_monthly_saving?: string;
-        } | null;
-        /**
-         * Deletable At
-         *
-         * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
-         */
-        readonly deletable_at: string | null;
-    };
-};
-
-export type CreateOrganizationOpsV1OrganizationsPostResponse = CreateOrganizationOpsV1OrganizationsPostResponses[keyof CreateOrganizationOpsV1OrganizationsPostResponses];
 
 export type DeleteOrganizationByIdOpsV1OrganizationsOrganizationIdDeleteData = {
     body?: never;
@@ -5336,6 +5648,27 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -5443,6 +5776,25 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -5554,6 +5906,27 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -5661,6 +6034,25 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -5885,7 +6277,7 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
 
 export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses = {
     /**
-     * DatasourceRead
+     * DatasourceDetailRead
      *
      * Successful Response
      */
@@ -5956,6 +6348,208 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
          * Expenses Forecast This Month
          */
         expenses_forecast_this_month: number;
+        /**
+         * Details
+         */
+        details?: {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            parent?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * DatasourceType
+                 */
+                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+                /**
+                 * Datasource Id
+                 */
+                datasource_id?: string | null;
+            } | null;
+            /**
+             * Subscription Id
+             */
+            subscription_id?: string | null;
+            /**
+             * Tenant Id
+             */
+            tenant_id?: string | null;
+            /**
+             * Client Id
+             */
+            client_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Tenant Id
+             */
+            tenant_id?: string | null;
+            /**
+             * Client Id
+             */
+            client_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Account Id
+             */
+            account_id?: string | null;
+            /**
+             * AwsAccountType
+             */
+            account_type: 'member' | 'management_standalone';
+            /**
+             * AwsAuthenticationType
+             */
+            authentication_type: 'assumed_role' | 'access_key';
+            /**
+             * Assumed Role Name
+             */
+            assumed_role_name?: string | null;
+            /**
+             * Access Key Id
+             */
+            access_key_id?: string | null;
+            export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+            /**
+             * Use Edp Discount
+             */
+            use_edp_discount?: boolean | null;
+            /**
+             * Export Name
+             */
+            export_name?: string | null;
+            /**
+             * Bucket Name
+             */
+            bucket_name?: string | null;
+            /**
+             * Bucket Prefix
+             */
+            bucket_prefix?: string | null;
+            /**
+             * Region Name
+             */
+            region_name?: string | null;
+            /**
+             * Included Regions
+             */
+            included_regions?: Array<string> | null;
+            /**
+             * Excluded Regions
+             */
+            excluded_regions?: Array<string> | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Project Id
+             */
+            project_id?: string | null;
+            /**
+             * Billing Dataset Name
+             */
+            billing_dataset_name?: string | null;
+            /**
+             * Billing Table Name
+             */
+            billing_table_name?: string | null;
+            /**
+             * Billing Project Id
+             */
+            billing_project_id?: string | null;
+        } | null;
+        /**
+         * DatasourceBillingInfo
+         */
+        billing: {
+            /**
+             * Last Report Processed At
+             */
+            last_report_processed_at?: string | null;
+            /**
+             * Last Attempt At
+             */
+            last_attempt_at?: string | null;
+            /**
+             * Last Report Updated At
+             */
+            last_report_updated_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        };
+        /**
+         * DatasourceMetricsInfo
+         */
+        metrics: {
+            /**
+             * Last Retrieval At
+             */
+            last_retrieval_at?: string | null;
+            /**
+             * Last Attempt At
+             */
+            last_attempt_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        };
+        /**
+         * Discovery
+         */
+        discovery?: Array<{
+            /**
+             * Resource Type
+             */
+            resource_type?: string | null;
+            /**
+             * Enabled
+             */
+            enabled?: boolean | null;
+            /**
+             * Last Discovery At
+             */
+            last_discovery_at?: string | null;
+            /**
+             * Last Error At
+             */
+            last_error_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        }>;
     };
 };
 
@@ -6443,6 +7037,24 @@ export type GetAccountsOpsV1AccountsGetResponses = {
              * AccountType
              */
             type: 'admin' | 'operations' | 'affiliate';
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
             /**
              * AccountStats
              */
@@ -6692,6 +7304,24 @@ export type CreateAccountOpsV1AccountsPostResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -6912,6 +7542,24 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7145,6 +7793,24 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7365,6 +8031,24 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                      * An external identifier for the account
                      */
                     external_id: string;
+                    cloud_provider?: {
+                        /**
+                         * Name
+                         */
+                        name: string;
+                        /**
+                         * Icon
+                         */
+                        icon: string;
+                        /**
+                         * Datasource Id Format
+                         */
+                        datasource_id_format: string;
+                        /**
+                         * Id
+                         */
+                        id: string;
+                    } | null;
                 };
             } | null;
         }>;
@@ -7422,6 +8106,24 @@ export type MeOpsV1MeGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         system: {
             /**
@@ -7463,331 +8165,3 @@ export type MeOpsV1MeGetResponses = {
 };
 
 export type MeOpsV1MeGetResponse = MeOpsV1MeGetResponses[keyof MeOpsV1MeGetResponses];
-
-export type ValidateOrderEventsCommerceOrdersValidatePostData = {
-    /**
-     * Order
-     */
-    body: {
-        [key: string]: unknown;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/commerce/orders/validate';
-};
-
-export type ValidateOrderEventsCommerceOrdersValidatePostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type ValidateOrderEventsCommerceOrdersValidatePostError = ValidateOrderEventsCommerceOrdersValidatePostErrors[keyof ValidateOrderEventsCommerceOrdersValidatePostErrors];
-
-export type ValidateOrderEventsCommerceOrdersValidatePostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type ProcessOrderEventsCommerceOrdersPostData = {
-    /**
-     * Event
-     */
-    body: {
-        /**
-         * Id
-         *
-         * Unique message ID, can be used to correlate with platform logs.
-         */
-        id: string;
-        /**
-         * Object
-         */
-        object: {
-            /**
-             * Id
-             *
-             * Unique object ID, maps to the platform object ID property.
-             */
-            id: string;
-            /**
-             * Name
-             *
-             * Object name, maps to the platform object name property.
-             */
-            name: string;
-            /**
-             * Objecttype
-             *
-             * The object's type, maps to the “routing.entity” property of the EventMessage.
-             */
-            objectType: string;
-        };
-        /**
-         * Details
-         */
-        details: {
-            /**
-             * Eventtype
-             *
-             * The type of the event. Maps to the “routing.event” property of the EventMessage.
-             */
-            eventType: string;
-            /**
-             * Enqueuetime
-             *
-             * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-             */
-            enqueueTime: string;
-            /**
-             * Deliverytime
-             *
-             * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-             */
-            deliveryTime: string;
-        };
-        /**
-         * Information about the event's related task. Maps to the task created by Task Orchestrator.
-         */
-        task?: {
-            /**
-             * Id
-             *
-             * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
-             */
-            id: string;
-        } | null;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/commerce/orders';
-};
-
-export type ProcessOrderEventsCommerceOrdersPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type ProcessOrderEventsCommerceOrdersPostError = ProcessOrderEventsCommerceOrdersPostErrors[keyof ProcessOrderEventsCommerceOrdersPostErrors];
-
-export type ProcessOrderEventsCommerceOrdersPostResponses = {
-    /**
-     * EventResponse
-     *
-     * Successful Response
-     */
-    200: {
-        /**
-         * Response
-         */
-        response: 'OK' | 'Delay' | 'Cancel';
-        /**
-         * Delay
-         *
-         * The minimum delay the Extensions Service must wait before sending the event again.
-         */
-        delay?: number | null;
-    };
-};
-
-export type ProcessOrderEventsCommerceOrdersPostResponse = ProcessOrderEventsCommerceOrdersPostResponses[keyof ProcessOrderEventsCommerceOrdersPostResponses];
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostData = {
-    /**
-     * Event
-     */
-    body: {
-        /**
-         * Id
-         *
-         * Unique message ID, can be used to correlate with platform logs.
-         */
-        id: string;
-        /**
-         * Object
-         */
-        object: {
-            /**
-             * Id
-             *
-             * Unique object ID, maps to the platform object ID property.
-             */
-            id: string;
-            /**
-             * Name
-             *
-             * Object name, maps to the platform object name property.
-             */
-            name: string;
-            /**
-             * Objecttype
-             *
-             * The object's type, maps to the “routing.entity” property of the EventMessage.
-             */
-            objectType: string;
-        };
-        /**
-         * Details
-         */
-        details: {
-            /**
-             * Eventtype
-             *
-             * The type of the event. Maps to the “routing.event” property of the EventMessage.
-             */
-            eventType: string;
-            /**
-             * Enqueuetime
-             *
-             * The date/time the platform became aware of this event. Maps to the “timestamp” property of EventMessage.
-             */
-            enqueueTime: string;
-            /**
-             * Deliverytime
-             *
-             * The date/time the platform is delivering this event to the extension. Defaults to current date/time on the server.
-             */
-            deliveryTime: string;
-        };
-        /**
-         * Information about the event's related task. Maps to the task created by Task Orchestrator.
-         */
-        task?: {
-            /**
-             * Id
-             *
-             * Unique platform task ID, maps to the ID of the task created by the Task Orchestrator.
-             */
-            id: string;
-        } | null;
-    };
-    path?: never;
-    query?: never;
-    url: '/events/commerce/subscriptions';
-};
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostErrors = {
-    /**
-     * HTTPValidationError
-     *
-     * Validation Error
-     */
-    422: {
-        /**
-         * Detail
-         */
-        detail?: Array<{
-            /**
-             * Location
-             */
-            loc: Array<string | number>;
-            /**
-             * Message
-             */
-            msg: string;
-            /**
-             * Error Type
-             */
-            type: string;
-            /**
-             * Input
-             */
-            input?: unknown;
-            /**
-             * Context
-             */
-            ctx?: {
-                [key: string]: unknown;
-            };
-        }>;
-    };
-};
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostError = ProcessSubscriptionEventsCommerceSubscriptionsPostErrors[keyof ProcessSubscriptionEventsCommerceSubscriptionsPostErrors];
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostResponses = {
-    /**
-     * EventResponse
-     *
-     * Successful Response
-     */
-    200: {
-        /**
-         * Response
-         */
-        response: 'OK' | 'Delay' | 'Cancel';
-        /**
-         * Delay
-         *
-         * The minimum delay the Extensions Service must wait before sending the event again.
-         */
-        delay?: number | null;
-    };
-};
-
-export type ProcessSubscriptionEventsCommerceSubscriptionsPostResponse = ProcessSubscriptionEventsCommerceSubscriptionsPostResponses[keyof ProcessSubscriptionEventsCommerceSubscriptionsPostResponses];

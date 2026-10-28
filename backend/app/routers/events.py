@@ -3,17 +3,30 @@ import logging
 from fastapi import APIRouter
 
 from app.dependencies.core import ExtensionContext
-from app.dependencies.events import OrderEventHandler, SubscriptionEventHandler
+from app.dependencies.events import (
+    ClientAccountEventHandler,
+    OrderEventHandler,
+    SubscriptionEventHandler,
+)
+from app.events.orders.constants import ORDER_TYPE_TERMINATE
 from app.events.orders.error import ERR_ORDER_TYPE_NOT_SUPPORTED
+from app.events.orders.parameters import check_termination_order_parameters
 from app.events.tasks import process_event
+from app.parameters import reset_ordering_parameters_error
 from app.schemas.core import Event, EventResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+accounts_router = APIRouter()
 
 
 @router.post("/orders/validate")
 async def validate_order(order: dict):
+    if order["type"] == ORDER_TYPE_TERMINATE:
+        order = reset_ordering_parameters_error(order)
+        order, _ = check_termination_order_parameters(order)
+        return order
+
     # Webhook of Change Order
     order["error"] = ERR_ORDER_TYPE_NOT_SUPPORTED.to_dict(order_type=order["type"])
     return order
@@ -33,5 +46,14 @@ async def process_subscription(
     event: Event,
     ext_ctx: ExtensionContext,
     handler: SubscriptionEventHandler,
+) -> EventResponse:
+    return await process_event(ext_ctx, event, handler)
+
+
+@accounts_router.post("/clients")
+async def process_client_account(
+    event: Event,
+    ext_ctx: ExtensionContext,
+    handler: ClientAccountEventHandler,
 ) -> EventResponse:
     return await process_event(ext_ctx, event, handler)

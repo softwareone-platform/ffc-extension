@@ -75,10 +75,48 @@ class DatasourceType(enum.StrEnum):
 
 
 @enum.unique
+class DatasourceImportStatus(enum.StrEnum):
+    COMPLETED = "completed"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
+
+
+@enum.unique
+class AwsAccountType(enum.StrEnum):
+    MEMBER = "member"
+    MANAGEMENT_STANDALONE = "management_standalone"
+
+
+@enum.unique
+class AwsAuthenticationType(enum.StrEnum):
+    ASSUMED_ROLE = "assumed_role"
+    ACCESS_KEY = "access_key"
+
+
+@enum.unique
+class AwsExportType(enum.StrEnum):
+    LEGACY_CUR_EXPORT = "legacy_cur_export"
+    STANDARD_DATA_EXPORT = "standard_data_export"
+
+
+@enum.unique
 class OrganizationStatus(enum.StrEnum):
     ACTIVE = "active"
     TERMINATED = "terminated"
     DELETED = "deleted"
+
+
+@enum.unique
+class TerminationReason(enum.StrEnum):
+    MISSING_FEATURES = "missing_features"
+    TOO_COMPLEX = "too_complex"
+    COST_OR_PRICING = "cost_or_pricing"
+    DATA_ACCURACY = "data_accuracy"
+    SWITCHING_TOOL = "switching_tool"
+    NEED_ENDED = "need_ended"
+    INTERNAL_CHANGES = "internal_changes"
+    UNSATISFACTORY_SUPPORT = "unsatisfactory_support"
+    OTHER = "other"
 
 
 @enum.unique

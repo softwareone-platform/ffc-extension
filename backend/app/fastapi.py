@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from functools import partial
 from pathlib import Path
+from typing import Any
 
 import fastapi_pagination
 from fastapi import Depends, FastAPI
@@ -53,10 +53,6 @@ tags_metadata = [
     {
         "name": "Billing",
         "description": "FinOps for Cloud Billing management endpoints.",
-    },
-    {
-        "name": "Marketplace Commerce Events",
-        "description": "Marketplace events handler endpoints for order's fulfillment",
     },
 ]
 
@@ -174,7 +170,22 @@ def setup_app():
     events_router.include_router(
         events.router,
         prefix="/commerce",
-        tags=["Marketplace Commerce Events"],
+        include_in_schema=False,
+        dependencies=[
+            Depends(
+                AuthorizedAccountTypes(
+                    AccountType.ADMIN,
+                    AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
+                    actor_required=False,
+                ),
+            ),
+        ],
+    )
+
+    events_router.include_router(
+        events.accounts_router,
+        prefix="/accounts",
         include_in_schema=False,
         dependencies=[
             Depends(
@@ -193,7 +204,10 @@ def setup_app():
 
     settings = get_settings()
 
-    app.openapi = partial(generate_openapi_spec, app, settings)
+    def openapi() -> dict[str, Any]:
+        return generate_openapi_spec(app, settings)
+
+    app.openapi = openapi  # ty: ignore[invalid-assignment]
 
     setup_fastapi_instrumentor(
         settings,

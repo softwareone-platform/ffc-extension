@@ -23,6 +23,7 @@ from app.utils import (
     get_jwt_token_expires,
     get_meta,
     get_organization_deletable_at,
+    get_organization_terminated_before,
     wrap_exc_in_http_response,
     wrap_http_error_in_502,
     wrap_http_not_found_in_400,
@@ -81,6 +82,52 @@ def test_get_organization_deletable_at_normalizes_non_utc_timezones() -> None:
     terminated_at = datetime(2026, 7, 31, 22, 30, tzinfo=timezone(-timedelta(hours=3)))
 
     assert get_organization_deletable_at(terminated_at) == datetime(2026, 10, 1, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("deletable_by", "expected"),
+    [
+        (datetime(2026, 3, 1, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC)),
+        (datetime(2026, 2, 28, 23, 59, 59, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC)),
+        (datetime(2026, 1, 15, 10, 0, tzinfo=UTC), datetime(2025, 12, 1, tzinfo=UTC)),
+        (
+            datetime(2026, 2, 28, 22, 30, tzinfo=timezone(-timedelta(hours=3))),
+            datetime(2026, 2, 1, tzinfo=UTC),
+        ),
+    ],
+)
+def test_get_organization_terminated_before(deletable_by: datetime, expected: datetime) -> None:
+    """Organizations must be terminated before midnight UTC of the 1st day of the month
+    preceding the (UTC) month of `deletable_by`."""
+    assert get_organization_terminated_before(deletable_by) == expected
+
+
+@pytest.mark.parametrize(
+    "terminated_at",
+    [
+        datetime(2025, 12, 31, 23, 59, 59, tzinfo=UTC),
+        datetime(2026, 1, 1, tzinfo=UTC),
+        datetime(2026, 1, 31, 23, 59, 59, tzinfo=UTC),
+        datetime(2026, 2, 1, tzinfo=UTC),
+        datetime(2026, 2, 15, 12, 0, tzinfo=UTC),
+    ],
+)
+@pytest.mark.parametrize(
+    "deletable_by",
+    [
+        datetime(2026, 2, 28, 23, 59, 59, tzinfo=UTC),
+        datetime(2026, 3, 1, tzinfo=UTC),
+        datetime(2026, 3, 15, 8, 0, tzinfo=UTC),
+        datetime(2026, 4, 1, tzinfo=UTC),
+    ],
+)
+def test_get_organization_terminated_before_is_inverse_of_deletable_at(
+    terminated_at: datetime, deletable_by: datetime
+) -> None:
+    """Being terminated before the cutoff is equivalent to being deletable by `deletable_by`."""
+    assert (terminated_at < get_organization_terminated_before(deletable_by)) == (
+        get_organization_deletable_at(terminated_at) <= deletable_by
+    )
 
 
 def test_compute_daily_expenses_fills_missing_days() -> None:

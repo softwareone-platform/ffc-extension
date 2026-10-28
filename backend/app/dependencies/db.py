@@ -34,6 +34,9 @@ OrganizationRepository = Annotated[
 AccountRepository = Annotated[
     handlers.AccountHandler, Depends(HandlerFactory(handlers.AccountHandler))
 ]
+ClientAccountRepository = Annotated[
+    handlers.ClientAccountHandler, Depends(HandlerFactory(handlers.ClientAccountHandler))
+]
 UserRepository = Annotated[handlers.UserHandler, Depends(HandlerFactory(handlers.UserHandler))]
 AccountUserRepository = Annotated[
     handlers.AccountUserHandler, Depends(HandlerFactory(handlers.AccountUserHandler))
@@ -47,4 +50,8 @@ DatasourceExpenseRepository = Annotated[
 AdditionalAdminRequestRepository = Annotated[
     handlers.AdditionalAdminRequestHandler,
     Depends(HandlerFactory(handlers.AdditionalAdminRequestHandler)),
+]
+TerminationFeedbackRepository = Annotated[
+    handlers.TerminationFeedbackHandler,
+    Depends(HandlerFactory(handlers.TerminationFeedbackHandler)),
 ]

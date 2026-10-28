@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { Outlet, useParams } from "react-router-dom";
 
 import { Card } from "@swo/design-system/card";
@@ -16,17 +18,25 @@ export function OrganizationDetailsContent() {
   const { data: entity } = useOrganizationDetailsApi(organizationId);
   const tDetails = useFixedT("organization:details");
 
-  const topBarItems = [
-    { label: tDetails("general:title"), path: SEGMENTS.general },
-    { label: tDetails("dataSources:title"), path: SEGMENTS.dataSources },
-    { label: tDetails("users:title"), path: SEGMENTS.users },
-    { label: tDetails("events:title"), path: SEGMENTS.events },
-  ];
+  const topBarItems = useMemo(
+    () => [
+      { label: tDetails("general:title"), path: SEGMENTS.general },
+      { label: tDetails("dataSources:title"), path: SEGMENTS.dataSources },
+      { label: tDetails("users:title"), path: SEGMENTS.users },
+      { label: tDetails("events:title"), path: SEGMENTS.events },
+      {
+        label: tDetails("termination:title"),
+        path: SEGMENTS.termination,
+        isHidden: !entity?.termination_feedback?.id,
+      },
+    ],
+    [tDetails, entity?.termination_feedback?.id],
+  );
 
   return (
     <>
       {organizationId && <OrganizationHighlights organizationId={organizationId} />}
-      <Navigation.TopBar items={topBarItems} />
+      <Navigation.TopBar items={topBarItems.filter((item) => !item.isHidden)} />
       <OrganizationsProvider organization={entity!}>
         <Card>
           <Outlet />

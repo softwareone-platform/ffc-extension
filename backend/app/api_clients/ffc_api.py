@@ -53,6 +53,35 @@ class FFCAPIClient(BaseAPIClient):
     def auth(self):
         return FFCAPIClusterSecretAuth(self.settings)
 
+    async def create_user(self, email: str, display_name: str, password: str) -> httpx.Response:
+        response = await self.httpx_client.post(
+            "/admin/users",
+            json={
+                "email": email,
+                "display_name": display_name,
+                "password": password,
+            },
+        )
+        response.raise_for_status()
+        return response
+
+    async def create_organization(
+        self,
+        org_name: str,
+        user_id: str,
+        currency: str,
+    ) -> httpx.Response:
+        response = await self.httpx_client.post(
+            "/admin/organizations",
+            json={
+                "name": org_name,
+                "user_id": user_id,
+                "currency": currency,
+            },
+        )
+        response.raise_for_status()
+        return response
+
     async def fetch_users_for_organization(
         self,
         organization_id: UUID | str,
@@ -77,6 +106,17 @@ class FFCAPIClient(BaseAPIClient):
         response = await self.httpx_client.get(
             f"/admin/organizations/{organization_id}/datasources",
             params=resolve_params(limit=limit, offset=offset, rql=rql),
+        )
+        response.raise_for_status()
+        return response
+
+    async def fetch_datasource_for_organization(
+        self,
+        organization_id: UUID | str,
+        datasource_id: UUID | str,
+    ) -> httpx.Response:
+        response = await self.httpx_client.get(
+            f"/admin/organizations/{organization_id}/datasources/{datasource_id}",
         )
         response.raise_for_status()
         return response

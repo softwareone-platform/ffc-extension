@@ -1,5 +1,8 @@
+from datetime import UTC, datetime
+
 import pytest
 from pytest_mock import MockerFixture
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -7,12 +10,14 @@ from app.auth.context import AuthenticationContext
 from app.db.handlers import (
     AccountUserHandler,
     CannotDeleteError,
+    ClientAccountHandler,
     ConstraintViolationError,
     ModelHandler,
     NotFoundError,
+    TerminationFeedbackHandler,
 )
-from app.db.models import Account, AccountUser, Base, User
-from app.enums import AccountStatus, AccountUserStatus, UserStatus
+from app.db.models import Account, AccountUser, Base, ClientAccount, Organization, System, User
+from app.enums import AccountStatus, AccountUserStatus, TerminationReason, UserStatus
 from tests.db.models import (
     DeletableAuditModelForTests,
     DeletableModelForTests,
@@ -230,6 +235,56 @@ async def test_get_or_create_with_default_load_options(db_session: AsyncSession)
     assert obj.parent.description == "GetOrCreate Parent"
 
 
+async def test_update_or_create_creates_missing_object(db_session: AsyncSession) -> None:
+    """`update_or_create` creates an object from filters and defaults when none matches."""
+    handler = ModelForTestsHandler(db_session)
+
+    obj, created = await handler.update_or_create(
+        defaults={"status": "inactive"}, name="UpdateOrCreate Object"
+    )
+
+    assert created is True
+    assert obj.id.startswith(ModelForTests.PK_PREFIX)
+    assert obj.name == "UpdateOrCreate Object"
+    assert obj.status == "inactive"
+
+
+async def test_update_or_create_updates_existing_object(db_session: AsyncSession) -> None:
+    """`update_or_create` applies defaults to the object matching the filters."""
+    handler = ModelForTestsHandler(db_session)
+    existing = await handler.create(ModelForTests(name="UpdateOrCreate Object"))
+
+    obj, created = await handler.update_or_create(
+        defaults={"status": "inactive"}, name="UpdateOrCreate Object"
+    )
+
+    assert created is False
+    assert obj.id == existing.id
+    assert obj.status == "inactive"
+    assert await handler.count() == 1
+
+
+async def test_update_or_create_applies_extra_conditions(db_session: AsyncSession) -> None:
+    """`update_or_create` ignores objects that don't satisfy `extra_conditions`."""
+    handler = ModelForTestsHandler(db_session)
+    parent = ParentModelForTests(description="Parent")
+    db_session.add(parent)
+    await db_session.commit()
+    existing = await handler.create(
+        ModelForTests(name="Inactive Object", status="inactive", parent_id=parent.id)
+    )
+
+    obj, created = await handler.update_or_create(
+        defaults={"name": "Active Object"},
+        extra_conditions=[ModelForTests.status == "active"],
+        parent_id=parent.id,
+    )
+
+    assert created is True
+    assert obj.id != existing.id
+    assert obj.name == "Active Object"
+
+
 @pytest.mark.parametrize(
     ("model_cls", "handler_cls", "initial_status", "exception"),
     [
@@ -342,3 +397,145 @@ async def test_deleted_by_user_id(
     assert result.status == AccountUserStatus.DELETED
     assert result.deleted_at is not None
     assert result.deleted_by_id == user_actor.id
+
+
+async def test_termination_feedback_upsert_for_organization_creates(
+    db_session: AsyncSession,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """A feedback is created when the organization doesn't have one yet."""
+    organization = await organization_factory()
+    handler = TerminationFeedbackHandler(db_session)
+
+    feedback = await handler.upsert_for_organization(
+        organization,
+        reason=TerminationReason.OTHER,
+        comments="We are moving to another tool.",
+    )
+
+    assert feedback.id.startswith("FFBK-")
+    assert feedback.organization_id == organization.id
+    assert feedback.reason == TerminationReason.OTHER
+    assert feedback.comments == "We are moving to another tool."
+
+
+async def test_termination_feedback_upsert_for_organization_replaces_existing(
+    db_session: AsyncSession,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """An existing feedback gets the new reason and comments instead of creating a new one."""
+    organization = await organization_factory()
+    handler = TerminationFeedbackHandler(db_session)
+    existing = await handler.upsert_for_organization(
+        organization, reason=TerminationReason.TOO_COMPLEX, comments="Too many screens."
+    )
+
+    feedback = await handler.upsert_for_organization(organization, reason=TerminationReason.OTHER)
+
+    assert feedback.id == existing.id
+    assert feedback.reason == TerminationReason.OTHER
+    assert feedback.comments is None
+    assert await handler.count() == 1
+
+
+async def test_client_account_update_or_create_creates_with_actor(
+    db_session: AsyncSession, ffc_extension_auth_context: AuthenticationContext
+) -> None:
+    """A new `ClientAccount` is created with `created_by`/`updated_by` set to the current actor."""
+    handler = ClientAccountHandler(db_session)
+
+    client_account, created = await handler.update_or_create(
+        defaults={"name": "Client", "icon": "/icons/client.png"},
+        external_id="ACC-1234-5678",
+    )
+
+    assert created is True
+    assert client_account.id.startswith(ClientAccount.PK_PREFIX)
+    assert client_account.external_id == "ACC-1234-5678"
+    assert client_account.name == "Client"
+    assert client_account.icon == "/icons/client.png"
+    assert client_account.created_by == ffc_extension_auth_context.system
+    assert client_account.updated_by == ffc_extension_auth_context.system
+
+
+async def test_client_account_update_or_create_updates_existing(
+    db_session: AsyncSession,
+    client_account_factory: ModelFactory[ClientAccount],
+    gcp_extension: System,
+    ffc_extension_auth_context: AuthenticationContext,
+) -> None:
+    """An existing `ClientAccount` is updated in place, keeping its creator."""
+    existing = await client_account_factory(
+        name="Old Name",
+        external_id="ACC-1234-5678",
+        created_by=gcp_extension,
+        updated_by=gcp_extension,
+    )
+    handler = ClientAccountHandler(db_session)
+
+    client_account, created = await handler.update_or_create(
+        defaults={"name": "New Name"}, external_id="ACC-1234-5678"
+    )
+
+    assert created is False
+    assert client_account.id == existing.id
+    assert client_account.name == "New Name"
+    assert client_account.created_by == gcp_extension
+    assert client_account.updated_by == ffc_extension_auth_context.system
+    assert await handler.count() == 1
+
+
+async def test_client_account_update_or_create_skips_unchanged(
+    db_session: AsyncSession,
+    client_account_factory: ModelFactory[ClientAccount],
+    gcp_extension: System,
+    ffc_extension_auth_context: AuthenticationContext,
+) -> None:
+    """Calling `update_or_create` with unchanged values doesn't touch the `ClientAccount`."""
+    existing = await client_account_factory(
+        name="Client",
+        external_id="ACC-1234-5678",
+        created_by=gcp_extension,
+        updated_by=gcp_extension,
+    )
+    handler = ClientAccountHandler(db_session)
+
+    client_account, created = await handler.update_or_create(
+        defaults={"name": "Client"}, external_id="ACC-1234-5678"
+    )
+
+    assert created is False
+    assert client_account.updated_by == gcp_extension
+    assert client_account.updated_at == existing.updated_at
+
+
+async def test_client_account_update_or_create_ignores_soft_deleted(
+    db_session: AsyncSession,
+    client_account_factory: ModelFactory[ClientAccount],
+    ffc_extension_auth_context: AuthenticationContext,
+) -> None:
+    """A soft-deleted `ClientAccount` is left untouched and a new one is created instead."""
+    deleted = await client_account_factory(
+        name="Old Name", external_id="ACC-1234-5678", deleted_at=datetime.now(UTC)
+    )
+    handler = ClientAccountHandler(db_session)
+
+    client_account, created = await handler.update_or_create(
+        defaults={"name": "New Name"}, external_id="ACC-1234-5678"
+    )
+
+    assert created is True
+    assert client_account.id != deleted.id
+    assert client_account.name == "New Name"
+    await db_session.refresh(deleted)
+    assert deleted.name == "Old Name"
+
+
+async def test_client_account_external_id_unique_for_non_deleted(
+    client_account_factory: ModelFactory[ClientAccount],
+) -> None:
+    """Two non-deleted `ClientAccount`s can't share the same `external_id`."""
+    await client_account_factory(external_id="ACC-1234-5678")
+
+    with pytest.raises(IntegrityError, match="ix_client_accounts_external_id_for_non_deleted"):
+        await client_account_factory(external_id="ACC-1234-5678")

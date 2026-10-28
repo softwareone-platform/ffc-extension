@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.handlers import NotFoundError
-from app.db.models import Account, AccountUser, System, User
+from app.db.models import Account, AccountUser, CloudProvider, System, User
 from app.dependencies.db import AccountRepository
 from app.enums import AccountStatus, AccountType, UserStatus
 from app.routers.accounts import (
@@ -277,8 +277,10 @@ async def test_get_all_account_multiple_pages(
 # ====================
 
 
-async def test_validate_account_type_and_required_conditions_account_type_admin():
-    account_repo = AccountRepository
+async def test_validate_account_type_and_required_conditions_account_type_admin(
+    mocker: MockerFixture,
+):
+    account_repo = mocker.Mock()
 
     data = AccountCreate(name="Microsoft", external_id=str(uuid4()), type=AccountType.ADMIN)
     with pytest.raises(HTTPException) as exc_info:
@@ -724,3 +726,47 @@ async def test_get_accounts_with_filters_relationship(
     assert data["total"] == len(data["items"])
     names = [item["name"] for item in data["items"]]
     assert names == ["Pilly", "Milly"]
+
+
+# ====================
+# Cloud provider
+# ====================
+
+
+async def test_create_affiliate_without_integration_has_no_provider(
+    admin_client: AsyncClient,
+) -> None:
+    """`POST /accounts` without an integration leaves the account without a provider."""
+    response = await admin_client.post(
+        "/accounts",
+        json={"name": "Contoso", "external_id": "ACC-9044-8754", "type": "affiliate"},
+    )
+
+    assert response.status_code == 201
+    assert response.json().get("cloud_provider") is None
+
+
+@pytest.mark.parametrize(
+    "factory_name",
+    ["aws_cloud_provider_factory", "azure_cloud_provider_factory"],
+    ids=["aws", "azure"],
+)
+async def test_get_account_includes_the_cloud_provider(
+    request: pytest.FixtureRequest,
+    admin_client: AsyncClient,
+    gcp_account: Account,
+    factory_name: str,
+) -> None:
+    """`GET /accounts/{id}` nests the affiliate's provider in the response."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    provider = await cloud_provider_factory(gcp_account)
+
+    response = await admin_client.get(f"/accounts/{gcp_account.id}")
+
+    assert response.status_code == 200
+    assert response.json()["cloud_provider"] == {
+        "id": provider.id,
+        "name": provider.name,
+        "icon": provider.icon,
+        "datasource_id_format": provider.datasource_id_format,
+    }
