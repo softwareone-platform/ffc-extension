@@ -36,6 +36,12 @@ const OrganizationEventsDetails = lazy(() =>
   })),
 );
 
+const OrganizationTerminationFeedback = lazy(() =>
+  import("~features/organizations/details/termination/TerminationFeedback").then((m) => ({
+    default: m.OrganizationTerminationFeedback,
+  })),
+);
+
 const allowedRoles = ["admin", "operations"] as const;
 
 export function Organizations() {
@@ -49,6 +55,7 @@ export function Organizations() {
           <Route path={SEGMENTS.dataSources} element={<OrganizationDataSources />} />
           <Route path={SEGMENTS.users} element={<OrganizationUsers />} />
           <Route path={SEGMENTS.events} element={<OrganizationEventsDetails />} />
+          <Route path={SEGMENTS.termination} element={<OrganizationTerminationFeedback />} />
         </Route>
       </Routes>
     </RouteGuard>
