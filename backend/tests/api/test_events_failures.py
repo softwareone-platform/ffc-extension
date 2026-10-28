@@ -159,6 +159,7 @@ async def test_process_order_propagates_a_failed_task_log(
 
     # The rejected log write is posted to Teams once, with the traceback and the event details.
     webhook_url = test_settings.msteams_notifications_webhook_url
+    assert webhook_url is not None
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -234,7 +235,9 @@ async def test_process_order_still_propagates_the_original_error_when_teams_is_d
     assert len(notification_failures) == 1
     assert notification_failures[0].levelno == logging.ERROR
     assert event.task.id in notification_failures[0].getMessage()
-    assert isinstance(notification_failures[0].exc_info[1], httpx.ConnectError)
+    notification_exc_info = notification_failures[0].exc_info
+    assert notification_exc_info is not None
+    assert isinstance(notification_exc_info[1], httpx.ConnectError)
 
     # The original failure was logged too, before the notification was attempted.
     unexpected_failures = [
@@ -245,7 +248,9 @@ async def test_process_order_still_propagates_the_original_error_when_teams_is_d
     assert len(unexpected_failures) == 1
     assert event.task.id in unexpected_failures[0].getMessage()
     assert purchase_order["id"] in unexpected_failures[0].getMessage()
-    assert isinstance(unexpected_failures[0].exc_info[1], httpx.HTTPStatusError)
+    unexpected_exc_info = unexpected_failures[0].exc_info
+    assert unexpected_exc_info is not None
+    assert isinstance(unexpected_exc_info[1], httpx.HTTPStatusError)
     assert caplog.records.index(unexpected_failures[0]) < caplog.records.index(
         notification_failures[0]
     )
@@ -310,6 +315,7 @@ async def test_process_order_propagates_a_failed_task_completion(
 
     # The timeout is posted to Teams once, with the traceback and the event details.
     webhook_url = test_settings.msteams_notifications_webhook_url
+    assert webhook_url is not None
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -354,6 +360,7 @@ async def test_process_order_reports_an_unreadable_order_as_unexpected(
 
     # The failure is posted to Teams once, with the traceback and the event details.
     webhook_url = test_settings.msteams_notifications_webhook_url
+    assert webhook_url is not None
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -427,6 +434,7 @@ async def test_process_order_reports_a_malformed_task_as_unexpected(
 
     # The failure is posted to Teams once, with the traceback and the event details.
     webhook_url = test_settings.msteams_notifications_webhook_url
+    assert webhook_url is not None
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]
@@ -679,6 +687,7 @@ async def test_process_subscription_propagates_a_failed_task_log(
 
     # The failure is posted to Teams once, with the traceback and the event details.
     webhook_url = test_settings.msteams_notifications_webhook_url
+    assert webhook_url is not None
     assert len(httpx_mock.get_requests(url=webhook_url)) == 1
     card = _teams_card(httpx_mock, webhook_url)
     assert "Process Event Error" in card["title"]

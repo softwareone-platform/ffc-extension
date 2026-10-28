@@ -18,6 +18,8 @@ from app.events.subscriptions.exceptions import (
     SubscriptionNotValidError,
 )
 from app.events.subscriptions.utils import get_datasource_id, is_product_supported
+from app.exceptions import InvalidDataSourceIdError
+from app.utils import validate_datasource_id_format
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +84,20 @@ class SubscriptionProcessor(EventProcessor):
 
         if entitlement is not None:
             return self.completed(f"The entitlement {entitlement.id} already exists.")
-
+        datasource_id = get_datasource_id(self.subscription)
+        if not datasource_id:
+            raise SubscriptionNotValidError("The value of the 'vendor.externalid' is emtpy.")
+        try:
+            validate_datasource_id_format(owner=self.account, datasource_id=datasource_id)
+        except InvalidDataSourceIdError:
+            raise SubscriptionNotValidError(
+                f"The format of the datasource id {datasource_id} is not valid."
+            )
         entitlement = await self.entitlement_repo.create(
             Entitlement(
                 name=self.subscription["name"],
                 affiliate_external_id=self.subscription["id"],
-                datasource_id=get_datasource_id(self.subscription),
+                datasource_id=datasource_id,
                 status=EntitlementStatus.NEW,
                 owner=self.account,
             )

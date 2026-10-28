@@ -171,6 +171,24 @@ export type AccountRead = {
      * AccountType
      */
     type: 'admin' | 'operations' | 'affiliate';
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
     /**
      * AccountStats
      */
@@ -218,6 +236,24 @@ export type AccountReference = {
      * An external identifier for the account
      */
     external_id: string;
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
 };
 
 /**
@@ -311,6 +347,24 @@ export type AccountUserReferenceWithAccount = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
 };
 
@@ -500,6 +554,186 @@ export type AuditFieldSchema = {
 };
 
 /**
+ * AwsAccountType
+ */
+export type AwsAccountType = 'member' | 'management_standalone';
+
+/**
+ * AwsAuthenticationType
+ */
+export type AwsAuthenticationType = 'assumed_role' | 'access_key';
+
+/**
+ * AwsDetails
+ *
+ * `assumed_role_name` is returned only for assumed role authentication,
+ * `access_key_id` only for access key authentication and the export fields
+ * only for management/standalone accounts.
+ */
+export type AwsDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Account Id
+     */
+    account_id?: string | null;
+    /**
+     * AwsAccountType
+     */
+    account_type: 'member' | 'management_standalone';
+    /**
+     * AwsAuthenticationType
+     */
+    authentication_type: 'assumed_role' | 'access_key';
+    /**
+     * Assumed Role Name
+     */
+    assumed_role_name?: string | null;
+    /**
+     * Access Key Id
+     */
+    access_key_id?: string | null;
+    export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+    /**
+     * Use Edp Discount
+     */
+    use_edp_discount?: boolean | null;
+    /**
+     * Export Name
+     */
+    export_name?: string | null;
+    /**
+     * Bucket Name
+     */
+    bucket_name?: string | null;
+    /**
+     * Bucket Prefix
+     */
+    bucket_prefix?: string | null;
+    /**
+     * Region Name
+     */
+    region_name?: string | null;
+    /**
+     * Included Regions
+     */
+    included_regions?: Array<string> | null;
+    /**
+     * Excluded Regions
+     */
+    excluded_regions?: Array<string> | null;
+};
+
+/**
+ * AwsExportType
+ */
+export type AwsExportType = 'legacy_cur_export' | 'standard_data_export';
+
+/**
+ * AzureSubscriptionDetails
+ */
+export type AzureSubscriptionDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    parent?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * DatasourceType
+         */
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
+    } | null;
+    /**
+     * Subscription Id
+     */
+    subscription_id?: string | null;
+    /**
+     * Tenant Id
+     */
+    tenant_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+};
+
+/**
+ * AzureTenantDetails
+ */
+export type AzureTenantDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Tenant Id
+     */
+    tenant_id?: string | null;
+    /**
+     * Client Id
+     */
+    client_id?: string | null;
+};
+
+/**
+ * ClientAccountReference
+ */
+export type ClientAccountReference = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * External Id
+     */
+    external_id: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+};
+
+/**
+ * CloudProviderRead
+ */
+export type CloudProviderRead = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon: string;
+    /**
+     * Datasource Id Format
+     */
+    datasource_id_format: string;
+    /**
+     * Id
+     */
+    id: string;
+};
+
+/**
  * DatasourceBase
  */
 export type DatasourceBase = {
@@ -519,6 +753,336 @@ export type DatasourceBase = {
      * Datasource Id
      */
     datasource_id?: string | null;
+};
+
+/**
+ * DatasourceBillingInfo
+ */
+export type DatasourceBillingInfo = {
+    /**
+     * Last Report Processed At
+     */
+    last_report_processed_at?: string | null;
+    /**
+     * Last Attempt At
+     */
+    last_attempt_at?: string | null;
+    /**
+     * Last Report Updated At
+     */
+    last_report_updated_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
+};
+
+/**
+ * DatasourceDetailRead
+ */
+export type DatasourceDetailRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * DatasourceType
+     */
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    /**
+     * Datasource Id
+     */
+    datasource_id?: string | null;
+    parent?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * DatasourceType
+         */
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        /**
+         * Datasource Id
+         */
+        datasource_id?: string | null;
+    } | null;
+    /**
+     * Parent Id
+     */
+    parent_id?: string | null;
+    /**
+     * Last Import At
+     */
+    last_import_at?: string;
+    /**
+     * Last Import Modified At
+     */
+    last_import_modified_at?: string;
+    /**
+     * Last Import Attempt At
+     */
+    last_import_attempt_at?: string;
+    /**
+     * Last Import Attempt Error
+     */
+    last_import_attempt_error?: string | null;
+    /**
+     * Resources Charged This Month
+     */
+    resources_charged_this_month: number;
+    /**
+     * Expenses So Far This Month
+     */
+    expenses_so_far_this_month: number;
+    /**
+     * Expenses Forecast This Month
+     */
+    expenses_forecast_this_month: number;
+    /**
+     * Details
+     */
+    details?: {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        parent?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * DatasourceType
+             */
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            /**
+             * Datasource Id
+             */
+            datasource_id?: string | null;
+        } | null;
+        /**
+         * Subscription Id
+         */
+        subscription_id?: string | null;
+        /**
+         * Tenant Id
+         */
+        tenant_id?: string | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Tenant Id
+         */
+        tenant_id?: string | null;
+        /**
+         * Client Id
+         */
+        client_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Account Id
+         */
+        account_id?: string | null;
+        /**
+         * AwsAccountType
+         */
+        account_type: 'member' | 'management_standalone';
+        /**
+         * AwsAuthenticationType
+         */
+        authentication_type: 'assumed_role' | 'access_key';
+        /**
+         * Assumed Role Name
+         */
+        assumed_role_name?: string | null;
+        /**
+         * Access Key Id
+         */
+        access_key_id?: string | null;
+        export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+        /**
+         * Use Edp Discount
+         */
+        use_edp_discount?: boolean | null;
+        /**
+         * Export Name
+         */
+        export_name?: string | null;
+        /**
+         * Bucket Name
+         */
+        bucket_name?: string | null;
+        /**
+         * Bucket Prefix
+         */
+        bucket_prefix?: string | null;
+        /**
+         * Region Name
+         */
+        region_name?: string | null;
+        /**
+         * Included Regions
+         */
+        included_regions?: Array<string> | null;
+        /**
+         * Excluded Regions
+         */
+        excluded_regions?: Array<string> | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Project Id
+         */
+        project_id?: string | null;
+        /**
+         * Billing Dataset Name
+         */
+        billing_dataset_name?: string | null;
+        /**
+         * Billing Table Name
+         */
+        billing_table_name?: string | null;
+        /**
+         * Billing Project Id
+         */
+        billing_project_id?: string | null;
+    } | null;
+    /**
+     * DatasourceBillingInfo
+     */
+    billing: {
+        /**
+         * Last Report Processed At
+         */
+        last_report_processed_at?: string | null;
+        /**
+         * Last Attempt At
+         */
+        last_attempt_at?: string | null;
+        /**
+         * Last Report Updated At
+         */
+        last_report_updated_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    };
+    /**
+     * DatasourceMetricsInfo
+     */
+    metrics: {
+        /**
+         * Last Retrieval At
+         */
+        last_retrieval_at?: string | null;
+        /**
+         * Last Attempt At
+         */
+        last_attempt_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    };
+    /**
+     * Discovery
+     */
+    discovery?: Array<{
+        /**
+         * Resource Type
+         */
+        resource_type?: string | null;
+        /**
+         * Enabled
+         */
+        enabled?: boolean | null;
+        /**
+         * Last Discovery At
+         */
+        last_discovery_at?: string | null;
+        /**
+         * Last Error At
+         */
+        last_error_at?: string | null;
+        /**
+         * DatasourceImportStatus
+         */
+        status: 'completed' | 'failed' | 'unknown';
+        /**
+         * Error
+         */
+        error?: string | null;
+    }>;
+};
+
+/**
+ * DatasourceDiscoveryItem
+ */
+export type DatasourceDiscoveryItem = {
+    /**
+     * Resource Type
+     */
+    resource_type?: string | null;
+    /**
+     * Enabled
+     */
+    enabled?: boolean | null;
+    /**
+     * Last Discovery At
+     */
+    last_discovery_at?: string | null;
+    /**
+     * Last Error At
+     */
+    last_error_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
 };
 
 /**
@@ -665,6 +1229,33 @@ export type DatasourceForceReimport = {
      * Date, in ISO format, to set as the datasource's last import timestamp before scheduling the reimport. When omitted it defaults to the epoch (0), which reimports all the available expenses.
      */
     last_import_at?: string | null;
+};
+
+/**
+ * DatasourceImportStatus
+ */
+export type DatasourceImportStatus = 'completed' | 'failed' | 'unknown';
+
+/**
+ * DatasourceMetricsInfo
+ */
+export type DatasourceMetricsInfo = {
+    /**
+     * Last Retrieval At
+     */
+    last_retrieval_at?: string | null;
+    /**
+     * Last Attempt At
+     */
+    last_attempt_at?: string | null;
+    /**
+     * DatasourceImportStatus
+     */
+    status: 'completed' | 'failed' | 'unknown';
+    /**
+     * Error
+     */
+    error?: string | null;
 };
 
 /**
@@ -876,6 +1467,24 @@ export type EntitlementRead = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     /**
      * EntitlementStatus
@@ -1163,6 +1772,32 @@ export type EntitlementsEventsSchema = {
 };
 
 /**
+ * GcpDetails
+ */
+export type GcpDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Project Id
+     */
+    project_id?: string | null;
+    /**
+     * Billing Dataset Name
+     */
+    billing_dataset_name?: string | null;
+    /**
+     * Billing Table Name
+     */
+    billing_table_name?: string | null;
+    /**
+     * Billing Project Id
+     */
+    billing_project_id?: string | null;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -1348,6 +1983,24 @@ export type LimitOffsetPageAccountRead = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -1736,6 +2389,24 @@ export type LimitOffsetPageEntitlementRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -1907,6 +2578,27 @@ export type LimitOffsetPageOrganizationRead = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -2014,6 +2706,25 @@ export type LimitOffsetPageOrganizationRead = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -2175,6 +2886,24 @@ export type LimitOffsetPageUserRead = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
         } | null;
     }>;
@@ -2219,6 +2948,24 @@ export type Me = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     system: {
         /**
@@ -2401,6 +3148,27 @@ export type OrganizationRead = {
      */
     status: 'active' | 'terminated' | 'deleted';
     /**
+     * The client account the organization belongs to, if any.
+     */
+    client?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * External Id
+         */
+        external_id: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
+    } | null;
+    /**
      * OrganizationEventsSchema
      */
     events: {
@@ -2510,6 +3278,25 @@ export type OrganizationRead = {
         possible_monthly_saving?: string;
     } | null;
     /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
+    } | null;
+    /**
      * Deletable At
      *
      * The moment from which a terminated organization can be deleted, null if the organization has not been terminated.
@@ -2571,6 +3358,31 @@ export type SystemReference = {
      */
     external_id: string;
 };
+
+/**
+ * TerminationFeedbackRead
+ */
+export type TerminationFeedbackRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * TerminationReason
+     */
+    reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+    /**
+     * Comments
+     *
+     * Additional comments; always provided when the reason is `other`.
+     */
+    comments?: string | null;
+};
+
+/**
+ * TerminationReason
+ */
+export type TerminationReason = 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
 
 /**
  * UserRead
@@ -2707,6 +3519,24 @@ export type UserRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
     } | null;
 };
@@ -2880,6 +3710,27 @@ export type LimitOffsetPageOrganizationReadWritable = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -2988,6 +3839,25 @@ export type LimitOffsetPageOrganizationReadWritable = {
              */
             possible_monthly_saving?: string;
         } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
+        } | null;
     }>;
     /**
      * Total
@@ -3035,6 +3905,27 @@ export type OrganizationReadWritable = {
      * OrganizationStatus
      */
     status: 'active' | 'terminated' | 'deleted';
+    /**
+     * The client account the organization belongs to, if any.
+     */
+    client?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * External Id
+         */
+        external_id: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
+    } | null;
     /**
      * OrganizationEventsSchema
      */
@@ -3143,6 +4034,25 @@ export type OrganizationReadWritable = {
          * Possible Monthly Saving
          */
         possible_monthly_saving?: string;
+    } | null;
+    /**
+     * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+     */
+    termination_feedback?: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * TerminationReason
+         */
+        reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+        /**
+         * Comments
+         *
+         * Additional comments; always provided when the reason is `other`.
+         */
+        comments?: string | null;
     } | null;
 };
 
@@ -3380,6 +4290,24 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
             /**
              * EntitlementStatus
@@ -3648,6 +4576,24 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -3942,6 +4888,24 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4176,6 +5140,24 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4347,6 +5329,27 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
              */
             status: 'active' | 'terminated' | 'deleted';
             /**
+             * The client account the organization belongs to, if any.
+             */
+            client?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * External Id
+                 */
+                external_id: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
+            } | null;
+            /**
              * OrganizationEventsSchema
              */
             events: {
@@ -4454,6 +5457,25 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                  * Possible Monthly Saving
                  */
                 possible_monthly_saving?: string;
+            } | null;
+            /**
+             * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+             */
+            termination_feedback?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * TerminationReason
+                 */
+                reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+                /**
+                 * Comments
+                 *
+                 * Additional comments; always provided when the reason is `other`.
+                 */
+                comments?: string | null;
             } | null;
             /**
              * Deletable At
@@ -4626,6 +5648,27 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -4733,6 +5776,25 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -4844,6 +5906,27 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
          */
         status: 'active' | 'terminated' | 'deleted';
         /**
+         * The client account the organization belongs to, if any.
+         */
+        client?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * External Id
+             */
+            external_id: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+        /**
          * OrganizationEventsSchema
          */
         events: {
@@ -4951,6 +6034,25 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
              * Possible Monthly Saving
              */
             possible_monthly_saving?: string;
+        } | null;
+        /**
+         * Feedback given by the client when terminating the agreement. Omitted if no feedback was collected.
+         */
+        termination_feedback?: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * TerminationReason
+             */
+            reason: 'missing_features' | 'too_complex' | 'cost_or_pricing' | 'data_accuracy' | 'switching_tool' | 'need_ended' | 'internal_changes' | 'unsatisfactory_support' | 'other';
+            /**
+             * Comments
+             *
+             * Additional comments; always provided when the reason is `other`.
+             */
+            comments?: string | null;
         } | null;
         /**
          * Deletable At
@@ -5175,7 +6277,7 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
 
 export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasourceIdGetResponses = {
     /**
-     * DatasourceRead
+     * DatasourceDetailRead
      *
      * Successful Response
      */
@@ -5246,6 +6348,208 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
          * Expenses Forecast This Month
          */
         expenses_forecast_this_month: number;
+        /**
+         * Details
+         */
+        details?: {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            parent?: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * DatasourceType
+                 */
+                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+                /**
+                 * Datasource Id
+                 */
+                datasource_id?: string | null;
+            } | null;
+            /**
+             * Subscription Id
+             */
+            subscription_id?: string | null;
+            /**
+             * Tenant Id
+             */
+            tenant_id?: string | null;
+            /**
+             * Client Id
+             */
+            client_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Tenant Id
+             */
+            tenant_id?: string | null;
+            /**
+             * Client Id
+             */
+            client_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Account Id
+             */
+            account_id?: string | null;
+            /**
+             * AwsAccountType
+             */
+            account_type: 'member' | 'management_standalone';
+            /**
+             * AwsAuthenticationType
+             */
+            authentication_type: 'assumed_role' | 'access_key';
+            /**
+             * Assumed Role Name
+             */
+            assumed_role_name?: string | null;
+            /**
+             * Access Key Id
+             */
+            access_key_id?: string | null;
+            export_type?: 'legacy_cur_export' | 'standard_data_export' | null;
+            /**
+             * Use Edp Discount
+             */
+            use_edp_discount?: boolean | null;
+            /**
+             * Export Name
+             */
+            export_name?: string | null;
+            /**
+             * Bucket Name
+             */
+            bucket_name?: string | null;
+            /**
+             * Bucket Prefix
+             */
+            bucket_prefix?: string | null;
+            /**
+             * Region Name
+             */
+            region_name?: string | null;
+            /**
+             * Included Regions
+             */
+            included_regions?: Array<string> | null;
+            /**
+             * Excluded Regions
+             */
+            excluded_regions?: Array<string> | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Project Id
+             */
+            project_id?: string | null;
+            /**
+             * Billing Dataset Name
+             */
+            billing_dataset_name?: string | null;
+            /**
+             * Billing Table Name
+             */
+            billing_table_name?: string | null;
+            /**
+             * Billing Project Id
+             */
+            billing_project_id?: string | null;
+        } | null;
+        /**
+         * DatasourceBillingInfo
+         */
+        billing: {
+            /**
+             * Last Report Processed At
+             */
+            last_report_processed_at?: string | null;
+            /**
+             * Last Attempt At
+             */
+            last_attempt_at?: string | null;
+            /**
+             * Last Report Updated At
+             */
+            last_report_updated_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        };
+        /**
+         * DatasourceMetricsInfo
+         */
+        metrics: {
+            /**
+             * Last Retrieval At
+             */
+            last_retrieval_at?: string | null;
+            /**
+             * Last Attempt At
+             */
+            last_attempt_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        };
+        /**
+         * Discovery
+         */
+        discovery?: Array<{
+            /**
+             * Resource Type
+             */
+            resource_type?: string | null;
+            /**
+             * Enabled
+             */
+            enabled?: boolean | null;
+            /**
+             * Last Discovery At
+             */
+            last_discovery_at?: string | null;
+            /**
+             * Last Error At
+             */
+            last_error_at?: string | null;
+            /**
+             * DatasourceImportStatus
+             */
+            status: 'completed' | 'failed' | 'unknown';
+            /**
+             * Error
+             */
+            error?: string | null;
+        }>;
     };
 };
 
@@ -5733,6 +7037,24 @@ export type GetAccountsOpsV1AccountsGetResponses = {
              * AccountType
              */
             type: 'admin' | 'operations' | 'affiliate';
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
             /**
              * AccountStats
              */
@@ -5982,6 +7304,24 @@ export type CreateAccountOpsV1AccountsPostResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -6202,6 +7542,24 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -6435,6 +7793,24 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -6655,6 +8031,24 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                      * An external identifier for the account
                      */
                     external_id: string;
+                    cloud_provider?: {
+                        /**
+                         * Name
+                         */
+                        name: string;
+                        /**
+                         * Icon
+                         */
+                        icon: string;
+                        /**
+                         * Datasource Id Format
+                         */
+                        datasource_id_format: string;
+                        /**
+                         * Id
+                         */
+                        id: string;
+                    } | null;
                 };
             } | null;
         }>;
@@ -6712,6 +8106,24 @@ export type MeOpsV1MeGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         system: {
             /**

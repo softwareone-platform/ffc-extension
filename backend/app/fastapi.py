@@ -54,10 +54,6 @@ tags_metadata = [
         "name": "Billing",
         "description": "FinOps for Cloud Billing management endpoints.",
     },
-    {
-        "name": "Marketplace Commerce Events",
-        "description": "Marketplace events handler endpoints for order's fulfillment",
-    },
 ]
 
 
@@ -174,7 +170,22 @@ def setup_app():
     events_router.include_router(
         events.router,
         prefix="/commerce",
-        tags=["Marketplace Commerce Events"],
+        include_in_schema=False,
+        dependencies=[
+            Depends(
+                AuthorizedAccountTypes(
+                    AccountType.ADMIN,
+                    AccountType.OPERATIONS,
+                    AccountType.AFFILIATE,
+                    actor_required=False,
+                ),
+            ),
+        ],
+    )
+
+    events_router.include_router(
+        events.accounts_router,
+        prefix="/accounts",
         include_in_schema=False,
         dependencies=[
             Depends(
@@ -196,8 +207,6 @@ def setup_app():
     def openapi() -> dict[str, Any]:
         return generate_openapi_spec(app, settings)
 
-    # FastAPI documents replacing `app.openapi` like this, but ty sees a method being
-    # overwritten on the instance.
     app.openapi = openapi  # ty: ignore[invalid-assignment]
 
     setup_fastapi_instrumentor(

@@ -1,6 +1,7 @@
 import copy
 import logging
-from datetime import date
+from collections.abc import Callable
+from datetime import UTC, date, datetime
 from typing import Any
 
 import httpx
@@ -12,10 +13,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from app.auth.context import AuthenticationContext
 from app.conf import Settings
-from app.db.handlers import AccountHandler, EntitlementHandler, OrganizationHandler
-from app.db.models import Account, Entitlement, Organization
-from app.enums import AccountStatus, AccountType, EntitlementStatus, OrganizationStatus
+from app.db.handlers import (
+    AccountHandler,
+    ClientAccountHandler,
+    EntitlementHandler,
+    OrganizationHandler,
+    TerminationFeedbackHandler,
+)
+from app.db.models import Account, ClientAccount, Entitlement, Organization, TerminationFeedback
+from app.enums import (
+    AccountStatus,
+    AccountType,
+    EntitlementStatus,
+    OrganizationStatus,
+    TerminationReason,
+)
 from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     PROCESSING_TEMPLATE_TYPE,
@@ -31,6 +45,7 @@ from app.events.orders.error import (
     ERR_DUE_DATE_NOT_SET,
     ERR_ORDER_TYPE_NOT_SUPPORTED,
     ERR_ORGANIZATION_NAME,
+    ERR_TERMINATION_REASON_NOT_VALID,
     ValidationError,
 )
 from app.events.orders.exceptions import (
@@ -38,6 +53,7 @@ from app.events.orders.exceptions import (
     OrderNotValidError,
     UnsupportedOrderTypeError,
 )
+from app.events.orders.parameters import check_purchase_order_parameters
 from app.events.orders.processing import OrderEventHandler, PurchaseOrderProcessor
 from app.events.processing import ProcessingStatus
 from app.parameters import (
@@ -45,10 +61,11 @@ from app.parameters import (
     PARAM_CURRENCY,
     PARAM_DUE_DATE,
     PARAM_ORGANIZATION_NAME,
+    PARAM_TERMINATION_REASON,
     get_ordering_parameter,
     set_due_date,
 )
-from tests.types import OrderFactory
+from tests.types import ModelFactory, OrderFactory
 
 PRODUCT_ID = "PRD-4141-4379"
 
@@ -548,7 +565,7 @@ async def test_set_processing_order_template_keeps_matching_template(
     assert httpx_mock.get_requests(method="PUT") == []
 
 
-# -- validate_and_move_to_querying_if_needed / validate --
+# -- validate_order_parameters / validate --
 
 
 async def test_validate_returns_true_for_valid_order(
@@ -558,7 +575,7 @@ async def test_validate_returns_true_for_valid_order(
     order_event_handler: OrderEventHandler,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """`validate_and_move_to_querying_if_needed` returns `True` and touches nothing when valid."""
+    """`validate_order_parameters` returns `True` and touches nothing when valid."""
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
@@ -568,7 +585,7 @@ async def test_validate_returns_true_for_valid_order(
     processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
     order_before = copy.deepcopy(processor.order)
 
-    result = await processor.validate_and_move_to_querying_if_needed()
+    result = await processor.validate_order_parameters(check_purchase_order_parameters)
     assert result is True
     assert processor.order == order_before  # nothing written back
     assert processor.template_cache == {}  # querying template never fetched
@@ -596,10 +613,11 @@ async def test_validate_moves_invalid_order_to_querying(
     external_id: str,
     expected_error: ValidationError,
 ) -> None:
-    """`validate_and_move_to_querying_if_needed` writes back errors and moves invalid orders.
+    """`validate_order_parameters` writes back errors and moves invalid orders.
 
     Every required ordering parameter is covered: each one must reach the marketplace as a
-    JSON error object, which is what `check_order_parameters` builds from its `ValidationError`.
+    JSON error object, which is what `check_purchase_order_parameters` builds from its
+    `ValidationError`.
     """
     rows = test_settings.mpt_api_rows_per_page
     invalid_parameter = get_ordering_parameter(purchase_order, external_id)
@@ -643,7 +661,7 @@ async def test_validate_moves_invalid_order_to_querying(
     processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     with caplog.at_level(logging.INFO):
-        result = await processor.validate_and_move_to_querying_if_needed()
+        result = await processor.validate_order_parameters(check_purchase_order_parameters)
     assert result is False
     assert (
         f"{purchase_order['id']}: ordering parameters are invalid, move to querying" in caplog.text
@@ -856,11 +874,11 @@ async def test_get_or_create_organization(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
         status_code=201,
         match_json={
-            "org_name": "ACME Inc",
+            "name": "ACME Inc",
             "user_id": "employee-id",
             "currency": "USD",
         },
@@ -991,10 +1009,10 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0002"},
         match_json={
-            "org_name": "ACME Inc",
+            "name": "ACME Inc",
             "user_id": "employee-id",
             "currency": "USD",
         },
@@ -1020,6 +1038,91 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
 
     assert "Organization on OptScale created with id OPT-ORG-0002" in caplog.text
     assert "Organization already exists with id" not in caplog.text
+
+
+async def test_get_or_create_organization_creates_client_account(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    ffc_extension_auth_context: AuthenticationContext,
+) -> None:
+    """A new organization is linked to a `ClientAccount` created from the order's client."""
+    organization_provisioning_mocker()
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    client = purchase_order["client"]
+    client_account = await db_session.scalar(
+        select(ClientAccount).where(ClientAccount.external_id == client["id"])
+    )
+    assert client_account is not None
+    assert client_account.name == client["name"]
+    assert client_account.icon == client["icon"]
+    assert client_account.created_by == ffc_extension_auth_context.system
+    assert client_account.updated_by == ffc_extension_auth_context.system
+    assert organization.client_account_id == client_account.id
+
+
+async def test_get_or_create_organization_reuses_existing_client_account(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    client_account_factory: ModelFactory[ClientAccount],
+    db_session: AsyncSession,
+) -> None:
+    """An existing `ClientAccount` is refreshed from the order's client and linked."""
+    client = purchase_order["client"]
+    existing = await client_account_factory(name="Old Name", external_id=client["id"])
+    organization_provisioning_mocker()
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert organization.client_account_id == existing.id
+    await db_session.refresh(existing)
+    assert existing.name == client["name"]
+    assert await ClientAccountHandler(db_session).count() == 1
+
+
+async def test_get_or_create_organization_repeated_does_not_duplicate_client_account(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+) -> None:
+    """Processing the same order twice links the organization to a single `ClientAccount`."""
+    organization_provisioning_mocker()
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    first = await processor.get_or_create_organization(employee_id="employee-id")
+    second = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert second.id == first.id
+    assert second.client_account_id == first.client_account_id
+    assert await ClientAccountHandler(db_session).count() == 1
+
+
+async def test_get_or_create_organization_links_client_account_to_existing_organization(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """An existing organization without a client account gets linked to the order's client."""
+    existing_organization = await organization_factory(
+        operations_external_id=purchase_order["agreement"]["id"],
+        linked_organization_id="already-linked-optscale-org-id",
+    )
+    organization_provisioning_mocker(provision=False)
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert organization.id == existing_organization.id
+    assert organization.client_account is not None
+    assert organization.client_account.external_id == purchase_order["client"]["id"]
 
 
 # -- create_employee --
@@ -1112,7 +1215,7 @@ async def test_create_employee_with_no_existing_user(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         json={
             "id": employee_id,
             "display_name": "Spider Man",
@@ -1442,9 +1545,9 @@ async def test_purchase_order_process_completes_order(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
-        match_json={"org_name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
+        match_json={"name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
     )
     httpx_mock.add_response(
         method="PUT",
@@ -1561,7 +1664,7 @@ async def test_purchase_order_process_new_user_branch(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         json={"id": "employee-id", "email": "pl@example.com"},
         match_json={
             "email": "pl@example.com",
@@ -1577,9 +1680,9 @@ async def test_purchase_order_process_new_user_branch(
     )
     httpx_mock.add_response(
         method="POST",
-        url=f"{test_settings.api_modifier_base_url}/organizations",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
         json={"id": "OPT-ORG-0001"},
-        match_json={"org_name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
+        match_json={"name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
     )
     # the vendor external id is the generated organization id, asserted after the call
     httpx_mock.add_response(
@@ -1888,7 +1991,7 @@ async def test_purchase_order_process_fails_when_due_date_reached(
     assert f"{order_id}: order processing failed." in caplog.text
 
 
-# # TerminateOrderProcessor
+# # TerminationOrderProcessor
 async def test_terminated_order_process_completes_order(
     terminate_order: dict[str, Any],
     test_settings: Settings,
@@ -2034,6 +2137,9 @@ async def test_terminated_order_process_completes_order(
     ).all()
     assert len(replacements) == 2
     assert {r.affiliate_external_id for r in replacements} == {"EXTERNAL_ID_1", "EXTERNAL_ID_2"}
+    # the order doesn't carry the termination feedback parameters
+    await db_session.refresh(organization, ["termination_feedback"])
+    assert organization.termination_feedback is None
 
 
 async def test_terminate_cancels_when_order_has_no_due_date_parameter(
@@ -2084,8 +2190,12 @@ async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
     httpx_mock: HTTPXMock,
     order_event_handler: OrderEventHandler,
     db_session: AsyncSession,
+    entitlement_factory: ModelFactory[Entitlement],
 ) -> None:
-    """`process` completes without suspending when the OptScale organization is already disabled."""
+    """
+    `process` doesn't suspend an already disabled OptScale organization but still terminates
+    the organization and its entitlements, left active by a previous partially failed attempt.
+    """
     order_id = terminate_order["id"]
     rows = test_settings.mpt_api_rows_per_page
     agreement_id = terminate_order["agreement"]["id"]
@@ -2098,6 +2208,9 @@ async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
             linked_organization_id="OPT-ORG-0001",
             status=OrganizationStatus.ACTIVE,
         )
+    )
+    entitlement = await entitlement_factory(
+        status=EntitlementStatus.ACTIVE, redeemed_by=organization
     )
     optscale_url = (
         f"{test_settings.optscale_rest_api_base_url}"
@@ -2167,8 +2280,545 @@ async def test_terminated_order_skip_suspend_when_optscale_org_is_disabled(
     assert httpx_mock.get_request(method="GET", url=optscale_url) is not None
     assert httpx_mock.get_requests(method="PATCH") == []
     await db_session.refresh(organization)
+    assert organization.status == OrganizationStatus.TERMINATED
+    assert organization.terminated_at is not None
+    await db_session.refresh(entitlement)
+    assert entitlement.status == EntitlementStatus.TERMINATED
+
+
+async def test_terminated_order_keeps_termination_date_of_terminated_organization(
+    terminate_order: dict[str, Any],
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    organization_factory: ModelFactory[Organization],
+) -> None:
+    """A redelivered order doesn't change the termination date of a terminated organization."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminated_at = datetime(2024, 11, 30, tzinfo=UTC)
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=terminated_at,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    await db_session.refresh(organization)
+    assert organization.status == OrganizationStatus.TERMINATED
+    assert organization.terminated_at == terminated_at
+
+
+@pytest.mark.parametrize(
+    ("reason", "comments", "expected_comments"),
+    [
+        ("other", "We moved to an in-house tool.", "We moved to an in-house tool."),
+        ("cost_or_pricing", None, None),
+    ],
+)
+async def test_terminated_order_stores_termination_feedback(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    reason: str,
+    comments: str | None,
+    expected_comments: str | None,
+) -> None:
+    """The termination reason and comments of the order are stored for the organization."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason=reason, comments=comments
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    feedback = await db_session.scalar(
+        select(TerminationFeedback).where(TerminationFeedback.organization_id == organization.id)
+    )
+    assert feedback is not None
+    assert feedback.reason == TerminationReason(reason)
+    assert feedback.comments == expected_comments
+
+
+async def test_terminated_order_skips_feedback_when_parameters_are_missing(
+    terminate_order: dict[str, Any],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Orders created before the feedback parameters existed complete without a feedback."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    with caplog.at_level(logging.INFO):
+        result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    assert await db_session.scalar(select(TerminationFeedback)) is None
+    assert "no termination reason provided" in caplog.text
+
+
+async def test_terminated_order_replaces_existing_termination_feedback(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """The feedback of a previous failed termination order is replaced by the new order's one."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="other", comments="New comments"
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    existing = await TerminationFeedbackHandler(db_session).upsert_for_organization(
+        organization, reason=TerminationReason.TOO_COMPLEX, comments="Old comments"
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/complete",
+        json=terminate_order,
+        match_json={
+            "template": {"id": "TPL-1234-5678-0001"},
+            "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
+        },
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.COMPLETE
+    feedbacks = (await db_session.scalars(select(TerminationFeedback))).all()
+    assert [f.id for f in feedbacks] == [existing.id]
+    assert feedbacks[0].reason == TerminationReason.OTHER
+    assert feedbacks[0].comments == "New comments"
+
+
+@freeze_time("2024-12-01")
+async def test_terminated_order_is_not_completed_when_storing_feedback_fails(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A failure while storing the feedback reschedules the order without completing it."""
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="other", comments="Moving to another tool."
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        ),
+        json={"id": organization.linked_organization_id, "disabled": True},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    mocker.patch.object(
+        TerminationFeedbackHandler,
+        "upsert_for_organization",
+        side_effect=RuntimeError("boom"),
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    with caplog.at_level(logging.ERROR):
+        result = await processor.process()
+
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert f"{order_id}: order processing failed." in caplog.text
+    assert httpx_mock.get_requests(method="POST") == []
+
+
+@freeze_time("2024-12-01")
+async def test_terminated_order_is_not_terminated_when_suspend_fails(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """
+    A failure suspending the OptScale organization reschedules the order without
+    terminating the organization or storing the feedback.
+    """
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="other", comments="Moving to another tool."
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    optscale_url = (
+        f"{test_settings.optscale_rest_api_base_url}"
+        f"/organizations/{organization.linked_organization_id}"
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+        json={"externalIds": {"client": "", "vendor": organization.id}},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=optscale_url,
+        json={"id": organization.linked_organization_id, "disabled": False},
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {
+                    "id": "TPL-1234-5678-0001",
+                    "type": COMPLETED_TEMPLATE_TYPE,
+                    "name": TERMINATE_TEMPLATE_NAME,
+                    "default": True,
+                }
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="PATCH",
+        url=optscale_url,
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.RESCHEDULE
+    assert httpx_mock.get_requests(method="POST") == []
+    assert await db_session.scalar(select(TerminationFeedback)) is None
+    await db_session.refresh(organization)
     assert organization.status == OrganizationStatus.ACTIVE
     assert organization.terminated_at is None
+
+
+async def test_terminated_order_moves_to_querying_when_termination_reason_is_not_valid(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    order_event_handler: OrderEventHandler,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """
+    A reason unknown to the extension sets the error on the reason and moves the order
+    to querying without terminating the organization.
+    """
+    order_id = terminate_order["id"]
+    agreement_id = terminate_order["agreement"]["id"]
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="not_a_reason"
+    )
+    organization = await organization_factory(
+        operations_external_id=agreement_id,
+        linked_organization_id="OPT-ORG-0001",
+    )
+    expected_order = copy.deepcopy(terminate_order)
+    expected_reason = get_ordering_parameter(expected_order, PARAM_TERMINATION_REASON)
+    expected_reason["error"] = ERR_TERMINATION_REASON_NOT_VALID.to_dict(reason="not_a_reason")
+    expected_reason["constraints"] = {"hidden": False, "required": True}
+    querying_order = copy.deepcopy(terminate_order)
+    querying_order["status"] = "Querying"
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        match_params={"select": "subscriptions.lines"},
+        json=terminate_order,
+    )
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.mpt_api_base_url}/catalog/products/{PRODUCT_ID}"
+            f"/templates?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+        ),
+        json={
+            "data": [
+                {"id": "TPL-0003", "type": "OrderQuerying", "name": "Querying", "default": True}
+            ],
+            "$meta": {"pagination": {"total": 1}},
+        },
+    )
+    httpx_mock.add_response(
+        method="PUT",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}",
+        json=terminate_order,
+        match_json={"parameters": expected_order["parameters"]},
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.mpt_api_base_url}/commerce/orders/{order_id}/query",
+        json=querying_order,
+        match_json={"template": {"id": "TPL-0003"}},
+    )
+    processor = await order_event_handler.get_processor(object_id=order_id)
+
+    result = await processor.process()
+
+    assert result.status is ProcessingStatus.SKIP
+    assert result.severity == "Info"
+    assert httpx_mock.get_requests(method="PATCH") == []
+    assert await db_session.scalar(select(TerminationFeedback)) is None
+    await db_session.refresh(organization)
+    assert organization.status == OrganizationStatus.ACTIVE
 
 
 async def test_terminated_order_cancel_when_organization_not_found(

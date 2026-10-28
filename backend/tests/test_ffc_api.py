@@ -1,4 +1,9 @@
-from app.api_clients.ffc_api import resolve_params
+import httpx
+import pytest
+from pytest_httpx import HTTPXMock
+
+from app.api_clients.ffc_api import FFCAPIClient, resolve_params
+from app.conf import Settings
 
 
 def test_resolve_params_empty_when_no_arguments() -> None:
@@ -28,3 +33,107 @@ def test_resolve_params_combines_pagination_and_rql() -> None:
         ("offset", "2"),
         ("eq(a,1)", ""),
     ]
+
+
+async def test_create_user_posts_payload_to_admin_users(
+    ffc_api_client: FFCAPIClient, test_settings: Settings, httpx_mock: HTTPXMock
+) -> None:
+    """`create_user` POSTs the user payload to `/admin/users` authenticated by cluster secret."""
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        match_json={
+            "email": "peter.parker@spiderman.com",
+            "display_name": "Peter Parker",
+            "password": "s3cret",
+        },
+        json={"id": "USR-1"},
+        status_code=201,
+    )
+
+    response = await ffc_api_client.create_user(
+        email="peter.parker@spiderman.com", display_name="Peter Parker", password="s3cret"
+    )
+
+    assert response.json() == {"id": "USR-1"}
+
+
+async def test_create_organization_posts_payload_to_admin_organizations(
+    ffc_api_client: FFCAPIClient, test_settings: Settings, httpx_mock: HTTPXMock
+) -> None:
+    """`create_organization` POSTs the org payload to `/admin/organizations` with cluster secret."""
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        match_json={"name": "ACME", "user_id": "USR-1", "currency": "EUR"},
+        json={"id": "ORG-1"},
+        status_code=201,
+    )
+
+    response = await ffc_api_client.create_organization(
+        org_name="ACME", user_id="USR-1", currency="EUR"
+    )
+
+    assert response.json() == {"id": "ORG-1"}
+
+
+@pytest.mark.parametrize(
+    ("method_name", "kwargs"),
+    [
+        pytest.param(
+            "create_user",
+            {"email": "a@b.c", "display_name": "A B", "password": "x"},
+            id="create_user",
+        ),
+        pytest.param(
+            "create_organization",
+            {"org_name": "ACME", "user_id": "USR-1", "currency": "EUR"},
+            id="create_organization",
+        ),
+    ],
+)
+async def test_create_methods_raise_on_error_status(
+    ffc_api_client: FFCAPIClient,
+    httpx_mock: HTTPXMock,
+    method_name: str,
+    kwargs: dict[str, str],
+) -> None:
+    """The create methods raise `httpx.HTTPStatusError` when the FFC API returns an error."""
+    httpx_mock.add_response(method="POST", status_code=400)
+
+    with pytest.raises(httpx.HTTPStatusError, match="400 Bad Request"):
+        await getattr(ffc_api_client, method_name)(**kwargs)
+
+
+async def test_fetch_datasource_for_organization_gets_admin_organization_datasource(
+    ffc_api_client: FFCAPIClient, test_settings: Settings, httpx_mock: HTTPXMock
+) -> None:
+    """`fetch_datasource_for_organization` GETs the organization datasource with cluster secret."""
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/ORG-1/datasources/DS-1"
+        ),
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": "DS-1"},
+    )
+
+    response = await ffc_api_client.fetch_datasource_for_organization(
+        organization_id="ORG-1", datasource_id="DS-1"
+    )
+
+    assert response.json() == {"id": "DS-1"}
+
+
+async def test_fetch_datasource_for_organization_raises_on_error_status(
+    ffc_api_client: FFCAPIClient, httpx_mock: HTTPXMock
+) -> None:
+    """`fetch_datasource_for_organization` raises when the FFC API returns an error."""
+    httpx_mock.add_response(method="GET", status_code=404)
+
+    with pytest.raises(httpx.HTTPStatusError, match="404 Not Found"):
+        await ffc_api_client.fetch_datasource_for_organization(
+            organization_id="ORG-1", datasource_id="DS-1"
+        )

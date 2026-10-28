@@ -15,26 +15,35 @@ from faker import Faker
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
+from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
 
-from app.api_clients.api_modifier import APIModifierClient
 from app.api_clients.base import BaseAPIClient
+from app.api_clients.ffc_api import FFCAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth
 from app.api_clients.optscale import OptscaleAuthClient, OptscaleClient
+from app.auth.context import AuthenticationContext, auth_context
 from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
 from app.conf import Settings, get_settings
 from app.db.base import configure_db_engine, session_factory
-from app.db.handlers import EntitlementHandler, OrganizationHandler
+from app.db.handlers import (
+    ClientAccountHandler,
+    EntitlementHandler,
+    OrganizationHandler,
+    TerminationFeedbackHandler,
+)
 from app.db.models import (
     Account,
     AccountUser,
     Actor,
     Base,
+    ClientAccount,
+    CloudProvider,
     DatasourceExpense,
     Entitlement,
     Organization,
@@ -46,12 +55,14 @@ from app.enums import (
     AccountStatus,
     AccountType,
     AccountUserStatus,
+    ActorType,
     DatasourceType,
     EntitlementStatus,
     OrganizationStatus,
     SystemStatus,
     UserStatus,
 )
+from app.events.accounts.processing import ClientAccountEventHandler
 from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     ORDER_TYPE_CHANGE,
@@ -71,7 +82,13 @@ from app.events.subscriptions.processing import SubscriptionEventHandler
 from app.fastapi import setup_app
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
-from tests.types import ModelFactory, MPTSubscriptionFactory, OrderFactory
+from tests.types import (
+    ModelFactory,
+    MPTAccountFactory,
+    MPTAccountMocker,
+    MPTSubscriptionFactory,
+    OrderFactory,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -111,13 +128,11 @@ def pytest_collection_modifyitems(items):
 
 @pytest.fixture(scope="session")
 def test_settings() -> Settings:
-    settings = Settings()  # type: ignore
+    settings = Settings()
     settings.optscale_cluster_secret = "test_cluster_secret"
     settings.optscale_rest_api_base_url = "https://opt-api.ffc.com"
     settings.optscale_auth_api_base_url = "https://opt-auth.ffc.com"
     settings.optscale_ffc_api_base_url = "https://opt-ffc-api.ffc.com"
-    settings.api_modifier_base_url = "https://api-modifier.ffc.com"
-    settings.api_modifier_jwt_secret = "test_jwt_secrettest_jwt_secrettest_jwt_secretpyt"
     settings.opentelemetry_exporter = None
     settings.cli_rich_logging = False
     settings.msteams_notifications_webhook_url = "https://example.com/webhook"
@@ -240,6 +255,12 @@ def mpt_client(test_settings: Settings) -> MPTClient:
 
 
 @pytest.fixture
+def ffc_api_client(test_settings: Settings) -> FFCAPIClient:
+    """A `FFCAPIClient` pinned to test settings."""
+    return FFCAPIClient(test_settings)
+
+
+@pytest.fixture
 def mpt_extension_client():
     """An `MPTClient` authenticated with the static extension token (no token refresh)."""
     from app.api_clients.mpt import MPTClient, MPTExtensionAuth
@@ -342,6 +363,7 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
         updated_by: Actor | None = None,
         terminated_at: datetime | None = None,
         status: OrganizationStatus = OrganizationStatus.ACTIVE,
+        client_account: ClientAccount | None = None,
     ) -> Organization:
         organization = Organization(
             name=name or faker.company(),
@@ -353,6 +375,7 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
             updated_by=updated_by,
             status=status,
             terminated_at=terminated_at,
+            client_account=client_account,
         )
         db_session.add(organization)
         await db_session.commit()
@@ -360,6 +383,32 @@ def organization_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory
         return organization
 
     return _organization
+
+
+@pytest.fixture
+def client_account_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[ClientAccount]:
+    async def _client_account(
+        name: str | None = None,
+        icon: str | None = None,
+        external_id: str | None = None,
+        created_by: Actor | None = None,
+        updated_by: Actor | None = None,
+        deleted_at: datetime | None = None,
+    ) -> ClientAccount:
+        client_account = ClientAccount(
+            name=name or faker.company(),
+            icon=icon,
+            external_id=external_id or f"ACC-{faker.numerify('####-####')}",
+            created_by=created_by,
+            updated_by=updated_by,
+            deleted_at=deleted_at,
+        )
+        db_session.add(client_account)
+        await db_session.commit()
+        await db_session.refresh(client_account)
+        return client_account
+
+    return _client_account
 
 
 @pytest.fixture
@@ -555,6 +604,81 @@ def datasource_expense_factory(
 
 
 @pytest.fixture
+def aws_cloud_provider_factory(db_session: AsyncSession) -> ModelFactory[CloudProvider]:
+    async def _cloud_provider(
+        account: Account,
+        name: str = "AWS Test Provider",
+        icon: str = "aws",
+        datasource_id_format: str = r"^[0-9]{12}$",
+    ) -> CloudProvider:
+        provider = CloudProvider(
+            account=account,
+            name=name,
+            icon=icon,
+            datasource_id_format=datasource_id_format,
+        )
+        db_session.add(provider)
+        await db_session.commit()
+        await db_session.refresh(provider)
+        await db_session.refresh(account)
+        return provider
+
+    return _cloud_provider
+
+
+@pytest.fixture
+def azure_cloud_provider_factory(db_session: AsyncSession) -> ModelFactory[CloudProvider]:
+    async def _cloud_provider(
+        account: Account,
+        name: str = "Azure Test Provider",
+        icon: str = "azure",
+        datasource_id_format: str = (
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        ),
+    ) -> CloudProvider:
+        provider = CloudProvider(
+            account=account,
+            name=name,
+            icon=icon,
+            datasource_id_format=datasource_id_format,
+        )
+        db_session.add(provider)
+        await db_session.commit()
+        await db_session.refresh(provider)
+        await db_session.refresh(account)
+        return provider
+
+    return _cloud_provider
+
+
+@pytest.fixture
+def ffc_api_event_payload_factory(faker: Faker) -> Callable[..., dict[str, Any]]:
+    """Build an organization event payload as returned by the FFC API, with overridable fields."""
+
+    def _ffc_api_event_payload(**overrides: Any) -> dict[str, Any]:
+        return {
+            "id": faker.uuid4(),
+            "time": "2026-10-01T10:00:00Z",
+            "level": "ERROR",
+            "evt_class": "report_import_failed",
+            "object_id": faker.uuid4(),
+            "object_type": "cloud_account",
+            "object_name": "swotest02",
+            "description": "Billing report import for swotest02 failed",
+            "ack": False,
+            "acknowledged": None,
+            "acknowledged_by": None,
+            "acknowledged_user": None,
+            "resolution": None,
+            "initiator_id": None,
+            "initiator_name": None,
+            **overrides,
+        }
+
+    return _ffc_api_event_payload
+
+
+@pytest.fixture
 async def aws_account(account_factory: ModelFactory[Account]) -> Account:
     return await account_factory(
         name="AWS", type=AccountType.AFFILIATE, external_id="ACC-2222-2222"
@@ -634,6 +758,19 @@ def gcp_jwt_token(system_jwt_token_factory: Callable[[System], str], gcp_extensi
 @pytest.fixture
 async def ffc_extension(system_factory: ModelFactory[System], admin_account: Account) -> System:
     return await system_factory(external_id="TKN-0000-0000", owner=admin_account)
+
+
+@pytest.fixture
+async def ffc_extension_auth_context(
+    ffc_extension: System, admin_account: Account
+) -> AsyncGenerator[AuthenticationContext]:
+    """Sets the auth context to the FFC extension system for the duration of the test."""
+    context = AuthenticationContext(
+        account=admin_account, actor_type=ActorType.SYSTEM, system=ffc_extension
+    )
+    token = auth_context.set(context)
+    yield context
+    auth_context.reset(token)
 
 
 @pytest.fixture
@@ -842,6 +979,85 @@ def order_with_parameters(
             "parameters": {
                 "ordering": order_parameters_factory(),
                 "fulfillment": fulfillment_parameters_factory(),
+            },
+        }
+
+    return _order
+
+
+@pytest.fixture
+def termination_parameters_factory() -> Callable[..., list[dict]]:
+    """Build the termination feedback ordering parameters as the marketplace returns them."""
+
+    def _parameters(reason: str | None = None, comments: str | None = None) -> list[dict]:
+        return [
+            {
+                "id": "PAR-7390-4315-0014",
+                "externalId": "terminationReason",
+                "name": "Termination reason",
+                "type": "DropDown",
+                "phase": "Order",
+                "scope": "Order",
+                "multiple": False,
+                "constraints": {"required": False, "hidden": False, "readonly": False},
+                "options": {
+                    "optionsList": [
+                        {"label": "Missing features or functionality", "value": "missing_features"},
+                        {
+                            "label": "The product is too complex or difficult to use",
+                            "value": "too_complex",
+                        },
+                        {"label": "Cost or pricing concerns", "value": "cost_or_pricing"},
+                        {
+                            "label": "Issues with data accuracy or reliability",
+                            "value": "data_accuracy",
+                        },
+                        {
+                            "label": "Switching to another tool or solution",
+                            "value": "switching_tool",
+                        },
+                        {"label": "The project or need has ended", "value": "need_ended"},
+                        {
+                            "label": "Internal changes, such as reorganization or budget cuts",
+                            "value": "internal_changes",
+                        },
+                        {"label": "Unsatisfactory support", "value": "unsatisfactory_support"},
+                        {"label": "Other", "value": "other"},
+                    ],
+                    "defaultValue": None,
+                },
+                "displayValue": reason,
+                "value": reason,
+            },
+            {
+                "id": "PAR-7390-4315-0015",
+                "externalId": "terminationComments",
+                "name": "Additional comments",
+                "type": "MultiLineText",
+                "phase": "Order",
+                "scope": "Order",
+                "multiple": False,
+                "constraints": {"required": False, "hidden": False, "readonly": False},
+                "displayValue": comments,
+                "value": comments,
+            },
+        ]
+
+    return _parameters
+
+
+@pytest.fixture
+def order_with_termination_parameters(
+    termination_parameters_factory: Callable[..., list[dict]],
+) -> Callable[..., dict]:
+    """Build an order payload carrying the termination feedback ordering parameters."""
+
+    def _order(reason: str | None = None, comments: str | None = None) -> dict:
+        return {
+            "id": "ORD-1234-5678",
+            "parameters": {
+                "ordering": termination_parameters_factory(reason=reason, comments=comments),
+                "fulfillment": [],
             },
         }
 
@@ -2290,6 +2506,41 @@ def post_order_event(
 
 
 @pytest.fixture
+def post_order_validation(
+    mpt_api_client: AsyncClient, ffc_jwt_token: str
+) -> Callable[[dict[str, Any]], Awaitable[Response]]:
+    """Return a helper that posts a draft order to the order validation endpoint."""
+
+    async def _post(order: dict[str, Any]) -> Response:
+        return await mpt_api_client.post(
+            "/events/commerce/orders/validate",
+            headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+            json=order,
+        )
+
+    return _post
+
+
+@pytest.fixture
+def draft_termination_order_factory(
+    order_factory: OrderFactory,
+    termination_parameters_factory: Callable[..., list[dict]],
+) -> Callable[..., dict[str, Any]]:
+    """Build a draft Termination order carrying the termination feedback parameters."""
+
+    def _order(reason: str | None = None, comments: str | None = None) -> dict[str, Any]:
+        return order_factory(
+            order_type=ORDER_TYPE_TERMINATE,
+            status="Draft",
+            product_id="PRD-4141-4379",
+            product_name="SoftwareOne FinOps for Cloud",
+            ordering_parameters=termination_parameters_factory(reason=reason, comments=comments),
+        )
+
+    return _order
+
+
+@pytest.fixture
 async def post_subscription_event(
     mpt_api_client: AsyncClient,
     system_jwt_token_factory: Callable[[System], str],
@@ -2329,15 +2580,59 @@ def order_event_handler(
     """Return a `OrderEventHandler` whose client yields the given order."""
 
     return OrderEventHandler(
-        api_modifier_client=APIModifierClient(test_settings),
+        ffc_api_client=FFCAPIClient(test_settings),
         installation_client=mpt_client,
         ext_client=mpt_client,
         optscale_auth_client=OptscaleAuthClient(test_settings),
         optscale_client=OptscaleClient(test_settings),
         organization_repo=OrganizationHandler(db_session),
         entitlement_repo=EntitlementHandler(db_session),
+        termination_feedback_repo=TerminationFeedbackHandler(db_session),
+        client_account_repo=ClientAccountHandler(db_session),
         settings=test_settings,
     )
+
+
+@pytest.fixture
+def organization_provisioning_mocker(
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    purchase_order: dict[str, Any],
+) -> Callable[..., None]:
+    """
+    Register the marketplace and OptScale responses `get_or_create_organization` needs
+    for `purchase_order`; with `provision=False` only the read calls are registered.
+    """
+
+    def _mock(provision: bool = True) -> None:
+        agreement_id = purchase_order["agreement"]["id"]
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
+            match_params={"select": "subscriptions.lines"},
+            json=purchase_order,
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+            match_params={"select": "authorization"},
+            json={"id": agreement_id, "authorization": {"id": "AUT-3727-1184", "currency": "USD"}},
+            is_reusable=True,
+        )
+        if provision:
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
+                json={"id": "OPT-ORG-0001"},
+                status_code=201,
+            )
+            httpx_mock.add_response(
+                method="PUT",
+                url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
+                json={"id": agreement_id},
+            )
+
+    return _mock
 
 
 @pytest.fixture
@@ -2425,3 +2720,66 @@ def subscription_event_handler(
         entitlement_repo=EntitlementHandler(db_session),
         account=subscription_account,
     )
+
+
+# ---------------------------------------------------------------------------
+# Client account event processing
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mpt_account_factory() -> MPTAccountFactory:
+    """Return a builder for the account payload the marketplace returns."""
+
+    def _account(
+        account_id: str = "ACC-4444-4444",
+        name: str = "Contoso",
+        icon: str | None = "/v1/accounts/accounts/ACC-4444-4444/icon",
+        account_type: str = "Client",
+    ) -> dict[str, Any]:
+        return {"id": account_id, "name": name, "icon": icon, "type": account_type}
+
+    return _account
+
+
+@pytest.fixture
+def mock_get_account(httpx_mock: HTTPXMock, test_settings: Settings) -> MPTAccountMocker:
+    """Make the marketplace answer `get_account` with the given payload."""
+
+    def _mock(account: dict[str, Any]) -> None:
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.mpt_api_base_url}/accounts/accounts/{account['id']}",
+            json=account,
+        )
+
+    return _mock
+
+
+@pytest.fixture
+def client_account_event_handler(
+    db_session: AsyncSession,
+    mpt_client: MPTClient,
+) -> ClientAccountEventHandler:
+    """Return a `ClientAccountEventHandler` bound to the test session."""
+    return ClientAccountEventHandler(
+        installation_client=mpt_client,
+        ext_client=mpt_client,
+        client_account_repo=ClientAccountHandler(db_session),
+    )
+
+
+@pytest.fixture
+def post_client_account_event(
+    mpt_api_client: AsyncClient, ffc_jwt_token: str
+) -> Callable[[Event], Awaitable[Response]]:
+    """Return a helper that posts an event to the client accounts endpoint as the extension."""
+
+    async def _post(event: Event) -> Response:
+        return await mpt_api_client.post(
+            "/events/accounts/clients",
+            headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+            json=event.model_dump(mode="json", by_alias=True),
+        )
+
+    return _post

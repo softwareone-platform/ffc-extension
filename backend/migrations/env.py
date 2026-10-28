@@ -63,7 +63,7 @@ async def run_migrations_online():
 
     """
 
-    config_section = config.get_section(config.config_ini_section)
+    config_section = config.get_section(config.config_ini_section, {})
     config_section["sqlalchemy.url"] = str(app_settings.postgres_async_url)
 
     connectable = AsyncEngine(

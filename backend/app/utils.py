@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import binascii
@@ -25,6 +27,7 @@ from app.db.base import configure_db_engine, session_factory
 from app.db.handlers import AccountHandler
 from app.db.models import Account
 from app.enums import AccountStatus, AccountType
+from app.exceptions import InvalidDataSourceIdError
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,25 @@ def get_organization_deletable_at(terminated_at: datetime) -> datetime:
     """
     deletable_date = terminated_at.astimezone(UTC).date() + relativedelta(months=2, day=1)
     return datetime.combine(deletable_date, time.min, tzinfo=UTC)
+
+
+def get_organization_terminated_before(deletable_by: datetime) -> datetime:
+    """
+    Inverse of `get_organization_deletable_at`: computes the moment before which an
+    organization must have been terminated for it to be deletable at `deletable_by`.
+
+    Since `deletable_at` is always midnight UTC of the 1st day of a month,
+    `deletable_at <= deletable_by` holds exactly when the organization has been terminated
+    before midnight UTC of the 1st day of the month preceding the one of `deletable_by`.
+
+    Args:
+        deletable_by (datetime): the moment by which the organization must be deletable.
+
+    Returns:
+        datetime: the timezone aware (UTC) moment organizations must be terminated before.
+    """
+    terminated_before = deletable_by.astimezone(UTC).date() - relativedelta(months=1, day=1)
+    return datetime.combine(terminated_before, time.min, tzinfo=UTC)
 
 
 def compute_daily_expenses(
@@ -233,3 +255,10 @@ def get_jwt_token_expires(token: str) -> datetime:
         return datetime.fromtimestamp(claims["exp"], tz=UTC)
     except (KeyError, ValueError) as exc:
         raise ValueError("Invalid JWT token") from exc
+
+
+def validate_datasource_id_format(owner: Account, datasource_id: str) -> None:
+    provider = owner.cloud_provider
+    if provider is None or provider.matches_datasource_id(datasource_id):
+        return
+    raise InvalidDataSourceIdError(datasource_id, provider.name)

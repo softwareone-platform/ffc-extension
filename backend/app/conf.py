@@ -37,10 +37,8 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    api_modifier_base_url: str
-    api_modifier_jwt_secret: str
-
     datasources_expenses_obsolete_after_months: int = 6
+    organization_deletion_grace_period_days: int = 180
     billing_percentage: float = 1.0  # todo : ask if the default is 4 or 1.
     ffc_external_product_id: str = "FIN-0001-P1M"
 

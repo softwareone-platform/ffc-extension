@@ -12,6 +12,8 @@ EventFactory = Callable[..., Event]
 OrderFactory = Callable[..., dict[str, Any]]
 MPTSubscriptionFactory = Callable[..., dict[str, Any]]
 SubscriptionsPageMocker = Callable[..., None]
+MPTAccountFactory = Callable[..., dict[str, Any]]
+MPTAccountMocker = Callable[..., None]
 
 
 class JWTTokenFactory(Protocol):

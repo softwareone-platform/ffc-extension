@@ -2,6 +2,7 @@ from app.commands import (
     calculate_accounts_stats,
     cleanup_obsolete_datasource_expenses,
     create_admin_account,
+    delete_terminated_orgs,
     fetch_datasource_expenses,
     openapi,
     process_billing,
@@ -23,5 +24,6 @@ __all__ = [
     "calculate_accounts_stats",
     "fetch_datasource_expenses",
     "cleanup_obsolete_datasource_expenses",
+    "delete_terminated_orgs",
     "sync_subscriptions",
 ]

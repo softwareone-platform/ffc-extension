@@ -1,8 +1,9 @@
 import copy
 import functools
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
+from app.enums import TerminationReason
 from app.utils import find_first
 
 PARAM_PHASE_ORDERING = "ordering"
@@ -18,9 +19,13 @@ PARAM_IS_NEW_USER = "isNewUser"
 PARAM_TRIAL_START_DATE = "trialStartDate"
 PARAM_TRIAL_END_DATE = "trialEndDate"
 PARAM_BILLED_PERCENTAGE = "billedPercentage"
+PARAM_TERMINATION_REASON = "terminationReason"
+PARAM_TERMINATION_COMMENTS = "terminationComments"
 
 
-def get_parameter(parameter_phase, source, param_external_id):
+def get_parameter(
+    parameter_phase: str, source: dict[str, Any], param_external_id: str
+) -> dict[str, Any]:
     """
     Returns a parameter of a given phase by its external identifier.
     Returns an empty dictionary if the parameter is not found.
@@ -45,7 +50,7 @@ get_ordering_parameter = functools.partial(get_parameter, PARAM_PHASE_ORDERING)
 get_fulfillment_parameter = functools.partial(get_parameter, PARAM_PHASE_FULFILLMENT)
 
 
-def get_ff_date_parameter(parameter_name, source):
+def get_ff_date_parameter(parameter_name: str, source: dict[str, Any]) -> date | None:
     parameter = get_fulfillment_parameter(source, parameter_name)
 
     if parameter.get("value", ""):
@@ -87,7 +92,7 @@ def set_ordering_parameter_error(
 get_due_date = functools.partial(get_ff_date_parameter, PARAM_DUE_DATE)
 
 
-def set_due_date(order, due_date):
+def set_due_date(order: dict[str, Any], due_date: date | None) -> dict[str, Any]:
     """
     Set Due Date parameter
     Args:
@@ -96,16 +101,13 @@ def set_due_date(order, due_date):
     """
     updated_order = copy.deepcopy(order)
 
-    if due_date:
-        due_date = due_date.strftime("%Y-%m-%d")
-
     param = get_fulfillment_parameter(updated_order, PARAM_DUE_DATE)
-    param["value"] = due_date
+    param["value"] = due_date.strftime("%Y-%m-%d") if due_date else due_date
 
     return updated_order
 
 
-def set_is_new_user(order, is_new):
+def set_is_new_user(order: dict[str, Any], is_new: bool) -> dict[str, Any]:
     """
     Set Is New User parameter
     Args:
@@ -125,7 +127,7 @@ def set_is_new_user(order, is_new):
     return updated_order
 
 
-def set_fulfillment_parameter(order, parameter, value):
+def set_fulfillment_parameter(order: dict[str, Any], parameter: str, value: Any) -> dict[str, Any]:
     """
     Set the provided fulfillment parameter with given value
     Args:
@@ -141,7 +143,7 @@ def set_fulfillment_parameter(order, parameter, value):
     return updated_order
 
 
-def reset_ordering_parameters_error(order):
+def reset_ordering_parameters_error(order: dict[str, Any]) -> dict[str, Any]:
     """
     Reset errors for all ordering parameters
 
@@ -163,5 +165,38 @@ get_trial_start_date = functools.partial(get_ff_date_parameter, PARAM_TRIAL_STAR
 get_trial_end_date = functools.partial(get_ff_date_parameter, PARAM_TRIAL_END_DATE)
 
 
-def get_billed_percentage(source):
+def get_billed_percentage(source: dict[str, Any]) -> dict[str, Any]:
     return get_fulfillment_parameter(source, PARAM_BILLED_PERCENTAGE)
+
+
+def get_termination_reason(source: dict[str, Any]) -> TerminationReason | None:
+    """
+    Returns the value of the Termination Reason ordering parameter.
+
+    Args:
+        source: The order from which the parameter should be extracted.
+
+    Returns:
+        TerminationReason | None: The selected reason, or None if the parameter
+        is missing or has no value.
+
+    Raises:
+        ValueError: If the value is not a valid TerminationReason key.
+    """
+    value = get_ordering_parameter(source, PARAM_TERMINATION_REASON).get("value")
+    return TerminationReason(value) if value else None
+
+
+def get_termination_comments(source: dict[str, Any]) -> str | None:
+    """
+    Returns the value of the Termination Comments (additional comments) ordering parameter.
+
+    Args:
+        source: The order from which the parameter should be extracted.
+
+    Returns:
+        str | None: The comments stripped of surrounding whitespace, or None if the
+        parameter is missing or blank.
+    """
+    value = get_ordering_parameter(source, PARAM_TERMINATION_COMMENTS).get("value")
+    return (value or "").strip() or None

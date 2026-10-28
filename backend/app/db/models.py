@@ -6,6 +6,7 @@ Account, Organization, Entitlement, etc.
 from __future__ import annotations
 
 import datetime
+import re
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -37,6 +38,7 @@ from app.enums import (
     EntitlementStatus,
     OrganizationStatus,
     SystemStatus,
+    TerminationReason,
     UserStatus,
 )
 
@@ -44,6 +46,7 @@ FKEY_ORGANIZATION = "organizations.id"
 FKEY_ACTOR = "actors.id"
 FKEY_ACCOUNT = "accounts.id"
 FKEY_USER = "users.id"
+FKEY_CLIENT_ACCOUNT = "client_accounts.id"
 
 
 class Base(DeclarativeBase):
@@ -147,6 +150,11 @@ class Account(Base, HumanReadablePKMixin, AuditableMixin):
         default=AccountStatus.ACTIVE,
         server_default=AccountStatus.ACTIVE.value,
     )
+    cloud_provider: Mapped[CloudProvider | None] = relationship(
+        back_populates="account",
+        uselist=False,
+        lazy="joined",
+    )
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
     users: Mapped[list[AccountUser]] = relationship(back_populates="account")
     new_entitlements_count: Mapped[int] = mapped_column(Integer(), nullable=False, default=0)
@@ -160,6 +168,26 @@ class Account(Base, HumanReadablePKMixin, AuditableMixin):
             return self.users[0]
         except Exception:
             return None
+
+
+class CloudProvider(Base, HumanReadablePKMixin, AuditableMixin):
+    __tablename__ = "cloud_providers"
+
+    PK_PREFIX = "FCLP"
+    PK_NUM_LENGTH = 4
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    icon: Mapped[str] = mapped_column(String(64), nullable=False)
+    datasource_id_format: Mapped[str] = mapped_column(String(512), nullable=False)
+    account_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ACCOUNT), nullable=False)
+    account: Mapped[Account] = relationship(
+        back_populates="cloud_provider", foreign_keys=[account_id]
+    )
+
+    __table_args__ = (UniqueConstraint(account_id, name="uq_cloud_providers_account_id"),)
+
+    def matches_datasource_id(self, datasource_id: str) -> bool:
+        return re.fullmatch(self.datasource_id_format, datasource_id) is not None
 
 
 class System(Actor, AuditableMixin):
@@ -202,7 +230,7 @@ class User(Actor, HumanReadablePKMixin, AuditableMixin):
         default=UserStatus.DRAFT,
         server_default=UserStatus.DRAFT.value,
     )
-    accounts: Mapped[list[AccountUser]] = relationship(back_populates="user", lazy="noload")
+    accounts: Mapped[list[AccountUser]] = relationship(back_populates="user", lazy="raise")
 
     @property
     def account_user(self) -> AccountUser | None:
@@ -237,6 +265,29 @@ class AccountUser(Base, AuditableMixin, HumanReadablePKMixin):
     )
 
 
+class ClientAccount(Base, AuditableMixin, HumanReadablePKMixin):
+    __tablename__ = "client_accounts"
+
+    PK_PREFIX = "FCAC"
+    PK_NUM_LENGTH = 8
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    icon: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    external_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    organizations: Mapped[list[Organization]] = relationship(
+        back_populates="client_account", lazy="raise"
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_client_accounts_external_id_for_non_deleted",
+            external_id,
+            unique=True,
+            postgresql_where=sa.text("deleted_at IS NULL"),
+        ),
+    )
+
+
 class Organization(Base, AuditableMixin, HumanReadablePKMixin):
     __tablename__ = "organizations"
 
@@ -261,6 +312,18 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
     terminated_by_id: Mapped[str | None] = mapped_column(ForeignKey(FKEY_ACTOR))
     terminated_by: Mapped[Actor | None] = relationship(foreign_keys=[terminated_by_id])
 
+    termination_feedback: Mapped[TerminationFeedback | None] = relationship(
+        back_populates="organization",
+        uselist=False,
+        lazy="joined",
+    )
+    client_account_id: Mapped[str | None] = mapped_column(
+        ForeignKey(FKEY_CLIENT_ACCOUNT), nullable=True, index=True
+    )
+    client_account: Mapped[ClientAccount | None] = relationship(
+        back_populates="organizations", foreign_keys=[client_account_id], lazy="joined"
+    )
+
     __table_args__ = (
         Index(
             "ix_organizations_operations_external_id_for_non_deleted",
@@ -269,6 +332,25 @@ class Organization(Base, AuditableMixin, HumanReadablePKMixin):
             postgresql_where=(status != OrganizationStatus.DELETED),
         ),
     )
+
+
+class TerminationFeedback(Base, TimestampMixin, HumanReadablePKMixin):
+    __tablename__ = "termination_feedbacks"
+
+    PK_PREFIX = "FFBK"
+    PK_NUM_LENGTH = 12
+
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey(FKEY_ORGANIZATION), nullable=False, unique=True
+    )
+    organization: Mapped[Organization] = relationship(
+        back_populates="termination_feedback", foreign_keys=[organization_id]
+    )
+    reason: Mapped[TerminationReason] = mapped_column(
+        Enum(TerminationReason, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+    )
+    comments: Mapped[str | None] = mapped_column(Text(), nullable=True)
 
 
 class DatasourceExpense(Base, HumanReadablePKMixin, TimestampMixin):
@@ -285,7 +367,7 @@ class DatasourceExpense(Base, HumanReadablePKMixin, TimestampMixin):
     datasource_name: Mapped[str] = mapped_column(String(255), nullable=False)
     organization_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ORGANIZATION))
 
-    organization: Mapped[Organization] = relationship(lazy="noload", foreign_keys=[organization_id])
+    organization: Mapped[Organization] = relationship(lazy="raise", foreign_keys=[organization_id])
 
     year: Mapped[int] = mapped_column(Integer(), nullable=False)
     month: Mapped[int] = mapped_column(Integer(), nullable=False)

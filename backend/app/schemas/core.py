@@ -138,15 +138,26 @@ def extract_fields_from_model[M: Base, S: BaseModel](
     retrieves the corresponding values from the database model (`db_model`), and returns
     a dictionary with the extracted field values.
     Any fields listed in `excluded_fields` or not present in `db_model`are ignored.
+    Fields declaring a string `validation_alias` are read from the model attribute named by
+    the alias and keyed by it, so that pydantic validation maps them back to the field.
     This function ensures that only fields present in the Pydantic model are included
     in the returned dictionary.
 
     """
-    return {
-        field_name: getattr(db_model, field_name)
-        for field_name in schema_cls.model_fields.keys()
-        if field_name not in excluded_fields and hasattr(db_model, field_name)
-    }
+    fields: dict[str, Any] = {}
+    for field_name, field_info in schema_cls.model_fields.items():
+        if field_name in excluded_fields:
+            continue
+        # A string `validation_alias` names the model attribute the field is read from
+        # (e.g. `OrganizationRead.client` is populated from `Organization.client_account`).
+        attr_name = (
+            field_info.validation_alias
+            if isinstance(field_info.validation_alias, str)
+            else field_name
+        )
+        if hasattr(db_model, attr_name):
+            fields[attr_name] = getattr(db_model, attr_name)
+    return fields
 
 
 class BaseSchema(BaseModel):
