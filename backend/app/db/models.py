@@ -19,6 +19,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -47,6 +48,7 @@ FKEY_ACTOR = "actors.id"
 FKEY_ACCOUNT = "accounts.id"
 FKEY_USER = "users.id"
 FKEY_CLIENT_ACCOUNT = "client_accounts.id"
+FKEY_ACTIVITY_LOG = "activity_logs.id"
 
 
 class Base(DeclarativeBase):
@@ -438,3 +440,48 @@ class AdditionalAdminRequest(Base, HumanReadablePKMixin, AuditableMixin):
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     organization_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ORGANIZATION))
     organization: Mapped[Organization] = relationship(foreign_keys=[organization_id], lazy="joined")
+
+
+class ActivityLog(Base, HumanReadablePKMixin):
+    __tablename__ = "activity_logs"
+
+    PK_PREFIX = "FLOG"
+    PK_NUM_LENGTH = 12
+
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(datetime.UTC),
+        server_default=sa.func.current_timestamp(),
+        index=True,
+    )
+    actor_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ACTOR), nullable=False, index=True)
+    actor: Mapped[Actor] = relationship(foreign_keys=[actor_id], lazy="raise")
+    action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    message: Mapped[str] = mapped_column(Text(), nullable=False)
+    changes: Mapped[list[ChangeRecord]] = relationship(
+        back_populates="activity_log",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+    )
+
+
+class ChangeRecord(Base, HumanReadablePKMixin):
+    __tablename__ = "change_records"
+
+    PK_PREFIX = "FCHG"
+    PK_NUM_LENGTH = 12
+
+    activity_log_id: Mapped[str] = mapped_column(
+        ForeignKey(FKEY_ACTIVITY_LOG, ondelete="CASCADE"), nullable=False, index=True
+    )
+    activity_log: Mapped[ActivityLog] = relationship(
+        back_populates="changes", foreign_keys=[activity_log_id], lazy="raise"
+    )
+    object_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    object_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    before: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    after: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    __table_args__ = (Index("ix_change_records_object", object_type, object_id),)
