@@ -40,8 +40,11 @@ from app.db.handlers import (
 from app.db.models import (
     Account,
     AccountUser,
+    ActivityLog,
     Actor,
+    App,
     Base,
+    ChangeRecord,
     ClientAccount,
     CloudProvider,
     DatasourceExpense,
@@ -409,6 +412,80 @@ def client_account_factory(faker: Faker, db_session: AsyncSession) -> ModelFacto
         return client_account
 
     return _client_account
+
+
+@pytest.fixture
+def app_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[App]:
+    async def _app(
+        name: str | None = None,
+        external_id: str | None = None,
+        description: str | None = None,
+    ) -> App:
+        app = App(
+            name=name or faker.company(),
+            external_id=external_id or str(uuid.uuid4()),
+            description=description,
+        )
+        db_session.add(app)
+        await db_session.commit()
+        await db_session.refresh(app)
+        return app
+
+    return _app
+
+
+@pytest.fixture
+def activity_log_factory(
+    faker: Faker, db_session: AsyncSession, system_factory: ModelFactory[System]
+) -> ModelFactory[ActivityLog]:
+    async def _activity_log(
+        actor: Actor | None = None,
+        action: str = "organization.updated",
+        message: str | None = None,
+        timestamp: datetime | None = None,
+    ) -> ActivityLog:
+        activity_log = ActivityLog(
+            actor=actor or await system_factory(),
+            action=action,
+            message=message or faker.sentence(),
+        )
+        if timestamp is not None:
+            activity_log.timestamp = timestamp
+        db_session.add(activity_log)
+        await db_session.commit()
+        await db_session.refresh(activity_log)
+        return activity_log
+
+    return _activity_log
+
+
+@pytest.fixture
+def change_record_factory(
+    faker: Faker,
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> ModelFactory[ChangeRecord]:
+    async def _change_record(
+        activity_log: ActivityLog | None = None,
+        object_type: str = "organization",
+        object_id: str | None = None,
+        before: dict | None = None,
+        after: dict | None = None,
+    ) -> ChangeRecord:
+        activity_log = activity_log or await activity_log_factory()
+        change_record = ChangeRecord(
+            activity_log_id=activity_log.id,
+            object_type=object_type,
+            object_id=object_id or f"FORG-{faker.numerify('####-####-####')}",
+            before=before,
+            after={"name": faker.company()} if after is None else after,
+        )
+        db_session.add(change_record)
+        await db_session.commit()
+        await db_session.refresh(change_record)
+        return change_record
+
+    return _change_record
 
 
 @pytest.fixture

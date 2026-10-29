@@ -1,14 +1,25 @@
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.human_readable_pk import HumanReadablePKMixin
-from app.db.models import Account, Actor, CloudProvider, Entitlement, Organization, System
+from app.db.models import (
+    Account,
+    ActivityLog,
+    Actor,
+    App,
+    ChangeRecord,
+    CloudProvider,
+    Entitlement,
+    Organization,
+    System,
+)
 from app.enums import ActorType, EntitlementStatus
 from tests.types import ModelFactory
 
@@ -213,3 +224,205 @@ async def test_cloud_provider_is_unique_per_account(
     )
     with pytest.raises(IntegrityError, match="uq_cloud_providers_account_id"):
         await db_session.commit()
+
+
+# -- app actor --
+
+
+async def test_app_gets_a_human_readable_id(app_factory: ModelFactory[App]) -> None:
+    """A persisted app gets an `FAPP-` id in the shape `build_id_regex` describes."""
+    app = await app_factory()
+
+    assert app.id.startswith(f"{App.PK_PREFIX}-")
+    assert re.fullmatch(App.build_id_regex(), app.id)
+
+
+async def test_app_is_an_actor_of_type_app(
+    db_session: AsyncSession, app_factory: ModelFactory[App]
+) -> None:
+    """An app is stored as an actor of type `app` and loads back as an `App` through `Actor`."""
+    app = await app_factory(name="Billing bot", description="Posts invoices")
+    db_session.expunge_all()
+
+    actor = await db_session.scalar(select(Actor).where(Actor.id == app.id))
+
+    assert isinstance(actor, App)
+    assert actor.type == ActorType.APP
+    assert actor.name == "Billing bot"
+    assert actor.description == "Posts invoices"
+
+
+async def test_app_can_be_the_actor_of_an_activity_log(
+    db_session: AsyncSession,
+    app_factory: ModelFactory[App],
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """An activity performed by an app references the app as its actor."""
+    app = await app_factory()
+    activity_log = await activity_log_factory(actor=app)
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ActivityLog)
+        .options(selectinload(ActivityLog.actor))
+        .where(ActivityLog.id == activity_log.id)
+    )
+
+    assert loaded is not None
+    assert loaded.actor.id == app.id
+    assert loaded.actor.type == ActorType.APP
+
+
+# -- activity log --
+
+
+async def test_activity_log_gets_a_human_readable_id(
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """A persisted activity log gets an `FLOG-` id in the shape `build_id_regex` describes."""
+    activity_log = await activity_log_factory()
+
+    assert activity_log.id.startswith(f"{ActivityLog.PK_PREFIX}-")
+    assert re.fullmatch(ActivityLog.build_id_regex(), activity_log.id)
+
+
+async def test_activity_log_timestamp_defaults_to_now_in_utc(
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """An activity log created without a timestamp is stamped with the current UTC time."""
+    before = datetime.now(UTC)
+
+    activity_log = await activity_log_factory()
+
+    assert activity_log.timestamp.tzinfo == UTC
+    assert before <= activity_log.timestamp <= datetime.now(UTC)
+
+
+async def test_activity_log_keeps_an_explicit_timestamp(
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """A timestamp given on creation is stored as is, so past activities can be recorded."""
+    happened_at = datetime.now(UTC) - timedelta(days=3)
+
+    activity_log = await activity_log_factory(timestamp=happened_at)
+
+    assert activity_log.timestamp == happened_at
+
+
+async def test_activity_log_requires_an_actor(db_session: AsyncSession) -> None:
+    """An activity log cannot be persisted without the actor that performed it."""
+    db_session.add(ActivityLog(action="organization.updated", message="Renamed"))
+
+    with pytest.raises(IntegrityError, match='null value in column "actor_id"'):
+        await db_session.commit()
+
+
+async def test_activity_log_links_the_actor(
+    db_session: AsyncSession,
+    ffc_extension: System,
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """An eagerly loaded activity log exposes the actor that performed the activity."""
+    activity_log = await activity_log_factory(actor=ffc_extension)
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ActivityLog)
+        .options(selectinload(ActivityLog.actor))
+        .where(ActivityLog.id == activity_log.id)
+    )
+
+    assert loaded is not None
+    assert loaded.actor.id == ffc_extension.id
+
+
+@pytest.mark.parametrize("relationship_name", ["actor", "changes"])
+async def test_activity_log_relationships_are_not_lazy_loaded(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    relationship_name: str,
+) -> None:
+    """Accessing a relationship that was not eagerly loaded raises instead of querying."""
+    activity_log = await activity_log_factory()
+    db_session.expunge_all()
+    loaded = await db_session.scalar(select(ActivityLog).where(ActivityLog.id == activity_log.id))
+    assert loaded is not None
+
+    with pytest.raises(InvalidRequestError, match="lazy='raise'"):
+        getattr(loaded, relationship_name)
+
+
+async def test_change_record_gets_a_sequential_id(
+    change_record_factory: ModelFactory[ChangeRecord],
+) -> None:
+    """A persisted change record gets a database-assigned integer id."""
+    first = await change_record_factory()
+    second = await change_record_factory()
+
+    assert isinstance(first.id, int)
+    assert second.id > first.id
+
+
+async def test_change_record_stores_json_snapshots(
+    db_session: AsyncSession,
+    change_record_factory: ModelFactory[ChangeRecord],
+) -> None:
+    """`before` and `after` round-trip as JSON, with `before` null for a created object."""
+    change_record = await change_record_factory(before=None, after={"name": "Acme", "users": 3})
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ChangeRecord).where(ChangeRecord.id == change_record.id)
+    )
+
+    assert loaded is not None
+    assert loaded.before is None
+    assert loaded.after == {"name": "Acme", "users": 3}
+
+
+async def test_change_record_requires_an_activity_log(db_session: AsyncSession) -> None:
+    """A change record cannot be persisted without its parent activity log."""
+    db_session.add(ChangeRecord(object_type="organization", object_id="FORG-0001", after={}))
+
+    with pytest.raises(IntegrityError, match='null value in column "activity_log_id"'):
+        await db_session.commit()
+
+
+async def test_activity_log_lists_its_change_records(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    change_record_factory: ModelFactory[ChangeRecord],
+) -> None:
+    """An eagerly loaded activity log exposes every change record written for it."""
+    activity_log = await activity_log_factory()
+    first = await change_record_factory(activity_log=activity_log, object_type="organization")
+    second = await change_record_factory(activity_log=activity_log, object_type="entitlement")
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ActivityLog)
+        .options(selectinload(ActivityLog.changes))
+        .where(ActivityLog.id == activity_log.id)
+    )
+
+    assert loaded is not None
+    assert {change.id for change in loaded.changes} == {first.id, second.id}
+
+
+async def test_deleting_an_activity_log_deletes_its_change_records(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    change_record_factory: ModelFactory[ChangeRecord],
+) -> None:
+    """Deleting an activity log cascades to its change records."""
+    activity_log = await activity_log_factory()
+    await change_record_factory(activity_log=activity_log)
+    db_session.expunge_all()
+    loaded = await db_session.get(ActivityLog, activity_log.id)
+    assert loaded is not None
+
+    await db_session.delete(loaded)
+    await db_session.commit()
+
+    remaining = await db_session.scalars(select(ChangeRecord))
+    assert remaining.all() == []
