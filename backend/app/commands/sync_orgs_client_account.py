@@ -108,9 +108,12 @@ def command(
     ctx: typer.Context,
     dry_run: Annotated[
         bool,
-        typer.Option("--dry-run", help="Nothing will be persisted"),
+        typer.Option("--dry-run", help="Report what would change without persisting anything."),
     ] = False,
 ) -> None:
+    """
+    Links FinOps for Cloud Organizations with the corresponding Marketplace Client Account.
+    """
     logger.info("Starting command function.")
 
     asyncio.run(
