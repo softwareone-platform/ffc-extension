@@ -5,6 +5,7 @@ import enum
 class ActorType(enum.StrEnum):
     USER = "user"
     SYSTEM = "system"
+    APP = "app"
 
 
 @enum.unique
