@@ -1,6 +1,7 @@
 export * from "./renderWithQueryClient";
 export * from "./renderWithRouter";
 export * from "./columnByName";
+export * from "./highlightValues";
 export * from "./renderCell";
 export * from "./triggerModal";
 export * from "./userEvent";

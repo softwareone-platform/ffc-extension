@@ -11,6 +11,7 @@ import {
   mockGridInfoDialogConfigurationModule,
   mockReactQueryRqlGridModule,
 } from "~test-utils/mocks/gridHooks";
+import { mockReactRouterLink } from "~test-utils/mocks/reactRouterLink";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
 
@@ -37,6 +38,7 @@ jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
 jest.mock("~shared/components/grid/GridCellCurrency", () => mockGridCellCurrency);
 jest.mock("~shared/components/grid/GridCellDate", () => mockGridCellDate);
 jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
+jest.mock("react-router-dom", () => mockReactRouterLink);
 
 jest.mock("~organizations/providers/OrganizationsProvider", () => ({
   useOrganizationContext: () => mockUseOrganizationContext(),

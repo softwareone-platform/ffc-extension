@@ -4,13 +4,12 @@ import { render, screen } from "@testing-library/react";
 
 import type { EntitlementRead } from "~api/ffc-api-model";
 import type { useEntitlementsDetailsApi } from "~entitlements/api";
-import { Status } from "~shared/components/entity-status-chip";
 import type { PageShell } from "~shared/components/page-shell";
+import { mockEntityStatusChip, mockStatus } from "~test-utils/mocks/entityStatusChip";
 
 import { EntitlementDetailsHeader } from "./EntitlementDetailsHeader";
 
 type MockPageShellHeaderProps = ComponentProps<typeof PageShell.Header>;
-type MockStatusProps = ComponentProps<typeof Status>;
 type UseEntitlementsDetailsApiResult = ReturnType<typeof useEntitlementsDetailsApi>;
 
 const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
@@ -19,7 +18,6 @@ const mockUseEntitlementsDetailsApi = jest.fn() as jest.MockedFunction<
 const mockPageShellHeader = jest.fn() as jest.MockedFunction<
   (props: MockPageShellHeaderProps) => void
 >;
-const mockStatus = jest.fn() as jest.MockedFunction<(props: MockStatusProps) => void>;
 
 jest.mock("~entitlements/api", () => ({
   useEntitlementsDetailsApi: (id: string | undefined) => mockUseEntitlementsDetailsApi(id),
@@ -34,12 +32,7 @@ jest.mock("~shared/components/page-shell", () => ({
   },
 }));
 
-jest.mock("~shared/components/entity-status-chip", () => ({
-  Status: (props: MockStatusProps) => {
-    mockStatus(props);
-    return <span data-testid="status" />;
-  },
-}));
+jest.mock("~shared/components/entity-status-chip", () => mockEntityStatusChip);
 
 function primeEntity(entity: Partial<EntitlementRead> | undefined) {
   mockUseEntitlementsDetailsApi.mockReturnValue({
@@ -68,16 +61,14 @@ describe("EntitlementDetailsHeader", () => {
     expect(lastHeaderProps().backUrl).toBe("/back-here");
   });
 
-  it("renders the entity id in the title and a Status chip when data is loaded", () => {
+  it("renders the entity id and its status chip in the title when data is loaded", () => {
     primeEntity({ id: "ent-1", name: "One", status: "active" });
 
     render(<EntitlementDetailsHeader entitlementId="ent-1" backUrl="/back" />);
 
     expect(screen.getByText("ent-1")).toBeInTheDocument();
     expect(screen.getByTestId("status")).toBeInTheDocument();
-    expect(mockStatus).toHaveBeenCalledWith(
-      expect.objectContaining({ item: expect.objectContaining({ id: "ent-1" }) }),
-    );
+    expect(mockStatus).toHaveBeenCalledWith({ status: "active" });
   });
 
   it("does not render a Status chip when the entity has no id", () => {

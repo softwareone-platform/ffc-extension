@@ -1,29 +1,18 @@
-import type { ComponentProps } from "react";
-
 import { render, screen } from "@testing-library/react";
 
 import type { AddWizardForm } from "~entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
-import type { Status } from "~shared/components/entity-status-chip";
 import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemEntityReference } from "~test-utils/mocks/entityReference";
+import { mockEntityStatusChip, mockStatus } from "~test-utils/mocks/entityStatusChip";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
 import { EntityProps } from "./EntityProperties";
 
-type StatusProps = ComponentProps<typeof Status<{ status: string }>>;
-
-const mockStatus = jest.fn() as jest.MockedFunction<(props: StatusProps) => void>;
-
 jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 jest.mock("./custom-icons/CustomIcon", () => mockCustomIcon);
-jest.mock("./entity-status-chip", () => ({
-  Status: ({ item }: StatusProps) => {
-    mockStatus({ item });
-    return <span data-testid="status">{item.status}</span>;
-  },
-}));
+jest.mock("./entity-status-chip", () => mockEntityStatusChip);
 jest.mock("@swo/design-system/entity-reference", () => mockDesignSystemEntityReference);
 
 function makeEntity(overrides: Partial<AddWizardForm> = {}): AddWizardForm {
@@ -61,7 +50,7 @@ describe("EntityProperties", () => {
     expect(screen.getByTestId("status")).toHaveTextContent("New");
     expect(screen.getByText("ds-1")).toBeInTheDocument();
     expect(screen.getByText("ext-1")).toBeInTheDocument();
-    expect(mockStatus).toHaveBeenCalledWith({ item: { status: "New" } });
+    expect(mockStatus).toHaveBeenCalledWith({ status: "New" });
   });
 
   it("renders fallback values for a draft entity without an affiliate", () => {
@@ -80,6 +69,6 @@ describe("EntityProperties", () => {
     expect(screen.getByTestId("secondary-content")).toHaveTextContent("-");
     expect(screen.getByTestId("status")).toHaveTextContent("Draft");
     expect(screen.queryByTestId("custom-icon")).not.toBeInTheDocument();
-    expect(mockStatus).toHaveBeenCalledWith({ item: { status: "Draft" } });
+    expect(mockStatus).toHaveBeenCalledWith({ status: "Draft" });
   });
 });

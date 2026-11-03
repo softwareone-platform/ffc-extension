@@ -152,7 +152,7 @@ export function useColumns(): Columns {
         fields: ["status"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>
-            <Status<OrganizationRead> item={item}></Status>
+            <Status status={item.status}></Status>
           </GridCellSimple>
         ),
         initialWidth: 150,

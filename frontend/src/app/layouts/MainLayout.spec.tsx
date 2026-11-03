@@ -2,6 +2,7 @@ import type { AccountType } from "~api/ffc-api-model";
 import { renderWithRouter } from "~test-utils";
 
 import {
+  mockDataSourceDetailsHeader,
   mockEntitlementDetailsHeader,
   mockHeader,
   mockOrganizationDetailsHeader,
@@ -23,6 +24,22 @@ describe("MainLayout", () => {
       organizationId: "org-1",
       backUrl: "/organizations",
     });
+  });
+
+  it("renders the data source details header instead of the organization one on a data source page", () => {
+    mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
+
+    renderWithRouter(<MainLayout />, {
+      initialUrl: "/organizations/org-1/data-sources/ds-1/details",
+      routePath: "/*",
+    });
+
+    expect(mockDataSourceDetailsHeader).toHaveBeenCalledWith({
+      organizationId: "org-1",
+      dataSourceId: "ds-1",
+      backUrl: "/organizations/org-1/data-sources",
+    });
+    expect(mockOrganizationDetailsHeader).not.toHaveBeenCalled();
   });
 
   it("renders the entitlement details header on an entitlement details page", () => {
