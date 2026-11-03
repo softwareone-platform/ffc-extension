@@ -3,6 +3,7 @@ import { Outlet, useMatch } from "react-router-dom";
 import type { AccountType } from "~api/ffc-api-model";
 import { PATHS } from "~app/paths";
 import { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
+import { DataSourceDetailsHeader } from "~features/organizations/components/DataSourceDetailsHeader";
 import { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import { PageShell, PageShellNavItem } from "~shared/components/page-shell";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -29,6 +30,7 @@ export function MainLayout() {
 
   const entitlementMatch = useMatch(PATHS.entitlements.detailMatch);
   const organizationMatch = useMatch(PATHS.organizations.detailMatch);
+  const dataSourceMatch = useMatch(PATHS.organizations.dataSourceMatch);
 
   const header = renderHeader();
 
@@ -41,6 +43,15 @@ export function MainLayout() {
         />
       );
     }
+    if (dataSourceMatch?.params.dataSourceId && organizationMatch?.params.organizationId) {
+      return (
+        <DataSourceDetailsHeader
+          organizationId={organizationMatch.params.organizationId}
+          dataSourceId={dataSourceMatch.params.dataSourceId}
+          backUrl={PATHS.organizations.dataSources(organizationMatch.params.organizationId)}
+        />
+      );
+    }
     if (organizationMatch?.params.organizationId) {
       return (
         <OrganizationDetailsHeader
@@ -49,6 +60,7 @@ export function MainLayout() {
         />
       );
     }
+
     return <PageShell.Header items={navItems} />;
   }
 

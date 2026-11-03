@@ -1,4 +1,3 @@
-import { EntitlementRead } from "~api/ffc-api-model";
 import { useEntitlementsDetailsApi } from "~entitlements/api";
 import { Status } from "~shared/components/entity-status-chip";
 import { PageShell } from "~shared/components/page-shell";
@@ -16,7 +15,7 @@ export function EntitlementDetailsHeader({ entitlementId, backUrl }: Readonly<Pr
       {entity?.id}
       {entity?.id && (
         <span className="entity-status">
-          <Status<EntitlementRead> item={entity} />
+          <Status status={entity?.status ?? ""} />
         </span>
       )}
     </span>

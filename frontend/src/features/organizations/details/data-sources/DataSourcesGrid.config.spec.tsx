@@ -92,7 +92,10 @@ describe("DataSourcesGrid.config", () => {
 
       renderColumnCell(columns, "name", item);
 
-      expect(screen.getByTestId("primary")).toHaveTextContent("AWS Prod");
+      expect(screen.getByRole("link", { name: "AWS Prod" })).toHaveAttribute(
+        "href",
+        "ds-1/details",
+      );
       expect(screen.getByTestId("secondary")).toHaveTextContent("aws-prod-123");
       expect(screen.getByTestId("custom-icon")).toHaveTextContent("aws_cnr");
     });
@@ -110,7 +113,10 @@ describe("DataSourcesGrid.config", () => {
 
       renderColumnCell(columns, "parent_id", item);
 
-      expect(screen.getByTestId("primary")).toHaveTextContent("Parent DS");
+      expect(screen.getByRole("link", { name: "Parent DS" })).toHaveAttribute(
+        "href",
+        "p-1/details",
+      );
       expect(screen.getByTestId("secondary")).toHaveTextContent("parent-ds-123");
       expect(screen.getByTestId("custom-icon")).toHaveTextContent("azure_tenant");
     });
