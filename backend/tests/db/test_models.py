@@ -424,5 +424,7 @@ async def test_deleting_an_activity_log_deletes_its_change_records(
     await db_session.delete(loaded)
     await db_session.commit()
 
-    remaining = await db_session.scalars(select(ChangeRecord))
+    remaining = await db_session.scalars(
+        select(ChangeRecord).where(ChangeRecord.activity_log_id == activity_log.id)
+    )
     assert remaining.all() == []

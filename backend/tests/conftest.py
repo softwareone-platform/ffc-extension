@@ -17,11 +17,13 @@ from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
 
+from app.activity_log.constants import APP_ACTOR_ID
 from app.api_clients.base import BaseAPIClient
 from app.api_clients.ffc_api import FFCAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth
@@ -158,10 +160,35 @@ def db_engine(test_settings: Settings) -> AsyncEngine:
     return configure_db_engine(test_settings)
 
 
+async def seed_app_actor(db_engine: AsyncEngine) -> None:
+    """Insert the FinOps for Cloud app actor the activity log falls back to.
+
+    Production gets it from migration 9f033317274c; the test database is built with
+    `create_all` and has to seed it itself. Idempotent.
+    """
+    async with db_engine.begin() as conn:
+        await conn.execute(
+            pg_insert(Base.metadata.tables["actors"])
+            .values(
+                id=APP_ACTOR_ID,
+                name="FinOps for Cloud",
+                type=ActorType.APP.value,
+                external_id="ffc-extension",
+            )
+            .on_conflict_do_nothing()
+        )
+        await conn.execute(
+            pg_insert(Base.metadata.tables["apps"])
+            .values(id=APP_ACTOR_ID, description="Test seed of the FinOps for Cloud app actor.")
+            .on_conflict_do_nothing()
+        )
+
+
 @pytest.fixture(scope="session", autouse=True)
 async def setup_db_tables(db_engine: AsyncEngine) -> AsyncGenerator[None]:
     async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await seed_app_actor(db_engine)
 
     try:
         yield
@@ -212,6 +239,20 @@ async def db_session(
             async with db_engine.begin() as conn:
                 await conn.exec_driver_sql("SET LOCAL lock_timeout = '5s'")
                 await conn.exec_driver_sql(f"TRUNCATE {tables} RESTART IDENTITY CASCADE")
+            await seed_app_actor(db_engine)
+
+
+@pytest.fixture(autouse=True)
+def _activity_log_needs_db_session(request: pytest.FixtureRequest, mocker: MockerFixture) -> None:
+    """Keep instrumented API clients from writing real activity log rows in DB-less tests.
+
+    With no `db_session` fixture the session factory is bound to the engine, so an
+    external-only entry would be committed for real and leak into later tests.
+    """
+    if "db_session" not in request.fixturenames:
+        mocker.patch(
+            "app.activity_log.external.record_external_call", new_callable=mocker.AsyncMock
+        )
 
 
 @pytest.fixture(scope="session")

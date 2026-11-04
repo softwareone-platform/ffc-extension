@@ -2,12 +2,13 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import Any, Protocol, TypeVar
 
-from app.db.models import Base
+from app.db.models import ActivityLog, Base
 from app.events.orders.processing import OrderEventHandler, OrderProcessor
 from app.schemas.core import Event
 
 ModelT = TypeVar("ModelT", bound=Base)
 ModelFactory = Callable[..., Awaitable[ModelT]]
+ActivityLogFetcher = Callable[..., Awaitable[list[ActivityLog]]]
 EventFactory = Callable[..., Event]
 OrderFactory = Callable[..., dict[str, Any]]
 MPTSubscriptionFactory = Callable[..., dict[str, Any]]

@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 from httpx_retries import Retry, RetryTransport
 
+from app.activity_log import instrument
 from app.billing.enum import JournalStatus
 from app.conf import get_settings
 from app.utils import get_jwt_token_expires
@@ -75,6 +76,7 @@ class MPTExtensionAuth(httpx.Auth):
         yield request
 
 
+@instrument
 class MPTClient:
     def __init__(self, auth: httpx.Auth) -> None:
         self.auth = auth

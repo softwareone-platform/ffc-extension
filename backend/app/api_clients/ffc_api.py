@@ -5,6 +5,7 @@ from uuid import UUID
 
 import httpx
 
+from app.activity_log import instrument
 from app.api_clients.base import APIClientError, BaseAPIClient
 from app.conf import Settings
 from app.enums import TagType
@@ -44,6 +45,7 @@ def resolve_params(
     return params
 
 
+@instrument
 class FFCAPIClient(BaseAPIClient):
     @property
     def base_url(self):

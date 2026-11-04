@@ -6,6 +6,7 @@ from uuid import UUID
 import httpx
 from httpx import codes
 
+from app.activity_log import instrument
 from app.api_clients.base import APIClientError, BaseAPIClient
 from app.conf import Settings
 
@@ -39,6 +40,7 @@ class OptscaleClusterSecretAuth(httpx.Auth):
         yield request
 
 
+@instrument
 class OptscaleClient(BaseAPIClient):
     @property
     def base_url(self):
