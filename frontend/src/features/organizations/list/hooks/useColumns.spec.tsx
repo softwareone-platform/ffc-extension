@@ -134,7 +134,7 @@ describe("useColumns (organizations list)", () => {
 
     renderColumnCell(result.current, "status", item);
 
-    expect(mockStatus).toHaveBeenCalledWith({ item });
+    expect(mockStatus).toHaveBeenCalledWith({ status: "active" });
   });
 
   it("renders the actions column with dynamic actions for the item", () => {

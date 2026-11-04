@@ -26,8 +26,7 @@ export function EntityProps({ entity }: EntityPropertiesProps) {
         <EntityReference
           primaryContent={
             <>
-              {entity.name}{" "}
-              <Status<{ status: string }> item={{ status: entity.id ? "New" : "Draft" }} />
+              {entity.name} <Status status={entity.id ? "New" : "Draft"} />
             </>
           }
           secondaryContent={entity.id ?? "-"}

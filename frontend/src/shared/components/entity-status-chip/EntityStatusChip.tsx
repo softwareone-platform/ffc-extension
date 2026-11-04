@@ -4,6 +4,6 @@ function capitalizeFirstLetter(statusName: string) {
   return String(statusName).charAt(0).toUpperCase() + String(statusName).slice(1);
 }
 
-export function Status<T>({ item }: { readonly item: T & { status: string } }) {
-  return <StatusChip status={capitalizeFirstLetter(item.status)} />;
+export function Status({ status }: { readonly status: string }) {
+  return <StatusChip status={capitalizeFirstLetter(status)} />;
 }

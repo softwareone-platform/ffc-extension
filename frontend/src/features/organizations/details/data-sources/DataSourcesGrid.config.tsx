@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from "react";
 
+import { Link } from "react-router-dom";
+
 import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
   GridCellSimple,
@@ -59,7 +61,7 @@ export function useColumns(): Columns {
         cell: (item: DatasourceRead) => (
           <GridCellSimple>
             <EntityReferenceCell
-              primaryContent={item.name}
+              primaryContent={<Link to={`${item.id}/details`}>{item.name}</Link>}
               secondaryContent={item.datasource_id || ""}
               secondaryContentMaxHeight={50}
               icon={<DataSourceIcon name={item.type} size={48} />}
@@ -83,7 +85,7 @@ export function useColumns(): Columns {
           return item.parent?.id ? (
             <GridCellSimple>
               <EntityReferenceCell
-                primaryContent={item.parent?.name}
+                primaryContent={<Link to={`${item.parent?.id}/details`}>{item.parent?.name}</Link>}
                 secondaryContent={item.parent?.datasource_id || NO_VALUE}
                 secondaryContentMaxHeight={50}
                 icon={<DataSourceIcon name={item.parent?.type || "unknown"} size={48} />}

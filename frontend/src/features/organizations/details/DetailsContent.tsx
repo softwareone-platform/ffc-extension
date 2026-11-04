@@ -1,42 +1,34 @@
-import { useMemo } from "react";
-
 import { Outlet, useParams } from "react-router-dom";
 
 import { Card } from "@swo/design-system/card";
 import { Navigation } from "@swo/design-system/navigation";
 
-import { SEGMENTS } from "~features/organizations/paths";
+import { ContentType, useContentType } from "~features/organizations/hooks/useContentType";
+import { useTopBarItems } from "~features/organizations/hooks/useTopBarItems";
 import { useOrganizationDetailsApi } from "~organizations/api";
-import { useFixedT } from "~shared/hooks/useFixedT";
 
+import { DataSourceHighlights } from "../components/DataSourceHighlights";
 import { OrganizationHighlights } from "../components/OrganizationHighlights";
 import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 
 // Inner content for organization details. Outer chrome comes from MainLayout.
 export function OrganizationDetailsContent() {
-  const { organizationId } = useParams();
+  const { organizationId, dataSourceId } = useParams();
   const { data: entity } = useOrganizationDetailsApi(organizationId);
-  const tDetails = useFixedT("organization:details");
+  const topBarItems = useTopBarItems({ entity, routeId: dataSourceId });
+  const contentType = useContentType();
 
-  const topBarItems = useMemo(
-    () => [
-      { label: tDetails("general:title"), path: SEGMENTS.general },
-      { label: tDetails("dataSources:title"), path: SEGMENTS.dataSources },
-      { label: tDetails("users:title"), path: SEGMENTS.users },
-      { label: tDetails("events:title"), path: SEGMENTS.events },
-      {
-        label: tDetails("termination:title"),
-        path: SEGMENTS.termination,
-        isHidden: !entity?.termination_feedback?.id,
-      },
-    ],
-    [tDetails, entity?.termination_feedback?.id],
-  );
+  if (!organizationId) return null;
 
   return (
     <>
-      {organizationId && <OrganizationHighlights organizationId={organizationId} />}
-      <Navigation.TopBar items={topBarItems.filter((item) => !item.isHidden)} />
+      {contentType === ContentType.DataSource && (
+        <DataSourceHighlights organizationId={organizationId} dataSourceId={dataSourceId ?? ""} />
+      )}
+      {contentType === ContentType.Organization && (
+        <OrganizationHighlights organizationId={organizationId} />
+      )}
+      <Navigation.TopBar items={topBarItems} />
       <OrganizationsProvider organization={entity!}>
         <Card>
           <Outlet />
