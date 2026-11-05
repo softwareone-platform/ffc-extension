@@ -4,6 +4,7 @@ import type { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
 import { mockErrorDetailsModule } from "~test-utils/mocks/errorDetails";
 import { mockUserRoleModule } from "~test-utils/mocks/userRole";
 
+import type { AddWizardForm } from "./CreateEntitlement.Schema";
 import type { ReviewStep } from "./steps/ReviewStep";
 import type { SummaryStep } from "./steps/SummaryStep";
 import type { useSteps } from "./useSteps";
@@ -82,9 +83,17 @@ jest.mock("@swo/design-system/wizard", () => {
   return { Wizard };
 });
 
-jest.mock("./steps/AffiliateStep", () => ({
-  AffiliateStep: () => <div data-testid="step-affiliate" />,
-}));
+jest.mock("./steps/AffiliateStep", () => {
+  const { useFormContext } =
+    jest.requireActual<typeof import("react-hook-form")>("react-hook-form");
+  const AffiliateStep = () => {
+    const { getValues } = useFormContext<AddWizardForm>();
+    return (
+      <div data-testid="step-affiliate" data-affiliate={JSON.stringify(getValues("affiliate"))} />
+    );
+  };
+  return { AffiliateStep };
+});
 
 jest.mock("./steps/DataSourceStep", () => ({
   DataSourceStep: () => <div data-testid="step-datasource" />,
