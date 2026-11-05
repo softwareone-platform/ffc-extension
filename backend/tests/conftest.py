@@ -17,11 +17,13 @@ from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
 
+from app.activity_log.constants import APP_ACTOR_ID
 from app.api_clients.base import BaseAPIClient
 from app.api_clients.ffc_api import FFCAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth
@@ -158,10 +160,29 @@ def db_engine(test_settings: Settings) -> AsyncEngine:
     return configure_db_engine(test_settings)
 
 
+async def seed_app_actor(db_engine: AsyncEngine) -> None:
+    """Insert the application actor that migration 9f033317274c seeds in real databases."""
+    actors = Base.metadata.tables["actors"]
+    apps = Base.metadata.tables["apps"]
+    async with db_engine.begin() as conn:
+        await conn.execute(
+            pg_insert(actors)
+            .values(
+                id=APP_ACTOR_ID,
+                name="FinOps for Cloud",
+                type=ActorType.APP.value,
+                external_id="ffc-extension",
+            )
+            .on_conflict_do_nothing()
+        )
+        await conn.execute(pg_insert(apps).values(id=APP_ACTOR_ID).on_conflict_do_nothing())
+
+
 @pytest.fixture(scope="session", autouse=True)
 async def setup_db_tables(db_engine: AsyncEngine) -> AsyncGenerator[None]:
     async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await seed_app_actor(db_engine)
 
     try:
         yield
@@ -212,6 +233,7 @@ async def db_session(
             async with db_engine.begin() as conn:
                 await conn.exec_driver_sql("SET LOCAL lock_timeout = '5s'")
                 await conn.exec_driver_sql(f"TRUNCATE {tables} RESTART IDENTITY CASCADE")
+            await seed_app_actor(db_engine)
 
 
 @pytest.fixture(scope="session")
