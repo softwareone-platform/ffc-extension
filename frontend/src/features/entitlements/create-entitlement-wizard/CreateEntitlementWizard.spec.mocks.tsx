@@ -9,6 +9,7 @@ import type { ReviewStep } from "./steps/ReviewStep";
 import type { SummaryStep } from "./steps/SummaryStep";
 import type { useSteps } from "./useSteps";
 
+export { mockGetErrorMessage } from "~test-utils/mocks/errorDetails";
 export { mockUseUserRole } from "~test-utils/mocks/userRole";
 
 type EntitlementsApi = ReturnType<typeof useEntitlementsApi>;
@@ -30,6 +31,14 @@ export const mockUseSteps = jest.fn();
 // per render. Tests mutate `.activeStepIndex` before rendering.
 export const mockStepContext = { activeStepIndex: 0 };
 
+// Schema-valid values written into the real form by the "fill form" button,
+// so `handleSubmit` passes zod validation and reaches the mutation.
+export const mockValidForm: AddWizardForm = {
+  name: "My entitlement",
+  affiliate: { id: "acc-1", name: "Affiliate 1", integration: "aws", cloud_provider: null },
+  dataSource: { id: "ds-1", affiliate_external_id: "ext-1" },
+};
+
 jest.mock("~entitlements/api/useEntitlementsApi", () => ({
   useEntitlementsApi: () => ({ save: mockSave }),
 }));
@@ -38,22 +47,58 @@ jest.mock("~shared/hooks/useErrorDetails", () => mockErrorDetailsModule);
 jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
 
 jest.mock("@swo/design-system/modal", () => ({
-  Modal: ({ children }: ModalProps) => <div data-testid="modal">{children}</div>,
+  Modal: ({ children, onClose }: ModalProps) => (
+    <div data-testid="modal">
+      <button onClick={() => onClose?.()} type="button">
+        dismiss modal
+      </button>
+      {children}
+    </div>
+  ),
 }));
 
 jest.mock("@swo/design-system/wizard", () => {
+  const { useFormContext } =
+    jest.requireActual<typeof import("react-hook-form")>("react-hook-form");
+
+  // Stands in for the (mocked) steps editing the real form owned by the wizard.
+  const FormControls = () => {
+    const { setValue } = useFormContext<AddWizardForm>();
+    const fillForm = () => {
+      setValue("name", mockValidForm.name);
+      setValue("affiliate", mockValidForm.affiliate);
+      setValue("dataSource", mockValidForm.dataSource);
+    };
+
+    return (
+      <>
+        <button onClick={fillForm} type="button">
+          fill form
+        </button>
+        <button onClick={() => setValue("name", "Edited", { shouldDirty: true })} type="button">
+          change name
+        </button>
+        <button onClick={() => setValue("name", "Edited")} type="button">
+          change name without dirtying
+        </button>
+      </>
+    );
+  };
+
   const Wizard = (props: MockWizardProps) => {
     mockWizard(props);
     return (
-      <div data-testid="wizard">
+      <form data-testid="wizard" onSubmit={props.onSubmit}>
         <button onClick={() => props.onClose?.()} type="button">
           close wizard
         </button>
         <button onClick={() => props.onSave?.()} type="button">
           save wizard
         </button>
+        <button type="submit">submit wizard</button>
+        <FormControls />
         {props.children}
-      </div>
+      </form>
     );
   };
   Wizard.Header = ({ children }: WizardHeaderProps) => (
