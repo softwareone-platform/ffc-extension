@@ -106,7 +106,10 @@
         "affiliate": { "required": "Affiliate is required" },
         "name": { "required": "Entitlement name is required" },
         "dataSource": {
-          "id": { "required": "Data Source ID is required" },
+          "id": {
+            "invalid": "Data Source ID does not match the format expected by the selected cloud provider: {{format}}",
+            "required": "Data Source ID is required"
+          },
           "affiliate_external_id": { "required": "Affiliate external ID is required" }
         }
       },

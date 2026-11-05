@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 import { useMutation } from "@tanstack/react-query";
@@ -45,6 +45,7 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   >({
     mutationFn: save,
     onError: (err) => {
+      setEntitlementCreated(false);
       setError(getErrorMessage(err));
     },
     onSuccess: (res) => {
@@ -67,7 +68,23 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
           : null,
     },
   });
-  const { handleSubmit, reset, setValue } = methods;
+  const { handleSubmit, reset, setValue, subscribe } = methods;
+
+  useEffect(() => {
+    const callback = subscribe({
+      formState: {
+        values: true,
+        isDirty: true,
+      },
+      callback: ({ isDirty }) => {
+        if (!entitlementCreated && isDirty && error) {
+          setError("");
+        }
+      },
+    });
+
+    return () => callback();
+  }, [subscribe, entitlementCreated, error]);
 
   const closeWizard = useCallback(() => {
     reset();
