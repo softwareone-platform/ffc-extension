@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
 
+import { NO_VALUE } from "@swo/design-system/utils";
+
 import type { AddWizardForm } from "~entitlements/create-entitlement-wizard/CreateEntitlement.Schema";
 import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
@@ -66,9 +68,25 @@ describe("EntityProperties", () => {
 
     expect(screen.getAllByTestId("highlight-item")).toHaveLength(4);
     expect(screen.getAllByTestId("entity-reference")).toHaveLength(1);
-    expect(screen.getByTestId("secondary-content")).toHaveTextContent("-");
+    expect(screen.getByTestId("secondary-content")).toBeEmptyDOMElement();
     expect(screen.getByTestId("status")).toHaveTextContent("Draft");
     expect(screen.queryByTestId("custom-icon")).not.toBeInTheDocument();
     expect(mockStatus).toHaveBeenCalledWith({ status: "Draft" });
+  });
+
+  it("renders the unknown integration icon when the affiliate has no integration", () => {
+    render(
+      <EntityProps
+        entity={makeEntity({ affiliate: { id: "aff-1", name: "Affiliate 1", integration: null } })}
+      />,
+    );
+
+    expect(screen.getByTestId("custom-icon")).toHaveTextContent("unknown");
+  });
+
+  it("renders NO_VALUE for data source fields when no data source is selected", () => {
+    render(<EntityProps entity={makeEntity({ dataSource: undefined })} />);
+
+    expect(screen.getAllByText(NO_VALUE)).toHaveLength(2);
   });
 });
