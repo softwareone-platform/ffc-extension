@@ -35,10 +35,16 @@ from app.events.subscriptions.constants import (
     TERMINATED_SUBSCRIPTION_STATUS,
 )
 from app.notifications import ColumnHeader
-from tests.types import ModelFactory, MPTSubscriptionFactory, SubscriptionsPageMocker
+from tests.types import (
+    ModelFactory,
+    MPTSubscriptionFactory,
+    SubscriptionMocker,
+    SubscriptionsPageMocker,
+)
 
 SUBSCRIPTION_ID = "SUB-1234-5678"
 DATASOURCE_ID = "ds0001234"
+REPLACEMENT_ID = "SUB-8765-4321"
 SINCE = datetime(2026, 9, 12, 9, 0, 0, tzinfo=UTC)
 UNTIL = datetime(2026, 9, 13, 9, 0, 0, tzinfo=UTC)
 WINDOW = "changed between 2026-09-12 09:00:00 UTC and 2026-09-13 09:00:00 UTC"
@@ -112,6 +118,7 @@ def test_build_query_filters_by_product_status_and_window(
 
 
 async def test_sync_subscription_creates_missing_entitlement(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
@@ -119,7 +126,9 @@ async def test_sync_subscription_creates_missing_entitlement(
 ) -> None:
     subscription = mpt_subscription_factory()
 
-    result = await sync_subscription(entitlement_handler, subscription_account, subscription, [])
+    result = await sync_subscription(
+        mpt_client, entitlement_handler, subscription_account, subscription, []
+    )
 
     entitlement = (await get_entitlements(db_session, subscription_account))[0]
     assert entitlement.status == EntitlementStatus.NEW
@@ -135,6 +144,7 @@ async def test_sync_subscription_creates_missing_entitlement(
 
 
 async def test_sync_subscription_skips_an_active_subscription_with_active_entitlement(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
@@ -148,13 +158,14 @@ async def test_sync_subscription_skips_an_active_subscription_with_active_entitl
     subscription = mpt_subscription_factory()
 
     result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [entitlement]
+        mpt_client, entitlement_handler, subscription_account, subscription, [entitlement]
     )
 
     assert result is None
 
 
 async def test_sync_subscription_reports_more_than_one_live_entitlement(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
@@ -170,7 +181,7 @@ async def test_sync_subscription_reports_more_than_one_live_entitlement(
     subscription = mpt_subscription_factory()
 
     result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [first, second]
+        mpt_client, entitlement_handler, subscription_account, subscription, [first, second]
     )
 
     assert result is not None
@@ -187,6 +198,7 @@ async def test_sync_subscription_reports_more_than_one_live_entitlement(
     [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
 )
 async def test_sync_subscription_ignore_non_active_subscription_without_entitlements(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
@@ -194,7 +206,9 @@ async def test_sync_subscription_ignore_non_active_subscription_without_entitlem
 ) -> None:
     subscription = mpt_subscription_factory(status=subscription_status)
 
-    result = await sync_subscription(entitlement_handler, subscription_account, subscription, [])
+    result = await sync_subscription(
+        mpt_client, entitlement_handler, subscription_account, subscription, []
+    )
 
     assert result is None
 
@@ -204,9 +218,11 @@ async def test_sync_subscription_ignore_non_active_subscription_without_entitlem
     [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
 )
 async def test_sync_subscription_actions_for_non_active_subscription(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_live_subscription_lookup: SubscriptionMocker,
     entitlement_factory: ModelFactory[Entitlement],
     db_session: AsyncSession,
     subscription_status: str,
@@ -225,8 +241,10 @@ async def test_sync_subscription_actions_for_non_active_subscription(
     )
     subscription = mpt_subscription_factory(status=subscription_status)
 
+    mock_live_subscription_lookup([])
+
     result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
+        mpt_client, entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
     )
 
     await db_session.refresh(new_ent)
@@ -247,6 +265,7 @@ async def test_sync_subscription_actions_for_non_active_subscription(
     [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
 )
 async def test_sync_subscription_ignores_entitlements_of_other_subscriptions(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
@@ -270,7 +289,7 @@ async def test_sync_subscription_ignores_entitlements_of_other_subscriptions(
     subscription = mpt_subscription_factory(status=subscription_status)
 
     result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
+        mpt_client, entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
     )
 
     assert result is None
@@ -282,9 +301,11 @@ async def test_sync_subscription_ignores_entitlements_of_other_subscriptions(
 
 
 async def test_sync_subscription_only_acts_on_entitlements_of_the_subscription(
+    mpt_client: MPTClient,
     entitlement_handler: EntitlementHandler,
     subscription_account: Account,
     mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_live_subscription_lookup: SubscriptionMocker,
     entitlement_factory: ModelFactory[Entitlement],
     db_session: AsyncSession,
 ) -> None:
@@ -303,8 +324,10 @@ async def test_sync_subscription_only_acts_on_entitlements_of_the_subscription(
     )
     subscription = mpt_subscription_factory(status=TERMINATED_SUBSCRIPTION_STATUS)
 
+    mock_live_subscription_lookup([])
+
     result = await sync_subscription(
-        entitlement_handler, subscription_account, subscription, [own_ent, other_ent]
+        mpt_client, entitlement_handler, subscription_account, subscription, [own_ent, other_ent]
     )
 
     await db_session.refresh(own_ent)
@@ -313,6 +336,56 @@ async def test_sync_subscription_only_acts_on_entitlements_of_the_subscription(
     assert other_ent.status == EntitlementStatus.ACTIVE
     assert result is not None
     assert result.message == f"The entitlement {own_ent.id} was terminated."
+
+
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+async def test_sync_subscription_moves_entitlements_to_the_live_replacement(
+    mpt_client: MPTClient,
+    entitlement_handler: EntitlementHandler,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_live_subscription_lookup: SubscriptionMocker,
+    entitlement_factory: ModelFactory[Entitlement],
+    db_session: AsyncSession,
+    subscription_status: str,
+) -> None:
+    """A live subscription for the same datasource keeps the entitlements and takes them over."""
+    new_ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id=SUBSCRIPTION_ID,
+        status=EntitlementStatus.NEW,
+    )
+    active_ent = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id=SUBSCRIPTION_ID,
+        status=EntitlementStatus.ACTIVE,
+    )
+    subscription = mpt_subscription_factory(status=subscription_status)
+    mock_live_subscription_lookup([mpt_subscription_factory(subscription_id=REPLACEMENT_ID)])
+
+    result = await sync_subscription(
+        mpt_client, entitlement_handler, subscription_account, subscription, [new_ent, active_ent]
+    )
+
+    await db_session.refresh(new_ent)
+    assert new_ent.status == EntitlementStatus.NEW
+    assert new_ent.affiliate_external_id == REPLACEMENT_ID
+    await db_session.refresh(active_ent)
+    assert active_ent.status == EntitlementStatus.ACTIVE
+    assert active_ent.affiliate_external_id == REPLACEMENT_ID
+    assert active_ent.terminated_at is None
+
+    assert result is not None
+    assert result.succeeded is True
+    assert result.message == (
+        f"The entitlement {new_ent.id} was moved to the subscription {REPLACEMENT_ID}.\n"
+        f"The entitlement {active_ent.id} was moved to the subscription {REPLACEMENT_ID}."
+    )
 
 
 async def test_sync_page(

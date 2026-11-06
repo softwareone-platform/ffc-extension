@@ -19,7 +19,7 @@ from app.events.subscriptions.constants import (
     EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 )
-from app.events.subscriptions.utils import get_datasource_id
+from app.events.subscriptions.utils import get_datasource_id, get_live_subscription
 from app.exceptions import InvalidDataSourceIdError
 from app.notifications import ColumnHeader, NotificationDetails, send_error, send_info
 from app.telemetry import capture_telemetry_cli_command
@@ -101,6 +101,7 @@ def build_query(products: list[str], status: list[str], since: datetime, until: 
 
 
 async def sync_subscription(
+    client: MPTClient,
     entitlement_handler: EntitlementHandler,
     account: Account,
     subscription: dict[str, Any],
@@ -139,12 +140,29 @@ async def sync_subscription(
                 message=f"Created new entitlement {created.id}.",
             )
     else:
-        if entitlements:
+        bound = [
+            entitlement
+            for entitlement in entitlements
+            if entitlement.affiliate_external_id == sub_id
+        ]
+        if bound:
             actions = []
-            for entitlement in entitlements:
-                if entitlement.affiliate_external_id != sub_id:
-                    continue
-                if entitlement.status == EntitlementStatus.NEW:
+            # Another live subscription for the same datasource takes the entitlement over.
+            replacement = await get_live_subscription(client, account, bound[0].datasource_id)
+            for entitlement in bound:
+                if replacement is not None:
+                    await entitlement_handler.update(
+                        entitlement, data={"affiliate_external_id": replacement["id"]}
+                    )
+                    actions.append(
+                        f"The entitlement {entitlement.id} was moved to the subscription "
+                        f"{replacement['id']}."
+                    )
+                    logger.info(
+                        f"Moved entitlement {entitlement.id} from subscription {sub_id} "
+                        f"to the subscription {replacement['id']}."
+                    )
+                elif entitlement.status == EntitlementStatus.NEW:
                     await entitlement_handler.delete(entitlement)
                     actions.append(f"The entitlement {entitlement.id} was deleted.")
                     logger.info(f"Deleted entitlement {entitlement.id} for subscription {sub_id}.")
@@ -154,12 +172,11 @@ async def sync_subscription(
                     logger.info(
                         f"Terminated entitlement {entitlement.id} for subscription {sub_id}."
                     )
-            if actions:
-                return SyncResult(
-                    subscription_id=sub_id,
-                    account_id=account.id,
-                    message="\n".join(actions),
-                )
+            return SyncResult(
+                subscription_id=sub_id,
+                account_id=account.id,
+                message="\n".join(actions),
+            )
 
     return None
 
@@ -240,6 +257,7 @@ async def sync_page(
                         ],
                     )
                     result = await sync_subscription(
+                        client,
                         entitlement_handler,
                         account,
                         subscription,
