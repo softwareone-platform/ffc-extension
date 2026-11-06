@@ -96,7 +96,14 @@ export function useColumns(): Columns {
                 icon={
                   item.client?.icon ? (
                     <Avatar size={32} shape="square" imageSrc={"/public/" + item.client?.icon} />
-                  ) : undefined
+                  ) : (
+                    <Avatar
+                      size={32}
+                      shape="square"
+                      isToUseJdenticon
+                      jdenticonValue={item.client?.external_id || item.client?.id || ""}
+                    />
+                  )
                 }
               />
             </GridCellSimple>

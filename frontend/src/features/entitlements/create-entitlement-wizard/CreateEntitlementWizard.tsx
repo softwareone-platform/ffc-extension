@@ -64,7 +64,11 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
     defaultValues: {
       affiliate:
         role === "affiliate"
-          ? { id: user?.account.id || "", name: user?.account.name || "" }
+          ? {
+              id: user?.account.id || "",
+              name: user?.account.name || "",
+              integration: user?.account.integration || "unknown",
+            }
           : null,
     },
   });

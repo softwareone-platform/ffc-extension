@@ -19,10 +19,14 @@ import {
 
 import { CreateEntitlementWizard } from "./CreateEntitlementWizard";
 
+type Me = NonNullable<ReturnType<typeof useUserRole>["user"]>;
+
+function makeMe(account: Omit<Me["account"], "external_id">): Me {
+  return { account: { external_id: "ext-1", ...account } } as Me;
+}
+
 const REVIEW_STEP_INDEX = 2;
 const SAVE_ERROR = "Saving failed";
-
-type User = NonNullable<ReturnType<typeof useUserRole>["user"]>;
 
 function lastWizardProps() {
   return mockWizard.mock.lastCall![0];
@@ -88,6 +92,31 @@ describe("CreateEntitlementWizard", () => {
     expect(screen.getByTestId(testId)).toBeInTheDocument();
   });
 
+  it("starts with no affiliate preselected for non-affiliate users", () => {
+    renderWizard();
+
+    expect(screen.getByTestId("step-affiliate")).toHaveAttribute("data-affiliate", "null");
+  });
+
+  it.each([
+    ["the account integration", "aws", "aws"],
+    ["the unknown integration when the account has none", null, "unknown"],
+  ] as const)(
+    "preselects the affiliate account with %s for affiliate users",
+    (_scenario, integration, expectedIntegration) => {
+      mockUseUserRole.mockReturnValue({
+        user: makeMe({ id: "aff-1", name: "Affiliate 1", type: "affiliate", integration }),
+        role: "affiliate",
+      });
+
+      renderWizard();
+
+      expect(
+        JSON.parse(screen.getByTestId("step-affiliate").getAttribute("data-affiliate")!),
+      ).toEqual({ id: "aff-1", name: "Affiliate 1", integration: expectedIntegration });
+    },
+  );
+
   it("closing the wizard reports an unsuccessful result when nothing was created", async () => {
     const { user, onClose } = renderWizard();
 
@@ -142,7 +171,7 @@ describe("CreateEntitlementWizard", () => {
 
     it("saves the entitlement without an owner for affiliate users", async () => {
       mockUseUserRole.mockReturnValue({
-        user: { account: { id: "acc-1", name: "Affiliate 1" } } as User,
+        user: makeMe({ id: "acc-1", name: "Affiliate 1", type: "affiliate", integration: "aws" }),
         role: "affiliate",
       });
       primeSaveSuccess();

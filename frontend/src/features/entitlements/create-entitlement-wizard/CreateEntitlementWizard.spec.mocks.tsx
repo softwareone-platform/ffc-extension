@@ -128,9 +128,17 @@ jest.mock("@swo/design-system/wizard", () => {
   return { Wizard };
 });
 
-jest.mock("./steps/AffiliateStep", () => ({
-  AffiliateStep: () => <div data-testid="step-affiliate" />,
-}));
+jest.mock("./steps/AffiliateStep", () => {
+  const { useFormContext } =
+    jest.requireActual<typeof import("react-hook-form")>("react-hook-form");
+  const AffiliateStep = () => {
+    const { getValues } = useFormContext<AddWizardForm>();
+    return (
+      <div data-testid="step-affiliate" data-affiliate={JSON.stringify(getValues("affiliate"))} />
+    );
+  };
+  return { AffiliateStep };
+});
 
 jest.mock("./steps/DataSourceStep", () => ({
   DataSourceStep: () => <div data-testid="step-datasource" />,
