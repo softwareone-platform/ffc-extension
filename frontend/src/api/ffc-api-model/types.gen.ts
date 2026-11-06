@@ -68,7 +68,7 @@ export type AccountRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -91,7 +91,7 @@ export type AccountRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -111,7 +111,7 @@ export type AccountRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -171,6 +171,24 @@ export type AccountRead = {
      * AccountType
      */
     type: 'admin' | 'operations' | 'affiliate';
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
     /**
      * AccountStats
      */
@@ -218,6 +236,24 @@ export type AccountReference = {
      * An external identifier for the account
      */
     external_id: string;
+    cloud_provider?: {
+        /**
+         * Name
+         */
+        name: string;
+        /**
+         * Icon
+         */
+        icon: string;
+        /**
+         * Datasource Id Format
+         */
+        datasource_id_format: string;
+        /**
+         * Id
+         */
+        id: string;
+    } | null;
 };
 
 /**
@@ -311,6 +347,24 @@ export type AccountUserReferenceWithAccount = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
 };
 
@@ -373,7 +427,7 @@ export type ActorReference = {
     /**
      * ActorType
      */
-    type: 'user' | 'system';
+    type: 'user' | 'system' | 'app';
     /**
      * Name
      */
@@ -383,7 +437,7 @@ export type ActorReference = {
 /**
  * ActorType
  */
-export type ActorType = 'user' | 'system';
+export type ActorType = 'user' | 'system' | 'app';
 
 /**
  * AdditionalAdminRequestCreate
@@ -423,7 +477,7 @@ export type AuditEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -446,7 +500,7 @@ export type AuditEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -466,7 +520,7 @@ export type AuditEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -491,7 +545,7 @@ export type AuditFieldSchema = {
         /**
          * ActorType
          */
-        type: 'user' | 'system';
+        type: 'user' | 'system' | 'app';
         /**
          * Name
          */
@@ -655,6 +709,28 @@ export type ClientAccountReference = {
      * Icon
      */
     icon?: string | null;
+};
+
+/**
+ * CloudProviderRead
+ */
+export type CloudProviderRead = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon: string;
+    /**
+     * Datasource Id Format
+     */
+    datasource_id_format: string;
+    /**
+     * Id
+     */
+    id: string;
 };
 
 /**
@@ -1033,7 +1109,7 @@ export type DatasourceExpenseRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1056,7 +1132,7 @@ export type DatasourceExpenseRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1076,7 +1152,7 @@ export type DatasourceExpenseRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1391,6 +1467,24 @@ export type EntitlementRead = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     /**
      * EntitlementStatus
@@ -1416,7 +1510,7 @@ export type EntitlementRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1439,7 +1533,7 @@ export type EntitlementRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1459,7 +1553,7 @@ export type EntitlementRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1502,7 +1596,7 @@ export type EntitlementRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -1582,7 +1676,7 @@ export type EntitlementsEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -1605,7 +1699,7 @@ export type EntitlementsEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -1625,7 +1719,7 @@ export type EntitlementsEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -1668,7 +1762,7 @@ export type EntitlementsEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -1791,7 +1885,7 @@ export type LimitOffsetPageAccountRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -1814,7 +1908,7 @@ export type LimitOffsetPageAccountRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -1834,7 +1928,7 @@ export type LimitOffsetPageAccountRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -1894,6 +1988,24 @@ export type LimitOffsetPageAccountRead = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -1959,7 +2071,7 @@ export type LimitOffsetPageDatasourceExpenseRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -1982,7 +2094,7 @@ export type LimitOffsetPageDatasourceExpenseRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2002,7 +2114,7 @@ export type LimitOffsetPageDatasourceExpenseRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2282,6 +2394,24 @@ export type LimitOffsetPageEntitlementRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -2307,7 +2437,7 @@ export type LimitOffsetPageEntitlementRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2330,7 +2460,7 @@ export type LimitOffsetPageEntitlementRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2350,7 +2480,7 @@ export type LimitOffsetPageEntitlementRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2393,7 +2523,7 @@ export type LimitOffsetPageEntitlementRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2576,7 +2706,7 @@ export type LimitOffsetPageOrganizationRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2599,7 +2729,7 @@ export type LimitOffsetPageOrganizationRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2619,7 +2749,7 @@ export type LimitOffsetPageOrganizationRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2639,7 +2769,7 @@ export type LimitOffsetPageOrganizationRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2745,7 +2875,7 @@ export type LimitOffsetPageUserRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2768,7 +2898,7 @@ export type LimitOffsetPageUserRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2788,7 +2918,7 @@ export type LimitOffsetPageUserRead = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -2844,6 +2974,24 @@ export type LimitOffsetPageUserRead = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
         } | null;
     }>;
@@ -2888,6 +3036,24 @@ export type Me = {
          * An external identifier for the account
          */
         external_id: string;
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
     };
     system: {
         /**
@@ -3009,7 +3175,7 @@ export type OrganizationEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -3032,7 +3198,7 @@ export type OrganizationEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -3052,7 +3218,7 @@ export type OrganizationEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -3072,7 +3238,7 @@ export type OrganizationEventsSchema = {
             /**
              * ActorType
              */
-            type: 'user' | 'system';
+            type: 'user' | 'system' | 'app';
             /**
              * Name
              */
@@ -3176,7 +3342,7 @@ export type OrganizationRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3199,7 +3365,7 @@ export type OrganizationRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3219,7 +3385,7 @@ export type OrganizationRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3239,7 +3405,7 @@ export type OrganizationRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3408,7 +3574,7 @@ export type UserRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3431,7 +3597,7 @@ export type UserRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3451,7 +3617,7 @@ export type UserRead = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3507,6 +3673,24 @@ export type UserRead = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
     } | null;
 };
@@ -3720,7 +3904,7 @@ export type LimitOffsetPageOrganizationReadWritable = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -3743,7 +3927,7 @@ export type LimitOffsetPageOrganizationReadWritable = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -3763,7 +3947,7 @@ export type LimitOffsetPageOrganizationReadWritable = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -3783,7 +3967,7 @@ export type LimitOffsetPageOrganizationReadWritable = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -3916,7 +4100,7 @@ export type OrganizationReadWritable = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3939,7 +4123,7 @@ export type OrganizationReadWritable = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3959,7 +4143,7 @@ export type OrganizationReadWritable = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -3979,7 +4163,7 @@ export type OrganizationReadWritable = {
                 /**
                  * ActorType
                  */
-                type: 'user' | 'system';
+                type: 'user' | 'system' | 'app';
                 /**
                  * Name
                  */
@@ -4064,7 +4248,7 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4087,7 +4271,7 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4107,7 +4291,7 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4260,6 +4444,24 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                  * An external identifier for the account
                  */
                 external_id: string;
+                cloud_provider?: {
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon: string;
+                    /**
+                     * Datasource Id Format
+                     */
+                    datasource_id_format: string;
+                    /**
+                     * Id
+                     */
+                    id: string;
+                } | null;
             };
             /**
              * EntitlementStatus
@@ -4285,7 +4487,7 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4308,7 +4510,7 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4328,7 +4530,7 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4371,7 +4573,7 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -4528,6 +4730,24 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4553,7 +4773,7 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4576,7 +4796,7 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4596,7 +4816,7 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4639,7 +4859,7 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4822,6 +5042,24 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -4847,7 +5085,7 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4870,7 +5108,7 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4890,7 +5128,7 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -4933,7 +5171,7 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5056,6 +5294,24 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         /**
          * EntitlementStatus
@@ -5081,7 +5337,7 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5104,7 +5360,7 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5124,7 +5380,7 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5167,7 +5423,7 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5267,7 +5523,7 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -5290,7 +5546,7 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -5310,7 +5566,7 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -5330,7 +5586,7 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -5586,7 +5842,7 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5609,7 +5865,7 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5629,7 +5885,7 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5649,7 +5905,7 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5844,7 +6100,7 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5867,7 +6123,7 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5887,7 +6143,7 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -5907,7 +6163,7 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -6981,7 +7237,7 @@ export type GetAccountsOpsV1AccountsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -7004,7 +7260,7 @@ export type GetAccountsOpsV1AccountsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -7024,7 +7280,7 @@ export type GetAccountsOpsV1AccountsGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -7084,6 +7340,24 @@ export type GetAccountsOpsV1AccountsGetResponses = {
              * AccountType
              */
             type: 'admin' | 'operations' | 'affiliate';
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
             /**
              * AccountStats
              */
@@ -7230,7 +7504,7 @@ export type CreateAccountOpsV1AccountsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7253,7 +7527,7 @@ export type CreateAccountOpsV1AccountsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7273,7 +7547,7 @@ export type CreateAccountOpsV1AccountsPostResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7333,6 +7607,24 @@ export type CreateAccountOpsV1AccountsPostResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7450,7 +7742,7 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7473,7 +7765,7 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7493,7 +7785,7 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7553,6 +7845,24 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7683,7 +7993,7 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7706,7 +8016,7 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7726,7 +8036,7 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
                     /**
                      * ActorType
                      */
-                    type: 'user' | 'system';
+                    type: 'user' | 'system' | 'app';
                     /**
                      * Name
                      */
@@ -7786,6 +8096,24 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
          * AccountType
          */
         type: 'admin' | 'operations' | 'affiliate';
+        cloud_provider?: {
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon: string;
+            /**
+             * Datasource Id Format
+             */
+            datasource_id_format: string;
+            /**
+             * Id
+             */
+            id: string;
+        } | null;
         /**
          * AccountStats
          */
@@ -7907,7 +8235,7 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -7930,7 +8258,7 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -7950,7 +8278,7 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                         /**
                          * ActorType
                          */
-                        type: 'user' | 'system';
+                        type: 'user' | 'system' | 'app';
                         /**
                          * Name
                          */
@@ -8006,6 +8334,24 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                      * An external identifier for the account
                      */
                     external_id: string;
+                    cloud_provider?: {
+                        /**
+                         * Name
+                         */
+                        name: string;
+                        /**
+                         * Icon
+                         */
+                        icon: string;
+                        /**
+                         * Datasource Id Format
+                         */
+                        datasource_id_format: string;
+                        /**
+                         * Id
+                         */
+                        id: string;
+                    } | null;
                 };
             } | null;
         }>;
@@ -8063,6 +8409,24 @@ export type MeOpsV1MeGetResponses = {
              * An external identifier for the account
              */
             external_id: string;
+            cloud_provider?: {
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon: string;
+                /**
+                 * Datasource Id Format
+                 */
+                datasource_id_format: string;
+                /**
+                 * Id
+                 */
+                id: string;
+            } | null;
         };
         system: {
             /**
