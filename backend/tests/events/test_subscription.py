@@ -9,6 +9,7 @@ from pytest_mock import MockerFixture
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api_clients.mpt import MPTClient
 from app.conf import Settings
 from app.db.handlers import EntitlementHandler
 from app.db.models import Account, CloudProvider, Entitlement
@@ -28,6 +29,7 @@ from tests.types import ModelFactory, MPTSubscriptionFactory, SubscriptionMocker
 SUBSCRIPTION_ID = "SUB-1234-5678"
 DATASOURCE_ID = "ds0001234"
 TASK_ID = "TSK-0014-5578-6577-4688"
+REPLACEMENT_ID = "SUB-8765-4321"
 
 
 @pytest.fixture
@@ -141,6 +143,7 @@ async def test_claim_task_starts_the_task_without_an_ownership_check(
 
 
 async def test_process_completes_for_a_non_affiliate_account(
+    mpt_client: MPTClient,
     mpt_subscription_factory: MPTSubscriptionFactory,
     account_factory: ModelFactory[Account],
     db_session: AsyncSession,
@@ -152,6 +155,7 @@ async def test_process_completes_for_a_non_affiliate_account(
         products="PRD-1111-1111",
     )
     processor = SubscriptionProcessor(
+        installation_client=mpt_client,
         entitlement_repo=EntitlementHandler(db_session),
         account=account,
         subscription=mpt_subscription_factory(),
@@ -318,6 +322,7 @@ async def test_inactive_subscription_deletes_not_redeemed_entitlement(
     subscription_event_handler: SubscriptionEventHandler,
     mpt_subscription_factory: MPTSubscriptionFactory,
     mock_get_subscription: SubscriptionMocker,
+    mock_live_subscription_lookup: SubscriptionMocker,
     entitlement_factory: ModelFactory[Entitlement],
     subscription_account: Account,
     db_session: AsyncSession,
@@ -328,6 +333,7 @@ async def test_inactive_subscription_deletes_not_redeemed_entitlement(
         owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.NEW
     )
     mock_get_subscription(mpt_subscription_factory(status=subscription_status))
+    mock_live_subscription_lookup([])
     processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
 
     result = await processor.process()
@@ -348,6 +354,7 @@ async def test_inactive_subscription_terminates_an_active_entitlement(
     subscription_event_handler: SubscriptionEventHandler,
     mpt_subscription_factory: MPTSubscriptionFactory,
     mock_get_subscription: SubscriptionMocker,
+    mock_live_subscription_lookup: SubscriptionMocker,
     entitlement_factory: ModelFactory[Entitlement],
     subscription_account: Account,
     db_session: AsyncSession,
@@ -358,6 +365,7 @@ async def test_inactive_subscription_terminates_an_active_entitlement(
         owner=subscription_account, datasource_id=DATASOURCE_ID, status=EntitlementStatus.ACTIVE
     )
     mock_get_subscription(mpt_subscription_factory(status=subscription_status))
+    mock_live_subscription_lookup([])
     processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
 
     result = await processor.process()
@@ -367,6 +375,47 @@ async def test_inactive_subscription_terminates_an_active_entitlement(
     assert redeemed.terminated_at is not None
     assert result.status is ProcessingStatus.COMPLETE
     assert result.message == f"The entitlement {redeemed.id} was terminated."
+
+
+@pytest.mark.parametrize(
+    "subscription_status",
+    [TERMINATED_SUBSCRIPTION_STATUS, EXPIRED_SUBSCRIPTION_STATUS],
+)
+@pytest.mark.parametrize("entitlement_status", [EntitlementStatus.NEW, EntitlementStatus.ACTIVE])
+async def test_inactive_subscription_moves_the_entitlement_to_the_live_replacement(
+    subscription_event_handler: SubscriptionEventHandler,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    mock_get_subscription: SubscriptionMocker,
+    mock_live_subscription_lookup: SubscriptionMocker,
+    entitlement_factory: ModelFactory[Entitlement],
+    subscription_account: Account,
+    db_session: AsyncSession,
+    subscription_status: str,
+    entitlement_status: EntitlementStatus,
+) -> None:
+    """A live subscription for the same datasource keeps the entitlement and takes it over."""
+    entitlement = await entitlement_factory(
+        owner=subscription_account,
+        datasource_id=DATASOURCE_ID,
+        affiliate_external_id=SUBSCRIPTION_ID,
+        status=entitlement_status,
+    )
+    mock_get_subscription(mpt_subscription_factory(status=subscription_status))
+    mock_live_subscription_lookup([mpt_subscription_factory(subscription_id=REPLACEMENT_ID)])
+    processor = await subscription_event_handler.get_processor(object_id=SUBSCRIPTION_ID)
+
+    result = await processor.process()
+
+    await db_session.refresh(entitlement)
+    assert entitlement.status is entitlement_status
+    assert entitlement.affiliate_external_id == REPLACEMENT_ID
+    assert entitlement.terminated_at is None
+    assert entitlement.deleted_at is None
+    assert result.status is ProcessingStatus.COMPLETE
+    assert result.severity == "Info"
+    assert result.message == (
+        f"The entitlement {entitlement.id} was moved to the subscription {REPLACEMENT_ID}."
+    )
 
 
 @pytest.mark.parametrize("status", [EntitlementStatus.TERMINATED, EntitlementStatus.DELETED])
