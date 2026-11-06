@@ -38,6 +38,7 @@ export function useTopBarItems({
           path: SEGMENTS.termination,
           isHidden: !entity?.termination_feedback?.id,
         },
+        { label: tDetails("logs:title"), path: SEGMENTS.logs },
       ].filter((item) => !item.isHidden),
     [tDetails, entity?.termination_feedback?.id],
   );

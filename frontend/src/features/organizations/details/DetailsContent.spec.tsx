@@ -135,7 +135,7 @@ describe("OrganizationDetailsContent", () => {
     expect(screen.queryByTestId("organization-highlights")).not.toBeInTheDocument();
   });
 
-  it("renders the top bar with items for general, dataSources, users, and events in order", () => {
+  it("renders the organization tabs in the top bar in order", () => {
     primeEntity({ id: "org-1" });
 
     renderWithOrganizationRoute(<OrganizationDetailsContent />, {
@@ -143,10 +143,10 @@ describe("OrganizationDetailsContent", () => {
     });
 
     const paths = mockTopBar.mock.lastCall![0].items!.map((item) => item.path);
-    expect(paths).toEqual(["general", "data-sources", "users", "events"]);
+    expect(paths).toEqual(["general", "data-sources", "users", "events", "logs"]);
   });
 
-  it("shows the termination tab last when the organization has termination feedback", () => {
+  it("shows the termination tab before logs when the organization has termination feedback", () => {
     primeEntity({ id: "org-1", termination_feedback: { id: "tf-1", reason: "other" } });
 
     renderWithOrganizationRoute(<OrganizationDetailsContent />, {
@@ -154,7 +154,7 @@ describe("OrganizationDetailsContent", () => {
     });
 
     const paths = mockTopBar.mock.lastCall![0].items!.map((item) => item.path);
-    expect(paths).toEqual(["general", "data-sources", "users", "events", "termination"]);
+    expect(paths).toEqual(["general", "data-sources", "users", "events", "termination", "logs"]);
   });
 
   it.each([
