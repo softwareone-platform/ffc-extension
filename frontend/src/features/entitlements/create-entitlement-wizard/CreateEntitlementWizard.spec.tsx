@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import type { useUserRole } from "~shared/hooks/useUserRole";
 import { renderWithQueryClient } from "~test-utils";
 
 import {
@@ -11,6 +12,12 @@ import {
 } from "./CreateEntitlementWizard.spec.mocks";
 
 import { CreateEntitlementWizard } from "./CreateEntitlementWizard";
+
+type Me = NonNullable<ReturnType<typeof useUserRole>["user"]>;
+
+function makeMe(account: Omit<Me["account"], "external_id">): Me {
+  return { account: { external_id: "ext-1", ...account } } as Me;
+}
 
 function lastWizardProps() {
   return mockWizard.mock.lastCall![0];
@@ -53,6 +60,31 @@ describe("CreateEntitlementWizard", () => {
 
     expect(screen.getByTestId(testId)).toBeInTheDocument();
   });
+
+  it("starts with no affiliate preselected for non-affiliate users", () => {
+    renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
+
+    expect(screen.getByTestId("step-affiliate")).toHaveAttribute("data-affiliate", "null");
+  });
+
+  it.each([
+    ["the account integration", "aws", "aws"],
+    ["the unknown integration when the account has none", null, "unknown"],
+  ] as const)(
+    "preselects the affiliate account with %s for affiliate users",
+    (_scenario, integration, expectedIntegration) => {
+      mockUseUserRole.mockReturnValue({
+        user: makeMe({ id: "aff-1", name: "Affiliate 1", type: "affiliate", integration }),
+        role: "affiliate",
+      });
+
+      renderWithQueryClient(<CreateEntitlementWizard isOpen onClose={jest.fn()} />);
+
+      expect(
+        JSON.parse(screen.getByTestId("step-affiliate").getAttribute("data-affiliate")!),
+      ).toEqual({ id: "aff-1", name: "Affiliate 1", integration: expectedIntegration });
+    },
+  );
 
   it("closing the wizard reports an unsuccessful result when nothing was created", () => {
     const user = userEvent.setup();
