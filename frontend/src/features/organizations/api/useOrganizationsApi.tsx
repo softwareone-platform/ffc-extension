@@ -8,6 +8,7 @@ import {
   DatasourceForceReimport,
   DatasourceRead,
   EmployeeRead,
+  OrganizationEventRead,
   OrganizationRead,
 } from "~api/ffc-api-model";
 import { useEntityApi } from "~shared/hooks/useEntityApi";
@@ -54,6 +55,18 @@ export function useOrganizationsApi() {
     [],
   );
 
+  const listOrganizationLogs = useCallback(
+    (organizationId: string, query?: RqlQuery<OrganizationEventRead>) => {
+      return http({
+        method: "GET",
+        url:
+          `${rootPath}/${organizationId}/events` +
+          getCustomQueryString<OrganizationEventRead>(query),
+      });
+    },
+    [],
+  );
+
   const forceReimportDatasource = useCallback(
     (organizationId: string, datasourceId: string, data?: DatasourceForceReimport) => {
       return http<void>({
@@ -73,6 +86,7 @@ export function useOrganizationsApi() {
       deleteOrganization,
       listOrganizationEmployees,
       listOrganizationDataSources,
+      listOrganizationLogs,
       forceReimportDatasource,
     }),
     [
@@ -82,6 +96,7 @@ export function useOrganizationsApi() {
       deleteOrganization,
       listOrganizationEmployees,
       listOrganizationDataSources,
+      listOrganizationLogs,
       forceReimportDatasource,
     ],
   );

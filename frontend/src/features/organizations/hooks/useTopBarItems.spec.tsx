@@ -21,10 +21,16 @@ describe("useTopBarItems", () => {
   it("returns the organization tabs without termination when there is no termination feedback", () => {
     const items = getItems({ entity: { id: "org-1" } as OrganizationRead });
 
-    expect(items.map((item) => item.path)).toEqual(["general", "data-sources", "users", "events"]);
+    expect(items.map((item) => item.path)).toEqual([
+      "general",
+      "data-sources",
+      "users",
+      "events",
+      "logs",
+    ]);
   });
 
-  it("appends the termination tab when the organization has termination feedback", () => {
+  it("inserts the termination tab before logs when the organization has termination feedback", () => {
     const entity = {
       id: "org-1",
       termination_feedback: { id: "tf-1", reason: "other" },
@@ -32,7 +38,14 @@ describe("useTopBarItems", () => {
 
     const items = getItems({ entity });
 
-    expect(items.at(-1)?.path).toBe("termination");
+    expect(items.map((item) => item.path)).toEqual([
+      "general",
+      "data-sources",
+      "users",
+      "events",
+      "termination",
+      "logs",
+    ]);
   });
 
   it("ignores the organization's termination feedback when a routeId is given", () => {
