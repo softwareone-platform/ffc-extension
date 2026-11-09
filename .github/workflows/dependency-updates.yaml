@@ -1,0 +1,193 @@
+# Reports the dependency updates the repository needs to Microsoft Teams. It
+# opens no pull request and commits nothing: lockfiles are only updated in the
+# throwaway checkout to learn the exact versions an update lands on.
+#
+# Every run sends at most one card per kind, side and branch, and only when
+# there is something to report:
+#   - security: known vulnerabilities found by OSV-Scanner in the lockfiles of
+#     backend, frontend and e2e, on `main` and on the highest numbered
+#     `release/<n>`, whose titles get [HF]. Each branch is scanned on its own.
+#     Accepted risks go in osv-scanner.toml, read from the branch this
+#     workflow runs on.
+#   - version: minor and patch updates within the declared ranges, for backend,
+#     frontend and e2e, on `main` only, as release branches only take fixes.
+#     Internal @swo/* packages are held, as their patch releases move the exact
+#     peer versions they require.
+# The full report of every job is on the workflow run summary page.
+#
+# No secret beyond the existing Teams webhook and npm feed ones is needed:
+# OSV-Scanner queries the public OSV.dev API. Dependabot is not used: there is
+# no .github/dependabot.yml, and "Dependabot security updates" stays off in
+# the repository settings so that it opens no pull requests either.
+name: Dependency updates
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st and the 16th: every 15 days or so.
+    - cron: "0 6 1,16 * *"
+  workflow_dispatch:
+    inputs:
+      updates:
+        description: Which updates to report
+        type: choice
+        default: all
+        options:
+          - all
+          - security
+          - version
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-updates
+  cancel-in-progress: false
+
+jobs:
+  targets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Resolve the updates to report
+        id: matrix
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          # Scheduled runs have no inputs.
+          UPDATES: ${{ inputs.updates || 'all' }}
+        run: |
+          set -euo pipefail
+
+          # Only release/<integer> counts; anything like release/5-rc is ignored.
+          latest=$(gh api --paginate "repos/$REPO/git/matching-refs/heads/release/" --jq '.[].ref' \
+            | sed -n 's#^refs/heads/release/\([0-9]\+\)$#\1#p' \
+            | sort -n | tail -n 1)
+
+          matrix=$(jq -cn --arg updates "$UPDATES" --arg release "${latest:+release/$latest}" '
+            (["main"] + (if $release == "" then [] else [$release] end)) as $bases
+            | [
+                (if $updates != "version" then
+                  $bases[] as $base | ("backend", "frontend", "e2e") as $side
+                  | {kind: "security", side: $side, base: $base}
+                else empty end),
+                (if $updates != "security" then
+                  ("backend", "frontend", "e2e") as $side
+                  | {kind: "version", side: $side, base: "main"}
+                else empty end)
+              ]')
+          echo "Updates to report: $matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  report:
+    name: ${{ matrix.kind }} · ${{ matrix.side }} · ${{ matrix.base }}
+    needs: targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.targets.outputs.matrix) }}
+    env:
+      KIND: ${{ matrix.kind }}
+      SIDE: ${{ matrix.side }}
+      BASE: ${{ matrix.base }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Resolve the report title
+        id: naming
+        run: |
+          set -euo pipefail
+          case "$SIDE" in
+            backend) label=Backend ;;
+            frontend) label=Frontend ;;
+            e2e) label=E2E ;;
+          esac
+          case "$KIND" in
+            security) title="$label security updates for $BASE" ;;
+            version) title="$label minor and patch updates for $BASE" ;;
+          esac
+          if [[ "$BASE" == release/* ]]; then
+            title="[HF] $title"
+          fi
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.base }}
+          persist-credentials: false
+
+      # The script and the Teams action are taken from the branch the workflow
+      # runs on, as an older release branch does not have them.
+      - name: Checkout the workflow tooling
+        uses: actions/checkout@v4
+        with:
+          path: .trusted-actions
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      # A pinned release, checked against the checksum published with it.
+      - name: Install OSV-Scanner
+        if: ${{ matrix.kind == 'security' }}
+        env:
+          OSV_SCANNER_VERSION: v2.7.0
+          OSV_SCANNER_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+        run: |
+          set -euo pipefail
+          bin="$RUNNER_TEMP/osv-scanner"
+          curl -fsSL -o "$bin" \
+            "https://github.com/google/osv-scanner/releases/download/$OSV_SCANNER_VERSION/osv-scanner_linux_amd64"
+          echo "$OSV_SCANNER_SHA256  $bin" | sha256sum --check --strict
+          chmod +x "$bin"
+          "$bin" --version
+          echo "OSV_SCANNER=$bin" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js 24
+        if: ${{ matrix.side != 'backend' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Configure npm authentication
+        if: ${{ matrix.side == 'frontend' }}
+        run: |
+          cat <<EOF > ~/.npmrc
+          //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/registry/:username=github
+          //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/registry/:_password="${NPM_TOKEN_BASE64}"
+          //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/registry/:email=github@softwareone.com
+          //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/:username=github
+          //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/:_password="${NPM_TOKEN_BASE64}"
+          //softwareone-pc.pkgs.visualstudio.com/_packaging/PyraCloud/npm/:email=github@softwareone.com
+          EOF
+        env:
+          NPM_TOKEN_BASE64: ${{ secrets.AZURE_DEVOPS_NPM_TOKEN_BASE64 }}
+
+      - name: Work out the updates
+        id: updates
+        env:
+          TITLE: ${{ steps.naming.outputs.title }}
+        run: |
+          uv run --script .trusted-actions/.github/scripts/dependency_updates.py \
+            --kind "$KIND" \
+            --side "$SIDE" \
+            --base "$BASE" \
+            --repo "$REPO" \
+            --title "$TITLE" \
+            --report .dependency-updates/report.json \
+            --summary "$GITHUB_STEP_SUMMARY" \
+            --osv-scanner "${OSV_SCANNER:-osv-scanner}" \
+            --osv-config .trusted-actions/osv-scanner.toml
+
+      - name: Notify Microsoft Teams
+        if: ${{ steps.updates.outputs.has_updates == 'true' }}
+        uses: ./.trusted-actions/.github/actions/notify-dependency-updates-teams
+        with:
+          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          bot_image_url: https://raw.githubusercontent.com/softwareone-platform/ffc-extension/main/.github/workflows/assets/turing_team_pr_bot.png
+          report_file: .dependency-updates/report.json
+          title: ${{ steps.naming.outputs.title }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
