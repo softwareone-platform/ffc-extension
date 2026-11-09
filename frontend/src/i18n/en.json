@@ -163,6 +163,7 @@
       },
       "users": { "title": "Users" },
       "events": { "title": "Events" },
+      "logs": { "title": "Logs" },
       "termination": {
         "title": "Termination",
         "feedback_title": "Termination feedback",
@@ -221,6 +222,13 @@
       "add_user": "Add user",
       "cancel": "Cancel",
       "save": "Save"
+    },
+    "events": {
+      "level": {
+        "INFO": "Info",
+        "WARNING": "Warning",
+        "ERROR": "Error"
+      }
     }
   },
   "organizations": {
@@ -291,7 +299,10 @@
         "inactiveEntitlements": "Inactive Entitlements",
         "allEntitlements": "All Entitlements",
         "mainEntitlements": "Default",
-        "mainOrganizations": "Default"
+        "mainOrganizations": "Default",
+        "logEventInfo": "Info Logs",
+        "logEventWarning": "Warning Logs",
+        "logEventError": "Error Logs"
       },
       "columns": {
         "actions": "Actions",
@@ -332,7 +343,13 @@
         "deletable_at": "Deletable Since",
         "client": "Client",
         "resource_type": "Resource Type",
-        "last_discovery_at": "Last discovery at"
+        "last_discovery_at": "Last discovery at",
+        "time": "Timestamp",
+        "evt_class": "Event Class",
+        "level": "Level",
+        "description": "Description",
+        "object_id": "Object ID",
+        "object_name": "Object Name"
       },
       "fields": {
         "id": "ID",
@@ -367,7 +384,13 @@
         "organization_name": "Organization Name",
         "client_name": "Client Name",
         "client_id": "Client ID",
-        "client_external_id": "Client External ID"
+        "client_external_id": "Client External ID",
+        "time": "Timestamp",
+        "evt_class": "Event Class",
+        "level": "Level",
+        "description": "Description",
+        "object_id": "Object ID",
+        "object_name": "Object Name"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
@@ -386,6 +409,72 @@
         "load_balancer": "Load Balancer",
         "unknown": "Unknown Resource Type"
       },
+      "evt_class": {
+        "katara_task_failed": "Report task failed",
+        "power_schedule_created": "Power schedule created",
+        "power_schedule_updated": "Power schedule updated",
+        "power_schedule_deleted": "Power schedule deleted",
+        "power_schedule_processed": "Power schedule processed",
+        "organization_created": "Organization created",
+        "organization_deleted": "Organization deleted",
+        "organization_updated": "Organization updated",
+        "organization_disabled": "Organization disabled",
+        "organization_enabled": "Organization enabled",
+        "resource_discovery_failed": "Resource discovery failed",
+        "resources_discovered": "Resources discovered",
+        "resources_clustered_discovered": "Clustered resources discovered",
+        "alert_added": "Alert added",
+        "alert_removed": "Alert removed",
+        "cloud_account_created": "Data source created",
+        "cloud_account_updated": "Data source updated",
+        "cloud_account_deleted": "Data source deleted",
+        "cloud_account_warning": "Data source warning",
+        "report_import_completed": "Billing report import completed",
+        "report_import_failed": "Billing report import failed",
+        "report_import_throttled": "Billing report import throttled",
+        "assignment_request_accepted": "Assignment request accepted",
+        "assignment_request_declined": "Assignment request declined",
+        "root_assigned_resource": "Resource assigned to root pool",
+        "resource_assigned": "Resource assigned",
+        "rules_processing_started": "Assignment rules processing started",
+        "rules_processing_completed": "Assignment rules processing completed",
+        "rule_created": "Assignment rule created",
+        "rule_updated": "Assignment rule updated",
+        "rule_deleted": "Assignment rule deleted",
+        "rule_applied": "Assignment rule applied",
+        "rule_deactivated": "Assignment rule deactivated",
+        "recommendations_dismissed": "Recommendations dismissed",
+        "recommendations_reactivated": "Recommendations reactivated",
+        "pool_created": "Pool created",
+        "pool_updated": "Pool updated",
+        "pool_deleted": "Pool deleted",
+        "policy_created": "Policy created",
+        "policy_updated": "Policy updated",
+        "policy_deleted": "Policy deleted",
+        "policy_enabled": "Policy enabled",
+        "policy_disabled": "Policy disabled",
+        "constraint_created": "Constraint created",
+        "constraint_updated": "Constraint updated",
+        "constraint_deleted": "Constraint deleted",
+        "employee_invited": "User invited",
+        "cluster_types_processing_started": "Cluster types processing started",
+        "cluster_types_processing_done": "Cluster types processing completed",
+        "cluster_type_applied": "Cluster type applied",
+        "cluster_resources_deleted": "Cluster resources deleted",
+        "recalculation_started": "Expenses recalculation started",
+        "recalculation_completed": "Expenses recalculation completed",
+        "recalculation_failed": "Expenses recalculation failed",
+        "shareable_resource_changed": "Shared resource changed",
+        "shareable_resource_deleted": "Shared resource deleted",
+        "shareable_booking_released": "Shared resource booking released",
+        "calendar_connected": "Calendar connected",
+        "calendar_disconnected": "Calendar disconnected",
+        "calendar_warning": "Calendar warning",
+        "calendar_observer_warning": "Calendar sync warning",
+        "technical_audit_submit": "Technical audit submitted",
+        "env_power_mngmt": "Environment power management",
+        "unknown": "Unknown"
+      },
       "userTypes": { "admin": "Admin", "user": "User" },
       "infoDialog": { "noData": { "description": "There is no data available to display." } },
       "actions": { "add": "Add" }
@@ -402,7 +491,8 @@
       "discovery": "Discovery",
       "billing_import": "Billing import",
       "monitoring_metrics": "Monitoring metrics",
-      "noDataSource": "Data source information not available. Selected data source does not exist."
+      "noDataSource": "Data source information not available. Selected data source does not exist.",
+      "logs": "Event logs"
     },
     "properties": {
       "linkedDataSource": "Linked data source ID",

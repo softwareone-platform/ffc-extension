@@ -1,0 +1,127 @@
+import { useMemo } from "react";
+
+import { GridFieldDefinition } from "@swo/design-system/grid";
+
+import { useFixedT } from "~shared/hooks/useFixedT";
+
+export function useFields() {
+  const tFields = useFixedT("shared:grid:fields");
+  const tLevel = useFixedT("organization:events:level");
+  const tEvtClass = useFixedT("shared:grid:evt_class");
+  return useMemo(
+    (): GridFieldDefinition[] => [
+      {
+        title: tFields("time"),
+        name: "time",
+        type: "date",
+      },
+      {
+        title: tFields("level"),
+        name: "level",
+        allowedOperations: ["Filter"],
+        type: "list",
+        options: [
+          { value: "INFO", label: tLevel("INFO") },
+          { value: "WARNING", label: tLevel("WARNING") },
+          { value: "ERROR", label: tLevel("ERROR") },
+        ],
+      },
+      {
+        title: tFields("description"),
+        name: "description",
+        allowedOperations: [],
+      },
+      {
+        title: tFields("evt_class"),
+        name: "evt_class",
+        allowedOperations: [],
+        type: "list",
+        options: [
+          { value: "katara_task_failed", label: tEvtClass("katara_task_failed") },
+          { value: "power_schedule_created", label: tEvtClass("power_schedule_created") },
+          { value: "power_schedule_updated", label: tEvtClass("power_schedule_updated") },
+          { value: "power_schedule_deleted", label: tEvtClass("power_schedule_deleted") },
+          { value: "power_schedule_processed", label: tEvtClass("power_schedule_processed") },
+          { value: "organization_created", label: tEvtClass("organization_created") },
+          { value: "organization_deleted", label: tEvtClass("organization_deleted") },
+          { value: "organization_updated", label: tEvtClass("organization_updated") },
+          { value: "organization_disabled", label: tEvtClass("organization_disabled") },
+          { value: "organization_enabled", label: tEvtClass("organization_enabled") },
+          { value: "resource_discovery_failed", label: tEvtClass("resource_discovery_failed") },
+          { value: "resources_discovered", label: tEvtClass("resources_discovered") },
+          {
+            value: "resources_clustered_discovered",
+            label: tEvtClass("resources_clustered_discovered"),
+          },
+          { value: "alert_added", label: tEvtClass("alert_added") },
+          { value: "alert_removed", label: tEvtClass("alert_removed") },
+          { value: "cloud_account_created", label: tEvtClass("cloud_account_created") },
+          { value: "cloud_account_updated", label: tEvtClass("cloud_account_updated") },
+          { value: "cloud_account_deleted", label: tEvtClass("cloud_account_deleted") },
+          { value: "cloud_account_warning", label: tEvtClass("cloud_account_warning") },
+          { value: "report_import_completed", label: tEvtClass("report_import_completed") },
+          { value: "report_import_failed", label: tEvtClass("report_import_failed") },
+          { value: "report_import_throttled", label: tEvtClass("report_import_throttled") },
+          { value: "assignment_request_accepted", label: tEvtClass("assignment_request_accepted") },
+          { value: "assignment_request_declined", label: tEvtClass("assignment_request_declined") },
+          { value: "root_assigned_resource", label: tEvtClass("root_assigned_resource") },
+          { value: "resource_assigned", label: tEvtClass("resource_assigned") },
+          { value: "rules_processing_started", label: tEvtClass("rules_processing_started") },
+          { value: "rules_processing_completed", label: tEvtClass("rules_processing_completed") },
+          { value: "rule_created", label: tEvtClass("rule_created") },
+          { value: "rule_updated", label: tEvtClass("rule_updated") },
+          { value: "rule_deleted", label: tEvtClass("rule_deleted") },
+          { value: "rule_applied", label: tEvtClass("rule_applied") },
+          { value: "rule_deactivated", label: tEvtClass("rule_deactivated") },
+          { value: "recommendations_dismissed", label: tEvtClass("recommendations_dismissed") },
+          { value: "recommendations_reactivated", label: tEvtClass("recommendations_reactivated") },
+          { value: "pool_created", label: tEvtClass("pool_created") },
+          { value: "pool_updated", label: tEvtClass("pool_updated") },
+          { value: "pool_deleted", label: tEvtClass("pool_deleted") },
+          { value: "policy_created", label: tEvtClass("policy_created") },
+          { value: "policy_updated", label: tEvtClass("policy_updated") },
+          { value: "policy_deleted", label: tEvtClass("policy_deleted") },
+          { value: "policy_enabled", label: tEvtClass("policy_enabled") },
+          { value: "policy_disabled", label: tEvtClass("policy_disabled") },
+          { value: "constraint_created", label: tEvtClass("constraint_created") },
+          { value: "constraint_updated", label: tEvtClass("constraint_updated") },
+          { value: "constraint_deleted", label: tEvtClass("constraint_deleted") },
+          { value: "employee_invited", label: tEvtClass("employee_invited") },
+          {
+            value: "cluster_types_processing_started",
+            label: tEvtClass("cluster_types_processing_started"),
+          },
+          {
+            value: "cluster_types_processing_done",
+            label: tEvtClass("cluster_types_processing_done"),
+          },
+          { value: "cluster_type_applied", label: tEvtClass("cluster_type_applied") },
+          { value: "cluster_resources_deleted", label: tEvtClass("cluster_resources_deleted") },
+          { value: "recalculation_started", label: tEvtClass("recalculation_started") },
+          { value: "recalculation_completed", label: tEvtClass("recalculation_completed") },
+          { value: "recalculation_failed", label: tEvtClass("recalculation_failed") },
+          { value: "shareable_resource_changed", label: tEvtClass("shareable_resource_changed") },
+          { value: "shareable_resource_deleted", label: tEvtClass("shareable_resource_deleted") },
+          { value: "shareable_booking_released", label: tEvtClass("shareable_booking_released") },
+          { value: "calendar_connected", label: tEvtClass("calendar_connected") },
+          { value: "calendar_disconnected", label: tEvtClass("calendar_disconnected") },
+          { value: "calendar_warning", label: tEvtClass("calendar_warning") },
+          { value: "calendar_observer_warning", label: tEvtClass("calendar_observer_warning") },
+          { value: "technical_audit_submit", label: tEvtClass("technical_audit_submit") },
+          { value: "env_power_mngmt", label: tEvtClass("env_power_mngmt") },
+        ],
+      },
+      {
+        title: tFields("object_id"),
+        allowedOperations: ["Filter"],
+        name: "object_id",
+      },
+      {
+        title: tFields("object_name"),
+        allowedOperations: [],
+        name: "object_name",
+      },
+    ],
+    [tFields, tLevel, tEvtClass],
+  );
+}

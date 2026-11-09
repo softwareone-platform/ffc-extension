@@ -51,6 +51,11 @@ const DataSourceAdvancedDetails = lazy(() =>
     default: m.DataSourceAdvancedDetails,
   })),
 );
+const OrganizationLogsDetails = lazy(() =>
+  import("~features/organizations/details/event-logs/EventLogs").then((m) => ({
+    default: m.OrganizationLogsDetails,
+  })),
+);
 
 const allowedRoles = ["admin", "operations"] as const;
 
@@ -75,6 +80,7 @@ export function Organizations() {
           <Route path={SEGMENTS.users} element={<OrganizationUsers />} />
           <Route path={SEGMENTS.events} element={<OrganizationEventsDetails />} />
           <Route path={SEGMENTS.termination} element={<OrganizationTerminationFeedback />} />
+          <Route path={SEGMENTS.logs} element={<OrganizationLogsDetails />} />
         </Route>
       </Routes>
     </RouteGuard>

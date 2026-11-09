@@ -40,6 +40,7 @@ describe("Organizations router", () => {
     ["data sources", "/organizations/org-1/data-sources", "data-sources"],
     ["users", "/organizations/org-1/users", "users"],
     ["events", "/organizations/org-1/events", "events"],
+    ["logs", "/organizations/org-1/logs", "event-logs"],
     [
       "data source details",
       "/organizations/org-1/data-sources/ds-1/details",
