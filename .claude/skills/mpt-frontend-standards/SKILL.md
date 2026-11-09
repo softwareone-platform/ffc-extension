@@ -7,7 +7,7 @@ description: Cross-cutting frontend conventions for MPT frontend projects — pa
 
 Baseline conventions used by every file under the project's `frontend/src/` tree. The feature-specific skills (`mpt-design-system`, `mpt-poc-builder`, `mpt-module-testing`) assume everything here already holds.
 
-**Project-specific bindings** (concrete alias names, CSS prefix, shared wrapper paths, test-utils inventory, entity list) live in the active project's `*-local` skill — in ffc-extension that's **`ffc-local`**. When this skill talks about "the project's shared panel wrapper" or "the project's test-utils factories", resolve names via `ffc-local`.
+**Project-specific bindings** (concrete alias names, CSS prefix, shared wrapper paths, test-utils inventory, entity list) live in the active project's project bindings skill — in ffc-extension that's **`ffc-extension`**. When this skill talks about "the project's shared panel wrapper" or "the project's test-utils factories", resolve names via `ffc-extension`.
 
 **Canonical source of truth** — the project maintains these docs; this skill defers to them on every topic they cover:
 
@@ -26,7 +26,7 @@ This skill covers what those docs don't: path-alias reference, TypeScript deriva
 
 ## Path aliases
 
-Always import by alias — never climb `../../../`. The alias NAMES and the folders they target are project-specific; see the active project's `*-local` skill for the concrete table (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)).
+Always import by alias — never climb `../../../`. The alias NAMES and the folders they target are project-specific; see the active project's project bindings skill for the concrete table (ffc-extension: [`ffc-extension`](../ffc-extension/SKILL.md)).
 
 Rule of thumb: if the file lives outside the current feature folder, use the alias.
 
@@ -120,7 +120,7 @@ Before building anything new, check whether it already exists:
 | Shared layout class               | the project's `shared/styles/_components.scss` namespace                    |
 | Mock axios response               | the project's shared `mockResponse` helper                                  |
 
-Concrete paths and the full inventory are in the active project's `*-local` skill (ffc-extension: [`ffc-local`](../ffc-local/SKILL.md)).
+Concrete paths and the full inventory are in the active project's project bindings skill (ffc-extension: [`ffc-extension`](../ffc-extension/SKILL.md)).
 
 If a Storybook / shared primitive **partially** matches: stop and ask. Don't silently invent a look-alike. (POC-side rationale in `mpt-poc-builder`; test-side in `mpt-module-testing`.)
 
@@ -153,14 +153,8 @@ Rule of thumb per surface:
 - Using `@swo/design-system/*` components (Grid, Modal, Panel, Charts, Chip, Popover, Icon, DatePicker, Navigation) or any of the project's shared DS wrappers → **`mpt-design-system`** (composition recipes, wrapper-vs-raw-DS decisions, gap-table workflow).
 - Building a new sandbox view, tab, grid, chart, side-nav, filter sidebar, or any mock-driven UI → **`mpt-poc-builder`** (folder layout, mock data layer, scaling patterns, POC checklist).
 - Writing or refactoring a `*.spec.tsx` — Grid wrapper, Details container, hook, action, wizard, modal callback, API hook → **`mpt-module-testing`** (jest mock rules, shared test-utils mocks, spec file layout, canonical patterns).
-- Resolving project-specific concrete values (aliases, CSS prefix, wrapper paths, entity list) → **`ffc-local`** / the active project's `*-local` skill.
+- Resolving project-specific concrete values (aliases, CSS prefix, wrapper paths, entity list) → **`ffc-extension`** / the active project's project bindings skill.
 
-## Pointers to workflow skills (git / PR / JIRA)
+## Scope
 
-This skill only covers writing the code. For shipping it, hand off to the `mpt-ignite-skills` plugin:
-
-- Starting a JIRA ticket → branch from master → **`start-feature`** (branch-name prefix by issue type, lowercase-dashes, pull-before-branch).
-- Opening a PR against the right base branch → **`create-pr`** (merge-base-first vs. direct push, confirm description before submit).
-- Writing a PR summary → **`summarize-pr`** (why-focused, short vs. structured by file count).
-- Reviewing PR feedback → **`review-pr-comments`** (severity triage: Blocking / Suggestion / Question / Nit; grouped by topic, not speaker).
-- Cherry-picking a landed commit onto a release branch → **`backport`** (branch from `origin/release/N`, oldest→newest, `-m 1` for merge parents, stop at conflicts).
+This skill only covers **writing the code**. Branching, PRs, JIRA, backports, and devcontainer setup are out of scope — follow the repo's git / PR conventions directly, or install a dedicated workflow-skills plugin if one is available.

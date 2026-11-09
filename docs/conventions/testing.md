@@ -49,8 +49,9 @@ jest.mock("@swo/design-system/grid", () => ({
 }));
 ```
 
-The shortened `@swo/<component>` form from `mpt-vikings-ui` does **not** match
-anything in this repo — the mock silently no-ops and the real module runs.
+The shortened `@swo/<component>` form (seen in other codebases) does **not**
+match anything in this repo — the mock silently no-ops and the real module
+runs.
 
 ### Never spread the real design-system module
 
@@ -81,10 +82,13 @@ it).
 
 **Root manual mocks that are NOT global** (opt in per spec):
 
-- [`__mocks__/react-router-dom.tsx`](../../frontend/src/__mocks__/react-router-dom.tsx)
+- [`frontend/__mocks__/react-router-dom.tsx`](../../frontend/__mocks__/react-router-dom.tsx)
   — pass-through, overrides `Link`. Route-param tests keep the real runtime by default.
-- [`__mocks__/react-i18next.tsx`](../../frontend/src/__mocks__/react-i18next.tsx)
+- [`frontend/__mocks__/react-i18next.tsx`](../../frontend/__mocks__/react-i18next.tsx)
   — identity `useTranslation`; `Trans` renders `i18nKey`.
+
+Jest's manual-mock folder lives at `frontend/__mocks__/` (one level up from
+`src/`), per jest's resolution rules.
 
 ### Never mock
 
