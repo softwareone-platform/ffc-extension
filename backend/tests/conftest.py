@@ -88,6 +88,7 @@ from tests.types import (
     MPTAccountMocker,
     MPTSubscriptionFactory,
     OrderFactory,
+    SubscriptionMocker,
 )
 
 
@@ -2694,6 +2695,36 @@ def mpt_subscription_factory() -> MPTSubscriptionFactory:
         }
 
     return _subscription
+
+
+@pytest.fixture
+def mock_live_subscription_lookup(
+    httpx_mock: HTTPXMock, test_settings: Settings
+) -> SubscriptionMocker:
+    """Make the marketplace answer the live-subscription lookup for a datasource."""
+
+    def _mock(
+        subscriptions: list[dict[str, Any]],
+        datasource_id: str = "ds0001234",
+        products: str = "PRD-1111-1111,PRD-2222-2222",
+    ) -> None:
+        query = (
+            f"and(eq(externalIds.vendor,{datasource_id}),out(status,(Terminated,Expired)),"
+            f"in(product.id,({products})))"
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=(
+                f"{test_settings.mpt_api_base_url}/commerce/subscriptions?{query}"
+                "&select=id,name,status,externalIds&limit=1&offset=0"
+            ),
+            json={
+                "data": subscriptions,
+                "$meta": {"pagination": {"total": len(subscriptions), "limit": 1, "offset": 0}},
+            },
+        )
+
+    return _mock
 
 
 @pytest.fixture
