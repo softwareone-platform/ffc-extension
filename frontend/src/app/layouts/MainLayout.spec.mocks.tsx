@@ -1,6 +1,7 @@
 import type { ComponentProps } from "react";
 
 import type { EntitlementDetailsHeader } from "~features/entitlements/components/EntitlementDetailsHeader";
+import type { DataSourceDetailsHeader } from "~features/organizations/components/DataSourceDetailsHeader";
 import type { OrganizationDetailsHeader } from "~features/organizations/components/OrganizationDetailsHeader";
 import type { PageShell } from "~shared/components/page-shell";
 import { mockUserRoleModule } from "~test-utils/mocks/userRole";
@@ -12,6 +13,7 @@ type MockPageShellProps = ComponentProps<typeof PageShell>;
 type MockPageShellContentProps = ComponentProps<typeof PageShell.Content>;
 type MockOrganizationDetailsHeaderProps = ComponentProps<typeof OrganizationDetailsHeader>;
 type MockEntitlementDetailsHeaderProps = ComponentProps<typeof EntitlementDetailsHeader>;
+type MockDataSourceDetailsHeaderProps = ComponentProps<typeof DataSourceDetailsHeader>;
 
 export const mockHeader = jest.fn() as jest.MockedFunction<(props: MockHeaderProps) => void>;
 export const mockOrganizationDetailsHeader = jest.fn() as jest.MockedFunction<
@@ -19,6 +21,9 @@ export const mockOrganizationDetailsHeader = jest.fn() as jest.MockedFunction<
 >;
 export const mockEntitlementDetailsHeader = jest.fn() as jest.MockedFunction<
   (props: MockEntitlementDetailsHeaderProps) => void
+>;
+export const mockDataSourceDetailsHeader = jest.fn() as jest.MockedFunction<
+  (props: MockDataSourceDetailsHeaderProps) => void
 >;
 
 jest.mock("~shared/components/page-shell", () => ({
@@ -47,6 +52,13 @@ jest.mock("~features/entitlements/components/EntitlementDetailsHeader", () => ({
   EntitlementDetailsHeader: (props: MockEntitlementDetailsHeaderProps) => {
     mockEntitlementDetailsHeader(props);
     return <div data-testid="entitlement-header" />;
+  },
+}));
+
+jest.mock("~features/organizations/components/DataSourceDetailsHeader", () => ({
+  DataSourceDetailsHeader: (props: MockDataSourceDetailsHeaderProps) => {
+    mockDataSourceDetailsHeader(props);
+    return <div data-testid="data-source-header" />;
   },
 }));
 

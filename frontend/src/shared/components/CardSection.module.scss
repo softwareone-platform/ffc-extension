@@ -1,3 +1,11 @@
+.card-section {
+  margin-bottom: var(--spacing-3);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
 .card-section-title {
   margin-bottom: var(--spacing-2);
 }

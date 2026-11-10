@@ -1,4 +1,53 @@
 {
+  "datasource": {
+    "details": {
+      "properties": {
+        "connected_at": "Connected at",
+        "parent": "Parent datasource",
+        "subscription_id": "Subscription ID",
+        "tenant_id": "Tenant ID",
+        "client_id": "Client ID",
+        "account_type": "Account Type",
+        "account_id": "Account ID",
+        "authentication_type": "Authentication Type",
+        "assumed_role_name": "Assumed Role Name",
+        "access_key": "Access Key",
+        "export_type": "Export Type",
+        "use_edp_discount": "Use EDP Discount",
+        "export_name": "Export Name",
+        "bucket_name": "Export Amazon S3 bucket name",
+        "bucket_prefix": "Export path prefix",
+        "region_name": "Export region name",
+        "included_regions": "Allowed regions",
+        "last_report_processed_at": "Last billing report processed",
+        "last_discovery_at": "Last discovery at",
+        "billing_last_attempt": "Last billing report attempt",
+        "status": "Status",
+        "metrics_last_retrieval": "Last metrics retrieval",
+        "metrics_last_attempt": "Last metrics retrieval attempt",
+        "project_id": "Project ID",
+        "billing_dataset_name": "Billing dataset name",
+        "billing_table_name": "Billing table name",
+        "billing_project_id": "Billing project ID"
+      },
+      "accountType": {
+        "member": "Member",
+        "management_standalone": "Management / Standalone"
+      },
+      "authenticationType": {
+        "assumed_role": "Assumed Role",
+        "access_key": "Access Key"
+      },
+      "awsExportType": {
+        "legacy_cur_export": "Legacy cost & usage reports (CUR) export",
+        "standard_data_export": "Standard data export (CUR 2.0)"
+      },
+      "edpDiscount": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    }
+  },
   "entitlement": {
     "details": { "general": { "title": "General" }, "events": { "title": "Events" } },
     "create_info": "Provide the details for the new entitlement.",
@@ -97,13 +146,18 @@
         "title": "Expenses",
         "properties": {
           "limit": "Limit",
-          "forecastThisMonth": "Expenses this month forecast",
+          "forecastThisMonth": "Expenses this month (forecast)",
           "expensesThisMonth": "Expenses this month",
           "expensesLastMonth": "Expenses last month",
-          "possibleSavings": "Possible monthly savings"
+          "possibleSavings": "Possible monthly savings",
+          "resourcesChargedThisMonth": "Resources charged (this month)"
         }
       },
       "dataSources": { "title": "Data Sources" },
+      "dataSource": {
+        "advanced": "Advanced",
+        "details": "Details"
+      },
       "users": { "title": "Users" },
       "events": { "title": "Events" },
       "termination": {
@@ -273,7 +327,9 @@
         "billing_currency": "Billing Currency",
         "linked_organization_id": "Linked Organization ID",
         "deletable_at": "Deletable Since",
-        "client": "Client"
+        "client": "Client",
+        "resource_type": "Resource Type",
+        "last_discovery_at": "Last discovery at"
       },
       "fields": {
         "id": "ID",
@@ -318,6 +374,15 @@
         "gcp_tenant": "GCP tenant",
         "unknown": "Unknown"
       },
+      "resourceType": {
+        "instance": "Instance",
+        "volume": "Volume",
+        "snapshot": "Snapshot",
+        "bucket": "Bucket",
+        "ip_address": "IP Address",
+        "load_balancer": "Load Balancer",
+        "unknown": "Unknown Resource Type"
+      },
       "userTypes": { "admin": "Admin", "user": "User" },
       "infoDialog": { "noData": { "description": "There is no data available to display." } },
       "actions": { "add": "Add" }
@@ -326,7 +391,15 @@
       "additionalIds": "Additional IDs",
       "references": "References",
       "system": "System",
-      "events": "Events"
+      "events": "Events",
+      "properties": "Properties",
+      "authentication": "Authentication",
+      "export": "Export",
+      "billing": "Billing",
+      "discovery": "Discovery",
+      "billing_import": "Billing import",
+      "monitoring_metrics": "Monitoring metrics",
+      "noDataSource": "Data source information not available. Selected data source does not exist."
     },
     "properties": {
       "linkedDataSource": "Linked data source ID",

@@ -166,6 +166,8 @@ spy itself.
 - `renderCell(column, item)` — invoke a grid column's `cell` function safely
   (typed as `Pick<GridColumnDefinition<T>, "cell" | "name">`).
 - `columnByName(columns, name)` — column lookup.
+- `highlightValues()` — reads items rendered by the `inPageHighlight` shared
+  mock into a `{ [title]: value }` map.
 
 ### Modal helpers
 
@@ -176,7 +178,7 @@ spy itself.
 
 [`frontend/src/test-utils/factories/`](../../frontend/src/test-utils/factories/)
 holds typed `Partial<T>`-overlay builders: `makeAccount`, `makeDatasource`,
-`makeEmployee`, `makeEntitlement`, `makeOrganization`. Prefer these over
+`makeDatasourceDetail`, `makeEmployee`, `makeEntitlement`, `makeOrganization`. Prefer these over
 hand-constructed fixtures.
 
 ### Shared mock modules
