@@ -12,6 +12,7 @@ from app.enums import (
     AwsExportType,
     DatasourceImportStatus,
     DatasourceType,
+    EventLevel,
     OrganizationStatus,
     TerminationReason,
 )
@@ -313,6 +314,31 @@ class DatasourceForceReimport(BaseSchema):
             return 0
 
         return int(datetime.combine(self.last_import_at, time.min, tzinfo=UTC).timestamp())
+
+
+class OrganizationEventRead(BaseSchema):
+    # Mirrors an FFC API payload: ignore unknown fields so upstream additions don't break us.
+    model_config = ConfigDict(extra="ignore")
+
+    id: Annotated[str, Field(examples=["8f2c4b1e-6d3a-4f7b-9e2c-1a5d7b3c9e4f"])]
+    time: datetime
+    level: EventLevel
+    evt_class: Annotated[str, Field(examples=["report_import_failed"])]
+    object_id: Annotated[str | None, Field(examples=["5cded1eb-4d7e-4df9-b76f-fc33b5df9eb3"])] = (
+        None
+    )
+    object_type: Annotated[str | None, Field(examples=["cloud_account"])] = None
+    object_name: Annotated[str | None, Field(examples=["swotest02"])] = None
+    description: Annotated[
+        str | None, Field(examples=["Billing report import for swotest02 failed"])
+    ] = None
+    ack: bool
+    acknowledged: datetime | None = None
+    acknowledged_by: str | None = None
+    acknowledged_user: str | None = None
+    resolution: str | None = None
+    initiator_id: str | None = None
+    initiator_name: str | None = None
 
 
 class AdditionalAdminRequestBase(BaseSchema):

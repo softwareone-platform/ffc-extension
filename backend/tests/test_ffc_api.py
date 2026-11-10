@@ -137,3 +137,34 @@ async def test_fetch_datasource_for_organization_raises_on_error_status(
         await ffc_api_client.fetch_datasource_for_organization(
             organization_id="ORG-1", datasource_id="DS-1"
         )
+
+
+async def test_fetch_events_for_organization_gets_admin_organization_events(
+    ffc_api_client: FFCAPIClient, test_settings: Settings, httpx_mock: HTTPXMock
+) -> None:
+    """`fetch_events_for_organization` GETs the organization events with pagination and rql."""
+    httpx_mock.add_response(
+        method="GET",
+        url=(
+            f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/ORG-1/events"
+            "?limit=10&offset=20&eq(level,ERROR)=&order_by(-time)="
+        ),
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"items": [], "total": 0, "limit": 10, "offset": 20},
+    )
+
+    response = await ffc_api_client.fetch_events_for_organization(
+        organization_id="ORG-1", limit=10, offset=20, rql="eq(level,ERROR)&order_by(-time)"
+    )
+
+    assert response.json() == {"items": [], "total": 0, "limit": 10, "offset": 20}
+
+
+async def test_fetch_events_for_organization_raises_on_error_status(
+    ffc_api_client: FFCAPIClient, httpx_mock: HTTPXMock
+) -> None:
+    """`fetch_events_for_organization` raises when the FFC API returns an error."""
+    httpx_mock.add_response(method="GET", status_code=400)
+
+    with pytest.raises(httpx.HTTPStatusError, match="400 Bad Request"):
+        await ffc_api_client.fetch_events_for_organization(organization_id="ORG-1")
