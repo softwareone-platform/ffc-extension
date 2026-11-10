@@ -80,18 +80,24 @@ describe("useColumns (organizations list)", () => {
     expect(screen.getByTestId("avatar")).toHaveAttribute("data-image-src", "/public/a.png");
   });
 
-  it("renders the client column without an avatar when the client has no icon", () => {
-    const { result } = renderHook(() => useColumns());
+  it.each([
+    ["external_id", { external_id: "cli-ext-1", id: "cli-1" }, "cli-ext-1"],
+    ["id when external_id is empty", { external_id: "", id: "cli-1" }, "cli-1"],
+  ])(
+    "renders a jdenticon avatar seeded with %s when the client has no icon",
+    (_scenario, overrides, expectedValue) => {
+      const { result } = renderHook(() => useColumns());
 
-    renderColumnCell(
-      result.current,
-      "client",
-      makeOrganization({ client: makeClientAccount({ icon: null }) }),
-    );
+      renderColumnCell(
+        result.current,
+        "client",
+        makeOrganization({ client: makeClientAccount({ icon: null, ...overrides }) }),
+      );
 
-    expect(screen.getByTestId("entity-reference-cell")).toBeInTheDocument();
-    expect(screen.queryByTestId("avatar")).not.toBeInTheDocument();
-  });
+      expect(screen.getByTestId("avatar")).toHaveAttribute("data-jdenticon-value", expectedValue);
+      expect(screen.getByTestId("avatar")).not.toHaveAttribute("data-image-src");
+    },
+  );
 
   it("falls back to NO_VALUE as client secondary content when external_id is empty", () => {
     const { result } = renderHook(() => useColumns());
