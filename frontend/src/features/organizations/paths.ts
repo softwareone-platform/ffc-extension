@@ -12,6 +12,7 @@ export const SEGMENTS = {
   dataSources: "data-sources",
   users: "users",
   termination: "termination",
+  logs: "logs",
   dataSourceDetails: "details",
   dataSourceAdvanced: "advanced",
 } as const;
