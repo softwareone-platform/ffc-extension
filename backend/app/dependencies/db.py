@@ -55,3 +55,6 @@ TerminationFeedbackRepository = Annotated[
     handlers.TerminationFeedbackHandler,
     Depends(HandlerFactory(handlers.TerminationFeedbackHandler)),
 ]
+ActivityLogRepository = Annotated[
+    handlers.ActivityLogHandler, Depends(HandlerFactory(handlers.ActivityLogHandler))
+]

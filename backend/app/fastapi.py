@@ -17,6 +17,7 @@ from app.dependencies.auth import (
 from app.openapi import generate_openapi_spec
 from app.routers import (
     accounts,
+    activity_logs,
     entitlements,
     events,
     expenses,
@@ -167,6 +168,13 @@ def setup_app():
         ],
         tags=["Auth"],
     )
+    v1_router.include_router(
+        activity_logs.router,
+        prefix="/activity-logs",
+        dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
+        tags=["Audit"],
+    )
+
     events_router.include_router(
         events.router,
         prefix="/commerce",

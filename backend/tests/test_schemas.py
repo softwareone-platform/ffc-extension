@@ -3,8 +3,17 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from app.db.models import Account, Actor, Entitlement, Organization, System
+from app.db.models import (
+    Account,
+    ActivityLog,
+    Actor,
+    ChangeRecord,
+    Entitlement,
+    Organization,
+    System,
+)
 from app.enums import AccountType, ActorType, EntitlementStatus, OrganizationStatus, SystemStatus
+from app.schemas.activity_logs import ActivityLogDetailRead, ActivityLogRead
 from app.schemas.core import ActorRead, convert_model_to_schema, convert_schema_to_model
 from app.schemas.entitlements import EntitlementCreate, EntitlementRead, EntitlementUpdate
 from app.schemas.organizations import (
@@ -376,3 +385,67 @@ def test_organization_invalid_billing_currencies(currency):
     assert len(errors) == 1
     assert errors[0]["loc"] == ("billing_currency",)
     assert str(errors[0]["ctx"]["error"]) == f"Invalid iso4217 currency code: {currency}."
+
+
+def test_activity_log_read_convert_model_to_schema():
+    actor = Actor(id="FUSR-1234-5678", name="Harry Potter", type=ActorType.USER)
+    activity_log = ActivityLog(
+        id="FLOG-1234-5678-9012",
+        timestamp=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
+        actor=actor,
+        action="organization.updated",
+        message="Renamed",
+    )
+
+    activity_log_read = convert_model_to_schema(ActivityLogRead, activity_log)
+
+    assert activity_log_read.id == "FLOG-1234-5678-9012"
+    assert activity_log_read.timestamp == activity_log.timestamp
+    assert activity_log_read.actor.id == "FUSR-1234-5678"
+    assert activity_log_read.actor.name == "Harry Potter"
+    assert activity_log_read.action == "organization.updated"
+    assert activity_log_read.message == "Renamed"
+    assert "changes" not in ActivityLogRead.model_fields
+
+
+def test_activity_log_detail_read_convert_model_to_schema():
+    actor = Actor(id="FUSR-1234-5678", name="Harry Potter", type=ActorType.USER)
+    change = ChangeRecord(
+        object_type="organizations",
+        object_id="FORG-1234-5678",
+        before={"name": "Old"},
+        after={"name": "New"},
+    )
+    activity_log = ActivityLog(
+        id="FLOG-1234-5678-9012",
+        timestamp=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
+        actor=actor,
+        action="organization.updated",
+        message="Renamed",
+        changes=[change],
+    )
+
+    activity_log_read = convert_model_to_schema(ActivityLogDetailRead, activity_log)
+
+    assert activity_log_read.id == "FLOG-1234-5678-9012"
+    assert activity_log_read.changes[0].object_type == "organizations"
+    assert activity_log_read.changes[0].object_id == "FORG-1234-5678"
+    assert activity_log_read.changes[0].before == {"name": "Old"}
+    assert activity_log_read.changes[0].after == {"name": "New"}
+
+
+def test_activity_log_detail_read_without_changes():
+    actor = Actor(id="FUSR-1234-5678", name="Harry Potter", type=ActorType.USER)
+    activity_log = ActivityLog(
+        id="FLOG-1234-5678-9012",
+        timestamp=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
+        actor=actor,
+        action="organization.updated",
+        message="",
+        changes=[],
+    )
+
+    activity_log_read = convert_model_to_schema(ActivityLogDetailRead, activity_log)
+
+    assert activity_log_read.changes == []
+    assert activity_log_read.message == ""

@@ -466,11 +466,13 @@ def activity_log_factory(
         action: str = "organization.updated",
         message: str | None = None,
         timestamp: datetime | None = None,
+        changes: list[ChangeRecord] | None = None,
     ) -> ActivityLog:
         activity_log = ActivityLog(
             actor=actor or await system_factory(),
             action=action,
             message=message or faker.sentence(),
+            changes=changes or [],
         )
         if timestamp is not None:
             activity_log.timestamp = timestamp
