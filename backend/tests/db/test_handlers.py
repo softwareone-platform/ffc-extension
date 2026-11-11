@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 import pytest
+import sqlalchemy
 from pytest_mock import MockerFixture
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +10,7 @@ from sqlalchemy.orm import joinedload
 from app.auth.context import AuthenticationContext
 from app.db.handlers import (
     AccountUserHandler,
+    ActivityLogHandler,
     CannotDeleteError,
     ClientAccountHandler,
     ConstraintViolationError,
@@ -16,7 +18,17 @@ from app.db.handlers import (
     NotFoundError,
     TerminationFeedbackHandler,
 )
-from app.db.models import Account, AccountUser, Base, ClientAccount, Organization, System, User
+from app.db.models import (
+    Account,
+    AccountUser,
+    ActivityLog,
+    Base,
+    ChangeRecord,
+    ClientAccount,
+    Organization,
+    System,
+    User,
+)
 from app.enums import AccountStatus, AccountUserStatus, TerminationReason, UserStatus
 from tests.db.models import (
     DeletableAuditModelForTests,
@@ -539,3 +551,67 @@ async def test_client_account_external_id_unique_for_non_deleted(
 
     with pytest.raises(IntegrityError, match="ix_client_accounts_external_id_for_non_deleted"):
         await client_account_factory(external_id="ACC-1234-5678")
+
+
+async def test_activity_log_handler_get_with_changes_loads_actor_and_changes(
+    db_session: AsyncSession, ffc_extension: System
+) -> None:
+    """`ActivityLogHandler.get_with_changes()` returns the entry with actor and changes loaded."""
+    handler = ActivityLogHandler(db_session)
+    created = await handler.create(
+        ActivityLog(
+            actor=ffc_extension,
+            action="organization.updated",
+            message="Renamed",
+            changes=[
+                ChangeRecord(
+                    object_type="organizations",
+                    object_id="FORG-1234-5678",
+                    before={"name": "Old"},
+                    after={"name": "New"},
+                )
+            ],
+        )
+    )
+    db_session.expunge_all()
+
+    fetched = await handler.get_with_changes(created.id)
+
+    assert fetched.id.startswith(ActivityLog.PK_PREFIX)
+    assert fetched.actor.id == ffc_extension.id
+    assert [change.object_id for change in fetched.changes] == ["FORG-1234-5678"]
+    assert fetched.changes[0].before == {"name": "Old"}
+    assert fetched.changes[0].after == {"name": "New"}
+
+
+async def test_activity_log_handler_get_with_changes_raises_when_missing(
+    db_session: AsyncSession,
+) -> None:
+    """`ActivityLogHandler.get_with_changes()` raises `NotFoundError` for an unknown id."""
+    handler = ActivityLogHandler(db_session)
+
+    with pytest.raises(NotFoundError):
+        await handler.get_with_changes("FLOG-0000-0000-0000")
+
+
+async def test_activity_log_handler_query_db_loads_actor_but_not_changes(
+    db_session: AsyncSession, ffc_extension: System
+) -> None:
+    """`ActivityLogHandler.query_db()` eagerly loads `actor` and leaves `changes` unloaded."""
+    handler = ActivityLogHandler(db_session)
+    for index in range(2):
+        await handler.create(
+            ActivityLog(
+                actor=ffc_extension,
+                action="organization.updated",
+                message=f"Entry {index}",
+                changes=[ChangeRecord(object_type="organizations", object_id=f"FORG-{index}")],
+            )
+        )
+    db_session.expunge_all()
+
+    entries = await handler.query_db(order_by=[ActivityLog.message])
+
+    assert [entry.message for entry in entries] == ["Entry 0", "Entry 1"]
+    assert all(entry.actor.id == ffc_extension.id for entry in entries)
+    assert all("changes" in sqlalchemy.inspect(entry).unloaded for entry in entries)

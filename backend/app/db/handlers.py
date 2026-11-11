@@ -11,13 +11,14 @@ import sqlalchemy
 from sqlalchemy import ColumnExpressionArgument, Select, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.interfaces import ORMOption
 
 from app.auth.context import auth_context
 from app.db.models import (
     Account,
     AccountUser,
+    ActivityLog,
     AdditionalAdminRequest,
     AuditableMixin,
     ClientAccount,
@@ -757,3 +758,24 @@ class DatasourceExpenseHandler(ModelHandler[DatasourceExpense]):
 
 class AdditionalAdminRequestHandler(ModelHandler[AdditionalAdminRequest]):
     pass
+
+
+class ActivityLogHandler(ModelHandler[ActivityLog]):
+    """
+    Handles read and create operations for the ActivityLog model.
+    """
+
+    def __init__(self, session):
+        super().__init__(session)
+        self.default_options = [
+            joinedload(ActivityLog.actor),
+        ]
+
+    async def get_with_changes(self, id: str) -> ActivityLog:
+        entry = await self.first(
+            base_query=select(ActivityLog).options(selectinload(ActivityLog.changes)),
+            where_clauses=[ActivityLog.id == id],
+        )
+        if entry is None:
+            raise NotFoundError(f"ActivityLog with id {id} not found")
+        return entry

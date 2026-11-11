@@ -7,7 +7,9 @@ from sqlalchemy.sql.selectable import Select
 from app.db.models import (
     Account,
     AccountUser,
+    ActivityLog,
     Actor,
+    ChangeRecord,
     ClientAccount,
     DatasourceExpense,
     Entitlement,
@@ -124,6 +126,23 @@ class DatasourceExpenseRules(ModelRQLRules, AuditableMixin):
     expenses = FieldRule()
     total_expenses = FieldRule()
     organization = RelationshipRule(rules=OrganizationRules())
+
+
+class ChangeRecordRule(ModelRQLRules):
+    __model__ = ChangeRecord
+    object_id = FieldRule()
+    object_type = FieldRule()
+
+
+class ActivityLogRules(ModelRQLRules):
+    __model__ = ActivityLog
+
+    id = FieldRule()
+    timestamp = FieldRule()
+    action = FieldRule()
+    message = FieldRule()
+    actor = RelationshipRule(rules=ActorRules())
+    changes = RelationshipRule(rules=ChangeRecordRule())
 
 
 def get_rql_expression_from_querystring(querystring: str) -> str | None:
