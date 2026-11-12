@@ -27,6 +27,10 @@ describe("useFields (organization event logs)", () => {
     expect(getField("time")).toMatchObject({ type: "date" });
   });
 
+  it("marks object_id as a text field", () => {
+    expect(getField("object_id")).toMatchObject({ type: "text" });
+  });
+
   it("exposes level as a filterable list of INFO, WARNING and ERROR", () => {
     const level = getField("level");
 
@@ -50,5 +54,13 @@ describe("useFields (organization event logs)", () => {
     ["object_name", []],
   ])("restricts '%s' to operations %j", (name, allowedOperations) => {
     expect(getField(name).allowedOperations).toEqual(allowedOperations);
+  });
+
+  it.each([
+    ["time", ["null"]],
+    ["level", ["neq", "ne"]],
+    ["object_id", ["contains", "neq", "ne", "notNull", "out", "endsWith", "startsWith", "null"]],
+  ])("hides operators %j for '%s'", (name, hiddenOperators) => {
+    expect(getField(name).hiddenOperators).toEqual(hiddenOperators);
   });
 });

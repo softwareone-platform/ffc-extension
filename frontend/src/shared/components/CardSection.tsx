@@ -6,11 +6,12 @@ import style from "./CardSection.module.scss";
 
 export interface CardSectionProps extends PropsWithChildren {
   readonly title: string;
+  readonly className?: string;
 }
 
-export function CardSection({ children, title }: CardSectionProps) {
+export function CardSection({ children, title, className }: CardSectionProps) {
   return (
-    <div className={style["card-section"]}>
+    <div className={`${style["card-section"]} ${className ?? ""}`}>
       <div className={style["card-section-title"]}>
         <MediumText size={4}>{title}</MediumText>
       </div>

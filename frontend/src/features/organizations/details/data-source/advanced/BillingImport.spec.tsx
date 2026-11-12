@@ -1,7 +1,8 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 import type { useDateDistance } from "~shared/hooks/useDateDistance";
 import { highlightValues, makeDatasourceDetail } from "~test-utils";
+import { mockDesignSystemNotification } from "~test-utils/mocks/designSystemNotification";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
 import { mockEntityStatusChip, mockStatus } from "~test-utils/mocks/entityStatusChip";
@@ -16,6 +17,7 @@ const mockDateDistance = jest.fn<ReturnType<DateDistance>, Parameters<DateDistan
 );
 
 jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHighlight);
+jest.mock("@swo/design-system/notification", () => mockDesignSystemNotification);
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 jest.mock("@swo/design-system/utils", () => mockDesignSystemUtils);
 jest.mock("~shared/components/entity-status-chip", () => mockEntityStatusChip);
@@ -50,5 +52,28 @@ describe("BillingImport", () => {
 
     expect(mockDateDistance.mock.calls).toEqual([[""], [""]]);
     expect(mockStatus).toHaveBeenCalledWith({ status: "" });
+  });
+
+  it("renders the billing error details when the billing has an error", () => {
+    const entity = makeDatasourceDetail({
+      billing: { status: "failed", error: "Access denied" },
+    });
+
+    render(<BillingImport entity={entity} />);
+
+    expect(screen.getByTestId("inline-notification")).toHaveTextContent(
+      "errorDetailsAccess denied",
+    );
+  });
+
+  it.each([
+    ["null", null],
+    ["empty", ""],
+  ])("does not render error details when the billing error is %s", (_, error) => {
+    const entity = makeDatasourceDetail({ billing: { status: "completed", error } });
+
+    render(<BillingImport entity={entity} />);
+
+    expect(screen.queryByTestId("inline-notification")).not.toBeInTheDocument();
   });
 });
