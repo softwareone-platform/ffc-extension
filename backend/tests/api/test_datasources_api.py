@@ -5,9 +5,9 @@ from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 
 from app.conf import Settings
-from app.db.models import Organization
+from app.db.models import Organization, System
 from app.enums import DatasourceType
-from tests.types import ModelFactory
+from tests.types import ActivityLogFetcher, ModelFactory
 
 # ==========================
 # FFC API Mock responses
@@ -459,6 +459,12 @@ async def test_force_reimport_datasource(
     )
     datasource_id = str(uuid.uuid4())
     httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": datasource_id, "name": "AWS prod", "account_id": "123456789012"},
+    )
+    httpx_mock.add_response(
         method="PATCH",
         url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}",
         match_headers={"Secret": test_settings.optscale_cluster_secret},
@@ -490,6 +496,12 @@ async def test_force_reimport_datasource_with_last_import_at(
     datasource_id = str(uuid.uuid4())
     # 2025-09-01T00:00:00+00:00 expressed as seconds since the epoch
     expected_timestamp = 1756684800
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": datasource_id, "name": "AWS prod", "account_id": "123456789012"},
+    )
     httpx_mock.add_response(
         method="PATCH",
         url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}",
@@ -534,6 +546,140 @@ async def test_force_reimport_datasource_no_linked_organization_id(
     }
 
 
+async def test_force_reimport_datasource_records_an_activity_log_entry(
+    organization_factory: ModelFactory[Organization],
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+    ffc_extension: System,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A successful re-import writes one entry naming the datasource, with no change records."""
+    org = await organization_factory(name="Acme", linked_organization_id=str(uuid.uuid4()))
+    datasource_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": datasource_id, "name": "AWS prod", "account_id": "123456789012"},
+    )
+    httpx_mock.add_response(
+        method="PATCH",
+        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=200,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_rest_api_base_url}/schedule_imports",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=200,
+    )
+
+    response = await admin_client.post(
+        f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
+    )
+
+    assert response.status_code == 204
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "organization.datasource_reimported"
+    assert entry.message == (
+        "Datasource 'AWS prod' (123456789012) re-import triggered "
+        f"for organization 'Acme' ({org.id})."
+    )
+    assert entry.actor_id == ffc_extension.id
+    assert entry.changes == []
+
+
+async def test_force_reimport_datasource_records_nothing_when_optscale_fails(
+    organization_factory: ModelFactory[Organization],
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A re-import refused by Optscale leaves no activity log entry behind."""
+    org = await organization_factory(linked_organization_id=str(uuid.uuid4()))
+    datasource_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": datasource_id, "name": "AWS prod", "account_id": "123456789012"},
+    )
+    httpx_mock.add_response(
+        method="PATCH",
+        url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=200,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_rest_api_base_url}/schedule_imports",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=400,
+    )
+
+    response = await admin_client.post(
+        f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
+    )
+
+    assert response.status_code == 502
+    assert await fetch_activity_logs() == []
+
+
+async def test_force_reimport_datasource_not_found(
+    organization_factory: ModelFactory[Organization],
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A datasource unknown to FinOps for Cloud yields a 404 and no activity log entry."""
+    org = await organization_factory(linked_organization_id=str(uuid.uuid4()))
+    datasource_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=404,
+    )
+
+    response = await admin_client.post(
+        f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == f"Datasource with ID `{datasource_id}` wasn't found."
+    assert await fetch_activity_logs() == []
+
+
+async def test_force_reimport_datasource_fetch_error(
+    organization_factory: ModelFactory[Organization],
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A non-404 failure while fetching the datasource is surfaced as a 502."""
+    org = await organization_factory(linked_organization_id=str(uuid.uuid4()))
+    datasource_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+
+    response = await admin_client.post(
+        f"/organizations/{org.id}/datasources/{datasource_id}/force-reimport",
+    )
+
+    assert response.status_code == 502
+    assert f"Error fetching datasource with ID {datasource_id}: 500" in response.json()["detail"]
+    assert await fetch_activity_logs() == []
+
+
 async def test_force_reimport_datasource_optscale_error(
     organization_factory: ModelFactory[Organization],
     test_settings: Settings,
@@ -544,6 +690,12 @@ async def test_force_reimport_datasource_optscale_error(
         linked_organization_id=str(uuid.uuid4()),
     )
     datasource_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_id}",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": datasource_id, "name": "AWS prod", "account_id": "123456789012"},
+    )
     httpx_mock.add_response(
         method="PATCH",
         url=f"{test_settings.optscale_rest_api_base_url}/cloud_accounts/{datasource_id}",

@@ -3,33 +3,15 @@ from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
-from sqlalchemy import event, select
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.auth.context import AuthenticationContext, auth_context
 from app.db.handlers import ClientAccountHandler, OrganizationHandler
-from app.db.models import Account, ActivityLog, Organization
+from app.db.models import Account, Organization
 from tests.db.models import ChildForTests, ParentWithChildrenForTests
-from tests.types import ActivityLogFetcher, ModelFactory
-
-
-@pytest.fixture
-def fetch_activity_logs(db_session: AsyncSession) -> ActivityLogFetcher:
-    """Return a coroutine that loads every activity log with its change records."""
-
-    async def _fetch(action: str | None = None) -> list[ActivityLog]:
-        query = (
-            select(ActivityLog)
-            .options(selectinload(ActivityLog.changes))
-            .order_by(ActivityLog.timestamp, ActivityLog.id)
-        )
-        if action is not None:
-            query = query.where(ActivityLog.action == action)
-        return list((await db_session.scalars(query)).all())
-
-    return _fetch
+from tests.types import ModelFactory
 
 
 @pytest.fixture
