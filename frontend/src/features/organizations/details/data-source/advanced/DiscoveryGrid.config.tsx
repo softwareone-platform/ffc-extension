@@ -78,9 +78,11 @@ export function useGridConfig(data: DatasourceDiscoveryItem[]) {
         isDefaultView: true,
         isToHideToolbar: true,
         selectedView: "default",
+        paging: { pageSize: data.length },
+        isToHideFooter: true,
         ...gridInfoDialogConfig,
       }) as GridInMemoryConfig<DatasourceDiscoveryItem>,
-    [identity, columns, gridInfoDialogConfig],
+    [identity, columns, gridInfoDialogConfig, data],
   );
 
   return useGridInMemory(data, config);

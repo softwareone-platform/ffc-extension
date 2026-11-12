@@ -492,7 +492,8 @@
       "billing_import": "Billing import",
       "monitoring_metrics": "Monitoring metrics",
       "noDataSource": "Data source information not available. Selected data source does not exist.",
-      "logs": "Event logs"
+      "logs": "Logs",
+      "errorDetails": "Error details:"
     },
     "properties": {
       "linkedDataSource": "Linked data source ID",
