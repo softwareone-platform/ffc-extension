@@ -14,6 +14,7 @@ export function useFields() {
         title: tFields("time"),
         name: "time",
         type: "date",
+        hiddenOperators: ["null"],
       },
       {
         title: tFields("level"),
@@ -25,6 +26,7 @@ export function useFields() {
           { value: "WARNING", label: tLevel("WARNING") },
           { value: "ERROR", label: tLevel("ERROR") },
         ],
+        hiddenOperators: ["neq", "ne"],
       },
       {
         title: tFields("description"),
@@ -115,6 +117,17 @@ export function useFields() {
         title: tFields("object_id"),
         allowedOperations: ["Filter"],
         name: "object_id",
+        type: "text",
+        hiddenOperators: [
+          "contains",
+          "neq",
+          "ne",
+          "notNull",
+          "out",
+          "endsWith",
+          "startsWith",
+          "null",
+        ],
       },
       {
         title: tFields("object_name"),

@@ -91,7 +91,7 @@ describe("DiscoveryGrid.config", () => {
       mockUseGridInMemory.mockReturnValue({ columns: [] });
     });
 
-    it("builds an in-memory grid over the discovery items with the toolbar hidden", () => {
+    it("builds an in-memory grid over the discovery items with the toolbar and footer hidden", () => {
       const data = [makeDiscoveryItem()];
 
       renderHook(() => useGridConfig(data));
@@ -104,9 +104,28 @@ describe("DiscoveryGrid.config", () => {
           isDefaultView: true,
           isToHideToolbar: true,
           selectedView: "default",
+          isToHideFooter: true,
           noDataConfiguration: {},
         }),
       );
+    });
+
+    it("sizes the page to fit every discovery item", () => {
+      const data = [makeDiscoveryItem(), makeDiscoveryItem({ resource_type: "volume" })];
+
+      renderHook(() => useGridConfig(data));
+
+      expect(mockUseGridInMemory.mock.lastCall![1]).toMatchObject({ paging: { pageSize: 2 } });
+    });
+
+    it("resizes the page when the discovery items change", () => {
+      const { rerender } = renderHook(({ data }) => useGridConfig(data), {
+        initialProps: { data: [makeDiscoveryItem()] },
+      });
+
+      rerender({ data: [makeDiscoveryItem(), makeDiscoveryItem(), makeDiscoveryItem()] });
+
+      expect(mockUseGridInMemory.mock.lastCall![1]).toMatchObject({ paging: { pageSize: 3 } });
     });
 
     it("returns the in-memory grid props", () => {
