@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from app.activity import activity_recorder
 from app.api_clients.mpt import MPTClient
 from app.db.models import Account, Entitlement
 from app.dependencies.db import EntitlementRepository
@@ -99,15 +100,21 @@ class SubscriptionProcessor(EventProcessor):
             raise SubscriptionNotValidError(
                 f"The format of the datasource id {datasource_id} is not valid."
             )
-        entitlement = await self.entitlement_repo.create(
-            Entitlement(
-                name=self.subscription["name"],
-                affiliate_external_id=self.subscription["id"],
-                datasource_id=datasource_id,
-                status=EntitlementStatus.NEW,
-                owner=self.account,
+        async with activity_recorder(
+            self.entitlement_repo.session,
+            "entitlement.created",
+            f"The entitlement {self.subscription['name']} has been created."
+            f"for the subscription {self.subscription['id']}.",
+        ):
+            entitlement = await self.entitlement_repo.create(
+                Entitlement(
+                    name=self.subscription["name"],
+                    affiliate_external_id=self.subscription["id"],
+                    datasource_id=datasource_id,
+                    status=EntitlementStatus.NEW,
+                    owner=self.account,
+                )
             )
-        )
         return self.completed(f"The entitlement {entitlement.id} was created.")
 
     async def handle_inactive(self, entitlement: Entitlement | None) -> ProcessingResult:

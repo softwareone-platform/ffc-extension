@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typer.testing import CliRunner
 
+from app.activity import APP_ACTOR_ID
 from app.api_clients.mpt import MPTClient
 from app.cli import app
 from app.commands.sync_subscriptions import (
@@ -36,6 +37,7 @@ from app.events.subscriptions.constants import (
 )
 from app.notifications import ColumnHeader
 from tests.types import (
+    ActivityLogFetcher,
     ModelFactory,
     MPTSubscriptionFactory,
     SubscriptionMocker,
@@ -1002,3 +1004,31 @@ async def test_sync_page_stores_the_entitlement_and_provider_with_their_pk_prefi
     assert stored.datasource_id == matching_id
     assert provider.id.startswith(f"{CloudProvider.PK_PREFIX}-")
     assert re.fullmatch(CloudProvider.build_id_regex(), provider.id)
+
+
+async def test_sync_subscription_creation_is_recorded_in_the_activity_log(
+    mpt_client: MPTClient,
+    entitlement_handler: EntitlementHandler,
+    subscription_account: Account,
+    mpt_subscription_factory: MPTSubscriptionFactory,
+    db_session: AsyncSession,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """An entitlement created by the sync is recorded as `entitlement.created` by the app."""
+    subscription = mpt_subscription_factory()
+
+    await sync_subscription(mpt_client, entitlement_handler, subscription_account, subscription, [])
+
+    (entitlement,) = await get_entitlements(db_session, subscription_account)
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "entitlement.created"
+    assert entry.message == (
+        f"The entitlement {subscription['name']} has been created "
+        f"for the subscription {SUBSCRIPTION_ID}."
+    )
+    assert entry.actor_id == APP_ACTOR_ID
+    (change,) = entry.changes
+    assert change.object_id == entitlement.id
+    assert change.before is None
+    assert change.after is not None
+    assert change.after["status"] == "new"

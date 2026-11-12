@@ -8,6 +8,7 @@ from typing import Annotated, Any
 
 import typer
 
+from app.activity import activity_recorder
 from app.api_clients.mpt import MPTClient, get_installation_client
 from app.conf import Settings
 from app.db.base import session_factory
@@ -124,15 +125,21 @@ async def sync_subscription(
             )
         if len(entitlements) == 0:
             datasource_id = get_datasource_id(subscription)
-            created = await entitlement_handler.create(
-                Entitlement(
-                    name=subscription["name"],
-                    affiliate_external_id=sub_id,
-                    datasource_id=datasource_id,
-                    status=EntitlementStatus.NEW,
-                    owner=account,
+            async with activity_recorder(
+                entitlement_handler.session,
+                "entitlement.created",
+                f"The entitlement {subscription['name']} has been created "
+                f"for the subscription {sub_id}.",
+            ):
+                created = await entitlement_handler.create(
+                    Entitlement(
+                        name=subscription["name"],
+                        affiliate_external_id=sub_id,
+                        datasource_id=datasource_id,
+                        status=EntitlementStatus.NEW,
+                        owner=account,
+                    )
                 )
-            )
             logger.info(f"Created entitlement {created.id} for subscription {sub_id}.")
             return SyncResult(
                 subscription_id=sub_id,

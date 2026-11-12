@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.conf import Settings
 from app.db.models import Account, CloudProvider, Entitlement, System, User
 from app.enums import AccountStatus, EntitlementStatus
-from tests.types import ModelFactory
+from tests.types import ActivityLogFetcher, ModelFactory
 
 # ====================
 # Authentication Tests
@@ -1083,3 +1083,145 @@ async def test_create_entitlement_accepts_an_id_matching_the_owner_provider(
         "icon": provider.icon,
         "datasource_id_format": provider.datasource_id_format,
     }
+
+
+# ============
+# Activity log
+# ============
+
+
+async def test_create_entitlement_records_an_activity_log_entry(
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_extension: System,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """Creating an entitlement writes one `entitlement.created` entry with the new row's image."""
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": "SPONSOR_CONTAINER_ID_1234",
+        },
+    )
+
+    assert response.status_code == 201
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "entitlement.created"
+    assert entry.message == "The entitlement AWS has been created."
+    assert entry.actor_id == gcp_extension.id
+    (change,) = entry.changes
+    assert change.object_type == "entitlements"
+    assert change.object_id == response.json()["id"]
+    assert change.before is None
+    assert change.after is not None
+    assert change.after["name"] == "AWS"
+    assert change.after["status"] == "new"
+
+
+async def test_terminate_entitlement_records_an_activity_log_entry(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    admin_user: User,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """Terminating an entitlement writes one entry with the status change and the admin actor."""
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": "tag_id"},
+    )
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=204,
+    )
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 200
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "entitlement.terminated"
+    assert entry.message == f"The entitlement {entitlement_gcp.name} has been terminated."
+    assert entry.actor_id == admin_user.id
+    (change,) = entry.changes
+    assert change.object_id == entitlement_gcp.id
+    assert change.before is not None
+    assert change.after is not None
+    assert change.before["status"] == "active"
+    assert change.after["status"] == "terminated"
+    assert change.before["terminated_at"] is None
+    assert change.after["terminated_at"] is not None
+
+
+async def test_terminate_entitlement_records_nothing_when_untag_fails(
+    entitlement_gcp: Entitlement,
+    admin_client: AsyncClient,
+    admin_user_token: str,
+    db_session: AsyncSession,
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A termination that fails on the FinOps for Cloud side leaves no entry behind."""
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/datasources/{entitlement_gcp.linked_datasource_id}/tags/entitlement",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": "tag_id"},
+    )
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/tags/tag_id",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=500,
+    )
+    entitlement_gcp.status = EntitlementStatus.ACTIVE
+    db_session.add(entitlement_gcp)
+    await db_session.commit()
+
+    response = await admin_client.post(
+        f"/entitlements/{entitlement_gcp.id}/terminate",
+        headers={"Authorization": f"Bearer {admin_user_token}"},
+    )
+
+    assert response.status_code == 502
+    assert await fetch_activity_logs() == []
+
+
+async def test_delete_entitlement_records_an_activity_log_entry(
+    admin_client: AsyncClient,
+    entitlement_factory: ModelFactory[Entitlement],
+    ffc_extension: System,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """Deleting a new entitlement writes one entry with the status going to `deleted`."""
+    entitlement = await entitlement_factory(status=EntitlementStatus.NEW)
+
+    response = await admin_client.delete(f"/entitlements/{entitlement.id}")
+
+    assert response.status_code == 204
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "entitlement.deleted"
+    assert entry.message == f"The entitlement {entitlement.name} has been deleted."
+    assert entry.actor_id == ffc_extension.id
+    (change,) = entry.changes
+    assert change.object_id == entitlement.id
+    assert change.before is not None
+    assert change.after is not None
+    assert change.before["status"] == "new"
+    assert change.after["status"] == "deleted"
