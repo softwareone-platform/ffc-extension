@@ -4,8 +4,8 @@ from httpx import AsyncClient
 from pytest_httpx import HTTPXMock
 
 from app.conf import Settings
-from app.db.models import Organization
-from tests.types import ModelFactory
+from app.db.models import Organization, System
+from tests.types import ActivityLogFetcher, ModelFactory
 
 # =============================================
 # Get employees within an organization
@@ -310,3 +310,76 @@ async def test_make_user_admin_error_assigning_role(
     )
     assert response.status_code == 502
     assert "Error making employee admin in FinOps for Cloud: 400" in response.json()["detail"]
+
+
+async def test_make_employee_admin_records_an_activity_log_entry(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+    ffc_extension: System,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A successful promotion writes one entry naming the user and the organization, no changes."""
+    user_id = str(uuid.uuid4())
+    org = await organization_factory(name="Acme", linked_organization_id=str(uuid.uuid4()))
+    auth_user_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_rest_api_base_url}/employees/{user_id}?roles=true",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": user_id,
+            "organization_id": org.linked_organization_id,
+            "auth_user_id": auth_user_id,
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_auth_api_base_url}/users/{auth_user_id}/assignment_register",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={"id": str(uuid.uuid4())},
+    )
+
+    response = await admin_client.post(f"/organizations/{org.id}/employees/{user_id}/make-admin")
+
+    assert response.status_code == 204
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "user.promoted_to_admin"
+    assert entry.message == f"User {user_id} promoted to admin for the Organization Acme."
+    assert entry.actor_id == ffc_extension.id
+    assert entry.changes == []
+
+
+async def test_make_employee_admin_records_nothing_when_optscale_fails(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A promotion refused by FinOps for Cloud leaves no entry behind."""
+    user_id = str(uuid.uuid4())
+    org = await organization_factory(linked_organization_id=str(uuid.uuid4()))
+    auth_user_id = str(uuid.uuid4())
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_rest_api_base_url}/employees/{user_id}?roles=true",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        json={
+            "id": user_id,
+            "organization_id": org.linked_organization_id,
+            "auth_user_id": auth_user_id,
+        },
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{test_settings.optscale_auth_api_base_url}/users/{auth_user_id}/assignment_register",
+        match_headers={"Secret": test_settings.optscale_cluster_secret},
+        status_code=400,
+    )
+
+    response = await admin_client.post(f"/organizations/{org.id}/employees/{user_id}/make-admin")
+
+    assert response.status_code == 502
+    assert await fetch_activity_logs() == []

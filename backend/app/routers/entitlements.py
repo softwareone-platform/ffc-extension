@@ -4,12 +4,14 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import ColumnExpressionArgument, Select
 
+from app.activity import activity_recorder
 from app.db.handlers import NotFoundError
 from app.db.models import Account, Entitlement
 from app.dependencies.api_clients import FFCAPIClient
 from app.dependencies.auth import AuthorizedAccountTypes, CurrentAuthContext
 from app.dependencies.db import (
     AccountRepository,
+    DBSession,
     EntitlementRepository,
 )
 from app.dependencies.path import EntitlementId
@@ -80,6 +82,7 @@ async def create_entitlement(
     account_repo: AccountRepository,
     entitlement_repo: EntitlementRepository,
     auth_context: CurrentAuthContext,
+    db_session: DBSession,
 ):
     owner = None
     if auth_context.account.type == AccountType.AFFILIATE:
@@ -134,7 +137,12 @@ async def create_entitlement(
 
     entitlement = convert_schema_to_model(data, Entitlement)
     entitlement.owner = owner
-    db_entitlement = await entitlement_repo.create(entitlement)
+    async with activity_recorder(
+        db_session,
+        "entitlement.created",
+        f"The entitlement {entitlement.name} has been created.",
+    ):
+        db_entitlement = await entitlement_repo.create(entitlement)
     return convert_model_to_schema(EntitlementRead, db_entitlement)
 
 
@@ -154,6 +162,7 @@ async def terminate_entitlement(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
     entitlement_repo: EntitlementRepository,
     ffcapi_client: FFCAPIClient,
+    db_session: DBSession,
 ):
     if entitlement.status == EntitlementStatus.TERMINATED:
         raise HTTPException(
@@ -168,22 +177,26 @@ async def terminate_entitlement(
                 f" current status is {entitlement.status.value}."
             ),
         )
+    async with activity_recorder(
+        db_session,
+        "entitlement.terminated",
+        f"The entitlement {entitlement.name} has been terminated.",
+    ):
+        entitlement = await entitlement_repo.terminate(entitlement)
+        with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
+            tag_data = None
+            try:
+                response = await ffcapi_client.get_tag_by_datasource_name(
+                    str(entitlement.linked_datasource_id),
+                    "entitlement",
+                )
+                tag_data = response.json()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code != 404:
+                    raise e
 
-    entitlement = await entitlement_repo.terminate(entitlement)
-    with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
-        tag_data = None
-        try:
-            response = await ffcapi_client.get_tag_by_datasource_name(
-                str(entitlement.linked_datasource_id),
-                "entitlement",
-            )
-            tag_data = response.json()
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code != 404:
-                raise e
-
-        if tag_data:
-            await ffcapi_client.delete_tag(tag_data["id"])
+            if tag_data:
+                await ffcapi_client.delete_tag(tag_data["id"])
 
     return convert_model_to_schema(EntitlementRead, entitlement)
 
@@ -192,10 +205,16 @@ async def terminate_entitlement(
 async def delete_entitlement_by_id(
     entitlement: Annotated[Entitlement, Depends(fetch_entitlement_or_404)],
     entitlement_repo: EntitlementRepository,
+    db_session: DBSession,
 ):
     if entitlement.status != EntitlementStatus.NEW:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only Entitlements in status `new` can be deleted.",
         )
-    await entitlement_repo.delete(entitlement)
+    async with activity_recorder(
+        db_session,
+        "entitlement.deleted",
+        f"The entitlement {entitlement.name} has been deleted.",
+    ):
+        await entitlement_repo.delete(entitlement)

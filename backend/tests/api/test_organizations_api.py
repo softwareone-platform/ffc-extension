@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.conf import Settings
 from app.db.models import ClientAccount, Organization, System, TerminationFeedback
 from app.enums import OrganizationStatus, TerminationReason
-from tests.types import ModelFactory
+from tests.types import ActivityLogFetcher, ModelFactory
 
 # =================
 # Get Organizations
@@ -710,6 +710,73 @@ async def test_update_organization_name(
         assert db_org.name == updated_name
 
 
+async def test_update_organization_records_an_activity_log_entry(
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+    ffc_extension: System,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A successful update writes one `organization.updated` entry with the before/after images."""
+    db_org = await organization_factory(
+        name="initial_name",
+        operations_external_id="initial_external_id",
+        linked_organization_id="ORG-123",
+    )
+    httpx_mock.add_response(
+        method="PATCH",
+        url=f"https://opt-api.ffc.com/organizations/{db_org.linked_organization_id}",
+        json={"id": db_org.linked_organization_id, "name": "new_name"},
+    )
+
+    response = await admin_client.put(
+        f"/organizations/{db_org.id}",
+        json={"name": "new_name", "operations_external_id": "new_external_id"},
+    )
+
+    assert response.status_code == 200
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "organization.updated"
+    assert entry.message == "The Organization initial_name was renamed in new_name."
+    assert entry.actor_id == ffc_extension.id
+    (change,) = entry.changes
+    assert change.object_type == "organizations"
+    assert change.object_id == db_org.id
+    assert change.before is not None
+    assert change.after is not None
+    assert change.before["name"] == "initial_name"
+    assert change.after["name"] == "new_name"
+    assert change.before["operations_external_id"] == "initial_external_id"
+    assert change.after["operations_external_id"] == "new_external_id"
+
+
+async def test_update_organization_records_nothing_when_optscale_fails(
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A failed update leaves no activity log entry behind."""
+    db_org = await organization_factory(
+        name="initial_name",
+        operations_external_id="initial_external_id",
+        linked_organization_id="ORG-123",
+    )
+    httpx_mock.add_response(
+        method="PATCH",
+        url=f"https://opt-api.ffc.com/organizations/{db_org.linked_organization_id}",
+        status_code=500,
+    )
+
+    response = await admin_client.put(
+        f"/organizations/{db_org.id}",
+        json={"name": "new_name", "operations_external_id": "new_external_id"},
+    )
+
+    assert response.status_code == 502
+    assert await fetch_activity_logs() == []
+
+
 @pytest.mark.parametrize(
     ("optscale_status_code", "expected_status_code"),
     [
@@ -841,6 +908,76 @@ async def test_delete_organization(
     response = await admin_client.delete(f"/organizations/{db_org.id}")
     assert response.status_code == 400
     assert response.json()["detail"] == f"Organization {db_org.name} is already deleted."
+
+
+@time_machine.travel("2026-08-1", tick=False)
+async def test_delete_organization_records_an_activity_log_entry(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+    ffc_extension: System,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """Deleting an organization writes one entry with the status going to `deleted`."""
+    db_org = await organization_factory(
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime(2026, 6, 30, tzinfo=UTC),
+        name="Test organization",
+        linked_organization_id="UUID-1234-5678-9098-7654",
+    )
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_rest_api_base_url}/organizations/{db_org.linked_organization_id}",
+        status_code=204,
+    )
+
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
+
+    assert response.status_code == 204
+    (entry,) = await fetch_activity_logs()
+    assert entry.action == "organization.deleted"
+    assert entry.message == (
+        f"The Organization Test organization ({db_org.operations_external_id}) "
+        "deleted from FinOps for Cloud and marked as deleted."
+    )
+    assert entry.actor_id == ffc_extension.id
+    (change,) = entry.changes
+    assert change.object_type == "organizations"
+    assert change.object_id == db_org.id
+    assert change.before is not None
+    assert change.after is not None
+    assert change.before["status"] == "terminated"
+    assert change.after["status"] == "deleted"
+    assert change.before["deleted_at"] is None
+    assert change.after["deleted_at"] is not None
+
+
+async def test_delete_organization_records_nothing_when_optscale_fails(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    admin_client: AsyncClient,
+    httpx_mock: HTTPXMock,
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """A deletion refused by FinOps for Cloud leaves no entry behind."""
+    db_org = await organization_factory(
+        name="Test organization",
+        linked_organization_id="UUID-1234-5678-9098-7654",
+        status=OrganizationStatus.TERMINATED,
+        terminated_at=datetime.now(UTC) - relativedelta(months=3),
+    )
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{test_settings.optscale_rest_api_base_url}/organizations/{db_org.linked_organization_id}",
+        status_code=500,
+        text="Internal Server Error",
+    )
+
+    response = await admin_client.delete(f"/organizations/{db_org.id}")
+
+    assert response.status_code == 502
+    assert await fetch_activity_logs() == []
 
 
 @time_machine.travel("2026-08-1", tick=False)

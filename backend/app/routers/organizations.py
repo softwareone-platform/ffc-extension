@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import create_page
 from sqlalchemy import Select
 
+from app.activity import activity_recorder
 from app.api_clients.optscale import UserDoesNotExist
-from app.db.handlers import ConstraintViolationError, NotFoundError
+from app.db.handlers import ConstraintViolationError, NotFoundError, OrganizationHandler
 from app.db.models import AdditionalAdminRequest, Organization
 from app.dependencies.api_clients import (
     FFCAPIClient,
@@ -20,6 +21,7 @@ from app.dependencies.api_clients import (
 from app.dependencies.auth import AuthorizedAccountTypes
 from app.dependencies.db import (
     AdditionalAdminRequestRepository,
+    DBSession,
     OrganizationRepository,
 )
 from app.dependencies.path import OrganizationId
@@ -195,22 +197,29 @@ async def force_reimport_datasource(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
     optscale_client: OptscaleClient,
+    db_session: DBSession,
     data: DatasourceForceReimport | None = None,
 ):
     validate_linked_organization_id(organization)
     # Optscale expects the import timestamps as seconds since the epoch.
     last_import_at = data.last_import_at_timestamp if data is not None else 0
-    with wrap_http_error_in_502(
-        f"Error scheduling import of cloud account with ID {datasource_id}"
+    async with activity_recorder(
+        db_session,
+        "organization.datasource_reimported",
+        f"Datasource {datasource_id} of organization {organization.name} re-imported "
+        "from FinOps for Cloud.",
     ):
-        await optscale_client.update_datasource(
-            datasource_id=datasource_id,
-            payload={
-                "last_import_at": last_import_at,
-                "last_import_modified_at": last_import_at,
-            },
-        )
-        await optscale_client.force_reimport_datasource(datasource_id)
+        with wrap_http_error_in_502(
+            f"Error scheduling import of cloud account with ID {datasource_id}"
+        ):
+            await optscale_client.update_datasource(
+                datasource_id=datasource_id,
+                payload={
+                    "last_import_at": last_import_at,
+                    "last_import_modified_at": last_import_at,
+                },
+            )
+            await optscale_client.force_reimport_datasource(datasource_id)
 
 
 @router.get(
@@ -291,16 +300,22 @@ async def make_organization_user_admin(
     user_id: UUID,
     optscale_auth_client: OptscaleAuthClient,
     optscale_client: OptscaleClient,
+    db_session: DBSession,
 ):
-    with wrap_http_error_in_502("Error making employee admin in FinOps for Cloud"):
-        # check user exists in optscale
-        response = await optscale_client.fetch_user_by_id(user_id)
-        user = response.json()
-        # assign admin role of current organization to the user
-        await optscale_auth_client.make_user_admin(
-            organization.linked_organization_id,  # type: ignore
-            user["auth_user_id"],
-        )
+    async with activity_recorder(
+        db_session,
+        "user.promoted_to_admin",
+        f"User {user_id} promoted to admin for the Organization {organization.name}.",
+    ):
+        with wrap_http_error_in_502("Error making employee admin in FinOps for Cloud"):
+            # check user exists in optscale
+            response = await optscale_client.fetch_user_by_id(user_id)
+            user = response.json()
+            # assign admin role of current organization to the user
+            await optscale_auth_client.make_user_admin(
+                organization.linked_organization_id,  # type: ignore
+                user["auth_user_id"],
+            )
 
 
 @router.put(
@@ -322,8 +337,23 @@ async def update_organization(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     organization_repo: OrganizationRepository,
     optscale_client: OptscaleClient,
+    db_session: DBSession,
     data: OrganizationUpdate,
 ):
+    async with activity_recorder(
+        db_session,
+        "organization.updated",
+        f"The Organization {db_organization.name} was renamed in {data.name}.",
+    ):
+        return await _update_organization(db_organization, organization_repo, optscale_client, data)
+
+
+async def _update_organization(
+    db_organization: Organization,
+    organization_repo: OrganizationHandler,
+    optscale_client: OptscaleClient,
+    data: OrganizationUpdate,
+) -> OrganizationRead:
     original_external_id = db_organization.operations_external_id
     external_id_changed = (
         data.operations_external_id is not None
@@ -396,6 +426,7 @@ async def delete_organization_by_id(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     organization_repo: OrganizationRepository,
     optscale_client: OptscaleClient,
+    db_session: DBSession,
 ):
     if db_organization.status == OrganizationStatus.DELETED:
         raise HTTPException(
@@ -426,8 +457,13 @@ async def delete_organization_by_id(
         await optscale_client.delete_organization(
             organization_id=db_organization.linked_organization_id,  # type: ignore
         )
-
-    await organization_repo.delete(db_organization)
+    async with activity_recorder(
+        db_session,
+        "organization.deleted",
+        f"The Organization {db_organization.name} ({db_organization.operations_external_id}) "
+        "deleted from FinOps for Cloud and marked as deleted.",
+    ):
+        await organization_repo.delete(db_organization)
 
 
 @router.post(

@@ -17,11 +17,13 @@ from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
 )
+from sqlalchemy.orm import selectinload
 
 from app.activity.constants import APP_ACTOR_ID
 from app.api_clients.base import BaseAPIClient
@@ -88,6 +90,7 @@ from app.fastapi import setup_app
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import (
+    ActivityLogFetcher,
     ModelFactory,
     MPTAccountFactory,
     MPTAccountMocker,
@@ -455,6 +458,23 @@ def app_factory(faker: Faker, db_session: AsyncSession) -> ModelFactory[App]:
         return app
 
     return _app
+
+
+@pytest.fixture
+def fetch_activity_logs(db_session: AsyncSession) -> ActivityLogFetcher:
+    """Return a coroutine that loads every activity log with its change records."""
+
+    async def _fetch(action: str | None = None) -> list[ActivityLog]:
+        query = (
+            select(ActivityLog)
+            .options(selectinload(ActivityLog.changes))
+            .order_by(ActivityLog.timestamp, ActivityLog.id)
+        )
+        if action is not None:
+            query = query.where(ActivityLog.action == action)
+        return list((await db_session.scalars(query)).all())
+
+    return _fetch
 
 
 @pytest.fixture
