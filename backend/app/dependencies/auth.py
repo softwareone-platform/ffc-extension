@@ -107,6 +107,7 @@ async def get_authentication_context_for_account_user(
             models.User(
                 name=user_data["name"],
                 email=user_data["email"],
+                icon=user_data.get("icon"),
                 external_id=user_id,
                 status=models.UserStatus.ACTIVE,
             )

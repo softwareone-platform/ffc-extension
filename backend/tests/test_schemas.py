@@ -14,7 +14,12 @@ from app.db.models import (
 )
 from app.enums import AccountType, ActorType, EntitlementStatus, OrganizationStatus, SystemStatus
 from app.schemas.activity_logs import ActivityLogDetailRead, ActivityLogRead
-from app.schemas.core import ActorRead, convert_model_to_schema, convert_schema_to_model
+from app.schemas.core import (
+    ActorRead,
+    ActorReference,
+    convert_model_to_schema,
+    convert_schema_to_model,
+)
 from app.schemas.entitlements import EntitlementCreate, EntitlementRead, EntitlementUpdate
 from app.schemas.organizations import (
     OrganizationBase,
@@ -34,6 +39,21 @@ def test_actor_read_convert_model_to_schema():
 
     assert actor_read.id == test_actor.id
     assert actor_read.type == test_actor.type
+
+
+@pytest.mark.parametrize("icon", ["/v1/accounts/users/USR-1234-5678/icon", None])
+def test_actor_reference_convert_model_to_schema_includes_icon(icon: str | None) -> None:
+    """`ActorReference` exposes the actor's icon, or null when the actor has none."""
+    test_actor = Actor(id="FUSR-1234-5678", type=ActorType.USER, name="Jane", icon=icon)
+
+    actor_reference = convert_model_to_schema(ActorReference, test_actor)
+
+    assert actor_reference.model_dump(mode="json") == {
+        "id": "FUSR-1234-5678",
+        "type": "user",
+        "name": "Jane",
+        "icon": icon,
+    }
 
 
 def test_system_create_convert_schema_to_model():

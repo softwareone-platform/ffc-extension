@@ -12,6 +12,7 @@ from app.commands import (
     sync_entitlements_datasources,
     sync_orgs_client_account,
     sync_subscriptions,
+    sync_users,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "delete_terminated_orgs",
     "sync_subscriptions",
     "sync_orgs_client_account",
+    "sync_users",
 ]
