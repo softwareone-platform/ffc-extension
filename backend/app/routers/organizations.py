@@ -118,6 +118,10 @@ async def get_organization_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     ffc_api_client: FFCAPIClient,
 ):
+    if organization.status == OrganizationStatus.DELETED:
+        # The organization no longer exists in Optscale, so there are no expenses to fetch
+        return convert_model_to_schema(OrganizationRead, organization)
+
     linked_organization_id = validate_linked_organization_id(organization)
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
         response = await ffc_api_client.fetch_expenses_for_organization(
