@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient, Response
 from pytest_asyncio import is_async_test
 from pytest_httpx import HTTPXMock
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -583,6 +583,7 @@ def user_factory(
         status: UserStatus = UserStatus.ACTIVE,
         account: Account | None = None,
         accountuser_status: AccountUserStatus = AccountUserStatus.ACTIVE,
+        icon: str | None = None,
     ) -> User:
         account = account or await account_factory()
         user = User(
@@ -590,6 +591,7 @@ def user_factory(
             email=email or faker.email(),
             external_id=external_id or str(uuid.uuid4()),
             status=status,
+            icon=icon,
         )
 
         db_session.add(user)
@@ -2933,3 +2935,23 @@ def mock_installation_client(
         return_value=mpt_client,
     )
     return mpt_client
+
+
+# ---------------------------------------------------------------------------
+# sync-users command
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_sync_users_installation_client(mocker: MockerFixture, mpt_client: MPTClient) -> MockType:
+    """Make the sync-users command resolve its installation client to the test `MPTClient`."""
+    return mocker.patch(
+        "app.commands.sync_users.get_installation_client",
+        return_value=mpt_client,
+    )
+
+
+@pytest.fixture
+async def operations_account(account_factory: ModelFactory[Account]) -> Account:
+    """The Operations account whose installation is used to sync users."""
+    return await account_factory(type=AccountType.OPERATIONS, external_id="ACC-0000-OPS")

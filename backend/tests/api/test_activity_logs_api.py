@@ -42,7 +42,12 @@ async def test_get_all_activity_logs_returns_entries_without_changes(
     assert item == {
         "id": activity_log.id,
         "timestamp": "2026-01-01T12:00:00Z",
-        "actor": {"id": ffc_extension.id, "type": "system", "name": ffc_extension.name},
+        "actor": {
+            "id": ffc_extension.id,
+            "type": "system",
+            "name": ffc_extension.name,
+            "icon": None,
+        },
         "action": "organization.updated",
         "message": "Renamed",
     }
@@ -203,7 +208,12 @@ async def test_get_activity_log_by_id_includes_changes(
     assert response.json() == {
         "id": activity_log.id,
         "timestamp": "2026-01-01T12:00:00Z",
-        "actor": {"id": ffc_extension.id, "type": "system", "name": ffc_extension.name},
+        "actor": {
+            "id": ffc_extension.id,
+            "type": "system",
+            "name": ffc_extension.name,
+            "icon": None,
+        },
         "action": "organization.updated",
         "message": "Renamed",
         "changes": [
