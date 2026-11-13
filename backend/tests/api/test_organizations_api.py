@@ -512,6 +512,31 @@ async def test_get_terminated_organization_by_id(
     assert data["deletable_at"] == "2026-09-01T00:00:00Z"
 
 
+async def test_get_deleted_organization_by_id_skips_optscale(
+    organization_factory: ModelFactory[Organization],
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+    httpx_mock: HTTPXMock,
+) -> None:
+    """A deleted organization is returned without fetching expenses from Optscale."""
+    org = await organization_factory(
+        linked_organization_id="ee7ebfaf-a222-4209-aecc-67861694a488",
+        status=OrganizationStatus.DELETED,
+        terminated_at=datetime(2026, 7, 15, 13, 45, 12, tzinfo=UTC),
+    )
+
+    response = await api_client.get(
+        f"/organizations/{org.id}", headers={"Authorization": f"Bearer {ffc_jwt_token}"}
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == org.id
+    assert data["status"] == "deleted"
+    assert "expenses_info" not in data
+    assert httpx_mock.get_requests() == []
+
+
 async def test_get_non_existant_organization(api_client: AsyncClient, ffc_jwt_token: str):
     not_found_id = "FORG-1234-5678-9012"
     response = await api_client.get(
