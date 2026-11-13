@@ -71,8 +71,11 @@ jest.mock("@swo/design-system/navigation", () => ({
   },
 }));
 
-function primeEntity(entity: Partial<OrganizationRead> | undefined) {
-  mockUseOrganizationDetailsApi.mockReturnValue({ data: entity } as unknown as ApiResult);
+function primeEntity(entity: Partial<OrganizationRead> | undefined, isLoading = false) {
+  mockUseOrganizationDetailsApi.mockReturnValue({
+    data: entity,
+    isLoading,
+  } as unknown as ApiResult);
 }
 
 describe("OrganizationDetailsContent", () => {
@@ -182,5 +185,15 @@ describe("OrganizationDetailsContent", () => {
     expect(mockOrganizationsProvider).toHaveBeenCalledWith(
       expect.objectContaining({ organization: entity }),
     );
+  });
+
+  it("renders an empty top bar while the organization is loading", () => {
+    primeEntity(undefined, true);
+
+    renderWithOrganizationRoute(<OrganizationDetailsContent />, {
+      routePath: "/organizations/:organizationId/*",
+    });
+
+    expect(mockTopBar.mock.lastCall![0].items).toEqual([]);
   });
 });

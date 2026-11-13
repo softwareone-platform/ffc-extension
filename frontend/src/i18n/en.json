@@ -1,5 +1,7 @@
 {
   "datasource": {
+    "breadcrumb": "Data source details",
+    "force_import": "Force import",
     "details": {
       "properties": {
         "connected_at": "Connected at",
