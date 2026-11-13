@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 
 import type { OrganizationRead } from "~api/ffc-api-model";
+import { makeOrganization } from "~test-utils/factories";
 
 import { useTopBarItems } from "./useTopBarItems";
 
@@ -58,4 +59,36 @@ describe("useTopBarItems", () => {
 
     expect(items.map((item) => item.path)).not.toContain("termination");
   });
+
+  it.each([
+    ["without termination feedback", undefined, ["general", "events"]],
+    [
+      "with termination feedback",
+      { id: "tf-1", reason: "other" },
+      ["general", "events", "termination"],
+    ],
+  ] as const)(
+    "hides the data sources, users and logs tabs for a deleted organization %s",
+    (_, terminationFeedback, expectedPaths) => {
+      const entity = makeOrganization({
+        status: "deleted",
+        termination_feedback: terminationFeedback,
+      });
+
+      const items = getItems({ entity });
+
+      expect(items.map((item) => item.path)).toEqual(expectedPaths);
+    },
+  );
+
+  it.each(["active", "terminated"] as const)(
+    "keeps the data sources, users and logs tabs for an organization with status '%s'",
+    (status) => {
+      const items = getItems({ entity: makeOrganization({ status }) });
+
+      expect(items.map((item) => item.path)).toEqual(
+        expect.arrayContaining(["data-sources", "users", "logs"]),
+      );
+    },
+  );
 });
