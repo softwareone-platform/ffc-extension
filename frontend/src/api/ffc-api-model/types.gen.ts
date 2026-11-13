@@ -417,6 +417,109 @@ export type AccountUserReferenceWithUser = {
 export type AccountUserStatus = 'invited' | 'invitation-expired' | 'active' | 'deleted';
 
 /**
+ * ActivityLogDetailRead
+ */
+export type ActivityLogDetailRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Timestamp
+     */
+    timestamp: string;
+    /**
+     * ActorReference
+     */
+    actor: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * ActorType
+         */
+        type: 'user' | 'system' | 'app';
+        /**
+         * Name
+         */
+        name: string;
+    };
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Changes
+     */
+    changes?: Array<{
+        /**
+         * Object Type
+         */
+        object_type: string;
+        /**
+         * Object Id
+         */
+        object_id: string;
+        /**
+         * Before
+         */
+        before?: {
+            [key: string]: unknown;
+        } | null;
+        /**
+         * After
+         */
+        after?: {
+            [key: string]: unknown;
+        } | null;
+    }>;
+};
+
+/**
+ * ActivityLogRead
+ */
+export type ActivityLogRead = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Timestamp
+     */
+    timestamp: string;
+    /**
+     * ActorReference
+     */
+    actor: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * ActorType
+         */
+        type: 'user' | 'system' | 'app';
+        /**
+         * Name
+         */
+        name: string;
+    };
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
  * ActorReference
  */
 export type ActorReference = {
@@ -687,6 +790,32 @@ export type AzureTenantDetails = {
      * Client Id
      */
     client_id?: string | null;
+};
+
+/**
+ * ChangeRecordRead
+ */
+export type ChangeRecordRead = {
+    /**
+     * Object Type
+     */
+    object_type: string;
+    /**
+     * Object Id
+     */
+    object_id: string;
+    /**
+     * Before
+     */
+    before?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * After
+     */
+    after?: {
+        [key: string]: unknown;
+    } | null;
 };
 
 /**
@@ -2028,6 +2157,62 @@ export type LimitOffsetPageAccountRead = {
                 terminated?: number;
             };
         };
+    }>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Limit
+     */
+    limit: number | null;
+    /**
+     * Offset
+     */
+    offset: number;
+};
+
+/**
+ * LimitOffsetPage[ActivityLogRead]
+ */
+export type LimitOffsetPageActivityLogRead = {
+    /**
+     * Items
+     */
+    items: Array<{
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Timestamp
+         */
+        timestamp: string;
+        /**
+         * ActorReference
+         */
+        actor: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system' | 'app';
+            /**
+             * Name
+             */
+            name: string;
+        };
+        /**
+         * Action
+         */
+        action: string;
+        /**
+         * Message
+         */
+        message: string;
     }>;
     /**
      * Total
@@ -8468,3 +8653,193 @@ export type MeOpsV1MeGetResponses = {
 };
 
 export type MeOpsV1MeGetResponse = MeOpsV1MeGetResponses[keyof MeOpsV1MeGetResponses];
+
+export type GetActivityLogsOpsV1ActivityLogsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/ops/v1/activity-logs';
+};
+
+export type GetActivityLogsOpsV1ActivityLogsGetResponses = {
+    /**
+     * LimitOffsetPage[ActivityLogRead]
+     *
+     * Successful Response
+     */
+    200: {
+        /**
+         * Items
+         */
+        items: Array<{
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * Timestamp
+             */
+            timestamp: string;
+            /**
+             * ActorReference
+             */
+            actor: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system' | 'app';
+                /**
+                 * Name
+                 */
+                name: string;
+            };
+            /**
+             * Action
+             */
+            action: string;
+            /**
+             * Message
+             */
+            message: string;
+        }>;
+        /**
+         * Total
+         */
+        total: number;
+        /**
+         * Limit
+         */
+        limit: number | null;
+        /**
+         * Offset
+         */
+        offset: number;
+    };
+};
+
+export type GetActivityLogsOpsV1ActivityLogsGetResponse = GetActivityLogsOpsV1ActivityLogsGetResponses[keyof GetActivityLogsOpsV1ActivityLogsGetResponses];
+
+export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Activity Log Id
+         */
+        activity_log_id: string;
+    };
+    query?: never;
+    url: '/ops/v1/activity-logs/{activity_log_id}';
+};
+
+export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetErrors = {
+    /**
+     * HTTPValidationError
+     *
+     * Validation Error
+     */
+    422: {
+        /**
+         * Detail
+         */
+        detail?: Array<{
+            /**
+             * Location
+             */
+            loc: Array<string | number>;
+            /**
+             * Message
+             */
+            msg: string;
+            /**
+             * Error Type
+             */
+            type: string;
+            /**
+             * Input
+             */
+            input?: unknown;
+            /**
+             * Context
+             */
+            ctx?: {
+                [key: string]: unknown;
+            };
+        }>;
+    };
+};
+
+export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetError = GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetErrors[keyof GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetErrors];
+
+export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses = {
+    /**
+     * ActivityLogDetailRead
+     *
+     * Successful Response
+     */
+    200: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Timestamp
+         */
+        timestamp: string;
+        /**
+         * ActorReference
+         */
+        actor: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system' | 'app';
+            /**
+             * Name
+             */
+            name: string;
+        };
+        /**
+         * Action
+         */
+        action: string;
+        /**
+         * Message
+         */
+        message: string;
+        /**
+         * Changes
+         */
+        changes?: Array<{
+            /**
+             * Object Type
+             */
+            object_type: string;
+            /**
+             * Object Id
+             */
+            object_id: string;
+            /**
+             * Before
+             */
+            before?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * After
+             */
+            after?: {
+                [key: string]: unknown;
+            } | null;
+        }>;
+    };
+};
+
+export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponse = GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses[keyof GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses];
