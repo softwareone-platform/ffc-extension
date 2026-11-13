@@ -14,7 +14,7 @@ import { OrganizationsProvider } from "../providers/OrganizationsProvider";
 // Inner content for organization details. Outer chrome comes from MainLayout.
 export function OrganizationDetailsContent() {
   const { organizationId, dataSourceId } = useParams();
-  const { data: entity } = useOrganizationDetailsApi(organizationId);
+  const { data: entity, isLoading } = useOrganizationDetailsApi(organizationId);
   const topBarItems = useTopBarItems({ entity, routeId: dataSourceId });
   const contentType = useContentType();
 
@@ -28,8 +28,8 @@ export function OrganizationDetailsContent() {
       {contentType === ContentType.Organization && (
         <OrganizationHighlights organizationId={organizationId} />
       )}
-      <Navigation.TopBar items={topBarItems} />
       <OrganizationsProvider organization={entity!}>
+        <Navigation.TopBar items={isLoading ? [] : topBarItems} />
         <Card>
           <Outlet />
         </Card>
