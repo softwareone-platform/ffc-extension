@@ -151,7 +151,13 @@ async def test_account_user_context_creates_user_from_mpt(
     """An unknown user is fetched from MPT and persisted with an active account link."""
     account = await account_factory(status=AccountStatus.ACTIVE, external_id="ACC-NEWUSER")
     client = mocker.Mock()
-    client.get_user = mocker.AsyncMock(return_value={"name": "Jane", "email": "jane@example.com"})
+    client.get_user = mocker.AsyncMock(
+        return_value={
+            "name": "Jane",
+            "email": "jane@example.com",
+            "icon": "/v1/accounts/users/USR-NEW/icon",
+        }
+    )
 
     ctx = await get_authentication_context_for_account_user(
         client, db_session, "ACC-NEWUSER", "USR-NEW"
@@ -160,6 +166,7 @@ async def test_account_user_context_creates_user_from_mpt(
     assert ctx.actor_type == ActorType.USER
     assert ctx.user is not None
     assert ctx.user.email == "jane@example.com"
+    assert ctx.user.icon == "/v1/accounts/users/USR-NEW/icon"
     assert ctx.account == account
     client.get_user.assert_awaited_once_with("USR-NEW")
 

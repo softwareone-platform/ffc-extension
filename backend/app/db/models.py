@@ -91,6 +91,7 @@ class Actor(Base, HumanReadablePKMixin):
         index=True,
     )
     external_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    icon: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_on": "type",

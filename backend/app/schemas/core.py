@@ -206,6 +206,7 @@ class ActorRead(IdSchema, ActorBase):
 class ActorReference(IdSchema):
     type: ActorType
     name: Annotated[str, Field(examples=["Barack Obama"])]
+    icon: Annotated[str | None, Field(examples=["/v1/accounts/users/USR-1234-5678/icon"])] = None
 
 
 class AuditFieldSchema(BaseSchema):
