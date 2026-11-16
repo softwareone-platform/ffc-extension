@@ -73,6 +73,10 @@ export type AccountRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         /**
@@ -96,6 +100,10 @@ export type AccountRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         deleted?: {
@@ -116,6 +124,10 @@ export type AccountRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
     };
@@ -444,6 +456,10 @@ export type ActivityLogDetailRead = {
          * Name
          */
         name: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
     };
     /**
      * Action
@@ -508,6 +524,10 @@ export type ActivityLogRead = {
          * Name
          */
         name: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
     };
     /**
      * Action
@@ -535,6 +555,10 @@ export type ActorReference = {
      * Name
      */
     name: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
 };
 
 /**
@@ -585,6 +609,10 @@ export type AuditEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     };
     /**
@@ -608,6 +636,10 @@ export type AuditEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     };
     deleted?: {
@@ -628,6 +660,10 @@ export type AuditEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     } | null;
 };
@@ -653,6 +689,10 @@ export type AuditFieldSchema = {
          * Name
          */
         name: string;
+        /**
+         * Icon
+         */
+        icon?: string | null;
     } | null;
 };
 
@@ -1243,6 +1283,10 @@ export type DatasourceExpenseRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         /**
@@ -1266,6 +1310,10 @@ export type DatasourceExpenseRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         deleted?: {
@@ -1286,6 +1334,10 @@ export type DatasourceExpenseRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
     };
@@ -1644,6 +1696,10 @@ export type EntitlementRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         /**
@@ -1667,6 +1723,10 @@ export type EntitlementRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         deleted?: {
@@ -1687,6 +1747,10 @@ export type EntitlementRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
         redeemed?: {
@@ -1730,6 +1794,10 @@ export type EntitlementRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
     };
@@ -1810,6 +1878,10 @@ export type EntitlementsEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     };
     /**
@@ -1833,6 +1905,10 @@ export type EntitlementsEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     };
     deleted?: {
@@ -1853,6 +1929,10 @@ export type EntitlementsEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     } | null;
     redeemed?: {
@@ -1896,6 +1976,10 @@ export type EntitlementsEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     } | null;
 };
@@ -2019,6 +2103,10 @@ export type LimitOffsetPageAccountRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -2042,6 +2130,10 @@ export type LimitOffsetPageAccountRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -2062,6 +2154,10 @@ export type LimitOffsetPageAccountRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -2204,6 +2300,10 @@ export type LimitOffsetPageActivityLogRead = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         };
         /**
          * Action
@@ -2261,6 +2361,10 @@ export type LimitOffsetPageDatasourceExpenseRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -2284,6 +2388,10 @@ export type LimitOffsetPageDatasourceExpenseRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -2304,6 +2412,10 @@ export type LimitOffsetPageDatasourceExpenseRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -2627,6 +2739,10 @@ export type LimitOffsetPageEntitlementRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -2650,6 +2766,10 @@ export type LimitOffsetPageEntitlementRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -2670,6 +2790,10 @@ export type LimitOffsetPageEntitlementRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             redeemed?: {
@@ -2713,6 +2837,10 @@ export type LimitOffsetPageEntitlementRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -2896,6 +3024,10 @@ export type LimitOffsetPageOrganizationRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -2919,6 +3051,10 @@ export type LimitOffsetPageOrganizationRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -2939,6 +3075,10 @@ export type LimitOffsetPageOrganizationRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             terminated?: {
@@ -2959,6 +3099,10 @@ export type LimitOffsetPageOrganizationRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -3065,6 +3209,10 @@ export type LimitOffsetPageUserRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -3088,6 +3236,10 @@ export type LimitOffsetPageUserRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -3108,6 +3260,10 @@ export type LimitOffsetPageUserRead = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -3365,6 +3521,10 @@ export type OrganizationEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     };
     /**
@@ -3388,6 +3548,10 @@ export type OrganizationEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     };
     deleted?: {
@@ -3408,6 +3572,10 @@ export type OrganizationEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     } | null;
     terminated?: {
@@ -3428,6 +3596,10 @@ export type OrganizationEventsSchema = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         } | null;
     } | null;
 };
@@ -3532,6 +3704,10 @@ export type OrganizationRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         /**
@@ -3555,6 +3731,10 @@ export type OrganizationRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         deleted?: {
@@ -3575,6 +3755,10 @@ export type OrganizationRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
         terminated?: {
@@ -3595,6 +3779,10 @@ export type OrganizationRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
     };
@@ -3764,6 +3952,10 @@ export type UserRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         /**
@@ -3787,6 +3979,10 @@ export type UserRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         deleted?: {
@@ -3807,6 +4003,10 @@ export type UserRead = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
     };
@@ -4094,6 +4294,10 @@ export type LimitOffsetPageOrganizationReadWritable = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -4117,6 +4321,10 @@ export type LimitOffsetPageOrganizationReadWritable = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -4137,6 +4345,10 @@ export type LimitOffsetPageOrganizationReadWritable = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             terminated?: {
@@ -4157,6 +4369,10 @@ export type LimitOffsetPageOrganizationReadWritable = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -4290,6 +4506,10 @@ export type OrganizationReadWritable = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         /**
@@ -4313,6 +4533,10 @@ export type OrganizationReadWritable = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         };
         deleted?: {
@@ -4333,6 +4557,10 @@ export type OrganizationReadWritable = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
         terminated?: {
@@ -4353,6 +4581,10 @@ export type OrganizationReadWritable = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             } | null;
         } | null;
     };
@@ -4438,6 +4670,10 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 /**
@@ -4461,6 +4697,10 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 deleted?: {
@@ -4481,6 +4721,10 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
             };
@@ -4677,6 +4921,10 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 /**
@@ -4700,6 +4948,10 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 deleted?: {
@@ -4720,6 +4972,10 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
                 redeemed?: {
@@ -4763,6 +5019,10 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
             };
@@ -4963,6 +5223,10 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -4986,6 +5250,10 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -5006,6 +5274,10 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             redeemed?: {
@@ -5049,6 +5321,10 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -5275,6 +5551,10 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -5298,6 +5578,10 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -5318,6 +5602,10 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             redeemed?: {
@@ -5361,6 +5649,10 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -5527,6 +5819,10 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -5550,6 +5846,10 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -5570,6 +5870,10 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             redeemed?: {
@@ -5613,6 +5917,10 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -5713,6 +6021,10 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 /**
@@ -5736,6 +6048,10 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 deleted?: {
@@ -5756,6 +6072,10 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
                 terminated?: {
@@ -5776,6 +6096,10 @@ export type GetOrganizationsOpsV1OrganizationsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
             };
@@ -6032,6 +6356,10 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -6055,6 +6383,10 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -6075,6 +6407,10 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             terminated?: {
@@ -6095,6 +6431,10 @@ export type GetOrganizationByIdOpsV1OrganizationsOrganizationIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -6290,6 +6630,10 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -6313,6 +6657,10 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -6333,6 +6681,10 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
             terminated?: {
@@ -6353,6 +6705,10 @@ export type UpdateOrganizationOpsV1OrganizationsOrganizationIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -7427,6 +7783,10 @@ export type GetAccountsOpsV1AccountsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 /**
@@ -7450,6 +7810,10 @@ export type GetAccountsOpsV1AccountsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 deleted?: {
@@ -7470,6 +7834,10 @@ export type GetAccountsOpsV1AccountsGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
             };
@@ -7694,6 +8062,10 @@ export type CreateAccountOpsV1AccountsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -7717,6 +8089,10 @@ export type CreateAccountOpsV1AccountsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -7737,6 +8113,10 @@ export type CreateAccountOpsV1AccountsPostResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -7932,6 +8312,10 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -7955,6 +8339,10 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -7975,6 +8363,10 @@ export type GetAccountByIdOpsV1AccountsIdGetResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -8183,6 +8575,10 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             /**
@@ -8206,6 +8602,10 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             };
             deleted?: {
@@ -8226,6 +8626,10 @@ export type UpdateAccountOpsV1AccountsIdPutResponses = {
                      * Name
                      */
                     name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
                 } | null;
             } | null;
         };
@@ -8425,6 +8829,10 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 /**
@@ -8448,6 +8856,10 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 };
                 deleted?: {
@@ -8468,6 +8880,10 @@ export type ListAccountUsersOpsV1AccountsIdUsersGetResponses = {
                          * Name
                          */
                         name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
                     } | null;
                 } | null;
             };
@@ -8696,6 +9112,10 @@ export type GetActivityLogsOpsV1ActivityLogsGetResponses = {
                  * Name
                  */
                 name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
             };
             /**
              * Action
@@ -8805,6 +9225,10 @@ export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses = {
              * Name
              */
             name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
         };
         /**
          * Action
