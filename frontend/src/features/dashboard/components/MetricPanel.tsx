@@ -40,9 +40,7 @@ export function MetricPanel({
           {trend && <div>{trend}</div>}
           {aside && (
             <div className={"ffc-chart-split__aside"}>
-              {asideLabel && (
-                <span className={"ffc-chart-split__aside-label"}>{asideLabel}</span>
-              )}
+              {asideLabel && <span className={"ffc-chart-split__aside-label"}>{asideLabel}</span>}
               {aside}
             </div>
           )}

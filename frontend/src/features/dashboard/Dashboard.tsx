@@ -1,6 +1,5 @@
-import { Outlet } from "react-router-dom";
-
 import { useIsFetching } from "@tanstack/react-query";
+import { Outlet } from "react-router-dom";
 
 import { LoadingSpinner } from "@swo/design-system/loading-spinner";
 

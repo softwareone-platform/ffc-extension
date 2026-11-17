@@ -1,5 +1,5 @@
-import { AxiosResponse } from "axios";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { AxiosResponse } from "axios";
 
 import { DashboardFilters, useDashboardFilters } from "../components/DashboardFiltersContext";
 import { useDashboardApi } from "./useDashboardApi";
@@ -22,6 +22,15 @@ function createMetricsQuery<T>(key: string, select: (api: DashboardApi) => Fetch
   };
 }
 
-export const useAdoptionMetricsApi = createMetricsQuery("AdoptionMetrics", (api) => api.getAdoptionMetrics);
-export const useConsumptionMetricsApi = createMetricsQuery("ConsumptionMetrics", (api) => api.getConsumptionMetrics);
-export const useMaturityMetricsApi = createMetricsQuery("MaturityMetrics", (api) => api.getMaturityMetrics);
+export const useAdoptionMetricsApi = createMetricsQuery(
+  "AdoptionMetrics",
+  (api) => api.getAdoptionMetrics,
+);
+export const useConsumptionMetricsApi = createMetricsQuery(
+  "ConsumptionMetrics",
+  (api) => api.getConsumptionMetrics,
+);
+export const useMaturityMetricsApi = createMetricsQuery(
+  "MaturityMetrics",
+  (api) => api.getMaturityMetrics,
+);
