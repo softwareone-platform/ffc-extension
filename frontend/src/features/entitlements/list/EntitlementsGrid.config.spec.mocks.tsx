@@ -4,10 +4,10 @@ import type { Link } from "react-router-dom";
 
 import type { useEntitlementsApi } from "~entitlements/api";
 import type { DataSourceEntityReference } from "~features/entitlements/components/DataSourceEntityReference";
-import type { Status } from "~shared/components/entity-status-chip/EntityStatusChip";
 import { mockCustomIcon } from "~test-utils/mocks/customIcon";
 import { mockDesignSystemGrid } from "~test-utils/mocks/designSystemGrid";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
+import { mockEntityStatusChip } from "~test-utils/mocks/entityStatusChip";
 import { mockGridCellDynamicActions } from "~test-utils/mocks/gridCellDynamicActions";
 import {
   mockGridIdentityModule,
@@ -16,6 +16,8 @@ import {
 } from "~test-utils/mocks/gridHooks";
 
 import type { useActionOptions } from "./hooks/useActionOptions";
+
+export { mockStatus } from "~test-utils/mocks/entityStatusChip";
 
 export { mockUseGridAsync } from "~test-utils/mocks/designSystemGrid";
 export {
@@ -28,12 +30,10 @@ type EntityReferenceProps = Pick<
   ComponentProps<typeof import("@swo/design-system/entity-reference").EntityReference>,
   "primaryContent" | "secondaryContent" | "icon"
 >;
-type StatusProps = ComponentProps<typeof Status<{ status: string }>>;
 type DataSourceEntityReferenceProps = ComponentProps<typeof DataSourceEntityReference>;
 
 export const mockListEntitlements = jest.fn() as jest.MockedFunction<EntitlementsApi["list"]>;
 export const mockGetActions = jest.fn() as jest.MockedFunction<ReturnType<typeof useActionOptions>>;
-export const mockStatus = jest.fn() as jest.MockedFunction<(props: StatusProps) => void>;
 
 jest.mock("@swo/design-system/grid", () => mockDesignSystemGrid);
 
@@ -51,12 +51,7 @@ jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceC
 jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
 jest.mock("~shared/components/grid/GridCellDynamicActions", () => mockGridCellDynamicActions);
 
-jest.mock("~shared/components/entity-status-chip/EntityStatusChip", () => ({
-  Status: (props: StatusProps) => {
-    mockStatus(props);
-    return <span data-testid="status" />;
-  },
-}));
+jest.mock("~shared/components/entity-status-chip/EntityStatusChip", () => mockEntityStatusChip);
 
 jest.mock("../components/DataSourceEntityReference", () => ({
   DataSourceEntityReference: (props: DataSourceEntityReferenceProps) => (

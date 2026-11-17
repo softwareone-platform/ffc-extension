@@ -2,22 +2,30 @@ import copy
 import logging
 import secrets
 import traceback
+from abc import ABC
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 from typing import Any
 
 from app.api_clients.mpt import MPTClient
 from app.api_clients.optscale import UserDoesNotExist
-from app.db.models import Organization
+from app.db.models import ClientAccount, Organization
 from app.dependencies.api_clients import (
-    APIModifierClient,
+    FFCAPIClient,
     InstallationClient,
     OptscaleAuthClient,
     OptscaleClient,
 )
 from app.dependencies.core import AppSettings
-from app.dependencies.db import EntitlementRepository, OrganizationRepository
+from app.dependencies.db import (
+    ClientAccountRepository,
+    EntitlementRepository,
+    OrganizationRepository,
+    TerminationFeedbackRepository,
+)
+from app.enums import OrganizationStatus, TerminationReason
 from app.events.core import EventHandler, EventProcessor
-from app.events.exceptions import EventError
+from app.events.exceptions import EventError, TaskNotOwnedError
 from app.events.orders.constants import (
     COMPLETED_TEMPLATE_TYPE,
     MPT_ORDER_STATUS_PROCESSING,
@@ -41,7 +49,8 @@ from app.events.orders.exceptions import (
     UnsupportedOrderTypeError,
 )
 from app.events.orders.parameters import (
-    check_order_parameters,
+    check_purchase_order_parameters,
+    check_termination_order_parameters,
     get_billing_defaults_updates,
     get_due_date_update,
 )
@@ -56,35 +65,43 @@ from app.parameters import (
     get_due_date,
     get_fulfillment_parameter,
     get_ordering_parameter,
+    get_termination_comments,
+    get_termination_reason,
     set_is_new_user,
 )
 from app.schemas.core import ExtensionContext
 
 logger = logging.getLogger(__name__)
 
+ParametersValidator = Callable[[dict[str, Any]], tuple[dict[str, Any], bool]]
 
-class OrderProcessor(EventProcessor):
+
+class OrderProcessor(EventProcessor, ABC):
     object_type = "order"
 
     def __init__(
         self,
-        api_modifier_client: APIModifierClient,
+        ffc_api_client: FFCAPIClient,
         installation_client: InstallationClient,
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
+        termination_feedback_repo: TerminationFeedbackRepository,
+        client_account_repo: ClientAccountRepository,
         settings: AppSettings,
         order: dict[str, Any],
     ):
-        self.api_modifier_client = api_modifier_client
+        self.ffc_api_client = ffc_api_client
         self.installation_client = installation_client
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
+        self.termination_feedback_repo = termination_feedback_repo
+        self.client_account_repo = client_account_repo
         self.settings = settings
         self.order = order
         self.template_cache = {}
@@ -94,8 +111,12 @@ class OrderProcessor(EventProcessor):
         return self.order["id"]
 
     async def on_event_error(self, exc: EventError) -> ProcessingResult:
-        """A known error is still an order that did not go through: the due date decides."""
-
+        """
+        A known error is still an order that did not go through: the due date decides.
+        An order moved to query waits for the customer instead, so it's skipped.
+        """
+        if isinstance(exc, OrderMovedToQuery):
+            return exc.to_result()
         return await self.recover(exc)
 
     def set_template(self, order: dict, template_id: str | None) -> dict:
@@ -142,13 +163,14 @@ class OrderProcessor(EventProcessor):
             self.template_cache[(template_type, template_name)] = template_id
             logger.debug("Cached template %s (%s, %s)", template_id, template_type, template_name)
 
-    async def validate_and_move_to_querying_if_needed(self) -> bool:
+    async def validate_order_parameters(self, parameters_validator_fn: ParametersValidator) -> bool:
         """
-        Validate ordering params and move order back to Query if invalid.
+        Check the ordering parameters with `parameters_validator_fn`: if they are invalid, write the
+        errors back to the order and move it to Querying.
+
+        :return: True if the parameters are valid, False if the order was moved to Querying.
         """
-        order_with_validation_errors, validation_succeeded = check_order_parameters(
-            order=self.order
-        )
+        order_with_validation_errors, validation_succeeded = parameters_validator_fn(self.order)
         order_id = self.order["id"]
         if not validation_succeeded:
             template_id = await self.get_product_template_id(QUERYING_TEMPLATE_TYPE, None)
@@ -207,11 +229,30 @@ class OrderProcessor(EventProcessor):
         }
         return await self._store_order_parameters_updates(updates_parameters)
 
+    async def update_or_create_client_account(self) -> ClientAccount:
+        """Create the order's client account, or refresh its name and icon if it exists."""
+        client = self.order["client"]
+        client_account, created = await self.client_account_repo.update_or_create(
+            external_id=client["id"],
+            defaults={"name": client["name"], "icon": client.get("icon")},
+        )
+        logger.info(
+            "%s: client account %s %s with id %s",
+            self.order["id"],
+            client["id"],
+            "created" if created else "already exists",
+            client_account.id,
+        )
+        return client_account
+
     async def get_or_create_organization(
         self,
         employee_id: str,
     ) -> Organization:
-        """Get or create the organization and link it back to the marketplace agreement."""
+        """
+        Get or create the organization, link it to the order's client account and
+        link it back to the marketplace agreement.
+        """
         agreement_id = self.order["agreement"]["id"]
         agreement = await self.installation_client.get_agreement(
             agreement_id, select=["authorization"]
@@ -220,6 +261,7 @@ class OrderProcessor(EventProcessor):
         org_name = get_ordering_parameter(self.order, PARAM_ORGANIZATION_NAME)["value"]
         org_currency = get_ordering_parameter(self.order, PARAM_CURRENCY)["value"]
         billing_currency = agreement["authorization"]["currency"]  # marketplace billing currency
+        client_account = await self.update_or_create_client_account()
 
         organization, created = await self.organization_repo.get_or_create(
             operations_external_id=agreement_id,
@@ -227,11 +269,16 @@ class OrderProcessor(EventProcessor):
                 "name": org_name,
                 "currency": org_currency,
                 "billing_currency": billing_currency,
+                "client_account": client_account,
             },
         )
+        if organization.client_account_id != client_account.id:
+            organization = await self.organization_repo.update(
+                organization, {"client_account": client_account}
+            )
 
         if created or not organization.linked_organization_id:
-            organization_on_optscale = await self.api_modifier_client.create_organization(
+            organization_on_optscale = await self.ffc_api_client.create_organization(
                 org_name=org_name, user_id=employee_id, currency=org_currency
             )
             optscale_organization = organization_on_optscale.json()
@@ -271,7 +318,7 @@ class OrderProcessor(EventProcessor):
             is_new = False
             logger.info("Employee exists with id %s for order %s", employee_id, self.order["id"])
         except UserDoesNotExist:
-            response = await self.api_modifier_client.create_user(
+            response = await self.ffc_api_client.create_user(
                 email=email,
                 display_name=f"{administrator['firstName']} {administrator['lastName']}",
                 password=secrets.token_urlsafe(128),
@@ -406,7 +453,7 @@ class PurchaseOrderProcessor(OrderProcessor):
 
     async def validate(self) -> None:
         await self.validate_order_status()
-        is_valid = await self.validate_and_move_to_querying_if_needed()
+        is_valid = await self.validate_order_parameters(check_purchase_order_parameters)
         if not is_valid:
             raise OrderMovedToQuery(
                 f"Order {self.order['id']} parameters are missing or invalid. Order Skipped."
@@ -453,11 +500,20 @@ class ChangeOrderProcessor(OrderProcessor):
         )
 
 
-class TerminateOrderProcessor(OrderProcessor):
+class TerminationOrderProcessor(OrderProcessor):
     async def validate(self) -> None:
         await self.validate_order_status()
+        is_valid = await self.validate_order_parameters(check_termination_order_parameters)
+        if not is_valid:
+            raise OrderMovedToQuery(
+                f"Order {self.order['id']} termination parameters are invalid. Order Skipped."
+            )
 
     async def handle(self) -> ProcessingResult:
+        # validated in `validate`: the reason is either missing or a known TerminationReason
+        reason = get_termination_reason(self.order)
+        comments = get_termination_comments(self.order)
+
         await self._store_order_parameters_updates(get_due_date_update(self.order, self.settings))
 
         agreement_id = self.order["agreement"]["id"]
@@ -493,15 +549,26 @@ class TerminateOrderProcessor(OrderProcessor):
         if is_disabled:
             severity = "Warning"
             message = f"The Organization {organization_id} was already terminated."
-
         else:
             await self.optscale_client.suspend_organization(optscale_org_id)
-
-            await self.organization_repo.terminate(organization)
-            await self.entitlement_repo.terminate_active_for_organization(organization)
-
             severity = "Info"
             message = f"The Organization {organization_id} was successfully suspended."
+
+        # The local termination doesn't rely on the OptScale status: a previous attempt
+        # could have suspended the organization and failed before terminating it locally.
+        if organization.status != OrganizationStatus.TERMINATED:
+            if is_disabled:
+                logger.info(
+                    "%s: OptScale organization %s is already disabled, "
+                    "terminating organization %s.",
+                    self.order["id"],
+                    optscale_org_id,
+                    organization.id,
+                )
+            await self.organization_repo.terminate(organization)
+        await self.entitlement_repo.terminate_active_for_organization(organization)
+
+        await self._store_termination_feedback(organization, reason, comments)
 
         await self.installation_client.complete_order(
             order_id=self.order["id"],
@@ -516,36 +583,68 @@ class TerminateOrderProcessor(OrderProcessor):
             message=message,
         )
 
+    async def _store_termination_feedback(
+        self,
+        organization: Organization,
+        reason: TerminationReason | None,
+        comments: str | None,
+    ) -> None:
+        """
+        Stores the termination reason and comments given by the client, replacing any
+        existing feedback of the organization: a previous termination order could have
+        failed and the client submitted a new one with a different feedback.
+        Orders created before the termination feedback parameters were introduced don't
+        carry a reason: in that case nothing is stored.
+        """
+        if reason is None:
+            logger.info(
+                "%s: no termination reason provided, skipping termination feedback "
+                "for organization %s.",
+                self.order["id"],
+                organization.id,
+            )
+            return
+
+        await self.termination_feedback_repo.upsert_for_organization(
+            organization,
+            reason=reason,
+            comments=comments,
+        )
+
 
 PROCESSOR_BY_TYPE: dict[str, type["OrderProcessor"]] = {
     ORDER_TYPE_PURCHASE: PurchaseOrderProcessor,
     ORDER_TYPE_CHANGE: ChangeOrderProcessor,
-    ORDER_TYPE_TERMINATE: TerminateOrderProcessor,
+    ORDER_TYPE_TERMINATE: TerminationOrderProcessor,
 }
 
 
 class OrderEventHandler(EventHandler):
     def __init__(
         self,
-        api_modifier_client: APIModifierClient,
+        ffc_api_client: FFCAPIClient,
         installation_client: InstallationClient,
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
+        termination_feedback_repo: TerminationFeedbackRepository,
+        client_account_repo: ClientAccountRepository,
         settings: AppSettings,
     ):
-        self.api_modifier_client = api_modifier_client
+        self.ffc_api_client = ffc_api_client
         self.installation_client = installation_client
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
+        self.termination_feedback_repo = termination_feedback_repo
+        self.client_account_repo = client_account_repo
         self.settings = settings
 
-    async def claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> bool:
+    async def _claim_task(self, ext_ctx: ExtensionContext, task_id: str, object_id: str) -> None:
         """The fulfilment of an order is a vendor activity: close any other account's task."""
 
         logger.info("Changing task %s status to Processing", task_id)
@@ -557,37 +656,30 @@ class OrderEventHandler(EventHandler):
             logger.info(
                 "The task %s does not match the ext account id %s", task_account_id, ext_account_id
             )
-
-            await self.ext_client.complete_task(task_id)
-            await self.ext_client.log_task(
-                task_id,
-                severity="Info",
-                error_message=(
-                    f"The task was ignored for the account {task_account_id} which is not the "
-                    f"fulfillment owner. The Fulfillment of the order {object_id} is a vendor "
-                    f"activity and is it processed under the vendor account {ext_account_id}"
-                ),
+            raise TaskNotOwnedError(
+                f"The task was ignored for the account {task_account_id} which is not the "
+                f"fulfillment owner. The Fulfillment of the order {object_id} is a vendor "
+                f"activity and is it processed under the vendor account {ext_account_id}"
             )
-            return False
 
-        return True
-
-    async def get_processor(self, object_id: str) -> OrderProcessor:
+    async def _get_processor(self, object_id: str) -> OrderProcessor:
         order = await self.installation_client.get_order(object_id, select=["subscriptions.lines"])
         order_type = order["type"]
-        logger.info("ORDER TYPE: %s", order_type)
+        logger.info("Order type: %s", order_type)
         processor_cls = PROCESSOR_BY_TYPE.get(order_type)
         if processor_cls is None:
             logger.warning("%s The order type %s is not supported.", order_type, order_type)
             raise UnsupportedOrderTypeError(order_type)
         return processor_cls(
-            api_modifier_client=self.api_modifier_client,
+            ffc_api_client=self.ffc_api_client,
             installation_client=self.installation_client,
             ext_client=self.ext_client,
             optscale_auth_client=self.optscale_auth_client,
             optscale_client=self.optscale_client,
             organization_repo=self.organization_repo,
             entitlement_repo=self.entitlement_repo,
+            termination_feedback_repo=self.termination_feedback_repo,
+            client_account_repo=self.client_account_repo,
             order=order,
             settings=self.settings,
         )

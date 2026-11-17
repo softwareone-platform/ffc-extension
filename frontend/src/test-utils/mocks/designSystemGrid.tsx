@@ -6,6 +6,7 @@ import type {
   GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
+  GridInMemoryConfig,
   UseAsyncGridConfig,
 } from "@swo/design-system/grid";
 
@@ -18,6 +19,9 @@ type MockGridCellTitleSubtitleProps = ComponentProps<typeof GridCellTitleSubtitl
 export const mockGridProps = jest.fn() as jest.MockedFunction<(props: MockGridProps) => void>;
 export const mockUseGridAsync = jest.fn() as jest.MockedFunction<
   (config: UseAsyncGridConfig<object>) => unknown
+>;
+export const mockUseGridInMemory = jest.fn() as jest.MockedFunction<
+  (data: object[], config: GridInMemoryConfig<object>) => unknown
 >;
 
 export const mockDesignSystemGrid = {
@@ -45,5 +49,7 @@ export const mockDesignSystemGrid = {
     </div>
   ),
   useGridAsync: (config: UseAsyncGridConfig<object>) => mockUseGridAsync(config),
+  useGridInMemory: (data: object[], config: GridInMemoryConfig<object>) =>
+    mockUseGridInMemory(data, config),
   buildRqlQuery: jest.fn() as jest.MockedFunction<typeof buildRqlQuery>,
 };

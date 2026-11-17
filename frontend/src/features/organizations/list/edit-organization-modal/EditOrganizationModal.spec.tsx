@@ -35,7 +35,7 @@ jest.mock("./hooks/useOrganizationsController", () => ({
 
 function primeController(overrides: Partial<Controller> = {}): Controller {
   const controller: Controller = {
-    handleCancel: jest.fn(),
+    cancel: jest.fn(),
     submit: jest.fn().mockResolvedValue(undefined),
     isPending: false,
     error: null,
@@ -71,7 +71,7 @@ describe("EditOrganizationModal", () => {
     render(<EditOrganizationModal isOpen onClose={jest.fn()} organization={makeOrganization()} />);
     triggerModalCancel(mockModal);
 
-    expect(controller.handleCancel).toHaveBeenCalledTimes(1);
+    expect(controller.cancel).toHaveBeenCalledTimes(1);
   });
 
   it("wires Modal onSubmit to controller.submit", async () => {

@@ -1,9 +1,10 @@
 import asyncio
+import enum
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 import typer
 
@@ -18,9 +19,11 @@ from app.events.subscriptions.constants import (
     EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 )
-from app.events.subscriptions.utils import get_datasource_id
+from app.events.subscriptions.utils import get_datasource_id, get_live_subscription
+from app.exceptions import InvalidDataSourceIdError
 from app.notifications import ColumnHeader, NotificationDetails, send_error, send_info
 from app.telemetry import capture_telemetry_cli_command
+from app.utils import validate_datasource_id_format
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,12 @@ DEFAULT_STATUS_LIST = [
     EXPIRED_SUBSCRIPTION_STATUS,
     TERMINATED_SUBSCRIPTION_STATUS,
 ]
+
+
+class SubscriptionStatusOption(enum.StrEnum):
+    ACTIVE = ACTIVE_SUBSCRIPTION_STATUS
+    EXPIRED = EXPIRED_SUBSCRIPTION_STATUS
+    TERMINATED = TERMINATED_SUBSCRIPTION_STATUS
 
 
 @dataclass
@@ -92,6 +101,7 @@ def build_query(products: list[str], status: list[str], since: datetime, until: 
 
 
 async def sync_subscription(
+    client: MPTClient,
     entitlement_handler: EntitlementHandler,
     account: Account,
     subscription: dict[str, Any],
@@ -113,11 +123,12 @@ async def sync_subscription(
                 error="Subscription has more than one new and/or active entitlement.",
             )
         if len(entitlements) == 0:
+            datasource_id = get_datasource_id(subscription)
             created = await entitlement_handler.create(
                 Entitlement(
                     name=subscription["name"],
                     affiliate_external_id=sub_id,
-                    datasource_id=get_datasource_id(subscription),
+                    datasource_id=datasource_id,
                     status=EntitlementStatus.NEW,
                     owner=account,
                 )
@@ -129,12 +140,29 @@ async def sync_subscription(
                 message=f"Created new entitlement {created.id}.",
             )
     else:
-        if entitlements:
+        bound = [
+            entitlement
+            for entitlement in entitlements
+            if entitlement.affiliate_external_id == sub_id
+        ]
+        if bound:
             actions = []
-            for entitlement in entitlements:
-                if entitlement.affiliate_external_id != sub_id:
-                    continue
-                if entitlement.status == EntitlementStatus.NEW:
+            # Another live subscription for the same datasource takes the entitlement over.
+            replacement = await get_live_subscription(client, account, bound[0].datasource_id)
+            for entitlement in bound:
+                if replacement is not None:
+                    await entitlement_handler.update(
+                        entitlement, data={"affiliate_external_id": replacement["id"]}
+                    )
+                    actions.append(
+                        f"The entitlement {entitlement.id} was moved to the subscription "
+                        f"{replacement['id']}."
+                    )
+                    logger.info(
+                        f"Moved entitlement {entitlement.id} from subscription {sub_id} "
+                        f"to the subscription {replacement['id']}."
+                    )
+                elif entitlement.status == EntitlementStatus.NEW:
                     await entitlement_handler.delete(entitlement)
                     actions.append(f"The entitlement {entitlement.id} was deleted.")
                     logger.info(f"Deleted entitlement {entitlement.id} for subscription {sub_id}.")
@@ -144,12 +172,11 @@ async def sync_subscription(
                     logger.info(
                         f"Terminated entitlement {entitlement.id} for subscription {sub_id}."
                     )
-            if actions:
-                return SyncResult(
-                    subscription_id=sub_id,
-                    account_id=account.id,
-                    message="\n".join(actions),
-                )
+            return SyncResult(
+                subscription_id=sub_id,
+                account_id=account.id,
+                message="\n".join(actions),
+            )
 
     return None
 
@@ -197,6 +224,28 @@ async def sync_page(
                             )
                         )
                         continue
+                    try:
+                        validate_datasource_id_format(owner=account, datasource_id=datasource_id)
+                    except InvalidDataSourceIdError:
+                        logger.warning(
+                            "The subscription has been skipped because the datasource id format is "
+                            "not valid."
+                        )
+                        error = (
+                            "The subscription has been skipped because the datasource id format "
+                            "is not valid."
+                        )
+
+                        results.append(
+                            SyncResult(
+                                subscription_id=subscription["id"],
+                                account_id=account.id,
+                                message=f"The format of the datasource id {datasource_id} is not "
+                                f"valid.",
+                                error=error,
+                            )
+                        )
+                        continue
 
                     entitlements = await entitlement_handler.query_db(
                         where_clauses=[
@@ -208,6 +257,7 @@ async def sync_page(
                         ],
                     )
                     result = await sync_subscription(
+                        client,
                         entitlement_handler,
                         account,
                         subscription,
@@ -269,7 +319,7 @@ def build_notification_details(results: list[SyncResult]) -> NotificationDetails
         ColumnHeader(text="Action", width="stretch"),
         ColumnHeader(text="Details", width="stretch"),
     )
-    rows = [
+    rows: list[tuple[str, ...]] = [
         (
             result.account_id,
             result.subscription_id or "",
@@ -331,10 +381,7 @@ async def main(
     if since.tzinfo is None:
         since = since.replace(tzinfo=UTC)
 
-    if status is None:
-        status = DEFAULT_STATUS_LIST
-    else:
-        status = [status]
+    statuses = DEFAULT_STATUS_LIST if status is None else [status]
 
     semaphore = asyncio.Semaphore(max_parallel)
 
@@ -361,7 +408,7 @@ async def main(
     for account in accounts:
         try:
             results.extend(
-                await sync_account(account, status, since, until, page_size, dry_run, semaphore)
+                await sync_account(account, statuses, since, until, page_size, dry_run, semaphore)
             )
         except Exception as exc:
             logger.exception(f"Failed to sync the subscriptions for account {account.id}: {exc}")
@@ -390,7 +437,7 @@ def command(
         ),
     ] = None,
     status: Annotated[
-        Literal[*DEFAULT_STATUS_LIST] | None,
+        SubscriptionStatusOption | None,
         typer.Option(
             "--status",
             "-s",

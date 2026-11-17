@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.conf import Settings
-from app.db.models import Account, Entitlement, System, User
+from app.db.models import Account, CloudProvider, Entitlement, System, User
 from app.enums import AccountStatus, EntitlementStatus
 from tests.types import ModelFactory
 
@@ -305,7 +305,7 @@ async def test_create_entitlement_already_existing_for_datasource(
     assert response.status_code == 400
     assert response.json()["detail"] == (
         f"An Entitlement in status '{existing_status.value}' already exist "
-        "for the data source SPONSOR_CONTAINER_ID_1234"
+        "for the data source SPONSOR_CONTAINER_ID_1234."
     )
 
 
@@ -959,3 +959,127 @@ async def test_delete_deleted_entitlement_by_affiliate(
 
     response = await affiliate_client.delete(f"/entitlements/{entitlement.id}")
     assert response.status_code == 404
+
+
+# ========================
+# Datasource id validation
+# ========================
+
+PROVIDER_CASES = [
+    pytest.param("aws_cloud_provider_factory", "123456789012", "spiderman", id="aws"),
+    pytest.param(
+        "azure_cloud_provider_factory",
+        "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+        "123456789012",
+        id="azure",
+    ),
+]
+
+REJECTED_ID_CASES = [
+    *PROVIDER_CASES,
+    pytest.param(
+        "azure_cloud_provider_factory",
+        "0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9",
+        "0A1B2C3D-4E5F-6071-8293-A4B5C6D7E8F9",
+        id="azure-upper",
+    ),
+]
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), REJECTED_ID_CASES)
+async def test_create_entitlement_by_admin_rejects_an_id_the_owner_provider_does_not_accept(
+    request: pytest.FixtureRequest,
+    api_client: AsyncClient,
+    ffc_jwt_token: str,
+    affiliate_account: Account,
+    db_session: AsyncSession,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """`POST /entitlements` by an admin returns 400 when the id fails the owner's format."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    provider = await cloud_provider_factory(affiliate_account)
+
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {ffc_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": rejected_id,
+            "owner": {"id": affiliate_account.id},
+        },
+    )
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert rejected_id in detail
+    assert provider.name in detail
+    result = await db_session.execute(
+        select(Entitlement).where(Entitlement.owner == affiliate_account)
+    )
+    assert result.scalars().all() == []
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), REJECTED_ID_CASES)
+async def test_create_entitlement_by_affiliate_rejects_an_id_its_provider_does_not_accept(
+    request: pytest.FixtureRequest,
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_account: Account,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """`POST /entitlements` by an affiliate returns 400 when the id fails its own format."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    provider = await cloud_provider_factory(gcp_account)
+
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": rejected_id,
+        },
+    )
+
+    assert response.status_code == 400
+    assert provider.name in response.json()["detail"]
+
+
+@pytest.mark.parametrize(("factory_name", "matching_id", "rejected_id"), PROVIDER_CASES)
+async def test_create_entitlement_accepts_an_id_matching_the_owner_provider(
+    request: pytest.FixtureRequest,
+    api_client: AsyncClient,
+    gcp_jwt_token: str,
+    gcp_account: Account,
+    factory_name: str,
+    matching_id: str,
+    rejected_id: str,
+) -> None:
+    """`POST /entitlements` returns 201 for a matching id and nests the provider in the owner."""
+    cloud_provider_factory: ModelFactory[CloudProvider] = request.getfixturevalue(factory_name)
+    provider = await cloud_provider_factory(gcp_account)
+
+    response = await api_client.post(
+        "/entitlements",
+        headers={"Authorization": f"Bearer {gcp_jwt_token}"},
+        json={
+            "name": "AWS",
+            "affiliate_external_id": "EXTERNAL_ID_987123",
+            "datasource_id": matching_id,
+        },
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["datasource_id"] == matching_id
+    assert data["owner"]["cloud_provider"] == {
+        "id": provider.id,
+        "name": provider.name,
+        "icon": provider.icon,
+        "datasource_id_format": provider.datasource_id_format,
+    }

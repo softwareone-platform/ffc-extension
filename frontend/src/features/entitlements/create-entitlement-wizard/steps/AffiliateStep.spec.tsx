@@ -37,8 +37,8 @@ jest.mock("~shared/components/SelectAffiliateList", () => ({
 
 jest.mock("~shared/components/wizard/WizardStep", () => mockSharedWizardStep);
 
-function renderStep(triggerResolvedValue = true) {
-  return renderWizardStep(<AffiliateStep />, { triggerResolvedValue });
+function renderStep(triggerResolvedValue = true, dirtyFields: string[] = []) {
+  return renderWizardStep(<AffiliateStep />, { triggerResolvedValue, dirtyFields });
 }
 
 function getRegisteredOnNextCallback() {
@@ -55,6 +55,24 @@ describe("AffiliateStep", () => {
     await user.click(screen.getByRole("button", { name: "select affiliate" }));
 
     expect(setValue).toHaveBeenCalledWith("affiliate", selectedAffiliate, { shouldValidate: true });
+  });
+
+  it("re-validates an entered datasource id when the affiliate changes", async () => {
+    const user = userEvent.setup();
+    const { trigger } = renderStep(true, ["dataSource.id"]);
+
+    await user.click(screen.getByRole("button", { name: "select affiliate" }));
+
+    expect(trigger).toHaveBeenCalledWith("dataSource.id");
+  });
+
+  it("does not validate the datasource id when it has not been entered yet", async () => {
+    const user = userEvent.setup();
+    const { trigger } = renderStep();
+
+    await user.click(screen.getByRole("button", { name: "select affiliate" }));
+
+    expect(trigger).not.toHaveBeenCalledWith("dataSource.id");
   });
 
   it("validates the affiliate selection before advancing", async () => {

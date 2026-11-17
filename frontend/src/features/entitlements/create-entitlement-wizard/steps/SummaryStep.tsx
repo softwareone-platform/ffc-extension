@@ -8,6 +8,7 @@ import { WizardStep } from "~shared/components/wizard/WizardStep";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { AddWizardForm } from "../CreateEntitlement.Schema";
+import styles from "./SummaryStep.module.scss";
 
 export interface SummaryStepProps {
   readonly error?: string;
@@ -21,9 +22,11 @@ export function SummaryStep({ error }: SummaryStepProps) {
   return (
     <WizardStep title={tStep("title")} error={error} className={"summary-step"}>
       {entity.id && (
-        <div className="step__notification">
+        <div className={styles.step__notification}>
           <InlineNotification status="success" isToShowCloseButton={false} width="auto">
-            <RegularText color="brand-type">{tStep("description")}</RegularText>
+            <RegularText className={styles.success_message} color="brand-type">
+              {tStep("description")}
+            </RegularText>
           </InlineNotification>
         </div>
       )}

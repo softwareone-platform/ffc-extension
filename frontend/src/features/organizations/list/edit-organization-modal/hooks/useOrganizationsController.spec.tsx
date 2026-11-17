@@ -111,12 +111,31 @@ describe("useOrganizationsController", () => {
     expect(mockEditOrganization).not.toHaveBeenCalled();
   });
 
+  it("keeps the organization_required error when organization is cleared", async () => {
+    mockGetErrorMessage.mockReturnValue("generic failure");
+    const { result, rerender } = renderHook(
+      ({ organization }: { organization: OrganizationRead | null }) =>
+        useOrganizationsController({ organization }),
+      { wrapper: createQueryClientWrapper(), initialProps: { organization } },
+    );
+    await waitFor(() => expect(result.current.control._formValues.name).toBe("Acme"));
+    rerender({ organization: null });
+
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    expect(result.current.error).toBe("organization_required");
+    expect(mockEditOrganization).not.toHaveBeenCalled();
+    expect(mockGetErrorMessage).not.toHaveBeenCalled();
+  });
+
   it("handleCancel clears error and calls onClose without arguments when provided", () => {
     const onClose = jest.fn();
     const { result } = renderController(organization, onClose);
 
     act(() => {
-      result.current.handleCancel();
+      result.current.cancel();
     });
 
     expect(onClose).toHaveBeenCalledWith();
@@ -127,7 +146,7 @@ describe("useOrganizationsController", () => {
 
     expect(() => {
       act(() => {
-        result.current.handleCancel();
+        result.current.cancel();
       });
     }).not.toThrow();
   });

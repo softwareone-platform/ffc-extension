@@ -1,15 +1,19 @@
 from app.commands import (
     calculate_accounts_stats,
+    cleanup_activity_logs,
     cleanup_obsolete_datasource_expenses,
     create_admin_account,
+    delete_terminated_orgs,
     fetch_datasource_expenses,
     openapi,
     process_billing,
     redeem_entitlements,
     serve,
-    set_entitlements_tag,
     shell,
+    sync_entitlements_datasources,
+    sync_orgs_client_account,
     sync_subscriptions,
+    sync_users,
 )
 
 __all__ = [
@@ -18,10 +22,14 @@ __all__ = [
     "process_billing",
     "redeem_entitlements",
     "serve",
-    "set_entitlements_tag",
     "shell",
+    "sync_entitlements_datasources",
     "calculate_accounts_stats",
     "fetch_datasource_expenses",
     "cleanup_obsolete_datasource_expenses",
+    "cleanup_activity_logs",
+    "delete_terminated_orgs",
     "sync_subscriptions",
+    "sync_orgs_client_account",
+    "sync_users",
 ]

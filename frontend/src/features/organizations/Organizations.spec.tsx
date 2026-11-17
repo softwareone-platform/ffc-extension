@@ -40,6 +40,17 @@ describe("Organizations router", () => {
     ["data sources", "/organizations/org-1/data-sources", "data-sources"],
     ["users", "/organizations/org-1/users", "users"],
     ["events", "/organizations/org-1/events", "events"],
+    ["logs", "/organizations/org-1/logs", "event-logs"],
+    [
+      "data source details",
+      "/organizations/org-1/data-sources/ds-1/details",
+      "data-source-details",
+    ],
+    [
+      "data source advanced",
+      "/organizations/org-1/data-sources/ds-1/advanced",
+      "data-source-advanced",
+    ],
   ] as const)(
     "renders the %s tab inside the organization details shell",
     async (_tab, url, testId) => {

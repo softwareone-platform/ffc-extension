@@ -4,13 +4,12 @@ import { render, screen } from "@testing-library/react";
 
 import type { OrganizationRead } from "~api/ffc-api-model";
 import type { useOrganizationDetailsApi } from "~organizations/api";
-import { Status } from "~shared/components/entity-status-chip";
 import type { PageShell } from "~shared/components/page-shell";
+import { mockEntityStatusChip, mockStatus } from "~test-utils/mocks/entityStatusChip";
 
 import { OrganizationDetailsHeader } from "./OrganizationDetailsHeader";
 
 type MockPageShellHeaderProps = ComponentProps<typeof PageShell.Header>;
-type MockStatusProps = ComponentProps<typeof Status>;
 type UseOrganizationDetailsApiResult = ReturnType<typeof useOrganizationDetailsApi>;
 
 const mockUseOrganizationDetailsApi = jest.fn() as jest.MockedFunction<
@@ -19,7 +18,6 @@ const mockUseOrganizationDetailsApi = jest.fn() as jest.MockedFunction<
 const mockPageShellHeader = jest.fn() as jest.MockedFunction<
   (props: MockPageShellHeaderProps) => void
 >;
-const mockStatus = jest.fn() as jest.MockedFunction<(props: MockStatusProps) => void>;
 
 jest.mock("~organizations/api", () => ({
   useOrganizationDetailsApi: (id: string | undefined) => mockUseOrganizationDetailsApi(id),
@@ -34,12 +32,7 @@ jest.mock("~shared/components/page-shell", () => ({
   },
 }));
 
-jest.mock("~shared/components/entity-status-chip", () => ({
-  Status: (props: MockStatusProps) => {
-    mockStatus(props);
-    return <span data-testid="status" />;
-  },
-}));
+jest.mock("~shared/components/entity-status-chip", () => mockEntityStatusChip);
 
 function primeEntity(entity: Partial<OrganizationRead> | undefined) {
   mockUseOrganizationDetailsApi.mockReturnValue({
@@ -68,7 +61,7 @@ describe("OrganizationDetailsHeader", () => {
     expect(lastHeaderProps().backUrl).toBe("/back-here");
   });
 
-  it("renders the entity id in the title and a Status chip when data is loaded", () => {
+  it("renders the entity id and its status chip in the title when data is loaded", () => {
     primeEntity({ id: "org-1", name: "Acme", status: "active" });
 
     render(<OrganizationDetailsHeader organizationId="org-1" backUrl="/back" />);
@@ -76,9 +69,7 @@ describe("OrganizationDetailsHeader", () => {
     expect(screen.getByTestId("page-shell-header")).toBeInTheDocument();
     expect(screen.getByText("org-1")).toBeInTheDocument();
     expect(screen.getByTestId("status")).toBeInTheDocument();
-    expect(mockStatus).toHaveBeenCalledWith(
-      expect.objectContaining({ item: expect.objectContaining({ id: "org-1" }) }),
-    );
+    expect(mockStatus).toHaveBeenCalledWith({ status: "active" });
   });
 
   it("does not render a Status chip when the entity has no id", () => {

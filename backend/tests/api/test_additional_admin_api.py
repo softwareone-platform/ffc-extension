@@ -153,7 +153,7 @@ async def test_add_additional_admin_with_no_existing_user(
     httpx_mock.add_response(
         method="POST",
         headers={"Authorization": admin_client.headers["Authorization"]},
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         status_code=201,
         json={
             "created_at": 1730126521,
@@ -209,7 +209,7 @@ async def test_add_additional_admin_with_no_existing_user(
     assert response["id"].startswith("FAAR")
 
 
-# api_modifier.APIModifierClient.create_user Exception
+# ffc_api.FFCAPIClient.create_user Exception
 async def test_add_additional_admin_request_error_create_user(
     admin_client: AsyncClient,
     organization_factory: ModelFactory[Organization],
@@ -231,7 +231,7 @@ async def test_add_additional_admin_request_error_create_user(
     httpx_mock.add_response(
         method="POST",
         headers={"Authorization": admin_client.headers["Authorization"]},
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         status_code=403,
     )
 
@@ -399,7 +399,7 @@ async def test_add_additional_admin_error_in_reset_password(
     httpx_mock.add_response(
         method="POST",
         headers={"Authorization": admin_client.headers["Authorization"]},
-        url=f"{test_settings.api_modifier_base_url}/users",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
         status_code=201,
         json={
             "created_at": 1730126521,

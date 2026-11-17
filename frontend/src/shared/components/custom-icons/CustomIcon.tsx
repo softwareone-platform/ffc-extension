@@ -53,7 +53,9 @@ function CustomIcon({
       "unknown",
     ];
 
-    asyncImport(availableIcons.includes(name) ? name : "unknown");
+    asyncImport(availableIcons.includes(name) ? name : "unknown").catch((error: unknown) =>
+      console.error(`[CustomIcon] Failed to load icon ${name}:`, error),
+    );
   }, [name]);
 
   return (

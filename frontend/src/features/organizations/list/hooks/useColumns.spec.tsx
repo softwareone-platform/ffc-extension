@@ -1,7 +1,9 @@
 import { renderHook, screen } from "@testing-library/react";
 
+import { NO_VALUE } from "@swo/design-system/utils";
+
 import type { AccountType } from "~api/ffc-api-model";
-import { columnByName, makeOrganization, renderColumnCell } from "~test-utils";
+import { columnByName, makeClientAccount, makeOrganization, renderColumnCell } from "~test-utils";
 
 import { mockGetActions, mockStatus, mockUseUserRole } from "./useColumns.spec.mocks";
 
@@ -13,6 +15,7 @@ const COLUMN_FIELDS = [
   ["billing_currency", ["billing_currency"]],
   ["linked_organization_id", ["linked_organization_id"]],
   ["operations_external_id", ["operations_external_id"]],
+  ["client", ["client.name", "client.id", "client.external_id"]],
   ["updated_at", ["events.updated.at"]],
   ["created_at", ["events.created.at"]],
   ["terminated_at", ["events.terminated.at"]],
@@ -62,6 +65,61 @@ describe("useColumns (organizations list)", () => {
     expect(screen.getByTestId("subtitle")).toHaveTextContent("org-1 | linked-1");
   });
 
+  it("renders the client column with name, external_id and a square icon avatar", () => {
+    const { result } = renderHook(() => useColumns());
+    const client = makeClientAccount({
+      name: "Client Co",
+      external_id: "cli-ext-1",
+      icon: "a.png",
+    });
+
+    renderColumnCell(result.current, "client", makeOrganization({ client }));
+
+    expect(screen.getByTestId("primary")).toHaveTextContent("Client Co");
+    expect(screen.getByTestId("secondary")).toHaveTextContent("cli-ext-1");
+    expect(screen.getByTestId("avatar")).toHaveAttribute("data-image-src", "/public/a.png");
+  });
+
+  it.each([
+    ["external_id", { external_id: "cli-ext-1", id: "cli-1" }, "cli-ext-1"],
+    ["id when external_id is empty", { external_id: "", id: "cli-1" }, "cli-1"],
+  ])(
+    "renders a jdenticon avatar seeded with %s when the client has no icon",
+    (_scenario, overrides, expectedValue) => {
+      const { result } = renderHook(() => useColumns());
+
+      renderColumnCell(
+        result.current,
+        "client",
+        makeOrganization({ client: makeClientAccount({ icon: null, ...overrides }) }),
+      );
+
+      expect(screen.getByTestId("avatar")).toHaveAttribute("data-jdenticon-value", expectedValue);
+      expect(screen.getByTestId("avatar")).not.toHaveAttribute("data-image-src");
+    },
+  );
+
+  it("falls back to NO_VALUE as client secondary content when external_id is empty", () => {
+    const { result } = renderHook(() => useColumns());
+
+    renderColumnCell(
+      result.current,
+      "client",
+      makeOrganization({ client: makeClientAccount({ external_id: "" }) }),
+    );
+
+    expect(screen.getByTestId("secondary")).toHaveTextContent(NO_VALUE);
+  });
+
+  it("renders NO_VALUE in the client column when the organization has no client", () => {
+    const { result } = renderHook(() => useColumns());
+
+    renderColumnCell(result.current, "client", makeOrganization({ client: null }));
+
+    expect(screen.getByTestId("grid-cell-simple")).toHaveTextContent(NO_VALUE);
+    expect(screen.queryByTestId("entity-reference-cell")).not.toBeInTheDocument();
+  });
+
   it.each([
     ["updated_at", "updated"],
     ["created_at", "created"],
@@ -82,7 +140,7 @@ describe("useColumns (organizations list)", () => {
 
     renderColumnCell(result.current, "status", item);
 
-    expect(mockStatus).toHaveBeenCalledWith({ item });
+    expect(mockStatus).toHaveBeenCalledWith({ status: "active" });
   });
 
   it("renders the actions column with dynamic actions for the item", () => {

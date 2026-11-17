@@ -13,7 +13,6 @@ from app.api_clients.optscale import UserDoesNotExist
 from app.db.handlers import ConstraintViolationError, NotFoundError
 from app.db.models import AdditionalAdminRequest, Organization
 from app.dependencies.api_clients import (
-    APIModifierClient,
     FFCAPIClient,
     OptscaleAuthClient,
     OptscaleClient,
@@ -24,7 +23,7 @@ from app.dependencies.db import (
     OrganizationRepository,
 )
 from app.dependencies.path import OrganizationId
-from app.enums import AccountType, DatasourceType, OrganizationStatus
+from app.enums import AccountType, OrganizationStatus
 from app.openapi import examples
 from app.pagination import LimitOffsetPage, LimitOffsetParams, paginate
 from app.rql import OrganizationRules, RQLPassthrough, RQLQuery
@@ -33,8 +32,10 @@ from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
     AdditionalAdminRequestCreate,
     AdditionalAdminRequestRead,
+    DatasourceDetailRead,
     DatasourceForceReimport,
     DatasourceRead,
+    OrganizationEventRead,
     OrganizationRead,
     OrganizationUpdate,
 )
@@ -117,6 +118,10 @@ async def get_organization_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     ffc_api_client: FFCAPIClient,
 ):
+    if organization.status == OrganizationStatus.DELETED:
+        # The organization no longer exists in Optscale, so there are no expenses to fetch
+        return convert_model_to_schema(OrganizationRead, organization)
+
     linked_organization_id = validate_linked_organization_id(organization)
     with wrap_http_error_in_502(f"Error fetching datasources for organization {organization.name}"):
         response = await ffc_api_client.fetch_expenses_for_organization(
@@ -158,35 +163,31 @@ async def get_datasources_by_organization_id(
 
 @router.get(
     "/{organization_id}/datasources/{datasource_id}",
-    response_model=DatasourceRead,
+    response_model=DatasourceDetailRead,
     dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
 )
 async def get_datasource_by_id(
     organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     datasource_id: UUID,
-    optscale_client: OptscaleClient,
+    ffc_api_client: FFCAPIClient,
 ):
-    validate_linked_organization_id(organization)
+    linked_organization_id = validate_linked_organization_id(organization)
 
-    with wrap_http_error_in_502(f"Error fetching cloud account with ID {datasource_id}"):
-        response = await optscale_client.fetch_datasource_by_id(datasource_id)
+    with wrap_http_error_in_502(f"Error fetching datasource with ID {datasource_id}"):
+        try:
+            response = await ffc_api_client.fetch_datasource_for_organization(
+                organization_id=linked_organization_id,
+                datasource_id=datasource_id,
+            )
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != httpx.codes.NOT_FOUND:
+                raise
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Datasource with ID `{datasource_id}` wasn't found.",
+            ) from e
 
-    datasource = response.json()
-
-    return DatasourceRead(
-        id=datasource["id"],
-        name=datasource["name"],
-        type=DatasourceType(datasource["type"]),
-        parent_id=datasource["parent_id"],
-        resources_charged_this_month=datasource["details"]["resources"],
-        expenses_so_far_this_month=datasource["details"]["cost"],
-        expenses_forecast_this_month=datasource["details"]["forecast"],
-        datasource_id=datasource["account_id"],
-        last_import_at=datasource.get("last_import_at", 0),
-        last_import_modified_at=datasource.get("last_import_modified_at", 0),
-        last_import_attempt_at=datasource.get("last_import_attempt_at", 0),
-        last_import_attempt_error=datasource.get("last_import_attempt_error"),
-    )
+    return DatasourceDetailRead(**response.json())
 
 
 @router.post(
@@ -214,6 +215,35 @@ async def force_reimport_datasource(
             },
         )
         await optscale_client.force_reimport_datasource(datasource_id)
+
+
+@router.get(
+    "/{organization_id}/events",
+    response_model=LimitOffsetPage[OrganizationEventRead],
+    dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN, AccountType.OPERATIONS))],
+)
+async def get_events_by_organization_id(
+    organization: Annotated[Organization, Depends(fetch_organization_or_404)],
+    ffc_api_client: FFCAPIClient,
+    params: Annotated[LimitOffsetParams, Depends()],
+    rql: Annotated[str | None, Depends(RQLPassthrough())],
+):
+    linked_organization_id = validate_linked_organization_id(organization)
+
+    with wrap_http_error_in_502(f"Error fetching events for organization {organization.name}"):
+        response = await ffc_api_client.fetch_events_for_organization(
+            organization_id=linked_organization_id,
+            limit=params.limit,
+            offset=params.offset,
+            rql=rql,
+        )
+
+    events = response.json()
+    return create_page(
+        [OrganizationEventRead(**event) for event in events["items"]],
+        params=params,
+        total=events["total"],
+    )
 
 
 @router.get(
@@ -317,7 +347,7 @@ async def update_organization(
     if external_id_changed:
         # If the external ID is changed, we need to first change it in the DB as there is a unique
         # constraint on it and if it fails, then we can immediately return an error response and not
-        # even make an API call to the API modifier
+        # even make an API call to Optscale
 
         with wrap_exc_in_http_response(
             ConstraintViolationError,
@@ -413,7 +443,7 @@ async def add_additional_admin(
     db_organization: Annotated[Organization, Depends(fetch_organization_or_404)],
     optscale_client: OptscaleClient,
     optscale_auth_client: OptscaleAuthClient,
-    api_modifier_client: APIModifierClient,
+    ffc_api_client: FFCAPIClient,
     additional_admin_repo: AdditionalAdminRequestRepository,
     data: AdditionalAdminRequestCreate,
 ):
@@ -435,7 +465,7 @@ async def add_additional_admin(
             response = await optscale_auth_client.get_existing_user_info(data.email)
             user_data = response.json()["user_info"]
         except UserDoesNotExist:
-            response = await api_modifier_client.create_user(
+            response = await ffc_api_client.create_user(
                 email=data.email,
                 display_name=data.display_name,
                 password=secrets.token_urlsafe(128),

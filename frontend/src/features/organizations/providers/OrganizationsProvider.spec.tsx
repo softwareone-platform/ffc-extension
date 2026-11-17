@@ -21,4 +21,16 @@ describe("OrganizationsProvider", () => {
 
     expect(result.current).toEqual({});
   });
+
+  it("returns undefined while the provider has no organization loaded yet", () => {
+    const { result } = renderHook(() => useOrganizationContext(), {
+      wrapper: ({ children }) => (
+        <OrganizationsProvider organization={undefined as unknown as OrganizationRead}>
+          {children}
+        </OrganizationsProvider>
+      ),
+    });
+
+    expect(result.current).toBeUndefined();
+  });
 });

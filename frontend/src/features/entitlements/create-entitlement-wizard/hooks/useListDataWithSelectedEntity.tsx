@@ -24,7 +24,7 @@ export function useListDataWithSelectedEntity<T extends { id?: string }>({
   );
   return useMemo(
     () =>
-      !entity?.id || dataWithEmptyValue?.some((x) => x && x.id === entity?.id)
+      !entity?.id || dataWithEmptyValue?.some((x) => x?.id === entity?.id)
         ? dataWithEmptyValue
         : [entity, ...dataWithEmptyValue],
     [dataWithEmptyValue, entity],

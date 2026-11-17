@@ -21,8 +21,8 @@ describe("EntityStatusChip", () => {
     ["Active", "Active"],
     ["", ""],
     ["dELETED", "DELETED"],
-  ] as const)("passes %s as %s to StatusChip", (status, expected) => {
-    render(<Status item={{ status }} />);
+  ] as const)("renders status '%s' as '%s' in the StatusChip", (status, expected) => {
+    render(<Status status={status} />);
 
     expect(mockStatusChip).toHaveBeenCalledWith({ status: expected });
   });

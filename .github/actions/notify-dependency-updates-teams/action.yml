@@ -1,0 +1,33 @@
+name: Notify Teams of dependency updates
+description: >
+  Posts a dependency updates report to Microsoft Teams as an adaptive card
+  styled to match the pull request notification card: the known
+  vulnerabilities with the versions that fix them and the ones still needing a
+  manual bump, or the minor and patch updates available.
+inputs:
+  webhook_url:
+    required: true
+    description: Teams incoming webhook URL
+  bot_image_url:
+    required: true
+    description: URL of the bot image to be used in the notification
+  report_file:
+    required: true
+    description: >
+      JSON report written by .github/scripts/dependency_updates.py, relative
+      to the workspace
+  title:
+    required: true
+    description: Title of the report, e.g. `Backend security updates for main`
+  run_url:
+    required: true
+    description: URL of the workflow run, whose summary lists the full report
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  env:
+    WEBHOOK_URL: ${{ inputs.webhook_url }}
+    BOT_IMAGE_URL: ${{ inputs.bot_image_url }}
+    REPORT_FILE: ${{ inputs.report_file }}
+    TITLE: ${{ inputs.title }}
+    RUN_URL: ${{ inputs.run_url }}

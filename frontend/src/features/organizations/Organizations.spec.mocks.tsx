@@ -33,3 +33,15 @@ jest.mock("~features/organizations/details/users/Users", () => ({
 jest.mock("~features/organizations/details/events/Events", () => ({
   OrganizationEventsDetails: () => <div data-testid="events" />,
 }));
+
+jest.mock("~features/organizations/details/event-logs/EventLogs", () => ({
+  OrganizationLogsDetails: () => <div data-testid="event-logs" />,
+}));
+
+jest.mock("~features/organizations/details/data-source/DataSourceDetails", () => ({
+  DataSourceDetails: () => <div data-testid="data-source-details" />,
+}));
+
+jest.mock("~features/organizations/details/data-source/DataSourceAdvancedDetails", () => ({
+  DataSourceAdvancedDetails: () => <div data-testid="data-source-advanced" />,
+}));

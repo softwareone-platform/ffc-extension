@@ -58,7 +58,7 @@ export function ExtensionsProvider({ children, i18n }: PropsWithChildren & { i18
       setIsLoaded(true);
     }
 
-    run();
+    run().catch((error: unknown) => console.error("[i18n] Failed to change language:", error));
   }, [i18n]);
 
   if (!isLoaded) {

@@ -50,9 +50,17 @@ jobs:
       - name: Build and validate frontend
         run: cd frontend && npm run check:all
 
+      # On pull_request the checkout is the merge commit, not the PR head that
+      # workflow_run reports, so the Sonar workflow needs to be told which
+      # commit the coverage line numbers belong to.
+      - name: Record the tested commit
+        run: git rev-parse HEAD > frontend/coverage/tested-sha.txt
+
       - name: Upload frontend coverage
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
-          path: frontend/coverage/lcov.info
+          path: |
+            frontend/coverage/lcov.info
+            frontend/coverage/tested-sha.txt
           if-no-files-found: error

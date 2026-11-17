@@ -98,9 +98,9 @@ Current inventory (grep `frontend/src/shared/utils/` for the full list):
 | Area              | Exports                                                                                       |
 | ----------------- | --------------------------------------------------------------------------------------------- |
 | Render wrappers   | `renderWithRouter`, `renderWithEntitlementRoute`, `renderWithOrganizationRoute`, `createQueryClientWrapper` |
-| Grid helpers      | `renderCell(column, item)`, `columnByName(columns, name)`                                     |
+| Grid helpers      | `renderCell(column, item)`, `columnByName(columns, name)`, `highlightValues()`                |
 | Modal helpers     | `triggerModalSubmit(mockModal)`, `triggerModalCancel(mockModal)`                              |
-| Factories         | `makeAccount`, `makeDatasource`, `makeEmployee`, `makeEntitlement`, `makeOrganization`        |
+| Factories         | `makeAccount`, `makeDatasource`, `makeDatasourceDetail`, `makeEmployee`, `makeEntitlement`, `makeOrganization` |
 | Shared jest mocks | `~test-utils/mocks/<name>` — see "Shared mock modules" below                                  |
 
 ### Shared mock modules (`~test-utils/mocks/*`)
@@ -111,10 +111,11 @@ Current inventory (names stable):
 ```
 controlledInput        designSystemButton       designSystemGrid         designSystemNavigation
 designSystemNotification designSystemSkeleton    designSystemText         designSystemUtils
-entityReferenceCell    errorDetails             fixedT                   gridCellCurrency
-gridCellDate           gridCellDynamicActions   gridHooks                inPageHighlight
-inlineErrorNotification modal                   notifyParentChildModal   routeGuard
-userRole               wizardStep               customIcon
+entityReferenceCell    entityStatusChip         errorDetails             fixedT
+formatDate             gridCellCurrency         gridCellDate             gridCellDynamicActions
+gridHooks              inPageHighlight          inlineErrorNotification  modal
+notifyParentChildModal reactRouterLink          routeGuard               userRole
+wizardStep             customIcon
 ```
 
 Each file exports both a **spy** (`mockUseX`) and a **module shape**
@@ -136,7 +137,7 @@ Entity grid route helpers:
 
 Entity factories (typed `Partial<T>` builders):
 
-- `makeOrganization`, `makeEntitlement`, `makeEmployee`, `makeDatasource`, `makeAccount`
+- `makeOrganization`, `makeEntitlement`, `makeEmployee`, `makeDatasource`, `makeDatasourceDetail`, `makeAccount`
 
 ## i18n
 

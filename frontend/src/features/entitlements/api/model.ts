@@ -1,14 +1,6 @@
 import { AccountRead, EntitlementRead } from "~api/ffc-api-model";
 
 export type Account = AccountRead;
-export type Entitlement = EntitlementRead & {
-  owner: {
-    id: string;
-    external_id: string;
-    name: string;
-    type: "operations" | "affiliate";
-    integration: "aws" | "google" | "microsoft";
-  };
-};
+export type Entitlement = EntitlementRead;
 
 export type EntitlementAction = "redeem" | "terminate" | "delete";

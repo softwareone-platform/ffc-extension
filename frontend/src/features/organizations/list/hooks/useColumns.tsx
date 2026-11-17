@@ -2,13 +2,15 @@ import { useMemo } from "react";
 
 import { Link } from "react-router-dom";
 
+import { Avatar } from "@swo/design-system/avatar";
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import {
   GridCellDateTime,
   GridCellSimple,
   GridCellTitleSubtitle,
   GridColumnDefinition,
 } from "@swo/design-system/grid";
-import { DisplayValue } from "@swo/design-system/utils";
+import { DisplayValue, NO_VALUE } from "@swo/design-system/utils";
 import { Paths } from "@swo/rql-client";
 
 import { OrganizationRead } from "~api/ffc-api-model";
@@ -81,6 +83,37 @@ export function useColumns(): Columns {
         initialWidth: 200,
       },
       {
+        name: "client",
+        title: tColumns("client"),
+        fields: ["client.name", "client.id", "client.external_id"],
+        cell: (item: OrganizationRead) => {
+          return item.client?.id ? (
+            <GridCellSimple>
+              <EntityReferenceCell
+                primaryContent={item.client?.name}
+                secondaryContent={item.client?.external_id || NO_VALUE}
+                secondaryContentMaxHeight={50}
+                icon={
+                  item.client?.icon ? (
+                    <Avatar size={32} shape="square" imageSrc={"/public/" + item.client?.icon} />
+                  ) : (
+                    <Avatar
+                      size={32}
+                      shape="square"
+                      isToUseJdenticon
+                      jdenticonValue={item.client?.external_id || item.client?.id || ""}
+                    />
+                  )
+                }
+              />
+            </GridCellSimple>
+          ) : (
+            <GridCellSimple>{NO_VALUE}</GridCellSimple>
+          );
+        },
+        initialWidth: 200,
+      },
+      {
         name: "updated_at",
         title: tColumns("updated_at"),
         fields: ["events.updated.at"],
@@ -126,7 +159,7 @@ export function useColumns(): Columns {
         fields: ["status"],
         cell: (item: OrganizationRead) => (
           <GridCellSimple>
-            <Status<OrganizationRead> item={item}></Status>
+            <Status status={item.status}></Status>
           </GridCellSimple>
         ),
         initialWidth: 150,

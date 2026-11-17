@@ -1,6 +1,9 @@
 import type { ComponentProps } from "react";
 
-import type { DisplayValue } from "@swo/design-system/utils";
+import type { DisplayValue, useLocalisation } from "@swo/design-system/utils";
+
+type DesignSystemLocalisation = ReturnType<typeof useLocalisation>;
+type LocalisationDate = Parameters<DesignSystemLocalisation["formatDate"]>[0] | null | undefined;
 
 // The root manual mock at `__mocks__/@swo/design-system/utils.tsx` spreads
 // `...jest.requireActual(...)` and overrides `NO_VALUE` / `useDesignSystemOptions` /
@@ -22,8 +25,8 @@ export const mockDesignSystemUtilsGlobals = {
     inputDateFormat: "P",
   }),
   useLocalisation: jest.fn().mockReturnValue({
-    formatDate: (date: unknown) => (date == null ? "" : String(date)),
-    formatTime: (date: unknown) => (date == null ? "" : String(date)),
+    formatDate: (date: LocalisationDate) => (date == null ? "" : String(date)),
+    formatTime: (date: LocalisationDate) => (date == null ? "" : String(date)),
     formatCurrency: (value: number, { currency }: { currency?: string } = {}) =>
       `${value} ${currency ?? "UNK"}`.trim(),
   }),

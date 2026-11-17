@@ -11,8 +11,8 @@ const azureCnr = (
         gradientTransform="translate(1991.3125 -849.89368) scale(1.5625)"
         gradientUnits="userSpaceOnUse"
       >
-        <stop offset="0" stop-color="#114a8b" />
-        <stop offset="1" stop-color="#0669bc" />
+        <stop offset="0" stopColor="#114a8b" />
+        <stop offset="1" stopColor="#0669bc" />
       </linearGradient>
       <linearGradient
         id="b"
@@ -23,11 +23,11 @@ const azureCnr = (
         gradientTransform="translate(1991.3125 -849.89368) scale(1.5625)"
         gradientUnits="userSpaceOnUse"
       >
-        <stop offset="0" stop-opacity="0.3" />
-        <stop offset="0.071" stop-opacity="0.2" />
-        <stop offset="0.321" stop-opacity="0.1" />
-        <stop offset="0.623" stop-opacity="0.05" />
-        <stop offset="1" stop-opacity="0" />
+        <stop offset="0" stopOpacity="0.3" />
+        <stop offset="0.071" stopOpacity="0.2" />
+        <stop offset="0.321" stopOpacity="0.1" />
+        <stop offset="0.623" stopOpacity="0.05" />
+        <stop offset="1" stopOpacity="0" />
       </linearGradient>
       <linearGradient
         id="c"
@@ -38,8 +38,8 @@ const azureCnr = (
         gradientTransform="translate(1991.3125 -849.89368) scale(1.5625)"
         gradientUnits="userSpaceOnUse"
       >
-        <stop offset="0" stop-color="#3ccbf4" />
-        <stop offset="1" stop-color="#2892df" />
+        <stop offset="0" stopColor="#3ccbf4" />
+        <stop offset="1" stopColor="#2892df" />
       </linearGradient>
     </defs>
     <path

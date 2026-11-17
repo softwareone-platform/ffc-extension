@@ -1,21 +1,16 @@
-import type { ComponentProps } from "react";
-
 import { render, screen } from "@testing-library/react";
 
 import { makeEntitlement } from "~test-utils";
 import { mockCustomIcon } from "~test-utils/mocks/customIcon";
+import { mockDesignSystemAvatar } from "~test-utils/mocks/designSystemAvatar";
 import { mockEntityReferenceCell } from "~test-utils/mocks/entityReferenceCell";
 
 import { DataSourceEntityReference } from "./DataSourceEntityReference";
 
-type MockAvatarProps = ComponentProps<typeof import("@swo/design-system/avatar").Avatar>;
-
 jest.mock("@swo/design-system/entity-reference-cell", () => mockEntityReferenceCell);
 jest.mock("~shared/components/custom-icons/CustomIcon", () => mockCustomIcon);
 
-jest.mock("@swo/design-system/avatar", () => ({
-  Avatar: ({ text }: MockAvatarProps) => <div data-testid="avatar">{text}</div>,
-}));
+jest.mock("@swo/design-system/avatar", () => mockDesignSystemAvatar);
 
 describe("DataSourceEntityReference", () => {
   it("renders the linked_datasource_name as primary and datasource_id as secondary content", () => {

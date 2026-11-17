@@ -30,6 +30,12 @@ ORGANIZATION_RESPONSE = {
     "currency": "USD",
     "billing_currency": "EUR",
     "status": "active",
+    "client": {
+        "id": "FCAC-1234-5678",
+        "name": "Red Hat Inc.",
+        "external_id": "ACC-1234-5678",
+        "icon": "/v1/accounts/ACC-1234-5678/icon",
+    },
     "events": EVENTS,
 }
 

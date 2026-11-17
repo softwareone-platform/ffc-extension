@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import jest from 'eslint-plugin-jest';
 import jestDom from 'eslint-plugin-jest-dom';
+import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import testingLibrary from 'eslint-plugin-testing-library';
@@ -30,6 +31,7 @@ export default tseslint.config(
             },
         },
         plugins: {
+            react,
             'react-hooks': reactHooks,
             'react-refresh': reactRefresh,
         },
@@ -48,6 +50,8 @@ export default tseslint.config(
                 },
             ],
             'no-unused-vars': 'off',
+            'require-await': 'error',
+            'react/no-array-index-key': 'error',
         },
     },
     {

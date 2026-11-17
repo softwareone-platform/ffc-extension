@@ -97,6 +97,21 @@ describe("useOrganizationsApi", () => {
     });
   });
 
+  it("lists event logs for an organization using the provided query", async () => {
+    const { result } = renderHook(() => useOrganizationsApi());
+
+    const query = withQuery("level=INFO") as unknown as Parameters<
+      ReturnType<typeof useOrganizationsApi>["listOrganizationLogs"]
+    >[1];
+
+    await result.current.listOrganizationLogs("org-1", query);
+
+    expect(httpMock).toHaveBeenCalledWith({
+      method: "GET",
+      url: "/ops/v1/organizations/org-1/events?level=INFO",
+    });
+  });
+
   it("requests a data-source reimport with the provided payload", async () => {
     const { result } = renderHook(() => useOrganizationsApi());
     const body = { last_import_at: "2026-03-15" };

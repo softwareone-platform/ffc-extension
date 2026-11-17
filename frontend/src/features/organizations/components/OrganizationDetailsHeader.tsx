@@ -1,4 +1,3 @@
-import { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationDetailsApi } from "~organizations/api";
 import { Status } from "~shared/components/entity-status-chip";
 import { PageShell } from "~shared/components/page-shell";
@@ -16,7 +15,7 @@ export function OrganizationDetailsHeader({ organizationId, backUrl }: Readonly<
       {entity?.id}
       {entity?.id && (
         <span className="entity-status">
-          <Status<OrganizationRead> item={entity} />
+          <Status status={entity?.status} />
         </span>
       )}
     </span>

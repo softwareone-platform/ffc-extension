@@ -1,12 +1,15 @@
+import { Avatar } from "@swo/design-system/avatar";
+import { EntityReferenceCell } from "@swo/design-system/entity-reference-cell";
 import { InPageHighlight } from "@swo/design-system/in-page-highlight";
 import { Navigation } from "@swo/design-system/navigation";
 import { Skeleton } from "@swo/design-system/skeleton";
-import { DisplayValue } from "@swo/design-system/utils";
+import { DisplayValue, NO_VALUE } from "@swo/design-system/utils";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 import { useFormatMoney } from "~shared/utils/NumberUtils";
 
 import { useOrganizationDetailsApi } from "../api";
+import style from "./OrganizationHighlights.module.scss";
 
 export function OrganizationHighlights({ organizationId }: { readonly organizationId: string }) {
   const { data: entity } = useOrganizationDetailsApi(organizationId);
@@ -17,6 +20,26 @@ export function OrganizationHighlights({ organizationId }: { readonly organizati
     <Navigation.Highlights>
       {entity?.id ? (
         <InPageHighlight style="inline">
+          {entity?.client?.id ? (
+            <InPageHighlight.Item title="">
+              <div className={style["client-info"]}>
+                <EntityReferenceCell
+                  primaryContent={entity.client?.name}
+                  secondaryContent={entity.client?.external_id || NO_VALUE}
+                  secondaryContentMaxHeight={50}
+                  icon={
+                    entity.client?.icon ? (
+                      <Avatar
+                        size={32}
+                        shape="square"
+                        imageSrc={"/public/" + entity.client?.icon}
+                      />
+                    ) : undefined
+                  }
+                />
+              </div>
+            </InPageHighlight.Item>
+          ) : null}
           <InPageHighlight.Item title={tProperties("limit")}>
             <DisplayValue
               value={Number.parseFloat(entity?.expenses_info?.limit || "0")}

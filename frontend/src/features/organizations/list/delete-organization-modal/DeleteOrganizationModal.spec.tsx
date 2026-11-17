@@ -49,7 +49,7 @@ jest.mock("./hooks/useDeleteOrganizationController", () => ({
 
 function primeController(overrides: Partial<Controller> = {}): Controller {
   const controller: Controller = {
-    handleCancel: jest.fn(),
+    cancel: jest.fn(),
     remove: jest.fn().mockResolvedValue(undefined),
     isPending: false,
     error: null,
@@ -166,6 +166,6 @@ describe("DeleteOrganizationModal", () => {
     );
     triggerModalCancel(mockModal);
 
-    expect(controller.handleCancel).toHaveBeenCalledTimes(1);
+    expect(controller.cancel).toHaveBeenCalledTimes(1);
   });
 });

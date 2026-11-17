@@ -9,3 +9,4 @@ OrganizationId = Annotated[str, Path(pattern=models.Organization.build_id_regex(
 SystemId = Annotated[str, Path(pattern=models.System.build_id_regex())]
 AccountId = Annotated[str, Path(pattern=models.Account.build_id_regex())]
 UserId = Annotated[str, Path(pattern=models.User.build_id_regex())]
+ActivityLogId = Annotated[str, Path(pattern=models.ActivityLog.build_id_regex())]

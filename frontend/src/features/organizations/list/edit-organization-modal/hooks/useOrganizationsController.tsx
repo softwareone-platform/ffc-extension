@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-
-import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { useEffect } from "react";
 
 import { OrganizationRead } from "~api/ffc-api-model";
 import { useOrganizationsApi } from "~features/organizations/api/useOrganizationsApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
-import { useErrorDetails } from "~shared/hooks/useErrorDetails";
+import { useBaseModalController } from "~shared/hooks/useBaseModalController";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { EditOrganizationForm } from "../EditOrganization.Schema";
@@ -22,13 +19,11 @@ export function useOrganizationsController({
   organization,
 }: EditOrganizationModalControllerProps) {
   const { editOrganization } = useOrganizationsApi();
-  const [error, setError] = useState<string | null>(null);
   const { handleSubmit, control, setValue } = useEditOrganizationForm({
     name: "",
     operations_external_id: "",
     currency: "",
   });
-  const { getErrorMessage } = useErrorDetails("organizations:edit:errors");
   const tErrors = useFixedT("organizations:edit:errors");
 
   useEffect(() => {
@@ -45,43 +40,27 @@ export function useOrganizationsController({
     }
   }, [organization, setValue]);
 
-  const handleCancel = useCallback((): void => {
-    if (onClose) {
-      setError(null);
-      onClose();
-    }
-  }, [onClose]);
-
-  const onError = useCallback(
-    (err: AxiosError): void => {
-      setError(getErrorMessage(err));
-    },
-    [getErrorMessage],
-  );
-
-  const onSuccess = useCallback((): void => {
-    if (onClose) {
-      setError(null);
-      onClose({ success: true });
-    }
-  }, [onClose]);
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (formData: EditOrganizationForm) => {
-      if (!organization) {
-        setError(tErrors("organization_required"));
-        return Promise.reject(new Error("Organization is required"));
-      }
-
-      return editOrganization(organization.id, formData);
-    },
-    onSuccess,
-    onError,
+  const { error, setError, isPending, mutateAsync, cancel } = useBaseModalController({
+    namespace: "organizations:edit:errors",
+    mutationFn: ({
+      organizationId,
+      formData,
+    }: {
+      organizationId: string;
+      formData: EditOrganizationForm;
+    }) => editOrganization(organizationId, formData),
+    onClose,
   });
 
   const submit = handleSubmit(async (formData: EditOrganizationForm) => {
-    await mutateAsync(formData);
+    // Checked before mutating so onError can't overwrite this message with a generic one.
+    if (!organization) {
+      setError(tErrors("organization_required"));
+      return;
+    }
+
+    await mutateAsync({ organizationId: organization.id, formData });
   });
 
-  return { submit, control, error, isPending, handleCancel };
+  return { submit, control, error, isPending, cancel };
 }

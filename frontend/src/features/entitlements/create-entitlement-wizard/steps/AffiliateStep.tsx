@@ -14,7 +14,7 @@ import { AddWizardForm } from "../CreateEntitlement.Schema";
 export function AffiliateStep() {
   const tStep = useFixedT("entitlements:addWizard:steps:affiliate");
 
-  const { trigger, setValue } = useFormContext<AddWizardForm>();
+  const { trigger, setValue, getFieldState } = useFormContext<AddWizardForm>();
   const { registerOnNextCallback } = useStepActions();
   const [affiliate] = useWatch<Partial<AddWizardForm>, ["affiliate"]>({ name: ["affiliate"] });
   const formState = useFormState<AddWizardForm>({ name: "affiliate" });
@@ -39,8 +39,14 @@ export function AffiliateStep() {
       setValue("affiliate", entity as Required<Account>, {
         shouldValidate: true,
       });
+
+      // The datasource id format depends on the affiliate's cloud provider,
+      // so re-check an already entered id against the new format.
+      if (getFieldState("dataSource.id").isDirty) {
+        void trigger("dataSource.id");
+      }
     },
-    [setValue],
+    [setValue, getFieldState, trigger],
   );
 
   return (

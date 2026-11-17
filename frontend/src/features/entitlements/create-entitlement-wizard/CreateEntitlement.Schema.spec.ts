@@ -1,4 +1,4 @@
-import { AddWizardFormSchema } from "./CreateEntitlement.Schema";
+import { AddWizardFormSchema, toDatasourceIdRegExp } from "./CreateEntitlement.Schema";
 
 describe("AddWizardFormSchema", () => {
   const validInput = {
@@ -51,5 +51,66 @@ describe("AddWizardFormSchema", () => {
       dataSource: { id: "ds-1" },
     });
     expect(result.success).toBe(false);
+  });
+
+  describe("dataSource.id format from the affiliate cloud provider", () => {
+    const withFormat = (datasource_id_format: string, id: string) => ({
+      ...validInput,
+      affiliate: { ...validInput.affiliate, cloud_provider: { datasource_id_format } },
+      dataSource: { ...validInput.dataSource, id },
+    });
+
+    it("accepts an id matching the cloud provider format", () => {
+      const result = AddWizardFormSchema.safeParse(withFormat("[0-9]{12}", "123456789012"));
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects an id not matching the format and reports it on dataSource.id", () => {
+      const result = AddWizardFormSchema.safeParse(withFormat("[0-9]{12}", "not-an-aws-id"));
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toEqual([
+        expect.objectContaining({ code: "custom", path: ["dataSource", "id"] }),
+      ]);
+    });
+
+    it("requires the whole id to match, not just a substring", () => {
+      const result = AddWizardFormSchema.safeParse(withFormat("[0-9]{12}", "x123456789012x"));
+      expect(result.success).toBe(false);
+    });
+
+    it("skips the format check when the affiliate has no cloud provider", () => {
+      const result = AddWizardFormSchema.safeParse({
+        ...validInput,
+        affiliate: { ...validInput.affiliate, cloud_provider: null },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("skips the format check when the pattern is malformed", () => {
+      const result = AddWizardFormSchema.safeParse(withFormat("([unclosed", "anything"));
+      expect(result.success).toBe(true);
+    });
+
+    it("keeps cloud_provider in the parsed output", () => {
+      const result = AddWizardFormSchema.parse(withFormat(".+", "ds-1"));
+      expect(result.affiliate.cloud_provider).toEqual({ datasource_id_format: ".+" });
+    });
+  });
+
+  describe("toDatasourceIdRegExp", () => {
+    it("returns null for an empty pattern", () => {
+      expect(toDatasourceIdRegExp(undefined)).toBeNull();
+      expect(toDatasourceIdRegExp("")).toBeNull();
+    });
+
+    it("anchors patterns that are already anchored without breaking them", () => {
+      expect(toDatasourceIdRegExp("^[a-z]+$")?.test("abc")).toBe(true);
+    });
+
+    it("full-matches alternations", () => {
+      const regex = toDatasourceIdRegExp("abc|def");
+      expect(regex?.test("abc")).toBe(true);
+      expect(regex?.test("abcdef")).toBe(false);
+    });
   });
 });

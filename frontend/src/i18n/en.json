@@ -1,118 +1,73 @@
 {
-  "organization": {
+  "datasource": {
+    "breadcrumb": "Data source details",
+    "force_import": "Force import",
     "details": {
-      "general": {
-        "title": "General",
-        "properties": {
-          "name": "Name",
-          "operations_external_id": "Operations external ID",
-          "linked_organization_id": "Linked organization ID",
-          "currency": "Currency",
-          "billing_currency": "Billing currency"
-        }
+      "properties": {
+        "connected_at": "Connected at",
+        "parent": "Parent datasource",
+        "subscription_id": "Subscription ID",
+        "tenant_id": "Tenant ID",
+        "client_id": "Client ID",
+        "account_type": "Account Type",
+        "account_id": "Account ID",
+        "authentication_type": "Authentication Type",
+        "assumed_role_name": "Assumed Role Name",
+        "access_key": "Access Key",
+        "export_type": "Export Type",
+        "use_edp_discount": "Use EDP Discount",
+        "export_name": "Export Name",
+        "bucket_name": "Export Amazon S3 bucket name",
+        "bucket_prefix": "Export path prefix",
+        "region_name": "Export region name",
+        "included_regions": "Allowed regions",
+        "last_report_processed_at": "Last billing report processed",
+        "last_discovery_at": "Last discovery at",
+        "billing_last_attempt": "Last billing report attempt",
+        "status": "Status",
+        "metrics_last_retrieval": "Last metrics retrieval",
+        "metrics_last_attempt": "Last metrics retrieval attempt",
+        "project_id": "Project ID",
+        "billing_dataset_name": "Billing dataset name",
+        "billing_table_name": "Billing table name",
+        "billing_project_id": "Billing project ID"
       },
-      "expenses": {
-        "title": "Expenses",
-        "properties": {
-          "limit": "Limit",
-          "forecastThisMonth": "Expenses this month forecast",
-          "expensesThisMonth": "Expenses this month",
-          "expensesLastMonth": "Expenses last month",
-          "possibleSavings": "Possible monthly savings"
-        }
+      "accountType": {
+        "member": "Member",
+        "management_standalone": "Management / Standalone"
       },
-      "dataSources": {
-        "title": "Data Sources"
+      "authenticationType": {
+        "assumed_role": "Assumed Role",
+        "access_key": "Access Key"
       },
-      "users": {
-        "title": "Users"
+      "awsExportType": {
+        "legacy_cur_export": "Legacy cost & usage reports (CUR) export",
+        "standard_data_export": "Standard data export (CUR 2.0)"
       },
-      "events": {
-        "title": "Events"
+      "edpDiscount": {
+        "yes": "Yes",
+        "no": "No"
       }
-    },
-    "dataSources": {
-      "force_import": {
-        "title": "Force data import",
-        "submit": "Force import",
-        "confirm_line1": "Are you sure you want to force a data import for:",
-        "properties": {
-          "id": "Id",
-          "name": "Name",
-          "linked_datasource_id": "Linked datasource ID:"
-        },
-        "confirm_line2": "*If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
-        "confirm_line3": "The import is queued with high priority and takes time to complete.",
-        "use_last_import_at": "Import from a specific date*",
-        "last_import_at": "Import expenses from",
-        "last_import_at_placeholder": "Select a date",
-        "last_import_at_description": "Expenses are reimported starting from this date."
-      },
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to force import."
-      }
-    },
-    "users": {
-      "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to add user.",
-        "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
-        "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
-        "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
-        "add_admin_failed_with_code_409": "Failed to add user: Conflict. The user may already be an admin of this organization.",
-        "add_admin_failed_with_code_422": "Failed to add user: Missing required fields. The user may already be an admin of this organization.",
-        "add_admin_failed_with_code_500": "Failed to add user: Internal server error. Please try again later.",
-        "add_admin_failed_with_code_502": "Failed to add user: Internal server error. Please try again later.",
-        "add_admin_failed_with_code_unknown": "Failed to add user: An unknown error occurred. Please try again."
-      },
-      "add": "Add",
-      "add_user": "Add user",
-      "cancel": "Cancel",
-      "save": "Save"
     }
   },
-  "organizations": {
-    "make_admin": {
-      "title": "Make user admin",
-      "promote_to_admin": "Promote to admin",
-      "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
-      "make_admin_warning_line2": "This action cannot be undone.",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to make user an admin."
-      }
+  "entitlement": {
+    "details": { "general": { "title": "General" }, "events": { "title": "Events" } },
+    "create_info": "Provide the details for the new entitlement.",
+    "add_entitlement": "Add entitlement",
+    "save": "Add",
+    "properties": { "name": "Name", "description": "Description", "contactEmail": "Contact email" },
+    "placeholders": {
+      "name": "Acme Corp.",
+      "description": "Short description",
+      "contactEmail": "admin@acme.com"
     },
-    "edit": {
-      "title": "Edit organization",
-      "edit_organization_info": "Update the details for the organization",
-      "save": "Save",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to edit organization.",
-        "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
-        "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
-        "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
-        "organization_edit_failed_with_code_403": "Failed to edit organization: Forbidden. You don't have permission to perform this action.",
-        "organization_edit_failed_with_code_404": "Failed to edit organization: Not found. The specified organization does not exist."
-      }
-    },
-    "delete_organization": {
-      "title": "Delete organization",
-      "not_deletable": "This organization cannot be deleted before {{date}}.",
-      "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
-      "delete_organization_warning_line2": "This action cannot be undone.",
-      "delete": "Delete",
-      "cancel": "Cancel",
-      "errors": {
-        "failed_with_code": "Error {{code}}: Failed to delete organization."
-      }
-    }
+    "errors": { "create_failed": "Failed to add entitlement. Please try again." }
   },
   "entitlements": {
     "addWizard": {
       "title": "Add entitlement",
       "steps": {
-        "affiliate": {
-          "title": "Affiliate"
-        },
+        "affiliate": { "title": "Affiliate" },
         "dataSource": {
           "title": "Data Source",
           "field": {
@@ -150,22 +105,17 @@
         }
       },
       "validations": {
-        "affiliate": {
-          "required": "Affiliate is required"
-        },
-        "name": {
-          "required": "Entitlement name is required"
-        },
+        "affiliate": { "required": "Affiliate is required" },
+        "name": { "required": "Entitlement name is required" },
         "dataSource": {
-          "id": { "required": "Data Source ID is required" },
-          "affiliate_external_id": {
-            "required": "Affiliate external ID is required"
-          }
+          "id": {
+            "invalid": "Data Source ID does not match the format expected by the selected cloud provider: {{format}}",
+            "required": "Data Source ID is required"
+          },
+          "affiliate_external_id": { "required": "Affiliate external ID is required" }
         }
       },
-      "error": {
-        "failed_with_code": "Error {{code}}: Failed to add entitlement."
-      }
+      "error": { "failed_with_code": "Error {{code}}: Failed to add entitlement." }
     },
     "terminate_entitlement": {
       "title": "Terminate entitlement",
@@ -175,11 +125,7 @@
       "terminate": "Terminate",
       "cancel": "Cancel"
     },
-    "entitlement_action": {
-      "errors": {
-        "failed_with_code": "Error {{code}}: Action failed."
-      }
-    },
+    "entitlement_action": { "errors": { "failed_with_code": "Error {{code}}: Action failed." } },
     "delete_entitlement": {
       "title": "Delete entitlement",
       "delete_entitlement_warning_line1": "Are you sure you want to delete entitlement {{entitlementId}}?",
@@ -188,28 +134,154 @@
       "cancel": "Cancel"
     }
   },
+  "errorPage": { "error-handler": { "errorPageCard": { "retry": "Retry", "home": "Go Home" } } },
+  "organization": {
+    "details": {
+      "general": {
+        "title": "General",
+        "properties": {
+          "name": "Name",
+          "operations_external_id": "Operations external ID",
+          "linked_organization_id": "Linked organization ID",
+          "currency": "Currency",
+          "billing_currency": "Billing currency"
+        }
+      },
+      "expenses": {
+        "title": "Expenses",
+        "properties": {
+          "limit": "Limit",
+          "forecastThisMonth": "Expenses this month (forecast)",
+          "expensesThisMonth": "Expenses this month",
+          "expensesLastMonth": "Expenses last month",
+          "possibleSavings": "Possible monthly savings",
+          "resourcesChargedThisMonth": "Resources charged (this month)"
+        }
+      },
+      "dataSources": { "title": "Data Sources" },
+      "dataSource": {
+        "advanced": "Advanced",
+        "details": "Details"
+      },
+      "users": { "title": "Users" },
+      "events": { "title": "Events" },
+      "logs": { "title": "Logs" },
+      "termination": {
+        "title": "Termination",
+        "feedback_title": "Termination feedback",
+        "feedbackMissing": "Something went wrong. Termination feedback is missing.",
+        "properties": {
+          "reason": "Reason",
+          "comment": "Comment"
+        },
+        "reason": {
+          "missing_features": "Missing features or functionality",
+          "too_complex": "The product is too complex or difficult to use",
+          "cost_or_pricing": "Cost or pricing concerns",
+          "data_accuracy": "Issues with data accuracy or reliability",
+          "switching_tool": "Switching to another tool or solution",
+          "need_ended": "The project or need has ended",
+          "internal_changes": "Internal changes, such as reorganization or budget cuts",
+          "unsatisfactory_support": "Unsatisfactory support",
+          "other": "Other",
+          "unknown": "Unknown"
+        }
+      }
+    },
+    "dataSources": {
+      "force_import": {
+        "title": "Force data import",
+        "submit": "Force import",
+        "confirm_line1": "Are you sure you want to force a data import for:",
+        "properties": {
+          "id": "Id",
+          "name": "Name",
+          "linked_datasource_id": "Linked datasource ID:"
+        },
+        "confirm_line2": "*If no date is provided, the latest 4 billing reports available from the cloud provider are imported.",
+        "confirm_line3": "The import is queued with high priority and takes time to complete.",
+        "use_last_import_at": "Import from a specific date*",
+        "last_import_at": "Import expenses from",
+        "last_import_at_placeholder": "Select a date",
+        "last_import_at_description": "Expenses are reimported starting from this date."
+      },
+      "errors": { "failed_with_code": "Error {{code}}: Failed to force import." }
+    },
+    "users": {
+      "create_admin_info": "Enter the email address of a user to add to this organization. This user will have the Organization admin role.",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to add user.",
+        "add_admin_failed_with_code_400": "Failed to add user: Bad request. Please check the input and try again.",
+        "add_admin_failed_with_code_403": "Failed to add user: Forbidden. You don't have permission to perform this action.",
+        "add_admin_failed_with_code_404": "Failed to add user: Not found. The specified organization or user does not exist.",
+        "add_admin_failed_with_code_409": "Failed to add user: Conflict. The user may already be an admin of this organization.",
+        "add_admin_failed_with_code_422": "Failed to add user: Missing required fields. The user may already be an admin of this organization.",
+        "add_admin_failed_with_code_500": "Failed to add user: Internal server error. Please try again later.",
+        "add_admin_failed_with_code_502": "Failed to add user: Internal server error. Please try again later.",
+        "add_admin_failed_with_code_unknown": "Failed to add user: An unknown error occurred. Please try again."
+      },
+      "add": "Add",
+      "add_user": "Add user",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "events": {
+      "level": {
+        "INFO": "Info",
+        "WARNING": "Warning",
+        "ERROR": "Error"
+      }
+    }
+  },
+  "organizations": {
+    "make_admin": {
+      "title": "Make user admin",
+      "promote_to_admin": "Promote to admin",
+      "make_admin_warning_line1": "Are you sure you want to promote {{employeeName}} ({{employeeEmail}}) to an admin of this organization?",
+      "make_admin_warning_line2": "This action cannot be undone.",
+      "errors": { "failed_with_code": "Error {{code}}: Failed to make user an admin." }
+    },
+    "edit": {
+      "title": "Edit organization",
+      "edit_organization_info": "Update the details for the organization",
+      "save": "Save",
+      "errors": {
+        "failed_with_code": "Error {{code}}: Failed to edit organization.",
+        "organization_edit_failed_with_code_502": "Failed to edit organization: Internal server error. Please try again later.",
+        "organization_edit_failed_with_code_500": "Failed to edit organization: Internal server error. Please try again later.",
+        "organization_edit_failed_with_code_400": "Failed to edit organization: Bad request. Please check the input and try again.",
+        "organization_edit_failed_with_code_403": "Failed to edit organization: Forbidden. You don't have permission to perform this action.",
+        "organization_edit_failed_with_code_404": "Failed to edit organization: Not found. The specified organization does not exist."
+      }
+    },
+    "delete_organization": {
+      "title": "Delete organization",
+      "not_deletable": "This organization cannot be deleted before {{date}}.",
+      "delete_organization_warning_line1": "Are you sure you want to delete organization {{organizationName}} ({{organizationId}})?",
+      "delete_organization_warning_line2": "This action cannot be undone.",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "errors": { "failed_with_code": "Error {{code}}: Failed to delete organization." }
+    }
+  },
   "shared": {
     "error": {
       "title": {
         "403": "Unauthorized Page",
-        "Forbidden": "Unauthorized Page",
         "404": "404 Not Found",
-        "NotFound": "404 Not Found",
         "500": "500 Internal Server Error",
+        "Forbidden": "Unauthorized Page",
+        "NotFound": "404 Not Found",
         "InternalServerError": "500 Internal Server Error"
       },
       "description": {
-        "forbidden": "Access to this module is not allowed for the current user",
         "403": "You do not have permission to access this resource.",
         "404": "The requested resource could not be found.",
+        "forbidden": "Access to this module is not allowed for the current user",
         "internalServerError": "An unexpected error occurred."
       }
     },
-    "nav": {
-      "dashboard": "Dashboard",
-      "organizations": "Organizations",
-      "entitlements": "Entitlements"
-    },
+    "nav": {"dashboard": "Dashboard", "organizations": "Organizations", "entitlements": "Entitlements" },
     "actions": {
       "activate": "Activate",
       "add": "Add",
@@ -229,7 +301,10 @@
         "inactiveEntitlements": "Inactive Entitlements",
         "allEntitlements": "All Entitlements",
         "mainEntitlements": "Default",
-        "mainOrganizations": "Default"
+        "mainOrganizations": "Default",
+        "logEventInfo": "Info Logs",
+        "logEventWarning": "Warning Logs",
+        "logEventError": "Error Logs"
       },
       "columns": {
         "actions": "Actions",
@@ -267,7 +342,16 @@
         "operations_external_id": "Operations Additional ID",
         "billing_currency": "Billing Currency",
         "linked_organization_id": "Linked Organization ID",
-        "deletable_at": "Deletable Since"
+        "deletable_at": "Deletable Since",
+        "client": "Client",
+        "resource_type": "Resource Type",
+        "last_discovery_at": "Last discovery at",
+        "time": "Timestamp",
+        "evt_class": "Event Class",
+        "level": "Level",
+        "description": "Description",
+        "object_id": "Object ID",
+        "object_name": "Object Name"
       },
       "fields": {
         "id": "ID",
@@ -283,14 +367,8 @@
         "rolesCount": "Roles Count",
         "affiliate_external_id": "Affiliate External ID",
         "datasourceId": "Data Source ID",
-        "entitlement": {
-          "name": "Entitlement Name",
-          "id": "Entitlement ID"
-        },
-        "affiliate": {
-          "name": "Affiliate Name",
-          "id": "Affiliate ID"
-        },
+        "entitlement": { "name": "Entitlement Name", "id": "Entitlement ID" },
+        "affiliate": { "name": "Affiliate Name", "id": "Affiliate ID" },
         "is_admin": "User Type",
         "lastLogin": "Last Login",
         "createdAt": "Created At",
@@ -305,7 +383,16 @@
         "linked_datasource_name": "Linked Data Source Name",
         "linked_datasource_type": "Linked Data Source Type",
         "organization_id": "Organization ID",
-        "organization_name": "Organization Name"
+        "organization_name": "Organization Name",
+        "client_name": "Client Name",
+        "client_id": "Client ID",
+        "client_external_id": "Client External ID",
+        "time": "Timestamp",
+        "evt_class": "Event Class",
+        "level": "Level",
+        "description": "Description",
+        "object_id": "Object ID",
+        "object_name": "Object Name"
       },
       "dataSourceType": {
         "azure_cnr": "Azure subscription",
@@ -315,24 +402,100 @@
         "gcp_tenant": "GCP tenant",
         "unknown": "Unknown"
       },
-      "userTypes": {
-        "admin": "Admin",
-        "user": "User"
+      "resourceType": {
+        "instance": "Instance",
+        "volume": "Volume",
+        "snapshot": "Snapshot",
+        "bucket": "Bucket",
+        "ip_address": "IP Address",
+        "load_balancer": "Load Balancer",
+        "unknown": "Unknown Resource Type"
       },
-      "infoDialog": {
-        "noData": {
-          "description": "There is no data available to display."
-        }
+      "evt_class": {
+        "katara_task_failed": "Report task failed",
+        "power_schedule_created": "Power schedule created",
+        "power_schedule_updated": "Power schedule updated",
+        "power_schedule_deleted": "Power schedule deleted",
+        "power_schedule_processed": "Power schedule processed",
+        "organization_created": "Organization created",
+        "organization_deleted": "Organization deleted",
+        "organization_updated": "Organization updated",
+        "organization_disabled": "Organization disabled",
+        "organization_enabled": "Organization enabled",
+        "resource_discovery_failed": "Resource discovery failed",
+        "resources_discovered": "Resources discovered",
+        "resources_clustered_discovered": "Clustered resources discovered",
+        "alert_added": "Alert added",
+        "alert_removed": "Alert removed",
+        "cloud_account_created": "Data source created",
+        "cloud_account_updated": "Data source updated",
+        "cloud_account_deleted": "Data source deleted",
+        "cloud_account_warning": "Data source warning",
+        "report_import_completed": "Billing report import completed",
+        "report_import_failed": "Billing report import failed",
+        "report_import_throttled": "Billing report import throttled",
+        "assignment_request_accepted": "Assignment request accepted",
+        "assignment_request_declined": "Assignment request declined",
+        "root_assigned_resource": "Resource assigned to root pool",
+        "resource_assigned": "Resource assigned",
+        "rules_processing_started": "Assignment rules processing started",
+        "rules_processing_completed": "Assignment rules processing completed",
+        "rule_created": "Assignment rule created",
+        "rule_updated": "Assignment rule updated",
+        "rule_deleted": "Assignment rule deleted",
+        "rule_applied": "Assignment rule applied",
+        "rule_deactivated": "Assignment rule deactivated",
+        "recommendations_dismissed": "Recommendations dismissed",
+        "recommendations_reactivated": "Recommendations reactivated",
+        "pool_created": "Pool created",
+        "pool_updated": "Pool updated",
+        "pool_deleted": "Pool deleted",
+        "policy_created": "Policy created",
+        "policy_updated": "Policy updated",
+        "policy_deleted": "Policy deleted",
+        "policy_enabled": "Policy enabled",
+        "policy_disabled": "Policy disabled",
+        "constraint_created": "Constraint created",
+        "constraint_updated": "Constraint updated",
+        "constraint_deleted": "Constraint deleted",
+        "employee_invited": "User invited",
+        "cluster_types_processing_started": "Cluster types processing started",
+        "cluster_types_processing_done": "Cluster types processing completed",
+        "cluster_type_applied": "Cluster type applied",
+        "cluster_resources_deleted": "Cluster resources deleted",
+        "recalculation_started": "Expenses recalculation started",
+        "recalculation_completed": "Expenses recalculation completed",
+        "recalculation_failed": "Expenses recalculation failed",
+        "shareable_resource_changed": "Shared resource changed",
+        "shareable_resource_deleted": "Shared resource deleted",
+        "shareable_booking_released": "Shared resource booking released",
+        "calendar_connected": "Calendar connected",
+        "calendar_disconnected": "Calendar disconnected",
+        "calendar_warning": "Calendar warning",
+        "calendar_observer_warning": "Calendar sync warning",
+        "technical_audit_submit": "Technical audit submitted",
+        "env_power_mngmt": "Environment power management",
+        "unknown": "Unknown"
       },
-      "actions": {
-        "add": "Add"
-      }
+      "userTypes": { "admin": "Admin", "user": "User" },
+      "infoDialog": { "noData": { "description": "There is no data available to display." } },
+      "actions": { "add": "Add" }
     },
     "details": {
       "additionalIds": "Additional IDs",
       "references": "References",
       "system": "System",
-      "events": "Events"
+      "events": "Events",
+      "properties": "Properties",
+      "authentication": "Authentication",
+      "export": "Export",
+      "billing": "Billing",
+      "discovery": "Discovery",
+      "billing_import": "Billing import",
+      "monitoring_metrics": "Monitoring metrics",
+      "noDataSource": "Data source information not available. Selected data source does not exist.",
+      "logs": "Logs",
+      "errorDetails": "Error details:"
     },
     "properties": {
       "linkedDataSource": "Linked data source ID",
@@ -362,40 +525,6 @@
       "event": "Event",
       "triggeredBy": "Triggered by",
       "dateAndTime": "Date and time"
-    }
-  },
-  "entitlement": {
-    "details": {
-      "general": {
-        "title": "General"
-      },
-      "events": {
-        "title": "Events"
-      }
-    },
-    "create_info": "Provide the details for the new entitlement.",
-    "add_entitlement": "Add entitlement",
-    "save": "Add",
-    "properties": {
-      "name": "Name",
-      "description": "Description",
-      "contactEmail": "Contact email"
-    },
-    "placeholders": {
-      "name": "Acme Corp.",
-      "description": "Short description",
-      "contactEmail": "admin@acme.com"
-    },
-    "errors": {
-      "create_failed": "Failed to add entitlement. Please try again."
-    }
-  },
-  "errorPage": {
-    "error-handler": {
-      "errorPageCard": {
-        "retry": "Retry",
-        "home": "Go Home"
-      }
     }
   },
   "dashboard": {

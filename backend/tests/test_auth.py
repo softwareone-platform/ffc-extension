@@ -91,7 +91,7 @@ async def test_resolve_installation_returns_none_when_no_installations(
 async def test_get_auth_context_raises_without_credentials() -> None:
     """`get_auth_context` raises a 401 when no credentials are supplied."""
     with pytest.raises(HTTPException) as exc_info:
-        await get_auth_context(None)  # type: ignore[arg-type]
+        await get_auth_context(None)  # ty: ignore[invalid-argument-type]
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -151,7 +151,13 @@ async def test_account_user_context_creates_user_from_mpt(
     """An unknown user is fetched from MPT and persisted with an active account link."""
     account = await account_factory(status=AccountStatus.ACTIVE, external_id="ACC-NEWUSER")
     client = mocker.Mock()
-    client.get_user = mocker.AsyncMock(return_value={"name": "Jane", "email": "jane@example.com"})
+    client.get_user = mocker.AsyncMock(
+        return_value={
+            "name": "Jane",
+            "email": "jane@example.com",
+            "icon": "/v1/accounts/users/USR-NEW/icon",
+        }
+    )
 
     ctx = await get_authentication_context_for_account_user(
         client, db_session, "ACC-NEWUSER", "USR-NEW"
@@ -160,6 +166,7 @@ async def test_account_user_context_creates_user_from_mpt(
     assert ctx.actor_type == ActorType.USER
     assert ctx.user is not None
     assert ctx.user.email == "jane@example.com"
+    assert ctx.user.icon == "/v1/accounts/users/USR-NEW/icon"
     assert ctx.account == account
     client.get_user.assert_awaited_once_with("USR-NEW")
 
@@ -290,8 +297,8 @@ async def test_get_authentication_context_yields_none_without_mpt_context(
     async with contextlib.asynccontextmanager(get_authentication_context)(
         test_settings,
         db_session,
-        None,  # type: ignore[arg-type]
-        mocker.Mock(),  # type: ignore[arg-type]
+        None,  # ty: ignore[invalid-argument-type]
+        mocker.Mock(),
     ) as ctx:
         assert ctx is None
 
@@ -379,8 +386,8 @@ async def test_authentication_required_rejects_anonymous_request(
         async with contextlib.asynccontextmanager(authentication_required)(
             test_settings,
             db_session,
-            None,  # type: ignore[arg-type]
-            mocker.Mock(),  # type: ignore[arg-type]
+            None,  # ty: ignore[invalid-argument-type]
+            mocker.Mock(),
         ):
             pass
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED

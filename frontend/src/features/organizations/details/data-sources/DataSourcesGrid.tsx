@@ -7,17 +7,13 @@ import { useModalToggle } from "~shared/hooks/useModalToggle";
 import { useGridConfig } from "./DataSourcesGrid.config";
 import { DataSourceForceImportModal } from "./force-import-modal/DataSourceForceImportModal";
 
-export function DataSourcesGrid({ organizationId }: { organizationId: string }) {
+export function DataSourcesGrid({ organizationId }: { readonly organizationId: string }) {
   const { refresh, ...gridProps } = useGridConfig(organizationId, onAction);
   const forceImportModal = useModalToggle<DatasourceRead>({ onSuccess: refresh });
 
   function onAction(action: DatasourceAction, item: DatasourceRead) {
-    switch (action) {
-      case "force_import":
-        forceImportModal.open(item);
-        break;
-      default:
-        break;
+    if (action === "force_import") {
+      forceImportModal.open(item);
     }
   }
 

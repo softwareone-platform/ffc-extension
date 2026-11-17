@@ -25,7 +25,7 @@ export function DeleteOrganizationModal({
   onSuccess,
 }: Readonly<Props>) {
   const tOrganization = useFixedT("organizations:delete_organization");
-  const { handleCancel, remove, isPending, error } = useDeleteOrganizationController({ onClose });
+  const { cancel, remove, isPending, error } = useDeleteOrganizationController({ onClose });
   const formatDate = useFormatDate();
 
   const isDeletable = organization?.deletable_at
@@ -38,7 +38,7 @@ export function DeleteOrganizationModal({
       onClose={onClose}
       title={tOrganization("title")}
       className={className}
-      onCancel={handleCancel}
+      onCancel={cancel}
       onSubmit={() => organization && remove(organization).then(() => onSuccess?.())}
       submitLabel={tOrganization("delete")}
       isSubmitting={isPending}

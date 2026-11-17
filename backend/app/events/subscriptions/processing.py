@@ -17,7 +17,13 @@ from app.events.subscriptions.exceptions import (
     SubscriptionNotFoundError,
     SubscriptionNotValidError,
 )
-from app.events.subscriptions.utils import get_datasource_id, is_product_supported
+from app.events.subscriptions.utils import (
+    get_datasource_id,
+    get_live_subscription,
+    is_product_supported,
+)
+from app.exceptions import InvalidDataSourceIdError
+from app.utils import validate_datasource_id_format
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +35,12 @@ class SubscriptionProcessor(EventProcessor):
 
     def __init__(
         self,
+        installation_client: MPTClient,
         entitlement_repo: EntitlementRepository,
         account: Account,
         subscription: dict[str, Any],
     ):
+        self.installation_client = installation_client
         self.entitlement_repo = entitlement_repo
         self.account = account
         self.subscription = subscription
@@ -82,12 +90,20 @@ class SubscriptionProcessor(EventProcessor):
 
         if entitlement is not None:
             return self.completed(f"The entitlement {entitlement.id} already exists.")
-
+        datasource_id = get_datasource_id(self.subscription)
+        if not datasource_id:
+            raise SubscriptionNotValidError("The value of the 'vendor.externalid' is emtpy.")
+        try:
+            validate_datasource_id_format(owner=self.account, datasource_id=datasource_id)
+        except InvalidDataSourceIdError:
+            raise SubscriptionNotValidError(
+                f"The format of the datasource id {datasource_id} is not valid."
+            )
         entitlement = await self.entitlement_repo.create(
             Entitlement(
                 name=self.subscription["name"],
                 affiliate_external_id=self.subscription["id"],
-                datasource_id=get_datasource_id(self.subscription),
+                datasource_id=datasource_id,
                 status=EntitlementStatus.NEW,
                 owner=self.account,
             )
@@ -95,9 +111,26 @@ class SubscriptionProcessor(EventProcessor):
         return self.completed(f"The entitlement {entitlement.id} was created.")
 
     async def handle_inactive(self, entitlement: Entitlement | None) -> ProcessingResult:
-        """Drop an entitlement that was never redeemed, terminate the one in use."""
+        """
+        Drop an entitlement that was never redeemed, terminate the one in use.
+
+        When another live subscription covers the same datasource, the entitlement is kept
+        and moved to it instead.
+        """
         if entitlement is None:
             return self.completed(f"No entitlement is bound to the subscription {self.object_id}.")
+
+        replacement = await get_live_subscription(
+            self.installation_client, self.account, entitlement.datasource_id
+        )
+        if replacement is not None:
+            await self.entitlement_repo.update(
+                entitlement, data={"affiliate_external_id": replacement["id"]}
+            )
+            return self.completed(
+                f"The entitlement {entitlement.id} was moved to the subscription "
+                f"{replacement['id']}."
+            )
 
         if entitlement.status == EntitlementStatus.NEW:
             await self.entitlement_repo.delete(entitlement)
@@ -135,11 +168,12 @@ class SubscriptionEventHandler(EventHandler):
         self.entitlement_repo = entitlement_repo
         self.account = account
 
-    async def get_processor(self, object_id: str) -> SubscriptionProcessor:
+    async def _get_processor(self, object_id: str) -> SubscriptionProcessor:
         subscription = await self.installation_client.get_subscription(object_id)
         if not subscription:
             raise SubscriptionNotFoundError(f"No subscription found for {object_id}.")
         return SubscriptionProcessor(
+            installation_client=self.installation_client,
             entitlement_repo=self.entitlement_repo,
             account=self.account,
             subscription=subscription,

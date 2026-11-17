@@ -1,6 +1,6 @@
 import { lazy } from "react";
 
-import { Route, Routes } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 
 import { SEGMENTS } from "~features/organizations/paths";
 import { RouteGuard } from "~shared/components/RouteGuard";
@@ -36,6 +36,27 @@ const OrganizationEventsDetails = lazy(() =>
   })),
 );
 
+const OrganizationTerminationFeedback = lazy(() =>
+  import("~features/organizations/details/termination/TerminationFeedback").then((m) => ({
+    default: m.OrganizationTerminationFeedback,
+  })),
+);
+const DataSourceDetails = lazy(() =>
+  import("~features/organizations/details/data-source/DataSourceDetails").then((m) => ({
+    default: m.DataSourceDetails,
+  })),
+);
+const DataSourceAdvancedDetails = lazy(() =>
+  import("~features/organizations/details/data-source/DataSourceAdvancedDetails").then((m) => ({
+    default: m.DataSourceAdvancedDetails,
+  })),
+);
+const OrganizationLogsDetails = lazy(() =>
+  import("~features/organizations/details/event-logs/EventLogs").then((m) => ({
+    default: m.OrganizationLogsDetails,
+  })),
+);
+
 const allowedRoles = ["admin", "operations"] as const;
 
 export function Organizations() {
@@ -46,9 +67,20 @@ export function Organizations() {
         <Route path={SEGMENTS.idParam} element={<OrganizationDetailsContent />}>
           <Route index element={<OrganizationGeneralDetails />} />
           <Route path={SEGMENTS.general} element={<OrganizationGeneralDetails />} />
-          <Route path={SEGMENTS.dataSources} element={<OrganizationDataSources />} />
+          <Route path={SEGMENTS.dataSources} element={<Outlet />}>
+            <Route index element={<OrganizationDataSources />} />
+            <Route path={SEGMENTS.dataSourceId} element={<Outlet />}>
+              <Route path={SEGMENTS.dataSourceDetails} element={<DataSourceDetails />}></Route>
+              <Route
+                path={SEGMENTS.dataSourceAdvanced}
+                element={<DataSourceAdvancedDetails />}
+              ></Route>
+            </Route>
+          </Route>
           <Route path={SEGMENTS.users} element={<OrganizationUsers />} />
           <Route path={SEGMENTS.events} element={<OrganizationEventsDetails />} />
+          <Route path={SEGMENTS.termination} element={<OrganizationTerminationFeedback />} />
+          <Route path={SEGMENTS.logs} element={<OrganizationLogsDetails />} />
         </Route>
       </Routes>
     </RouteGuard>

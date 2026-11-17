@@ -4,9 +4,8 @@ import { DisplayValue } from "@swo/design-system/utils";
 import { useFormatMoney } from "~shared/utils/NumberUtils";
 
 export interface GridCellCurrencyProps {
-  value?: number | null;
-  currency?: string | null;
-  shouldHideCurrencyCode?: boolean;
+  readonly value?: number | null;
+  readonly currency?: string | null;
 }
 
 export function GridCellCurrency({ value, currency }: GridCellCurrencyProps) {

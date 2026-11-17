@@ -1,0 +1,9 @@
+# Vulnerabilities the Dependency updates workflow
+# (.github/workflows/dependency-updates.yaml) must not report, because the risk
+# has been reviewed and accepted. Every entry needs a reason; set ignoreUntil so
+# that the decision is reviewed again instead of being forgotten.
+#
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2027-01-31
+# reason = "Only reachable through the PKCS#7 API, which we never call."

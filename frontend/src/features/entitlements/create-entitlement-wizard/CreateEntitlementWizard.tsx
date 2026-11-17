@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod/dist/zod.js";
 import { useMutation } from "@tanstack/react-query";
@@ -7,7 +7,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { Modal } from "@swo/design-system/modal";
 import { Wizard, WizardContextProps } from "@swo/design-system/wizard";
 
-import { EntitlementCreated, useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
+import { useEntitlementsApi } from "~entitlements/api/useEntitlementsApi";
 import { ModalCloseResult } from "~shared/components/modal/types";
 import { useErrorDetails } from "~shared/hooks/useErrorDetails";
 import { useFixedT } from "~shared/hooks/useFixedT";
@@ -24,7 +24,7 @@ import "./CreateEntitlementWizard.scss";
 
 import { AxiosError, AxiosResponse } from "axios";
 
-import { EntitlementCreate } from "~api/ffc-api-model";
+import { EntitlementCreate, EntitlementRead } from "~api/ffc-api-model";
 
 type Props = {
   isOpen: boolean;
@@ -39,12 +39,13 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
   const { save } = useEntitlementsApi();
   const { getErrorMessage } = useErrorDetails("entitlements:addWizard:error");
   const { mutateAsync, isPending } = useMutation<
-    AxiosResponse<EntitlementCreated>,
+    AxiosResponse<EntitlementRead>,
     AxiosError,
     EntitlementCreate
   >({
     mutationFn: save,
     onError: (err) => {
+      setEntitlementCreated(false);
       setError(getErrorMessage(err));
     },
     onSuccess: (res) => {
@@ -63,11 +64,31 @@ export function CreateEntitlementWizard({ isOpen, onClose }: Readonly<Props>) {
     defaultValues: {
       affiliate:
         role === "affiliate"
-          ? { id: user?.account.id || "", name: user?.account.name || "" }
+          ? {
+              id: user?.account.id || "",
+              name: user?.account.name || "",
+              integration: user?.account.integration || "unknown",
+            }
           : null,
     },
   });
-  const { handleSubmit, reset, setValue } = methods;
+  const { handleSubmit, reset, setValue, subscribe } = methods;
+
+  useEffect(() => {
+    const callback = subscribe({
+      formState: {
+        values: true,
+        isDirty: true,
+      },
+      callback: ({ isDirty }) => {
+        if (!entitlementCreated && isDirty && error) {
+          setError("");
+        }
+      },
+    });
+
+    return () => callback();
+  }, [subscribe, entitlementCreated, error]);
 
   const closeWizard = useCallback(() => {
     reset();

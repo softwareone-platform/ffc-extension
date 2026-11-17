@@ -182,7 +182,7 @@ describe("EntitlementsGrid.config", () => {
 
       renderColumnCell(columns, "status", item);
 
-      expect(mockStatus).toHaveBeenCalledWith({ item });
+      expect(mockStatus).toHaveBeenCalledWith({ status: "active" });
     });
 
     it("renders 'actions' column with dynamic actions for the item", () => {

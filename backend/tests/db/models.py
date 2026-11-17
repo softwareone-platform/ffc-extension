@@ -83,3 +83,27 @@ class NonDeletableModelWithEnumStatusForTests(Base, HumanReadablePKMixin):
         default=NonDeletableModelStatus.ACTIVE,
         server_default=NonDeletableModelStatus.ACTIVE.value,
     )
+
+
+class ParentWithChildrenForTests(Base, HumanReadablePKMixin):
+    __tablename__ = "test_parents_with_children"
+
+    PK_PREFIX = "PWCH"
+    PK_NUM_LENGTH = 4
+
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # One-to-many without `back_populates`: appending a child sets its foreign key during
+    # the flush without the child ever being dirty.
+    children: Mapped[list["ChildForTests"]] = relationship()
+
+
+class ChildForTests(Base, HumanReadablePKMixin):
+    __tablename__ = "test_children"
+
+    PK_PREFIX = "CHLD"
+    PK_NUM_LENGTH = 4
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_id: Mapped[str | None] = mapped_column(
+        ForeignKey("test_parents_with_children.id"), nullable=True
+    )

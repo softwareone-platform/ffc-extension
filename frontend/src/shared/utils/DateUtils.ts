@@ -58,3 +58,13 @@ export function isEpoch(value?: string | number | Date | null): boolean {
 
   return Number.isNaN(time) || time === 0;
 }
+
+export function getDate(value?: string | Date): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}

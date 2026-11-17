@@ -3,26 +3,30 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from types import get_original_bases
+from typing import Any, get_args, get_origin
 from uuid import UUID
 
 import sqlalchemy
 from sqlalchemy import ColumnExpressionArgument, Select, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.orm.interfaces import ORMOption
 
 from app.auth.context import auth_context
 from app.db.models import (
     Account,
     AccountUser,
+    ActivityLog,
     AdditionalAdminRequest,
     AuditableMixin,
+    ClientAccount,
     DatasourceExpense,
     Entitlement,
     Organization,
     System,
+    TerminationFeedback,
     TimestampMixin,
     User,
 )
@@ -31,6 +35,7 @@ from app.enums import (
     AccountUserStatus,
     EntitlementStatus,
     OrganizationStatus,
+    TerminationReason,
 )
 
 
@@ -65,9 +70,9 @@ class ModelHandler[M: BaseModel]:
         Retrieves the generic model class arg dynamically
         """
         return next(
-            base_cls.__args__
-            for base_cls in cls.__orig_bases__
-            if base_cls.__origin__ is ModelHandler
+            get_args(base_cls)
+            for base_cls in get_original_bases(cls)
+            if get_origin(base_cls) is ModelHandler
         )
 
     @property
@@ -134,6 +139,39 @@ class ModelHandler[M: BaseModel]:
         obj = await self.create(self.model_cls(**params))
         return obj, True
 
+    async def update_or_create(
+        self,
+        *,
+        defaults: dict[str, Any] | None = None,
+        extra_conditions: list[ColumnExpressionArgument] | None = None,
+        **filters: Any,
+    ) -> tuple[M, bool]:
+        """
+        Looks up an object matching the given filters and updates it with `defaults`,
+        or creates a new one from `filters` and `defaults` if none exists.
+
+        The update is skipped when `defaults` don't change any field, so repeated
+        calls with the same values don't bump `updated_at`/`updated_by`.
+
+        Returns a `(obj, created)` tuple.
+        """
+        defaults = defaults or {}
+        obj = await self.first(
+            where_clauses=[
+                *(getattr(self.model_cls, key) == value for key, value in filters.items()),
+                *(extra_conditions or []),
+            ]
+        )
+
+        if obj:
+            changes = {key: value for key, value in defaults.items() if getattr(obj, key) != value}
+            if changes:
+                obj = await self.update(obj, changes)
+            return obj, False
+
+        obj = await self.create(self.model_cls(**filters, **defaults))
+        return obj, True
+
     async def update(self, id_or_obj: str | M, data: dict[str, Any] | None = None) -> M:
         obj = await self._get_model_obj(id_or_obj)
 
@@ -168,7 +206,7 @@ class ModelHandler[M: BaseModel]:
                 f"{self.model_cls.__name__} status column does not have a 'deleted' value."
             )
 
-        if obj.status == "deleted":  # type: ignore[attr-defined]
+        if getattr(obj, status_column.key) == "deleted":
             raise CannotDeleteError(f"{self.model_cls.__name__} object is already deleted.")
 
         column_updates = {"status": "deleted"}
@@ -459,7 +497,7 @@ class EntitlementHandler(ModelHandler[Entitlement]):
         )
 
         response = await self.session.execute(stmt)
-        return dict(list(response.tuples()))
+        return dict(response.all())
 
     async def redeem(
         self,
@@ -512,7 +550,6 @@ class OrganizationHandler(ModelHandler[Organization]):
         self,
         billing_currency: str,
     ) -> AsyncGenerator[Organization, None]:
-
         async for organization in self.stream_scalars(
             extra_conditions=[Organization.billing_currency == billing_currency],
         ):
@@ -529,6 +566,33 @@ class OrganizationHandler(ModelHandler[Organization]):
                 "terminated_at": datetime.now(UTC),
             },
         )
+
+
+class TerminationFeedbackHandler(ModelHandler[TerminationFeedback]):
+    """
+    Handles CRUD operations for the TerminationFeedback model.
+    """
+
+    async def upsert_for_organization(
+        self,
+        organization: Organization,
+        reason: TerminationReason,
+        comments: str | None = None,
+    ) -> TerminationFeedback:
+        """
+        Creates the TerminationFeedback of the given organization or, if it already exists,
+        replaces its reason and comments with the given ones.
+        """
+        feedback = await self.first(
+            where_clauses=[TerminationFeedback.organization_id == organization.id]
+        )
+        if feedback is None:
+            return await self.create(
+                TerminationFeedback(
+                    organization_id=organization.id, reason=reason, comments=comments
+                )
+            )
+        return await self.update(feedback, data={"reason": reason, "comments": comments})
 
 
 class SystemHandler(ModelHandler[System]):
@@ -558,6 +622,37 @@ class AccountHandler(ModelHandler[Account]):
             joinedload(Account.updated_by),
             joinedload(Account.deleted_by),
         ]
+
+
+class ClientAccountHandler(ModelHandler[ClientAccount]):
+    """
+    Handles CRUD operations for the ClientAccount model.
+    """
+
+    def __init__(self, session):
+        super().__init__(session)
+        self.default_options = [
+            joinedload(ClientAccount.created_by),
+            joinedload(ClientAccount.updated_by),
+            joinedload(ClientAccount.deleted_by),
+        ]
+
+    async def update_or_create(
+        self,
+        *,
+        defaults: dict[str, Any] | None = None,
+        extra_conditions: list[ColumnExpressionArgument] | None = None,
+        **filters: Any,
+    ) -> tuple[ClientAccount, bool]:
+        """
+        Same as `ModelHandler.update_or_create` but soft-deleted client accounts are
+        never matched, so a new one is created in their place.
+        """
+        return await super().update_or_create(
+            defaults=defaults,
+            extra_conditions=[ClientAccount.deleted_at.is_(None), *(extra_conditions or [])],
+            **filters,
+        )
 
 
 class UserHandler(ModelHandler[User]):
@@ -663,3 +758,24 @@ class DatasourceExpenseHandler(ModelHandler[DatasourceExpense]):
 
 class AdditionalAdminRequestHandler(ModelHandler[AdditionalAdminRequest]):
     pass
+
+
+class ActivityLogHandler(ModelHandler[ActivityLog]):
+    """
+    Handles read and create operations for the ActivityLog model.
+    """
+
+    def __init__(self, session):
+        super().__init__(session)
+        self.default_options = [
+            joinedload(ActivityLog.actor),
+        ]
+
+    async def get_with_changes(self, id: str) -> ActivityLog:
+        entry = await self.first(
+            base_query=select(ActivityLog).options(selectinload(ActivityLog.changes)),
+            where_clauses=[ActivityLog.id == id],
+        )
+        if entry is None:
+            raise NotFoundError(f"ActivityLog with id {id} not found")
+        return entry

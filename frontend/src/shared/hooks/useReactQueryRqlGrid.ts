@@ -61,7 +61,7 @@ export function useReactQueryRqlGrid<
     enabled: isInitialised,
   });
 
-  const onConfigChange = useCallback(async (config: GridDefaultConfiguration<TEntity>) => {
+  const onConfigChange = useCallback((config: GridDefaultConfiguration<TEntity>) => {
     const { isInitialised, query: oldQuery } = stateRef.current;
     if (!isInitialised) {
       setIsInitialised(true);
@@ -76,27 +76,25 @@ export function useReactQueryRqlGrid<
 
   const abort = useCallback(() => {
     const queryKey = stateRef.current.options.queryKey;
-    queryClient.cancelQueries({ queryKey });
+    void queryClient.cancelQueries({ queryKey });
   }, [queryClient]);
 
   const refresh = useCallback(async () => {
     setIsSilentRefresh(false);
-    queryClient.invalidateQueries({ queryKey: stateRef.current.options.queryKey });
+    await queryClient.invalidateQueries({ queryKey: stateRef.current.options.queryKey });
   }, [queryClient]);
 
   const silentRefresh = useCallback(async () => {
     setIsSilentRefresh(true);
-    queryClient.invalidateQueries({ queryKey: stateRef.current.baseQueryKey });
+    await queryClient.invalidateQueries({ queryKey: stateRef.current.baseQueryKey });
   }, [queryClient]);
 
   return useMemo(
     () => ({
-      ...(data
-        ? data
-        : {
-            total: pagingOption === "DisablePaging" ? undefined : 0,
-            data: [],
-          }),
+      ...(data ?? {
+        total: pagingOption === "DisablePaging" ? undefined : 0,
+        data: [],
+      }),
       isLoading: isFetching && !isSilentRefresh,
       refresh,
       onConfigChange,
