@@ -4,6 +4,7 @@ import { renderWithRouter } from "~test-utils";
 import {
   mockDataSourceDetailsHeader,
   mockEntitlementDetailsHeader,
+  mockFeatureFlags,
   mockHeader,
   mockOrganizationDetailsHeader,
   mockUseUserRole,
@@ -12,6 +13,10 @@ import {
 import { MainLayout } from "./MainLayout";
 
 describe("MainLayout", () => {
+  beforeEach(() => {
+    mockFeatureFlags.dashboard = true;
+  });
+
   it("renders the organization details header on an organization details page", () => {
     mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
 
@@ -57,9 +62,9 @@ describe("MainLayout", () => {
   });
 
   it.each<[AccountType, string[]]>([
-    ["admin", ["/organizations", "/entitlements"]],
-    ["operations", ["/organizations", "/entitlements"]],
-    ["affiliate", ["/entitlements"]],
+    ["admin", ["/dashboard", "/organizations", "/entitlements"]],
+    ["operations", ["/dashboard", "/organizations", "/entitlements"]],
+    ["affiliate", ["/dashboard", "/entitlements"]],
   ])("filters nav items by role '%s' to %j", (role, expectedPaths) => {
     mockUseUserRole.mockReturnValue({ user: null, role });
 
@@ -81,6 +86,19 @@ describe("MainLayout", () => {
     });
 
     const items = mockHeader.mock.lastCall![0].items!;
-    expect(items.map((i) => i.path)).toEqual(["/entitlements"]);
+    expect(items.map((i) => i.path)).toEqual(["/dashboard", "/entitlements"]);
+  });
+
+  it("hides the dashboard nav item when the dashboard flag is off", () => {
+    mockFeatureFlags.dashboard = false;
+    mockUseUserRole.mockReturnValue({ user: null, role: "admin" });
+
+    renderWithRouter(<MainLayout />, {
+      initialUrl: "/",
+      routePath: "/*",
+    });
+
+    const items = mockHeader.mock.lastCall![0].items!;
+    expect(items.map((i) => i.path)).toEqual(["/organizations", "/entitlements"]);
   });
 });

@@ -63,3 +63,8 @@ jest.mock("~features/organizations/components/DataSourceDetailsHeader", () => ({
 }));
 
 jest.mock("~shared/hooks/useUserRole", () => mockUserRoleModule);
+
+// Mutable so a test can flip a flag; MainLayout reads it on every render.
+export const mockFeatureFlags = { dashboard: true };
+
+jest.mock("~app/featureFlags", () => ({ FEATURE_FLAGS: mockFeatureFlags }));
