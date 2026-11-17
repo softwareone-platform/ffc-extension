@@ -1,5 +1,6 @@
 import { PATHS as ENTITLEMENT_PATHS } from "~features/entitlements/paths";
 import { ChartLegend, DonutChart, PROVIDER_COLORS, XyChart } from "~shared/components/charts";
+import { Panel } from "~shared/components/panel";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useAdoptionMetricsApi } from "../api";
@@ -14,6 +15,8 @@ import {
 } from "../chartConfig";
 import { useDashboardFilters, withDashboardFilters } from "../components/DashboardFiltersContext";
 import { MetricPanel } from "../components/MetricPanel";
+import { NoDatasourcesGrid } from "./NoDatasourcesGrid";
+import { TopSpendGrid } from "./TopSpendGrid";
 
 const formatCount = (n: number) => n.toLocaleString("en-US");
 
@@ -92,6 +95,19 @@ export function AdoptionTab() {
           }
         />
 
+        <Panel
+          title={tAdoption("noDatasources:title", {
+            count: data.organizationsWithoutDatasources.length,
+          })}
+          className={"ffc-panel--span-7"}
+        >
+          <NoDatasourcesGrid rows={data.organizationsWithoutDatasources} />
+        </Panel>
+
+        <Panel title={tAdoption("topSpend:title")} className={"ffc-panel--span-5"}>
+          <TopSpendGrid rows={data.topOrganizationsBySpend} />
+        </Panel>
+
         <MetricPanel
           title={tAdoption("trialVsPaid:title")}
           kpis={[
@@ -119,7 +135,14 @@ export function AdoptionTab() {
           }
           asideLabel={tAdoption("trialVsPaid:distribution")}
           aside={
-            <DonutChart data={data.trialVsPaid.distribution} colors={TRIAL_VS_PAID_DONUT_COLORS} />
+            <DonutChart
+              data={data.trialVsPaid.distribution}
+              colors={TRIAL_VS_PAID_DONUT_COLORS}
+              centerLabel={{
+                value: formatCount(data.trialVsPaid.paid + data.trialVsPaid.trial),
+                caption: tAdoption("trialVsPaid:totalCaption"),
+              }}
+            />
           }
         />
 

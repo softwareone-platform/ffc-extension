@@ -47,6 +47,24 @@ export type ConsumptionMetrics = {
   topOrganizations: MetricPoint[];
 };
 
+/** An active organization that has not connected any datasource yet. */
+export type OrganizationWithoutDatasources = {
+  id: string;
+  organizationName: string;
+  /** ISO 8601 date the organization was created (e.g. `2026-10-02`). */
+  createdAt: string;
+  billingStatus: BillingStatus;
+};
+
+/** An organization ranked by spend for the Top 10 table. */
+export type TopSpendOrganization = {
+  id: string;
+  organizationName: string;
+  status: OrganisationStatus;
+  /** Spend for the latest closed month, in USD. */
+  monthlySpend: number;
+};
+
 export type AdoptionMetrics = {
   organizationsOverview: {
     total: number;
@@ -66,6 +84,10 @@ export type AdoptionMetrics = {
     byProvider: MetricPoint[];
   };
   adoptionFunnel: MetricPoint[];
+  /** Active organizations with zero datasources, for the follow-up table. */
+  organizationsWithoutDatasources: OrganizationWithoutDatasources[];
+  /** Candidates for the Top 10 by spend; the API narrows them to the status filter. */
+  topOrganizationsBySpend: TopSpendOrganization[];
   trialVsPaid: {
     trial: number;
     paid: number;

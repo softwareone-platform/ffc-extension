@@ -2,6 +2,9 @@ import { useIsFetching } from "@tanstack/react-query";
 import { Outlet } from "react-router-dom";
 
 import { LoadingSpinner } from "@swo/design-system/loading-spinner";
+import { InlineNotification } from "@swo/design-system/notification";
+
+import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { DashboardFiltersProvider } from "./components/DashboardFiltersProvider";
 import { FilterSidebar } from "./components/FilterSidebar";
@@ -24,11 +27,20 @@ export function Dashboard() {
 // `keepPreviousData` keeps the prior payload rendered underneath, so the overlay reads as a
 // "refreshing" state rather than a full reload.
 function DashboardContent() {
+  const tDashboard = useFixedT("dashboard");
   const fetchingCount = useIsFetching({ queryKey: ["Dashboard"] });
   const isFetching = fetchingCount > 0;
 
   return (
     <div className={"ffc-workspace__content"}>
+      {/* Every metric comes from `mock/*.json` until the dashboard API ships — remove with it. */}
+      <div className={"ffc-workspace__notice"}>
+        <InlineNotification
+          status={"warning"}
+          isToShowCloseButton
+          messageText={tDashboard("mockDataNotice")}
+        />
+      </div>
       <Outlet />
       {isFetching && (
         <div className={"ffc-workspace__overlay"} role={"status"} aria-live={"polite"}>

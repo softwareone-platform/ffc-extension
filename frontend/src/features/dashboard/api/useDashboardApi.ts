@@ -174,6 +174,29 @@ function filterOrgStatusView(data: AdoptionMetrics, filters: DashboardFilters): 
   };
 }
 
+// The follow-up table lists active organizations only, so an Organisation Status pick without
+// "active" empties it; a Billing Status pick keeps the matching trial / paid rows.
+function filterNoDatasourceRows(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
+  const statusAllowsActive = filters.statuses.length === 0 || filters.statuses.includes("active");
+  const billingPicks = filters.billingStatuses;
+  const rows = statusAllowsActive
+    ? data.organizationsWithoutDatasources.filter(
+        (row) => billingPicks.length === 0 || billingPicks.includes(row.billingStatus),
+      )
+    : [];
+  return { ...data, organizationsWithoutDatasources: rows };
+}
+
+// Top 10 by spend among the picked Organisation Statuses (all statuses when none is picked).
+function filterTopSpendRows(data: AdoptionMetrics, filters: DashboardFilters): AdoptionMetrics {
+  const picks = filters.statuses;
+  const rows = data.topOrganizationsBySpend
+    .filter((row) => picks.length === 0 || picks.includes(row.status))
+    .sort((a, b) => b.monthlySpend - a.monthlySpend)
+    .slice(0, 10);
+  return { ...data, topOrganizationsBySpend: rows };
+}
+
 // Provider-breakdown views (stacked column, per-provider donut, per-provider trend) share the
 // same shape: either a row like `{ period, azure, aws, gcp }` or a slice like
 // `{ category: "Azure", value: … }`. Walking the whole payload and zeroing out non-selected
@@ -253,6 +276,15 @@ function filterTrialVsPaidView(data: AdoptionMetrics, filters: DashboardFilters)
   };
 }
 
+// Applied in order after scaling; each narrows one panel to the sidebar filters.
+const ADOPTION_VIEWS: ((data: AdoptionMetrics, filters: DashboardFilters) => AdoptionMetrics)[] = [
+  filterOrgStatusView,
+  filterTrialVsPaidView,
+  filterProviderView,
+  filterNoDatasourceRows,
+  filterTopSpendRows,
+];
+
 export function useDashboardApi() {
   const getAdoptionMetrics = useCallback(
     (filters: DashboardFilters): Promise<AxiosResponse<AdoptionMetrics>> => {
@@ -261,10 +293,7 @@ export function useDashboardApi() {
         computeScale(filters),
         monthWindow(filters),
       );
-      const filtered = filterProviderView(
-        filterTrialVsPaidView(filterOrgStatusView(scaled, filters), filters),
-        filters,
-      );
+      const filtered = ADOPTION_VIEWS.reduce((data, view) => view(data, filters), scaled);
       return mockResponse(filtered, MOCK_DELAY_MS);
     },
     [],

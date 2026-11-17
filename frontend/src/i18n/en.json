@@ -543,11 +543,11 @@
     "comingSoon": {
       "description": "This view is not built yet."
     },
+    "mockDataNotice": "Preview: this dashboard shows sample data, not your live figures.",
     "filters": {
       "title": "Filter options",
       "timeLabel": "Time",
       "dateRange": "Date range",
-      "presetsMode": "Presets",
       "customMode": "Custom date",
       "startDate": "Start date",
       "endDate": "End date",
@@ -555,6 +555,8 @@
       "billingStatus": "Billing Status",
       "cloudProvider": "Cloud Provider",
       "summary": "{{statusCount}} status · {{providerCount}} provider",
+      "activeCount_one": "{{count}} filter selected",
+      "activeCount_other": "{{count}} filters selected",
       "collapse": "Collapse filters",
       "expand": "Expand filters",
       "organizationsLink": {
@@ -564,6 +566,7 @@
         "reset": "Reset filters"
       },
       "presets": {
+        "default": "Last 3 months",
         "thisMonth": "This month",
         "lastMonth": "Last month",
         "lastQuarter": "Last quarter",
@@ -612,7 +615,33 @@
         "title": "Trial vs Paid",
         "trial": "Trial Organizations",
         "paid": "Paid Organizations",
-        "distribution": "Current distribution"
+        "distribution": "Current distribution",
+        "totalCaption": "Organizations"
+      },
+      "noDatasources": {
+        "title": "Active organizations without datasources ({{count}})",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days",
+        "columns": {
+          "priority": "Priority",
+          "organizationName": "Organization",
+          "createdAt": "Created",
+          "billingStatus": "Trial / Paid",
+          "daysSinceCreation": "Age"
+        },
+        "priority": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        }
+      },
+      "topSpend": {
+        "title": "Top 10 organizations by monthly spend",
+        "columns": {
+          "organizationName": "Organization Name",
+          "status": "Status",
+          "monthlySpend": "Spend"
+        }
       }
     },
     "consumption": {

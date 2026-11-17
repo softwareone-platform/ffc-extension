@@ -23,6 +23,22 @@
     padding: $space-xl;
   }
 
+  // The DS notification unmounts its content on close, leaving this wrapper empty —
+  // hide it then so its gap doesn't linger above the tab.
+  &__notice {
+    margin-bottom: $space-lg;
+
+    &:empty {
+      display: none;
+    }
+
+    // The DS close button is pinned to the top of the flex row, 6px above the text's centre.
+    // Its class is hashed, so match on the stable part of the name.
+    [class*="inline-notification__close"] {
+      align-self: center;
+    }
+  }
+
   // Semi-transparent overlay painted on top of the content while a dashboard query is
   // in flight — leans on react-query's `keepPreviousData` so the previous payload stays
   // rendered underneath and the overlay reads as "refreshing", not "loading from scratch".
@@ -106,6 +122,31 @@
 
   &__title {
     @extend %medium4;
+  }
+
+  // Count of selected filters next to the title. Collapsed, the header is centred on the gear
+  // icon, so the badge pins to the icon's top-right corner instead.
+  &__badge {
+    @extend %medium1;
+
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 $space-xs;
+    background: var(--brand-primary);
+    border-radius: 10px;
+    color: var(--brand-white);
+  }
+
+  &--collapsed &__header {
+    position: relative;
+  }
+
+  &--collapsed &__badge {
+    position: absolute;
+    top: calc(#{$space-xl} - 8px);
+    left: calc(50% + 4px);
   }
 
   &__body-inner {
@@ -326,39 +367,12 @@
   }
 }
 
-// SWO radio group (Presets / Custom date) on one line, then either the preset buttons one per row or two
-// stacked `DatePicker`s.
+// SWO radio group listing the default window, the presets and "Custom date"; the two
+// `DatePicker`s appear under it only for the custom option.
 .ffc-date-range-picker {
   display: flex;
   flex-direction: column;
   gap: $space-sm;
-
-  // The DS group renders its label then one wrapper per option. A two-column grid with the
-  // label spanning both keeps the radios on one line; together they need ~175px of the 185px
-  // column, so the gap stays small and the labels must not wrap.
-  &__mode {
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-content: start;
-    align-items: center;
-    column-gap: $space-xs;
-    white-space: nowrap;
-
-    > :first-child {
-      grid-column: 1 / -1;
-    }
-  }
-
-  &__presets {
-    display: flex;
-    flex-direction: column;
-    gap: $space-xs;
-
-    > * {
-      width: 100%;
-      justify-content: center;
-    }
-  }
 }
 
 // Vertical stack within a tab: typically a headline KPI strip above the panel grid.
@@ -369,7 +383,8 @@
 }
 
 // Responsive 12-column panel grid. Panels default to span 6 (half width); use `--span-4` /
-// `--span-8` modifiers for asymmetric rows, or `--full` for a row-spanning panel.
+// `--span-8` or `--span-5` / `--span-7` modifiers for asymmetric rows, or `--full` for a
+// row-spanning panel.
 .ffc-panel-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -406,6 +421,15 @@
 
   &--span-8 {
     grid-column: span 8;
+  }
+
+  // 7 / 5 fits a five-column grid beside a three-column one without truncating either.
+  &--span-5 {
+    grid-column: span 5;
+  }
+
+  &--span-7 {
+    grid-column: span 7;
   }
 
   &__title {

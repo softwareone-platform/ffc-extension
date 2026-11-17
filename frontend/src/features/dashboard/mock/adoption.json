@@ -141,5 +141,333 @@
       { "month": "2025-11-01T00:00:00Z", "trial": 199, "paid": 348 },
       { "month": "2025-12-01T00:00:00Z", "trial": 210, "paid": 365 }
     ]
-  }
+  },
+  "organizationsWithoutDatasources": [
+    {
+      "id": "ORG-4100-1000",
+      "organizationName": "TechCo Alpha",
+      "createdAt": "2026-10-27",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4137-1053",
+      "organizationName": "GreenLeaf Solutions",
+      "createdAt": "2026-10-22",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4174-1106",
+      "organizationName": "Combe Hiane",
+      "createdAt": "2026-11-13",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4211-1159",
+      "organizationName": "Northwind Traders",
+      "createdAt": "2026-09-25",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4248-1212",
+      "organizationName": "Bluepeak Analytics",
+      "createdAt": "2026-11-10",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4285-1265",
+      "organizationName": "Orion Retail",
+      "createdAt": "2026-10-10",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4322-1318",
+      "organizationName": "Vantage Health",
+      "createdAt": "2026-09-19",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4359-1371",
+      "organizationName": "Lumen Logistics",
+      "createdAt": "2026-11-03",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4396-1424",
+      "organizationName": "Crestline Energy",
+      "createdAt": "2026-11-11",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4433-1477",
+      "organizationName": "Harbor Finance",
+      "createdAt": "2026-10-21",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4470-1530",
+      "organizationName": "Pinecrest Media",
+      "createdAt": "2026-11-01",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4507-1583",
+      "organizationName": "Quantum Foods",
+      "createdAt": "2026-10-12",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4544-1636",
+      "organizationName": "Silverline Telecom",
+      "createdAt": "2026-11-13",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4581-1689",
+      "organizationName": "Atlas Manufacturing",
+      "createdAt": "2026-11-09",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4618-1742",
+      "organizationName": "Brightwave Labs",
+      "createdAt": "2026-10-07",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4655-1795",
+      "organizationName": "Cobalt Insurance",
+      "createdAt": "2026-10-10",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4692-1848",
+      "organizationName": "Evergreen Pharma",
+      "createdAt": "2026-10-11",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4729-1901",
+      "organizationName": "Ironclad Security",
+      "createdAt": "2026-10-22",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4766-1954",
+      "organizationName": "Juniper Travel",
+      "createdAt": "2026-11-02",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4803-2007",
+      "organizationName": "Keystone Legal",
+      "createdAt": "2026-10-12",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4840-2060",
+      "organizationName": "Meridian Retail",
+      "createdAt": "2026-10-29",
+      "billingStatus": "trial"
+    },
+    {
+      "id": "ORG-4877-2113",
+      "organizationName": "Nimbus Software",
+      "createdAt": "2026-11-07",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4914-2166",
+      "organizationName": "Summit Education",
+      "createdAt": "2026-11-09",
+      "billingStatus": "paid"
+    },
+    {
+      "id": "ORG-4951-2219",
+      "organizationName": "Tidewater Shipping",
+      "createdAt": "2026-10-28",
+      "billingStatus": "paid"
+    }
+  ],
+  "topOrganizationsBySpend": [
+    {
+      "id": "ORG-5200-3000",
+      "organizationName": "Northwind Trading",
+      "status": "terminated",
+      "monthlySpend": 79700
+    },
+    {
+      "id": "ORG-5241-3067",
+      "organizationName": "Contoso Industries",
+      "status": "active",
+      "monthlySpend": 9700
+    },
+    {
+      "id": "ORG-5282-3134",
+      "organizationName": "Fabrikam Group",
+      "status": "active",
+      "monthlySpend": 7200
+    },
+    {
+      "id": "ORG-5323-3201",
+      "organizationName": "Adventure Works",
+      "status": "active",
+      "monthlySpend": 84000
+    },
+    {
+      "id": "ORG-5364-3268",
+      "organizationName": "Litware Inc",
+      "status": "terminated",
+      "monthlySpend": 58600
+    },
+    {
+      "id": "ORG-5405-3335",
+      "organizationName": "Proseware Ltd",
+      "status": "active",
+      "monthlySpend": 74800
+    },
+    {
+      "id": "ORG-5446-3402",
+      "organizationName": "Tailspin Toys",
+      "status": "deleted",
+      "monthlySpend": 33700
+    },
+    {
+      "id": "ORG-5487-3469",
+      "organizationName": "Wide World Importers",
+      "status": "active",
+      "monthlySpend": 57800
+    },
+    {
+      "id": "ORG-5528-3536",
+      "organizationName": "Woodgrove Bank",
+      "status": "terminated",
+      "monthlySpend": 21800
+    },
+    {
+      "id": "ORG-5569-3603",
+      "organizationName": "Coho Winery",
+      "status": "active",
+      "monthlySpend": 25300
+    },
+    {
+      "id": "ORG-5610-3670",
+      "organizationName": "Alpine Ski House",
+      "status": "active",
+      "monthlySpend": 30800
+    },
+    {
+      "id": "ORG-5651-3737",
+      "organizationName": "Blue Yonder Airlines",
+      "status": "active",
+      "monthlySpend": 4400
+    },
+    {
+      "id": "ORG-5692-3804",
+      "organizationName": "City Power & Light",
+      "status": "active",
+      "monthlySpend": 11700
+    },
+    {
+      "id": "ORG-5733-3871",
+      "organizationName": "Consolidated Messenger",
+      "status": "active",
+      "monthlySpend": 63600
+    },
+    {
+      "id": "ORG-5774-3938",
+      "organizationName": "Fourth Coffee",
+      "status": "active",
+      "monthlySpend": 41000
+    },
+    {
+      "id": "ORG-5815-4005",
+      "organizationName": "Graphic Design Institute",
+      "status": "deleted",
+      "monthlySpend": 54200
+    },
+    {
+      "id": "ORG-5856-4072",
+      "organizationName": "Humongous Insurance",
+      "status": "active",
+      "monthlySpend": 88800
+    },
+    {
+      "id": "ORG-5897-4139",
+      "organizationName": "Lucerne Publishing",
+      "status": "terminated",
+      "monthlySpend": 11600
+    },
+    {
+      "id": "ORG-5938-4206",
+      "organizationName": "Margie's Travel",
+      "status": "active",
+      "monthlySpend": 27100
+    },
+    {
+      "id": "ORG-5979-4273",
+      "organizationName": "Relecloud",
+      "status": "terminated",
+      "monthlySpend": 73000
+    },
+    {
+      "id": "ORG-6020-4340",
+      "organizationName": "School of Fine Art",
+      "status": "active",
+      "monthlySpend": 50700
+    },
+    {
+      "id": "ORG-6061-4407",
+      "organizationName": "Southridge Video",
+      "status": "active",
+      "monthlySpend": 6700
+    },
+    {
+      "id": "ORG-6102-4474",
+      "organizationName": "Trey Research",
+      "status": "terminated",
+      "monthlySpend": 55200
+    },
+    {
+      "id": "ORG-6143-4541",
+      "organizationName": "VanArsdel Ltd",
+      "status": "active",
+      "monthlySpend": 13800
+    },
+    {
+      "id": "ORG-6184-4608",
+      "organizationName": "Wingtip Toys",
+      "status": "deleted",
+      "monthlySpend": 13800
+    },
+    {
+      "id": "ORG-6225-4675",
+      "organizationName": "Datum Corporation",
+      "status": "deleted",
+      "monthlySpend": 30500
+    },
+    {
+      "id": "ORG-6266-4742",
+      "organizationName": "Bellows College",
+      "status": "terminated",
+      "monthlySpend": 10100
+    },
+    {
+      "id": "ORG-6307-4809",
+      "organizationName": "First Up Consultants",
+      "status": "active",
+      "monthlySpend": 5500
+    },
+    {
+      "id": "ORG-6348-4876",
+      "organizationName": "Lamna Healthcare",
+      "status": "deleted",
+      "monthlySpend": 66300
+    },
+    {
+      "id": "ORG-6389-4943",
+      "organizationName": "Munson's Pickles",
+      "status": "active",
+      "monthlySpend": 23400
+    }
+  ]
 }

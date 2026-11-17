@@ -18,6 +18,7 @@ import { toCssColor } from "../chartColors";
 import { BILLING_COLOR, PROVIDER_COLOR, STATUS_COLOR } from "../chartConfig";
 import { useDashboardFilters } from "./DashboardFiltersContext";
 import { DateRangePicker } from "./DateRangePicker";
+import { describeRange } from "./dateRanges";
 import { OrganizationsLink } from "./OrganizationsLink";
 
 type FilterOption<T extends string> = { value: T; label: string; color: number };
@@ -102,6 +103,14 @@ export function FilterSidebar() {
     color: PROVIDER_COLOR[provider],
   }));
 
+  // Every ticked checkbox, plus the date range once it differs from the default — the same
+  // things Reset clears.
+  const activeCount =
+    filters.statuses.length +
+    filters.billingStatuses.length +
+    filters.providers.length +
+    (describeRange(filters) === "default" ? 0 : 1);
+
   return (
     <aside
       className={`ffc-filter-bar${isCollapsed ? " ffc-filter-bar--collapsed" : ""}`}
@@ -121,12 +130,24 @@ export function FilterSidebar() {
       <div className={"ffc-filter-bar__header"}>
         <Icon name={"settings"} size={20} className={"ffc-filter-bar__icon"} />
         {!isCollapsed && <span className={"ffc-filter-bar__title"}>{tFilters("title")}</span>}
+        {activeCount > 0 && (
+          <span
+            className={"ffc-filter-bar__badge"}
+            role={"status"}
+            aria-label={tFilters("activeCount", { count: activeCount })}
+          >
+            {activeCount}
+          </span>
+        )}
       </div>
 
       {!isCollapsed && (
         <div id={"ffc-filter-bar-body"} className={"ffc-filter-bar__body-inner"}>
           <div className={"ffc-filter-bar__group"}>
+            {/* Remounts when the range returns to the default (e.g. Reset), so a "Custom date"
+                choice left over from before doesn't stay selected. */}
             <DateRangePicker
+              key={describeRange(filters) === "default" ? "default" : "picked"}
               label={tFilters("dateRange")}
               value={{ from: filters.from, to: filters.to }}
               onChange={(range) => setFilters({ ...filters, ...range })}
