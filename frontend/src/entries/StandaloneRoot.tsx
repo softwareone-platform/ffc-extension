@@ -8,8 +8,6 @@ import { App } from "~app/App";
 import { i18n } from "~i18n/translations";
 import { ExtensionsProvider } from "~shared/providers/ExtensionsProvider";
 
-import "react-day-picker/style.css";
-
 import "./StandaloneRoot.scss";
 
 setup((element: Element) => {

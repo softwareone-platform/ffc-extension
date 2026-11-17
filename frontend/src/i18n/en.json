@@ -547,11 +547,13 @@
       "title": "Filter options",
       "timeLabel": "Time",
       "dateRange": "Date range",
-      "pickDateRange": "Pick a date range",
+      "presetsMode": "Presets",
+      "customMode": "Custom date",
+      "startDate": "Start date",
+      "endDate": "End date",
       "organisationStatus": "Organisation Status",
       "billingStatus": "Billing Status",
       "cloudProvider": "Cloud Provider",
-      "apply": "Apply",
       "summary": "{{statusCount}} status · {{providerCount}} provider",
       "collapse": "Collapse filters",
       "expand": "Expand filters",
@@ -593,12 +595,14 @@
       "datasources": {
         "title": "Datasource Adoption",
         "datasourceCount": "Total Datasources",
+        "totalCaption": "Datasources",
         "orgsWithDatasources": "Organizations with Datasources",
         "orgsWithoutDatasources": "Organizations without Datasources",
         "providerDistribution": "Provider distribution"
       },
       "statusBreakdown": {
-        "title": "Organizations by Status"
+        "title": "Organizations by Status",
+        "totalCaption": "Organizations"
       },
       "funnel": {
         "title": "Adoption Funnel",

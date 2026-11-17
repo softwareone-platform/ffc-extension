@@ -41,6 +41,10 @@ export function AdoptionTab() {
             data={data.organizationsOverview.statusDistribution}
             colors={STATUS_DONUT_COLORS}
             height={CHART_HEIGHT.lg}
+            centerLabel={{
+              value: formatCount(data.organizationsOverview.total),
+              caption: tAdoption("statusBreakdown:totalCaption"),
+            }}
           />
           <ChartLegend items={statusLegendItems} layout={"horizontal"} />
         </MetricPanel>
@@ -77,7 +81,14 @@ export function AdoptionTab() {
           }
           asideLabel={tAdoption("datasources:providerDistribution")}
           aside={
-            <DonutChart data={data.datasources.providerDistribution} colors={PROVIDER_COLORS} />
+            <DonutChart
+              data={data.datasources.providerDistribution}
+              colors={PROVIDER_COLORS}
+              centerLabel={{
+                value: formatCount(data.datasources.datasourceCount),
+                caption: tAdoption("datasources:totalCaption"),
+              }}
+            />
           }
         />
 

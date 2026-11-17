@@ -143,6 +143,12 @@
   &__divider {
     align-self: stretch;
   }
+
+  // The DS Divider pads its line 24px top and bottom; on top of the 16px group gap that left
+  // ~65px around each divider. The extra class beats the DS module class on specificity.
+  & &__divider {
+    padding-block: 0;
+  }
 }
 
 // Multi-select pattern: labelled trigger button with a comma-separated summary; opens a
@@ -153,10 +159,11 @@
   gap: $space-xs;
   min-width: 180px;
 
+  // Same face and colour as the DS form-group label (e.g. the radio group's "Date range").
   &__label {
     @extend %medium2;
 
-    color: $text-strong;
+    color: var(--brand-type);
   }
 
   // Trigger mirrors the SWO DS `Input` component: gray-4 border, 8px radius, 14px/400 copy,
@@ -217,9 +224,10 @@
   border: 0;
   min-width: 0;
 
+  // 8px below the legend, matching the DS group label's gap to its first option.
   > legend {
     padding: 0;
-    margin-bottom: $space-xs;
+    margin-bottom: $space-sm;
   }
 }
 
@@ -318,81 +326,38 @@
   }
 }
 
-// `react-day-picker` range calendar inside the SWO Popover — DS doesn't ship a range picker so
-// we lean on day-picker's built-in CSS and only tint the selected range to brand colours. The
-// SWO Popover container is transparent (position/z-index only), so the popover surface
-// (background + border + shadow) is applied here. The preset column on the left mirrors the
-// Google-Analytics-style picker: single-click shortcuts for common relative ranges.
-.ffc-date-range {
+// SWO radio group (Presets / Custom date) on one line, then either the preset buttons one per row or two
+// stacked `DatePicker`s.
+.ffc-date-range-picker {
   display: flex;
-  align-items: stretch;
-  padding: $space-sm;
-  background: $surface;
-  border: 1px solid $border-subtle;
-  border-radius: $radius-card;
-  box-shadow: var(--shadow-card);
+  flex-direction: column;
+  gap: $space-sm;
 
-  .rdp-root {
-    // Tinted brand background so range middle stands out against the white popover surface —
-    // $border-subtle (#e0e5e8) would blend; a soft brand tint reads as "in the selected range".
-    --rdp-accent-color: var(--brand-primary);
-    --rdp-accent-background-color: #e6edff;
-  }
+  // The DS group renders its label then one wrapper per option. A two-column grid with the
+  // label spanning both keeps the radios on one line; together they need ~175px of the 185px
+  // column, so the gap stays small and the labels must not wrap.
+  &__mode {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: center;
+    column-gap: $space-xs;
+    white-space: nowrap;
 
-  .rdp-day_button {
-    font-weight: 500;
-  }
-
-  .rdp-selected .rdp-day_button {
-    color: var(--brand-white);
-    background-color: var(--brand-primary);
-  }
-
-  .rdp-range_middle .rdp-day_button {
-    color: var(--brand-type);
-    background-color: transparent;
+    > :first-child {
+      grid-column: 1 / -1;
+    }
   }
 
   &__presets {
     display: flex;
     flex-direction: column;
     gap: $space-xs;
-    padding-right: $space-sm;
-    margin-right: $space-sm;
-    border-right: 1px solid $border-subtle;
-    min-width: 140px;
-  }
 
-  &__preset {
-    @extend %regular2;
-
-    display: block;
-    width: 100%;
-    padding: $space-xs $space-sm;
-    background: transparent;
-    border: 0;
-    border-radius: 4px;
-    color: $text-strong;
-    text-align: left;
-    cursor: pointer;
-
-    &:hover {
-      background: var(--gray-1);
-      color: var(--brand-primary);
+    > * {
+      width: 100%;
+      justify-content: center;
     }
-  }
-
-  &__calendar {
-    display: flex;
-    flex-direction: column;
-    gap: $space-sm;
-  }
-
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: $space-sm;
-    border-top: 1px solid $border-subtle;
   }
 }
 

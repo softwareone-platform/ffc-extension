@@ -1,131 +1,84 @@
-import { useId, useState } from "react";
-
-import { DateRange, DayPicker } from "react-day-picker";
+import { useState } from "react";
 
 import { Button } from "@swo/design-system/button";
-import { Icon } from "@swo/design-system/icon";
-import { Popover } from "@swo/design-system/popover";
+import { DatePicker } from "@swo/design-system/date-picker";
+import { RadioButtonGroup } from "@swo/design-system/radio";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-import {
-  DateRangeValue,
-  DISPLAY_DATE_FORMAT,
-  formatRange,
-  PRESET_KEYS,
-  PresetKey,
-  presetRange,
-} from "./dateRanges";
+import { describeRange, PRESET_KEYS, PresetKey, presetRange } from "./dateRanges";
+
+type Mode = "presets" | "custom";
 
 export type DateRangePickerProps = {
   label: string;
-  placeholder: string;
-  value: DateRangeValue;
-  onChange: (next: DateRangeValue) => void;
-  /** Format passed to `date-fns`. Defaults to `DISPLAY_DATE_FORMAT`. */
-  dateFormat?: string;
+  value: { from: Date; to: Date };
+  onChange: (next: { from: Date; to: Date }) => void;
 };
 
 /**
- * Date-range trigger built from a SWO `Popover` + `react-day-picker` `DayPicker` in range mode.
- * The SWO design system doesn't ship a range picker; this wrapper mirrors the labelled-trigger
- * pattern of the existing MultiSelect and adds a column of preset ranges (This month, Last
- * month, Last quarter, Last year) plus an Apply button so a tentative range only commits to
- * the dashboard filters when the user confirms.
+ * Date range on SWO primitives — the design system ships no range picker. A radio group picks
+ * between one-click presets and a custom range made of two `DatePicker`s, each capping the other
+ * so the start can never pass the end.
  */
-export function DateRangePicker({
-  label,
-  placeholder,
-  value,
-  onChange,
-  dateFormat = DISPLAY_DATE_FORMAT,
-}: DateRangePickerProps) {
+export function DateRangePicker({ label, value, onChange }: DateRangePickerProps) {
   const tFilters = useFixedT("dashboard:filters");
   const tPresets = useFixedT("dashboard:filters:presets");
-  const labelId = useId();
-  const triggerId = useId();
+  const activePreset = describeRange(value);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [draft, setDraft] = useState<DateRangeValue>(value);
+  // Opens on Custom only when the range came from the date inputs (e.g. a shared URL);
+  // after that the user's choice sticks, even when a custom range happens to match a preset.
+  const [mode, setMode] = useState<Mode>(activePreset ? "presets" : "custom");
 
-  // Resync the draft from the committed value as the popover opens — handled in the
-  // open-change callback (not an effect) so React can batch both updates in one render.
-  function handleOpenChange(open: boolean) {
-    if (open) {
-      setDraft(value);
-    }
-    setIsOpen(open);
-  }
-
-  const summary = formatRange(value, dateFormat) ?? placeholder;
-  const presets = PRESET_KEYS.map((key) => ({ key, label: tPresets(key) }));
-
-  function apply() {
-    onChange(draft);
-    setIsOpen(false);
-  }
-
-  // Presets are one-click shortcuts: commit the range + close the popover immediately rather
-  // than requiring a second click on Apply.
   function applyPreset(key: PresetKey) {
     const range = presetRange(key);
-    setDraft(range);
-    onChange(range);
-    setIsOpen(false);
+    if (range.from && range.to) {
+      onChange({ from: range.from, to: range.to });
+    }
   }
 
   return (
-    <div className={"ffc-multiselect"}>
-      <span id={labelId} className={"ffc-multiselect__label"}>
-        {label}
-      </span>
-      <Popover
-        trigger={"click-manual"}
-        keepOpenOnOutsideClick={false}
-        isOpen={isOpen}
-        isOpenChange={handleOpenChange}
-      >
-        <Popover.Target>
-          <button
-            type={"button"}
-            id={triggerId}
-            className={"ffc-multiselect__trigger"}
-            aria-labelledby={`${labelId} ${triggerId}`}
-          >
-            <span className={"ffc-multiselect__summary"}>{summary}</span>
-            <Icon name={"calendar"} size={16} />
-          </button>
-        </Popover.Target>
-        <Popover.Content>
-          <div className={"ffc-date-range"}>
-            <div className={"ffc-date-range__presets"} role={"group"} aria-label={label}>
-              {presets.map((preset) => (
-                <button
-                  key={preset.key}
-                  type={"button"}
-                  className={"ffc-date-range__preset"}
-                  onClick={() => applyPreset(preset.key)}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-            <div className={"ffc-date-range__calendar"}>
-              <DayPicker
-                mode={"range"}
-                numberOfMonths={2}
-                selected={draft as DateRange}
-                onSelect={(range) => setDraft(range ?? {})}
-              />
-              <div className={"ffc-date-range__actions"}>
-                <Button type={"primary"} onClick={apply}>
-                  {tFilters("apply")}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Popover.Content>
-      </Popover>
+    <div className={"ffc-date-range-picker"}>
+      <RadioButtonGroup
+        name={"ffc-date-range-mode"}
+        className={"ffc-date-range-picker__mode"}
+        label={label}
+        value={mode}
+        options={[
+          { value: "presets", label: tFilters("presetsMode") },
+          { value: "custom", label: tFilters("customMode") },
+        ]}
+        onChange={(event) => setMode(event.target.value as Mode)}
+      />
+
+      {mode === "presets" ? (
+        <div className={"ffc-date-range-picker__presets"} role={"group"} aria-label={label}>
+          {PRESET_KEYS.map((key) => (
+            <Button
+              key={key}
+              type={activePreset === key ? "primary" : "outline"}
+              onClick={() => applyPreset(key)}
+            >
+              {tPresets(key)}
+            </Button>
+          ))}
+        </div>
+      ) : (
+        <>
+          <DatePicker<Date>
+            label={tFilters("startDate")}
+            value={value.from}
+            maxDate={value.to}
+            onChange={(from) => onChange({ ...value, from })}
+          />
+          <DatePicker<Date>
+            label={tFilters("endDate")}
+            value={value.to}
+            minDate={value.from}
+            onChange={(to) => onChange({ ...value, to })}
+          />
+        </>
+      )}
     </div>
   );
 }

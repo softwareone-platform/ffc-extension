@@ -72,7 +72,7 @@ function CheckboxGroup<T extends string>({
 /**
  * Persistent left-column filter panel for the dashboard, modelled on the SWO `Navigation.SideNav`
  * (250px expanded / 72px collapsed with a floating circular collapse button on the right edge).
- * The date range uses `react-day-picker` (the SWO DS ships no range picker) and the
+ * The date range is a pair of SWO `DatePicker`s with preset buttons, and the
  * multi-value filters are DS `Checkbox` groups. Every change commits directly to `DashboardFiltersContext` so the
  * dashboard updates live; the previous payload stays visible via react-query's
  * `keepPreviousData` so there's no flash while the next fetch is in flight.
@@ -128,15 +128,8 @@ export function FilterSidebar() {
           <div className={"ffc-filter-bar__group"}>
             <DateRangePicker
               label={tFilters("dateRange")}
-              placeholder={tFilters("pickDateRange")}
               value={{ from: filters.from, to: filters.to }}
-              onChange={(range) =>
-                setFilters({
-                  ...filters,
-                  from: range.from ?? filters.from,
-                  to: range.to ?? filters.to,
-                })
-              }
+              onChange={(range) => setFilters({ ...filters, ...range })}
             />
           </div>
 
