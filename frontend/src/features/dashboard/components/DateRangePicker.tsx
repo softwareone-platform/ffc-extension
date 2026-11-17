@@ -1,14 +1,5 @@
 import { useId, useState } from "react";
 
-import {
-  endOfMonth,
-  endOfYear,
-  format,
-  startOfMonth,
-  startOfYear,
-  subMonths,
-  subYears,
-} from "date-fns";
 import { DateRange, DayPicker } from "react-day-picker";
 
 import { Button } from "@swo/design-system/button";
@@ -17,18 +8,23 @@ import { Popover } from "@swo/design-system/popover";
 
 import { useFixedT } from "~shared/hooks/useFixedT";
 
-export type DateRangeValue = { from?: Date; to?: Date };
+import {
+  DateRangeValue,
+  DISPLAY_DATE_FORMAT,
+  formatRange,
+  PRESET_KEYS,
+  PresetKey,
+  presetRange,
+} from "./dateRanges";
 
 export type DateRangePickerProps = {
   label: string;
   placeholder: string;
   value: DateRangeValue;
   onChange: (next: DateRangeValue) => void;
-  /** Format passed to `date-fns`. Default is `dd.MM.yy` → "28.11.26" (short to fit the sidebar). */
+  /** Format passed to `date-fns`. Defaults to `DISPLAY_DATE_FORMAT`. */
   dateFormat?: string;
 };
-
-type PresetKey = "thisMonth" | "lastMonth" | "lastQuarter" | "lastYear";
 
 /**
  * Date-range trigger built from a SWO `Popover` + `react-day-picker` `DayPicker` in range mode.
@@ -42,7 +38,7 @@ export function DateRangePicker({
   placeholder,
   value,
   onChange,
-  dateFormat = "dd.MM.yy",
+  dateFormat = DISPLAY_DATE_FORMAT,
 }: DateRangePickerProps) {
   const tFilters = useFixedT("dashboard:filters");
   const tPresets = useFixedT("dashboard:filters:presets");
@@ -61,13 +57,8 @@ export function DateRangePicker({
     setIsOpen(open);
   }
 
-  const summary = formatRange(value, placeholder, dateFormat);
-  const presets: { key: PresetKey; label: string }[] = [
-    { key: "thisMonth", label: tPresets("thisMonth") },
-    { key: "lastMonth", label: tPresets("lastMonth") },
-    { key: "lastQuarter", label: tPresets("lastQuarter") },
-    { key: "lastYear", label: tPresets("lastYear") },
-  ];
+  const summary = formatRange(value, dateFormat) ?? placeholder;
+  const presets = PRESET_KEYS.map((key) => ({ key, label: tPresets(key) }));
 
   function apply() {
     onChange(draft);
@@ -137,40 +128,4 @@ export function DateRangePicker({
       </Popover>
     </div>
   );
-}
-
-function presetRange(key: PresetKey): DateRangeValue {
-  const now = new Date();
-  switch (key) {
-    case "thisMonth":
-      return { from: startOfMonth(now), to: endOfMonth(now) };
-    case "lastMonth": {
-      const prev = subMonths(now, 1);
-      return { from: startOfMonth(prev), to: endOfMonth(prev) };
-    }
-    case "lastQuarter": {
-      // Last 4 full calendar months ending with the previous month (per product request).
-      return {
-        from: startOfMonth(subMonths(now, 4)),
-        to: endOfMonth(subMonths(now, 1)),
-      };
-    }
-    case "lastYear": {
-      const prev = subYears(now, 1);
-      return { from: startOfYear(prev), to: endOfYear(prev) };
-    }
-  }
-}
-
-function formatRange(value: DateRangeValue, placeholder: string, dateFormat: string): string {
-  if (!value.from && !value.to) {
-    return placeholder;
-  }
-  if (value.from && !value.to) {
-    return `${format(value.from, dateFormat)} - …`;
-  }
-  if (!value.from && value.to) {
-    return `… - ${format(value.to, dateFormat)}`;
-  }
-  return `${format(value.from as Date, dateFormat)} - ${format(value.to as Date, dateFormat)}`;
 }

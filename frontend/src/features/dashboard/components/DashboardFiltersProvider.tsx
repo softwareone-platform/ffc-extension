@@ -1,18 +1,30 @@
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useCallback, useMemo } from "react";
 
-import { DashboardFilters, DashboardFiltersContext } from "./DashboardFiltersContext";
+import { useSearchParams } from "react-router-dom";
 
-// Rolling 3-month window ending today, matching the default previously hardcoded in the sidebar.
-function initialFilters(): DashboardFilters {
-  const to = new Date();
-  const from = new Date(to);
-  from.setMonth(from.getMonth() - 3);
-  return { from, to, statuses: [], billingStatuses: [], providers: [] };
-}
+import {
+  DashboardFilters,
+  DashboardFiltersContext,
+  parseDashboardFilters,
+  toDashboardSearchParams,
+} from "./DashboardFiltersContext";
 
+// The URL is the single source of truth: a filter change rewrites the query string, and an
+// edited or shared URL re-hydrates the filters.
 export function DashboardFiltersProvider({ children }: { children: ReactNode }) {
-  const [filters, setFilters] = useState<DashboardFilters>(initialFilters);
-  const value = useMemo(() => ({ filters, setFilters }), [filters]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.toString();
+
+  // Keyed on the string so an unchanged query keeps the same filters object.
+  const filters = useMemo(() => parseDashboardFilters(new URLSearchParams(search)), [search]);
+
+  // `replace` keeps checkbox clicks out of the portal's session history (see App.tsx).
+  const setFilters = useCallback(
+    (next: DashboardFilters) => setSearchParams(toDashboardSearchParams(next), { replace: true }),
+    [setSearchParams],
+  );
+
+  const value = useMemo(() => ({ filters, setFilters }), [filters, setFilters]);
   return (
     <DashboardFiltersContext.Provider value={value}>{children}</DashboardFiltersContext.Provider>
   );

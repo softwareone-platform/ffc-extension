@@ -3,6 +3,11 @@ export const PARAMS = {
   dataSourceId: "dataSourceId",
 } as const;
 
+// Query params the list reads on load, so another feature can deep-link a filtered list.
+export const LIST_PARAMS = {
+  statuses: "statuses",
+} as const;
+
 export const SEGMENTS = {
   root: "organizations",
   idParam: `:${PARAMS.organizationId}`,

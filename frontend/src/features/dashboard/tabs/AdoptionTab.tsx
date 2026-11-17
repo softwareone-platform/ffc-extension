@@ -1,7 +1,5 @@
 import { PATHS as ENTITLEMENT_PATHS } from "~features/entitlements/paths";
-import { PATHS as ORGANIZATION_PATHS } from "~features/organizations/paths";
 import { ChartLegend, DonutChart, PROVIDER_COLORS, XyChart } from "~shared/components/charts";
-import { KpiTile } from "~shared/components/panel";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
 import { useAdoptionMetricsApi } from "../api";
@@ -37,31 +35,6 @@ export function AdoptionTab() {
 
   return (
     <div className={"ffc-tab-stack"}>
-      <div className={"ffc-kpi-row ffc-kpi-row--four"}>
-        <KpiTile
-          label={tAdoption("overview:total")}
-          value={formatCount(data.organizationsOverview.total)}
-          linkTo={link(ORGANIZATION_PATHS.root)}
-        />
-        <KpiTile
-          label={tAdoption("overview:active")}
-          value={formatCount(data.organizationsOverview.active)}
-          trend={"up"}
-          linkTo={link(`${ORGANIZATION_PATHS.root}?status=active`)}
-        />
-        <KpiTile
-          label={tAdoption("overview:terminated")}
-          value={formatCount(data.organizationsOverview.terminated)}
-          linkTo={link(`${ORGANIZATION_PATHS.root}?status=terminated`)}
-        />
-        <KpiTile
-          label={tAdoption("overview:deleted")}
-          value={formatCount(data.organizationsOverview.deleted)}
-          trend={"down"}
-          linkTo={link(`${ORGANIZATION_PATHS.root}?status=deleted`)}
-        />
-      </div>
-
       <div className={"ffc-panel-grid"}>
         <MetricPanel title={tAdoption("statusBreakdown:title")} className={"ffc-panel--span-4"}>
           <DonutChart

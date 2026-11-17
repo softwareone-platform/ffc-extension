@@ -1,7 +1,6 @@
 import { useState } from "react";
 
-import Select, { MultiValue } from "react-select";
-
+import { Checkbox } from "@swo/design-system/checkbox";
 import { Divider } from "@swo/design-system/divider";
 import { Icon } from "@swo/design-system/icon";
 
@@ -15,35 +14,66 @@ import {
   ORGANISATION_STATUSES,
   OrganisationStatus,
 } from "../api/model";
+import { toCssColor } from "../chartColors";
 import { BILLING_COLOR, PROVIDER_COLOR, STATUS_COLOR } from "../chartConfig";
 import { useDashboardFilters } from "./DashboardFiltersContext";
 import { DateRangePicker } from "./DateRangePicker";
+import { OrganizationsLink } from "./OrganizationsLink";
 
-type SelectOption<T extends string> = { value: T; label: string; color: number };
+type FilterOption<T extends string> = { value: T; label: string; color: number };
 
-function toCssColor(color: number) {
-  return `#${color.toString(16).padStart(6, "0")}`;
-}
+type CheckboxGroupProps<T extends string> = {
+  label: string;
+  options: FilterOption<T>[];
+  value: T[];
+  onChange: (value: T[]) => void;
+};
 
-// Renders the colour swatch + label used both inside the dropdown and in the selected chip —
-// one definition keeps the two in sync automatically.
-function renderOptionLabel<T extends string>(option: SelectOption<T>) {
+// Each option carries the same colour swatch the charts use, so the filter doubles as a legend.
+function CheckboxGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: CheckboxGroupProps<T>) {
+  function toggle(option: T, isChecked: boolean) {
+    // Rebuild from `options` so the picked values keep the canonical order whatever the click order.
+    onChange(
+      options
+        .map((item) => item.value)
+        .filter((item) => (item === option ? isChecked : value.includes(item))),
+    );
+  }
+
   return (
-    <span className={"ffc-select-option"}>
-      <span
-        className={"ffc-select-option__swatch"}
-        style={{ background: toCssColor(option.color) }}
-      />
-      {option.label}
-    </span>
+    <fieldset className={"ffc-checkbox-group"}>
+      <legend className={"ffc-multiselect__label"}>{label}</legend>
+      {options.map((option) => (
+        <Checkbox
+          key={option.value}
+          value={option.value}
+          isChecked={value.includes(option.value)}
+          onChange={(event) => toggle(option.value, event.target.checked)}
+          label={
+            <span className={"ffc-select-option"}>
+              <span
+                className={"ffc-select-option__swatch"}
+                style={{ background: toCssColor(option.color) }}
+              />
+              {option.label}
+            </span>
+          }
+        />
+      ))}
+    </fieldset>
   );
 }
 
 /**
  * Persistent left-column filter panel for the dashboard, modelled on the SWO `Navigation.SideNav`
  * (250px expanded / 72px collapsed with a floating circular collapse button on the right edge).
- * The date range uses `react-day-picker` and the multi-selects use `react-select` — the SWO DS
- * ships neither primitive. Every change commits directly to `DashboardFiltersContext` so the
+ * The date range uses `react-day-picker` (the SWO DS ships no range picker) and the
+ * multi-value filters are DS `Checkbox` groups. Every change commits directly to `DashboardFiltersContext` so the
  * dashboard updates live; the previous payload stays visible via react-query's
  * `keepPreviousData` so there's no flash while the next fetch is in flight.
  */
@@ -56,29 +86,21 @@ export function FilterSidebar() {
   const { filters, setFilters } = useDashboardFilters();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const statusOptions: SelectOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map((status) => ({
+  const statusOptions: FilterOption<OrganisationStatus>[] = ORGANISATION_STATUSES.map((status) => ({
     value: status,
     label: tStatus(status),
     color: STATUS_COLOR[status],
   }));
-  const billingOptions: SelectOption<BillingStatus>[] = BILLING_STATUSES.map((status) => ({
+  const billingOptions: FilterOption<BillingStatus>[] = BILLING_STATUSES.map((status) => ({
     value: status,
     label: tBilling(status),
     color: BILLING_COLOR[status],
   }));
-  const providerOptions: SelectOption<CloudProvider>[] = CLOUD_PROVIDERS.map((provider) => ({
+  const providerOptions: FilterOption<CloudProvider>[] = CLOUD_PROVIDERS.map((provider) => ({
     value: provider,
     label: tProvider(provider),
     color: PROVIDER_COLOR[provider],
   }));
-
-  function selectedOptions<T extends string>(options: SelectOption<T>[], picks: T[]) {
-    return options.filter((option) => picks.includes(option.value));
-  }
-
-  function pickValues<T extends string>(selected: MultiValue<SelectOption<T>>): T[] {
-    return selected.map((option) => option.value);
-  }
 
   return (
     <aside
@@ -121,45 +143,35 @@ export function FilterSidebar() {
           <Divider className={"ffc-filter-bar__divider"} />
 
           <div className={"ffc-filter-bar__group"}>
-            <label className={"ffc-multiselect__label"}>{tFilters("organisationStatus")}</label>
-            <Select<SelectOption<OrganisationStatus>, true>
-              isMulti
-              classNamePrefix={"ffc-select"}
-              placeholder={tFilters("selectStatuses")}
+            <CheckboxGroup
+              label={tFilters("organisationStatus")}
               options={statusOptions}
-              value={selectedOptions(statusOptions, filters.statuses)}
-              formatOptionLabel={renderOptionLabel}
-              onChange={(selected) => setFilters({ ...filters, statuses: pickValues(selected) })}
+              value={filters.statuses}
+              onChange={(statuses) => setFilters({ ...filters, statuses })}
             />
           </div>
 
           <div className={"ffc-filter-bar__group"}>
-            <label className={"ffc-multiselect__label"}>{tFilters("billingStatus")}</label>
-            <Select<SelectOption<BillingStatus>, true>
-              isMulti
-              classNamePrefix={"ffc-select"}
-              placeholder={tFilters("selectBillingStatuses")}
+            <CheckboxGroup
+              label={tFilters("billingStatus")}
               options={billingOptions}
-              value={selectedOptions(billingOptions, filters.billingStatuses)}
-              formatOptionLabel={renderOptionLabel}
-              onChange={(selected) =>
-                setFilters({ ...filters, billingStatuses: pickValues(selected) })
-              }
+              value={filters.billingStatuses}
+              onChange={(billingStatuses) => setFilters({ ...filters, billingStatuses })}
             />
           </div>
 
           <div className={"ffc-filter-bar__group"}>
-            <label className={"ffc-multiselect__label"}>{tFilters("cloudProvider")}</label>
-            <Select<SelectOption<CloudProvider>, true>
-              isMulti
-              classNamePrefix={"ffc-select"}
-              placeholder={tFilters("selectProviders")}
+            <CheckboxGroup
+              label={tFilters("cloudProvider")}
               options={providerOptions}
-              value={selectedOptions(providerOptions, filters.providers)}
-              formatOptionLabel={renderOptionLabel}
-              onChange={(selected) => setFilters({ ...filters, providers: pickValues(selected) })}
+              value={filters.providers}
+              onChange={(providers) => setFilters({ ...filters, providers })}
             />
           </div>
+
+          <Divider className={"ffc-filter-bar__divider"} />
+
+          <OrganizationsLink />
         </div>
       )}
     </aside>

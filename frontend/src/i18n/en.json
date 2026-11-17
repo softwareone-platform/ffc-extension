@@ -281,7 +281,11 @@
         "internalServerError": "An unexpected error occurred."
       }
     },
-    "nav": {"dashboard": "Dashboard", "organizations": "Organizations", "entitlements": "Entitlements" },
+    "nav": {
+      "dashboard": "Dashboard",
+      "organizations": "Organizations",
+      "entitlements": "Entitlements"
+    },
     "actions": {
       "activate": "Activate",
       "add": "Add",
@@ -548,12 +552,14 @@
       "billingStatus": "Billing Status",
       "cloudProvider": "Cloud Provider",
       "apply": "Apply",
-      "selectProviders": "Select providers…",
-      "selectStatuses": "Select statuses…",
-      "selectBillingStatuses": "Select billing…",
       "summary": "{{statusCount}} status · {{providerCount}} provider",
       "collapse": "Collapse filters",
       "expand": "Expand filters",
+      "organizationsLink": {
+        "noFilters": "Default Organizations view",
+        "notApplied": "not applied",
+        "open": "Show in Organizations"
+      },
       "presets": {
         "thisMonth": "This month",
         "lastMonth": "Last month",
@@ -578,7 +584,6 @@
     "adoption": {
       "overview": {
         "title": "Organizations Overview",
-        "total": "Total Organizations",
         "active": "Active Organizations",
         "terminated": "Terminated Organizations",
         "deleted": "Deleted Organizations",

@@ -1,9 +1,30 @@
 import { useMemo } from "react";
 
+import { useSearchParams } from "react-router-dom";
+
+import type { OrganizationStatus } from "~api/ffc-api-model";
+import { LIST_PARAMS } from "~organizations/paths";
 import { useFixedT } from "~shared/hooks/useFixedT";
+
+const STATUSES: OrganizationStatus[] = ["active", "terminated", "deleted"];
+
+// `?statuses=active,terminated` (e.g. from the dashboard) replaces the main view's filter.
+function statusFilterFromParam(param: string | null) {
+  const picks = new Set(param?.split(",") ?? []);
+  const statuses = STATUSES.filter((status) => picks.has(status));
+  if (statuses.length === 0) {
+    return { operator: "or", value: [{ operator: "neq", field: "status", value: "deleted" }] };
+  }
+  return {
+    operator: "or",
+    value: statuses.map((status) => ({ operator: "eq", field: "status", value: status })),
+  };
+}
 
 export function useViews() {
   const tView = useFixedT("shared:grid:views");
+  const [searchParams] = useSearchParams();
+  const statusParam = searchParams.get(LIST_PARAMS.statuses);
 
   return useMemo(() => {
     return [
@@ -11,10 +32,7 @@ export function useViews() {
         name: "main",
         title: tView("mainOrganizations"),
         configuration: {
-          filters: {
-            operator: "or",
-            value: [{ operator: "neq", field: "status", value: "deleted" }],
-          },
+          filters: statusFilterFromParam(statusParam),
           sort: [{ field: "events.updated.at", direction: "desc" }],
         },
       },
@@ -41,5 +59,5 @@ export function useViews() {
         },
       },
     ];
-  }, [tView]);
+  }, [tView, statusParam]);
 }

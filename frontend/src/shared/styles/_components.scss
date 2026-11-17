@@ -206,71 +206,103 @@
   }
 }
 
-// `react-select` theming via its `classNamePrefix` — mirrors the SWO DS `Input` so the whole
-// filter sidebar reads uniformly: gray-4 border, radius-m, 14px/400 copy, brand-primary hover
-// and focus states.
-.ffc-select {
-  @extend %regular2;
+// Vertical list of DS `Checkbox`es under a legend styled like the multiselect label. The
+// fieldset reset drops the browser's default border and padding.
+.ffc-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
 
-  &__control {
-    min-height: 32px !important;
-    background: $surface !important;
-    border: 1px solid var(--gray-4) !important;
-    border-radius: var(--radius-m) !important;
-    box-shadow: none !important;
-    color: var(--brand-type) !important;
+  > legend {
+    padding: 0;
+    margin-bottom: $space-xs;
+  }
+}
 
-    &:hover {
-      border-color: var(--brand-primary) !important;
+// Sidebar footer: the button that opens Organizations, then a plain summary of the filters
+// that differ from their defaults — one label + values block per filter.
+.ffc-organizations-link {
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+
+  &__button {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    gap: $space-md;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+  }
+
+  &__label {
+    @extend %regular1;
+
+    display: flex;
+    align-items: baseline;
+    gap: $space-xs;
+    color: $text-muted;
+  }
+
+  &__tag {
+    font-style: italic;
+
+    &::before {
+      content: "·";
+      margin-right: $space-xs;
+      font-style: normal;
     }
-
-    &--is-focused {
-      border-color: var(--brand-primary) !important;
-      box-shadow: var(--box-shadow-3) !important;
-    }
   }
 
-  &__value-container {
-    padding: $space-xs $space-sm !important;
-  }
-
-  &__multi-value {
-    background: var(--gray-1) !important;
-    border: 1px solid var(--gray-2) !important;
-    border-radius: var(--radius-s) !important;
-  }
-
-  &__multi-value__label {
+  &__empty {
     @extend %regular2;
 
-    color: var(--brand-type) !important;
-    padding: 0 $space-xs !important;
+    color: $text-muted;
   }
 
-  &__menu {
-    background: $surface !important;
-    border: 1px solid $border-subtle !important;
-    border-radius: var(--radius-m) !important;
-    box-shadow: var(--shadow-card) !important;
+  &__values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-xs $space-md;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  &__option {
-    cursor: pointer !important;
+  &__value {
+    @extend %regular2;
 
-    &--is-focused {
-      background: var(--gray-1) !important;
-    }
+    display: inline-flex;
+    align-items: center;
+    gap: $space-xs;
+    color: $text-strong;
+  }
 
-    &--is-selected {
-      background: var(--brand-primary) !important;
-      color: var(--brand-white) !important;
+  // Filters the Organizations list ignores: still listed so the user sees them, but greyed.
+  &__section--ignored &__value {
+    color: $text-muted;
+
+    .ffc-select-option__swatch {
+      opacity: 0.45;
     }
   }
 }
 
-// Status / provider swatch rendered via `react-select`'s `formatOptionLabel` — appears both
-// inside the dropdown and in the selected chips so the colour meaning stays visible even
-// after a pick.
+// Status / provider colour swatch shown next to each filter checkbox label, matching the
+// chart palette so the colour meaning carries over.
 .ffc-select-option {
   display: inline-flex;
   align-items: center;
@@ -369,7 +401,6 @@
   flex-direction: column;
   gap: $space-xl;
 }
-
 
 // Responsive 12-column panel grid. Panels default to span 6 (half width); use `--span-4` /
 // `--span-8` modifiers for asymmetric rows, or `--full` for a row-spanning panel.
@@ -470,7 +501,20 @@
   &__label {
     @extend %regular1;
 
+    display: flex;
+    align-items: baseline;
+    gap: $space-xs;
     color: $text-muted;
+  }
+
+  &__tag {
+    font-style: italic;
+
+    &::before {
+      content: "·";
+      margin-right: $space-xs;
+      font-style: normal;
+    }
   }
 
   &__value {
