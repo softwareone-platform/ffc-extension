@@ -558,7 +558,8 @@
       "organizationsLink": {
         "noFilters": "Default Organizations view",
         "notApplied": "not applied",
-        "open": "Show in Organizations"
+        "open": "Show in Organizations",
+        "reset": "Reset filters"
       },
       "presets": {
         "thisMonth": "This month",

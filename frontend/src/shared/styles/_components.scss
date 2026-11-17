@@ -2,7 +2,7 @@
 @use "tokens" as *;
 
 // Shared analytics/dashboard building blocks. Typography comes from the design-token
-// placeholders (%regular1, %bold2, …) so sizes stay on the SWO type scale.
+// placeholders (%regular1, %medium2, …) so sizes stay on the SWO type scale.
 
 // Workspace shell: persistent filter column on the left, tab content on the right.
 .ffc-workspace {
@@ -105,7 +105,7 @@
   }
 
   &__title {
-    @extend %bold4;
+    @extend %medium4;
   }
 
   &__body-inner {
@@ -154,7 +154,7 @@
   min-width: 180px;
 
   &__label {
-    @extend %bold2;
+    @extend %medium2;
 
     color: $text-strong;
   }
@@ -228,7 +228,7 @@
 .ffc-organizations-link {
   display: flex;
   flex-direction: column;
-  gap: $space-md;
+  gap: $space-sm;
 
   &__button {
     width: 100%;
@@ -240,6 +240,7 @@
     display: flex;
     flex-direction: column;
     gap: $space-md;
+    margin-top: $space-sm;
   }
 
   &__section {
@@ -518,7 +519,7 @@
   }
 
   &__value {
-    @extend %bold6;
+    @extend %medium6;
 
     font-size: 32px;
     line-height: 1.1;
@@ -649,7 +650,7 @@
   }
 
   &__heading {
-    @extend %bold1;
+    @extend %medium1;
 
     color: $text-strong;
   }

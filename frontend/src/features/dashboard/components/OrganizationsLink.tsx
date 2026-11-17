@@ -31,7 +31,7 @@ export function OrganizationsLink() {
   const navigate = useNavigate();
   const summaryId = useId();
 
-  const { filters } = useDashboardFilters();
+  const { filters, resetFilters } = useDashboardFilters();
   const statuses = filters.statuses;
 
   const rangeKind = describeRange(filters);
@@ -92,6 +92,15 @@ export function OrganizationsLink() {
         aria-describedby={summaryId}
       >
         {tLink("open")}
+      </Button>
+      {/* Disabled when the summary is empty — there is nothing to clear. */}
+      <Button
+        type={"outline"}
+        className={"ffc-organizations-link__button"}
+        onClick={resetFilters}
+        isDisabled={sections.length === 0}
+      >
+        {tLink("reset")}
       </Button>
 
       <div id={summaryId} className={"ffc-organizations-link__summary"}>

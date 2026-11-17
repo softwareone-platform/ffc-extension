@@ -25,6 +25,8 @@ export type DashboardFilters = {
 export type DashboardFiltersContextValue = {
   filters: DashboardFilters;
   setFilters: (next: DashboardFilters) => void;
+  /** Drops every filter param from the URL, back to the default range with nothing picked. */
+  resetFilters: () => void;
 };
 
 export const DashboardFiltersContext = createContext<DashboardFiltersContextValue | null>(null);

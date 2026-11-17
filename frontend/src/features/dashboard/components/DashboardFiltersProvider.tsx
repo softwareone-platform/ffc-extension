@@ -24,7 +24,15 @@ export function DashboardFiltersProvider({ children }: { children: ReactNode }) 
     [setSearchParams],
   );
 
-  const value = useMemo(() => ({ filters, setFilters }), [filters, setFilters]);
+  const resetFilters = useCallback(
+    () => setSearchParams(new URLSearchParams(), { replace: true }),
+    [setSearchParams],
+  );
+
+  const value = useMemo(
+    () => ({ filters, setFilters, resetFilters }),
+    [filters, setFilters, resetFilters],
+  );
   return (
     <DashboardFiltersContext.Provider value={value}>{children}</DashboardFiltersContext.Provider>
   );
