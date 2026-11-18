@@ -3,9 +3,10 @@ import asyncio
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.activity import APP_ACTOR_ID, MASK, ActivityRecorder, activity_recorder
+from app.activity import MASK, ActivityRecorder, activity_recorder
 from app.auth.context import AuthenticationContext
 from app.db.base import session_factory
+from app.db.constants import APP_ACTOR_ID
 from app.db.handlers import ClientAccountHandler, OrganizationHandler
 from app.db.models import ClientAccount, Organization, System
 from app.enums import OrganizationStatus

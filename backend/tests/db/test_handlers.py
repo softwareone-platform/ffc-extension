@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.auth.context import AuthenticationContext
+from app.db.constants import APP_ACTOR_ID
 from app.db.handlers import (
     AccountUserHandler,
     ActivityLogHandler,
@@ -409,6 +410,107 @@ async def test_deleted_by_user_id(
     assert result.status == AccountUserStatus.DELETED
     assert result.deleted_at is not None
     assert result.deleted_by_id == user_actor.id
+
+
+async def test_create_sets_app_actor_without_auth_context(db_session: AsyncSession) -> None:
+    """`create` attributes the object to the app actor when no auth context is set."""
+    handler = DeletableAuditModelForTestsHandler(db_session)
+
+    created = await handler.create(DeletableAuditModelForTests(name="No Context Create"))
+
+    assert created.created_by_id == APP_ACTOR_ID
+    assert created.updated_by_id == APP_ACTOR_ID
+
+
+async def test_create_sets_app_actor_with_actorless_auth_context(
+    db_session: AsyncSession, actorless_auth_context: AuthenticationContext
+) -> None:
+    """`create` attributes the object to the app actor when the auth context has no actor."""
+    handler = DeletableAuditModelForTestsHandler(db_session)
+
+    created = await handler.create(DeletableAuditModelForTests(name="Actorless Create"))
+
+    assert created.created_by_id == APP_ACTOR_ID
+    assert created.updated_by_id == APP_ACTOR_ID
+
+
+async def test_create_keeps_explicit_actor_without_auth_context(
+    db_session: AsyncSession, user_factory: ModelFactory[User]
+) -> None:
+    """`create` keeps an explicitly given creator and updater instead of the app actor."""
+    user = await user_factory()
+    handler = DeletableAuditModelForTestsHandler(db_session)
+
+    created = await handler.create(
+        DeletableAuditModelForTests(
+            name="Explicit Actor Create", created_by_id=user.id, updated_by_id=user.id
+        )
+    )
+
+    assert created.created_by_id == user.id
+    assert created.updated_by_id == user.id
+
+
+async def test_update_sets_app_actor_without_auth_context(
+    db_session: AsyncSession, user_factory: ModelFactory[User]
+) -> None:
+    """`update` sets `updated_by` to the app actor when no auth context is set."""
+    user = await user_factory()
+    handler = DeletableAuditModelForTestsHandler(db_session)
+    obj = await handler.create(
+        DeletableAuditModelForTests(
+            name="No Context Update", created_by_id=user.id, updated_by_id=user.id
+        )
+    )
+
+    updated = await handler.update(obj, {"name": "No Context Update Renamed"})
+
+    assert updated.updated_by_id == APP_ACTOR_ID
+    assert updated.created_by_id == user.id
+
+
+async def test_update_sets_app_actor_with_actorless_auth_context(
+    db_session: AsyncSession,
+    user_factory: ModelFactory[User],
+    actorless_auth_context: AuthenticationContext,
+) -> None:
+    """`update` sets `updated_by` to the app actor when the auth context has no actor."""
+    user = await user_factory()
+    handler = DeletableAuditModelForTestsHandler(db_session)
+    obj = await handler.create(
+        DeletableAuditModelForTests(
+            name="Actorless Update", created_by_id=user.id, updated_by_id=user.id
+        )
+    )
+
+    updated = await handler.update(obj, {"name": "Actorless Update Renamed"})
+
+    assert updated.updated_by_id == APP_ACTOR_ID
+    assert updated.created_by_id == user.id
+
+
+async def test_delete_sets_app_actor_without_auth_context(db_session: AsyncSession) -> None:
+    """`delete` sets `deleted_by` to the app actor when no auth context is set."""
+    handler = DeletableAuditModelForTestsHandler(db_session)
+    obj = await handler.create(DeletableAuditModelForTests(name="No Context Delete"))
+
+    deleted = await handler.delete(obj)
+
+    assert deleted.status == DeletableModelStatus.DELETED
+    assert deleted.deleted_by_id == APP_ACTOR_ID
+
+
+async def test_delete_sets_app_actor_with_actorless_auth_context(
+    db_session: AsyncSession, actorless_auth_context: AuthenticationContext
+) -> None:
+    """`delete` sets `deleted_by` to the app actor when the auth context has no actor."""
+    handler = DeletableAuditModelForTestsHandler(db_session)
+    obj = await handler.create(DeletableAuditModelForTests(name="Actorless Delete"))
+
+    deleted = await handler.delete(obj)
+
+    assert deleted.status == DeletableModelStatus.DELETED
+    assert deleted.deleted_by_id == APP_ACTOR_ID
 
 
 async def test_termination_feedback_upsert_for_organization_creates(

@@ -4,12 +4,46 @@ import pathlib
 
 import httpx
 from mrok.agent import ziticorn
+from sqlalchemy import create_engine, select
 
 from app.conf import Settings
+from app.db.models import Account
+from app.enums import AccountStatus, AccountType
 from app.logging import get_logging_config
-from app.utils import get_affiliate_products, get_instance_external_id, get_meta
+from app.utils import get_instance_external_id, get_meta
 
 logger = logging.getLogger(__name__)
+
+
+def get_affiliate_products(settings: Settings) -> list[str]:
+    """
+    Loads the products of the active affiliate accounts.
+
+    `bootstrap` runs before any event loop exists, so the database is read through a
+    short-lived synchronous engine, disposed before the server workers are started.
+
+    Args:
+        settings (Settings): the application settings.
+
+    Returns:
+        list[str]: the sorted, unique product ids.
+    """
+    engine = create_engine(str(settings.postgres_url))
+    try:
+        with engine.connect() as connection:
+            rows = connection.scalars(
+                select(Account.products).where(
+                    Account.type == AccountType.AFFILIATE,
+                    Account.status == AccountStatus.ACTIVE,
+                    Account.products.is_not(None),
+                )
+            ).all()
+    finally:
+        engine.dispose()
+
+    return sorted(
+        {product.strip() for row in rows for product in row.split(",") if product.strip()}
+    )
 
 
 def bootstrap(

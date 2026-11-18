@@ -1,11 +1,15 @@
 import json
 from pathlib import Path
 
+import pytest
 from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 
-from app.bootstrap import bootstrap
+from app.bootstrap import bootstrap, get_affiliate_products
 from app.conf import Settings
+from app.db.models import Account
+from app.enums import AccountStatus, AccountType
+from tests.types import ModelFactory
 
 EXTERNAL_ID = "testextid"
 
@@ -71,3 +75,44 @@ def test_bootstrap_replaces_identity_from_a_different_extension(
     bootstrap(test_settings)
 
     assert json.loads(identity_file.read_text()) == {"new": "identity"}
+
+
+@pytest.mark.transactional_db
+async def test_get_affiliate_products_collects_unique_sorted_products(
+    test_settings: Settings,
+    account_factory: ModelFactory[Account],
+) -> None:
+    """Only active affiliate accounts contribute, and each product id appears once."""
+    await account_factory(
+        type=AccountType.AFFILIATE,
+        status=AccountStatus.ACTIVE,
+        products="PRD-2222-2222, PRD-1111-1111",
+    )
+    await account_factory(
+        type=AccountType.AFFILIATE, status=AccountStatus.ACTIVE, products="PRD-1111-1111"
+    )
+    await account_factory(type=AccountType.AFFILIATE, status=AccountStatus.ACTIVE, products=None)
+    await account_factory(
+        type=AccountType.AFFILIATE, status=AccountStatus.DISABLED, products="PRD-8888-8888"
+    )
+    await account_factory(
+        type=AccountType.OPERATIONS, status=AccountStatus.ACTIVE, products="PRD-9999-9999"
+    )
+
+    assert get_affiliate_products(test_settings) == ["PRD-1111-1111", "PRD-2222-2222"]
+
+
+def test_get_affiliate_products_disposes_the_engine_on_failure(
+    mocker: MockerFixture,
+    test_settings: Settings,
+) -> None:
+    """The engine `bootstrap` opened is always closed, so the workers fork cleanly."""
+    engine = mocker.MagicMock()
+    engine.connect.side_effect = RuntimeError("no database")
+    create_engine = mocker.patch("app.bootstrap.create_engine", return_value=engine)
+
+    with pytest.raises(RuntimeError, match="no database"):
+        get_affiliate_products(test_settings)
+
+    create_engine.assert_called_once_with(str(test_settings.postgres_url))
+    engine.dispose.assert_called_once_with()

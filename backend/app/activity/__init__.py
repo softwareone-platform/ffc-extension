@@ -3,7 +3,7 @@
 See `docs/proposals/activity-log-recorder.md` for the design.
 """
 
-from app.activity.constants import APP_ACTOR_ID, MASK
+from app.activity.constants import MASK
 from app.activity.recorder import (
     CAPTURE_OPTION,
     ActivityRecorder,
@@ -13,7 +13,6 @@ from app.activity.recorder import (
 from app.activity.snapshot import snapshot
 
 __all__ = [
-    "APP_ACTOR_ID",
     "CAPTURE_OPTION",
     "MASK",
     "ActivityRecorder",

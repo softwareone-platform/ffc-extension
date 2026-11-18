@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import Generator
 from typing import Any
 
 import pytest
@@ -7,9 +7,8 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.context import AuthenticationContext, auth_context
 from app.db.handlers import ClientAccountHandler, OrganizationHandler
-from app.db.models import Account, Organization
+from app.db.models import Organization
 from tests.db.models import ChildForTests, ParentWithChildrenForTests
 from tests.types import ModelFactory
 
@@ -73,17 +72,6 @@ def child_factory(db_session: AsyncSession) -> ModelFactory[ChildForTests]:
         return child
 
     return _child
-
-
-@pytest.fixture
-async def actorless_auth_context(
-    admin_account: Account,
-) -> AsyncGenerator[AuthenticationContext]:
-    """An authentication context with an account but no actor, for the duration of the test."""
-    context = AuthenticationContext(account=admin_account)
-    token = auth_context.set(context)
-    yield context
-    auth_context.reset(token)
 
 
 @pytest.fixture

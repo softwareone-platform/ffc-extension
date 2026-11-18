@@ -1,6 +1,5 @@
 from collections import defaultdict
 from collections.abc import Iterable
-from contextlib import suppress
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any, Self
@@ -12,10 +11,9 @@ from sqlalchemy.orm.attributes import instance_state
 from sqlalchemy.orm.base import NEVER_SET, NO_VALUE
 from sqlalchemy.orm.state import InstanceState
 
-from app.activity.constants import APP_ACTOR_ID
 from app.activity.snapshot import encode_values, mask_sensitive
-from app.auth.context import auth_context
 from app.db.models import ActivityLog, Base, ChangeRecord
+from app.utils import resolve_actor_id
 
 # Key of the root recorder in `Session.info`. Stored on the session, not in a ContextVar:
 # changes are captured per session (= per transaction), whatever task or function makes them.
@@ -34,15 +32,6 @@ type RowKey = tuple[Mapper, tuple[Any, ...]]
 
 class ActivityRecorderError(RuntimeError):
     """The block did something whose changes cannot be recorded reliably."""
-
-
-def resolve_actor_id() -> str:
-    """The actor of the current request, else the application itself."""
-    with suppress(LookupError):
-        current = auth_context.get().get_actor()
-        if current is not None:
-            return current.id
-    return APP_ACTOR_ID
 
 
 def _is_recorded(mapper: Mapper) -> bool:
