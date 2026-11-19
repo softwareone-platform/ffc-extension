@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     @computed_field
     def postgres_url(self) -> PostgresDsn:
         return PostgresDsn.build(
-            scheme="postgresql",
+            scheme="postgresql+psycopg",
             username=self.postgres_user,
             password=quote(self.postgres_password),
             host=self.postgres_host,

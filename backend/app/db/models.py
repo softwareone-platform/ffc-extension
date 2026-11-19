@@ -29,6 +29,14 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from app.db.constants import (
+    FKEY_ACCOUNT,
+    FKEY_ACTIVITY_LOG,
+    FKEY_ACTOR,
+    FKEY_CLIENT_ACCOUNT,
+    FKEY_ORGANIZATION,
+    FKEY_USER,
+)
 from app.db.human_readable_pk import HumanReadablePKMixin
 from app.enums import (
     AccountIntegration,
@@ -43,13 +51,6 @@ from app.enums import (
     TerminationReason,
     UserStatus,
 )
-
-FKEY_ORGANIZATION = "organizations.id"
-FKEY_ACTOR = "actors.id"
-FKEY_ACCOUNT = "accounts.id"
-FKEY_USER = "users.id"
-FKEY_CLIENT_ACCOUNT = "client_accounts.id"
-FKEY_ACTIVITY_LOG = "activity_logs.id"
 
 
 class Base(DeclarativeBase):

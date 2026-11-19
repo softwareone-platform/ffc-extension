@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import base64
 import binascii
 import contextlib
@@ -11,6 +10,7 @@ import os
 import socket
 import subprocess
 from collections.abc import Sequence
+from contextlib import suppress
 from datetime import UTC, datetime, time
 from decimal import Decimal
 from functools import lru_cache
@@ -22,11 +22,10 @@ from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from yaml import safe_load
 
-from app.conf import Settings, get_settings
-from app.db.base import configure_db_engine, session_factory
-from app.db.handlers import AccountHandler
+from app.auth.context import auth_context
+from app.conf import get_settings
+from app.db.constants import APP_ACTOR_ID
 from app.db.models import Account
-from app.enums import AccountStatus, AccountType
 from app.exceptions import InvalidDataSourceIdError
 
 logger = logging.getLogger(__name__)
@@ -198,32 +197,6 @@ def get_instance_external_id() -> str:
     return hashlib.sha256(seed.encode()).hexdigest()[:12]
 
 
-async def _fetch_affiliate_products(settings: Settings) -> list[str]:
-    engine = configure_db_engine(settings)
-    try:
-        async with session_factory() as session:
-            accounts = await AccountHandler(session).query_db(
-                where_clauses=[
-                    Account.type == AccountType.AFFILIATE,
-                    Account.status == AccountStatus.ACTIVE,
-                    Account.products.is_not(None),
-                ]
-            )
-        products = {
-            product.strip()
-            for account in accounts
-            for product in account.products.split(",")
-            if product.strip()
-        }
-        return sorted(products)
-    finally:
-        await engine.dispose()
-
-
-def get_affiliate_products(settings: Settings) -> list[str]:
-    return asyncio.run(_fetch_affiliate_products(settings))
-
-
 def get_meta(products: Sequence[str] | None = None):
     template = _JINJA_ENV.get_template("meta.yaml")
     return safe_load(
@@ -262,3 +235,12 @@ def validate_datasource_id_format(owner: Account, datasource_id: str) -> None:
     if provider is None or provider.matches_datasource_id(datasource_id):
         return
     raise InvalidDataSourceIdError(datasource_id, provider.name)
+
+
+def resolve_actor_id() -> str:
+    """The actor of the current request, else the application itself."""
+    with suppress(LookupError):
+        current = auth_context.get().get_actor()
+        if current is not None:
+            return current.id
+    return APP_ACTOR_ID

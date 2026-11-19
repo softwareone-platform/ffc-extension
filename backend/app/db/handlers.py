@@ -37,6 +37,7 @@ from app.enums import (
     OrganizationStatus,
     TerminationReason,
 )
+from app.utils import resolve_actor_id
 
 
 class DatabaseError(Exception):
@@ -81,13 +82,8 @@ class ModelHandler[M: BaseModel]:
 
     async def create(self, obj: M) -> M:
         if isinstance(obj, AuditableMixin):  # pragma: no branch
-            if obj.created_by is None:
-                with suppress(LookupError):
-                    obj.created_by = auth_context.get().get_actor()
-
-            if obj.updated_by is None:
-                with suppress(LookupError):
-                    obj.updated_by = auth_context.get().get_actor()
+            obj.created_by_id = obj.created_by_id or resolve_actor_id()
+            obj.updated_by_id = obj.updated_by_id or resolve_actor_id()
 
         self.session.add(obj)
         await self._save_changes(obj)
@@ -182,8 +178,7 @@ class ModelHandler[M: BaseModel]:
         if (
             isinstance(obj, AuditableMixin) and data and "updated_by" not in data
         ):  # pragma: no branch
-            with suppress(LookupError):
-                obj.updated_by = auth_context.get().get_actor()
+            obj.updated_by_id = resolve_actor_id()
 
         await self._save_changes(obj)
 
@@ -216,9 +211,7 @@ class ModelHandler[M: BaseModel]:
 
         if isinstance(obj, AuditableMixin):
             column_updates["updated_by"] = obj.updated_by
-            with suppress(LookupError):
-                column_updates["deleted_by"] = auth_context.get().get_actor()
-
+            column_updates["deleted_by_id"] = resolve_actor_id()
         return await self.update(obj, data=column_updates)
 
     async def query_db(

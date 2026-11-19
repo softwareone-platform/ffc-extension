@@ -25,7 +25,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import selectinload
 
-from app.activity.constants import APP_ACTOR_ID
 from app.api_clients.base import BaseAPIClient
 from app.api_clients.ffc_api import FFCAPIClient
 from app.api_clients.mpt import MPTClient, MPTExtensionAuth
@@ -35,6 +34,7 @@ from app.billing.dataclasses import ProcessResultInfo
 from app.billing.enum import ProcessResult
 from app.conf import Settings, get_settings
 from app.db.base import configure_db_engine, session_factory
+from app.db.constants import APP_ACTOR_ID
 from app.db.handlers import (
     ClientAccountHandler,
     EntitlementHandler,
@@ -892,6 +892,17 @@ async def ffc_extension_auth_context(
     context = AuthenticationContext(
         account=admin_account, actor_type=ActorType.SYSTEM, system=ffc_extension
     )
+    token = auth_context.set(context)
+    yield context
+    auth_context.reset(token)
+
+
+@pytest.fixture
+async def actorless_auth_context(
+    admin_account: Account,
+) -> AsyncGenerator[AuthenticationContext]:
+    """An authentication context with an account but no actor, for the duration of the test."""
+    context = AuthenticationContext(account=admin_account)
     token = auth_context.set(context)
     yield context
     auth_context.reset(token)
