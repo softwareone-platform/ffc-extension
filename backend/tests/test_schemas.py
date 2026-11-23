@@ -12,7 +12,14 @@ from app.db.models import (
     Organization,
     System,
 )
-from app.enums import AccountType, ActorType, EntitlementStatus, OrganizationStatus, SystemStatus
+from app.enums import (
+    AccountType,
+    ActivityStatus,
+    ActorType,
+    EntitlementStatus,
+    OrganizationStatus,
+    SystemStatus,
+)
 from app.schemas.activity_logs import ActivityLogDetailRead, ActivityLogRead
 from app.schemas.core import (
     ActorRead,
@@ -415,6 +422,7 @@ def test_activity_log_read_convert_model_to_schema():
         actor=actor,
         action="organization.updated",
         message="Renamed",
+        status=ActivityStatus.IN_PROGRESS,
     )
 
     activity_log_read = convert_model_to_schema(ActivityLogRead, activity_log)
@@ -425,7 +433,10 @@ def test_activity_log_read_convert_model_to_schema():
     assert activity_log_read.actor.name == "Harry Potter"
     assert activity_log_read.action == "organization.updated"
     assert activity_log_read.message == "Renamed"
+    assert activity_log_read.status == ActivityStatus.IN_PROGRESS
     assert "changes" not in ActivityLogRead.model_fields
+    assert "operation_key" not in ActivityLogRead.model_fields
+    assert "notes" not in ActivityLogRead.model_fields
 
 
 def test_activity_log_detail_read_convert_model_to_schema():
@@ -435,6 +446,7 @@ def test_activity_log_detail_read_convert_model_to_schema():
         object_id="FORG-1234-5678",
         before={"name": "Old"},
         after={"name": "New"},
+        recorded_at=datetime(2026, 11, 10, 12, 5, tzinfo=UTC),
     )
     activity_log = ActivityLog(
         id="FLOG-1234-5678-9012",
@@ -442,6 +454,15 @@ def test_activity_log_detail_read_convert_model_to_schema():
         actor=actor,
         action="organization.updated",
         message="Renamed",
+        status=ActivityStatus.IN_PROGRESS,
+        operation_key="order:ORD-1234-5678-9012",
+        notes=[
+            {
+                "at": "2026-11-10T12:01:00+00:00",
+                "actor_id": "FUSR-1234-5678",
+                "message": "Waiting for the datasource.",
+            }
+        ],
         changes=[change],
     )
 
@@ -452,6 +473,13 @@ def test_activity_log_detail_read_convert_model_to_schema():
     assert activity_log_read.changes[0].object_id == "FORG-1234-5678"
     assert activity_log_read.changes[0].before == {"name": "Old"}
     assert activity_log_read.changes[0].after == {"name": "New"}
+    assert activity_log_read.changes[0].recorded_at == datetime(2026, 11, 10, 12, 5, tzinfo=UTC)
+    assert activity_log_read.status == ActivityStatus.IN_PROGRESS
+    assert activity_log_read.operation_key == "order:ORD-1234-5678-9012"
+    assert len(activity_log_read.notes) == 1
+    assert activity_log_read.notes[0].at == datetime(2026, 11, 10, 12, 1, tzinfo=UTC)
+    assert activity_log_read.notes[0].actor_id == "FUSR-1234-5678"
+    assert activity_log_read.notes[0].message == "Waiting for the datasource."
 
 
 def test_activity_log_detail_read_without_changes():
@@ -462,10 +490,14 @@ def test_activity_log_detail_read_without_changes():
         actor=actor,
         action="organization.updated",
         message="",
+        status=ActivityStatus.COMPLETED,
+        notes=[],
         changes=[],
     )
 
     activity_log_read = convert_model_to_schema(ActivityLogDetailRead, activity_log)
 
     assert activity_log_read.changes == []
+    assert activity_log_read.notes == []
+    assert activity_log_read.operation_key is None
     assert activity_log_read.message == ""

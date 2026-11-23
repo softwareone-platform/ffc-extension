@@ -500,6 +500,8 @@ export const meOpsV1MeGet = <ThrowOnError extends boolean = false>(options?: Opt
  * |changes|eq, ne|no|
  * |id|eq, ilike, in, like, ne, out|yes|
  * |message|eq, ilike, in, like, ne, out|yes|
+ * |operation_key|eq, ilike, in, like, ne, out|yes|
+ * |status|eq, ilike, in, like, ne, out|yes|
  * |timestamp|eq, gt, gte, lt, lte, ne|yes|
  */
 export const getActivityLogsOpsV1ActivityLogsGet = <ThrowOnError extends boolean = false>(options?: Options<GetActivityLogsOpsV1ActivityLogsGetData, ThrowOnError>) => (options?.client ?? client).get<GetActivityLogsOpsV1ActivityLogsGetResponses, unknown, ThrowOnError>({

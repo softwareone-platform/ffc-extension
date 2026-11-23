@@ -141,6 +141,8 @@ class ActivityLogRules(ModelRQLRules):
     timestamp = FieldRule()
     action = FieldRule()
     message = FieldRule()
+    status = FieldRule()
+    operation_key = FieldRule()
     actor = RelationshipRule(rules=ActorRules())
     changes = RelationshipRule(rules=ChangeRecordRule())
 

@@ -20,7 +20,7 @@ from app.db.models import (
     Organization,
     System,
 )
-from app.enums import ActorType, EntitlementStatus
+from app.enums import ActivityStatus, ActorType, EntitlementStatus
 from tests.types import ModelFactory
 
 
@@ -426,3 +426,91 @@ async def test_deleting_an_activity_log_deletes_its_change_records(
 
     remaining = await db_session.scalars(select(ChangeRecord))
     assert remaining.all() == []
+
+
+async def test_activity_log_defaults_to_completed_without_key_or_notes(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """An activity log created without operation fields is `completed`, keyless and noteless."""
+    activity_log = await activity_log_factory()
+    db_session.expunge_all()
+
+    loaded = await db_session.get(ActivityLog, activity_log.id)
+
+    assert loaded is not None
+    assert loaded.status == ActivityStatus.COMPLETED
+    assert loaded.operation_key is None
+    assert loaded.notes == []
+
+
+async def test_activity_log_operation_key_is_unique_while_in_progress(
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """A second `in_progress` activity log with the same operation key is rejected."""
+    await activity_log_factory(operation_key="order:ORD-1111", status=ActivityStatus.IN_PROGRESS)
+
+    with pytest.raises(IntegrityError, match="ux_activity_logs_operation_key_in_progress"):
+        await activity_log_factory(
+            operation_key="order:ORD-1111", status=ActivityStatus.IN_PROGRESS
+        )
+
+
+@pytest.mark.parametrize("status", [ActivityStatus.COMPLETED, ActivityStatus.ABANDONED])
+async def test_activity_log_operation_key_can_be_shared_by_finished_entries(
+    activity_log_factory: ModelFactory[ActivityLog],
+    status: ActivityStatus,
+) -> None:
+    """Finished activity logs can share the operation key of an `in_progress` one."""
+    await activity_log_factory(operation_key="order:ORD-1111", status=ActivityStatus.IN_PROGRESS)
+
+    first = await activity_log_factory(operation_key="order:ORD-1111", status=status)
+    second = await activity_log_factory(operation_key="order:ORD-1111", status=status)
+
+    assert first.id != second.id
+    assert first.status == second.status == status
+
+
+async def test_activity_logs_without_operation_key_can_all_be_in_progress(
+    activity_log_factory: ModelFactory[ActivityLog],
+) -> None:
+    """The uniqueness of `in_progress` entries does not apply to entries without a key."""
+    first = await activity_log_factory(status=ActivityStatus.IN_PROGRESS)
+    second = await activity_log_factory(status=ActivityStatus.IN_PROGRESS)
+
+    assert first.id != second.id
+
+
+async def test_change_record_recorded_at_defaults_to_now(
+    change_record_factory: ModelFactory[ChangeRecord],
+) -> None:
+    """A change record created without `recorded_at` is stamped with the current time."""
+    before = datetime.now(UTC) - timedelta(seconds=5)
+
+    change_record = await change_record_factory()
+
+    assert before <= change_record.recorded_at <= datetime.now(UTC) + timedelta(seconds=5)
+
+
+async def test_activity_log_changes_are_ordered_by_recorded_at_then_id(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    change_record_factory: ModelFactory[ChangeRecord],
+) -> None:
+    """`ActivityLog.changes` loads the records oldest first, with the id breaking ties."""
+    activity_log = await activity_log_factory()
+    later = datetime(2026, 1, 2, 12, 0, tzinfo=UTC)
+    earlier = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+    third = await change_record_factory(activity_log=activity_log, recorded_at=later)
+    first = await change_record_factory(activity_log=activity_log, recorded_at=earlier)
+    second = await change_record_factory(activity_log=activity_log, recorded_at=earlier)
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ActivityLog)
+        .options(selectinload(ActivityLog.changes))
+        .where(ActivityLog.id == activity_log.id)
+    )
+
+    assert loaded is not None
+    assert [change.id for change in loaded.changes] == [first.id, second.id, third.id]

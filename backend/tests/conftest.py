@@ -62,6 +62,7 @@ from app.enums import (
     AccountStatus,
     AccountType,
     AccountUserStatus,
+    ActivityStatus,
     ActorType,
     DatasourceType,
     EntitlementStatus,
@@ -487,15 +488,23 @@ def activity_log_factory(
         message: str | None = None,
         timestamp: datetime | None = None,
         changes: list[ChangeRecord] | None = None,
+        status: ActivityStatus | None = None,
+        operation_key: str | None = None,
+        notes: list[dict[str, Any]] | None = None,
     ) -> ActivityLog:
         activity_log = ActivityLog(
             actor=actor or await system_factory(),
             action=action,
             message=message or faker.sentence(),
             changes=changes or [],
+            operation_key=operation_key,
         )
         if timestamp is not None:
             activity_log.timestamp = timestamp
+        if status is not None:
+            activity_log.status = status
+        if notes is not None:
+            activity_log.notes = notes
         db_session.add(activity_log)
         await db_session.commit()
         await db_session.refresh(activity_log)
@@ -516,6 +525,7 @@ def change_record_factory(
         object_id: str | None = None,
         before: dict | None = None,
         after: dict | None = None,
+        recorded_at: datetime | None = None,
     ) -> ChangeRecord:
         activity_log = activity_log or await activity_log_factory()
         change_record = ChangeRecord(
@@ -525,6 +535,8 @@ def change_record_factory(
             before=before,
             after={"name": faker.company()} if after is None else after,
         )
+        if recorded_at is not None:
+            change_record.recorded_at = recorded_at
         db_session.add(change_record)
         await db_session.commit()
         await db_session.refresh(change_record)

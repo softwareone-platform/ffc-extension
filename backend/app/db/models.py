@@ -8,6 +8,7 @@ from __future__ import annotations
 import datetime
 import re
 from decimal import Decimal
+from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy import (
@@ -43,6 +44,7 @@ from app.enums import (
     AccountStatus,
     AccountType,
     AccountUserStatus,
+    ActivityStatus,
     ActorType,
     DatasourceType,
     EntitlementStatus,
@@ -478,11 +480,35 @@ class ActivityLog(Base, HumanReadablePKMixin):
     actor: Mapped[Actor] = relationship(foreign_keys=[actor_id], lazy="raise")
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     message: Mapped[str] = mapped_column(Text(), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=ActivityStatus.COMPLETED.value,
+        server_default=ActivityStatus.COMPLETED.value,
+    )
+    # Identifies an operation (a multi-step / multi-attempt activity) so that every attempt
+    # can find the entry of the operation it belongs to.
+    operation_key: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    # Each note is `{"at": <ISO datetime>, "actor_id": <actor id>, "message": <text>}`.
+    notes: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, default=list, server_default=sa.text("'[]'::jsonb")
+    )
     changes: Mapped[list[ChangeRecord]] = relationship(
         back_populates="activity_log",
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="raise",
+        order_by=lambda: (ChangeRecord.recorded_at, ChangeRecord.id),
+    )
+
+    __table_args__ = (
+        # Only one entry per key can be in progress; finished entries can share a key.
+        Index(
+            "ux_activity_logs_operation_key_in_progress",
+            operation_key,
+            unique=True,
+            postgresql_where=sa.text(f"status = '{ActivityStatus.IN_PROGRESS.value}'"),
+        ),
     )
 
 
@@ -500,5 +526,11 @@ class ChangeRecord(Base):
     object_id: Mapped[str] = mapped_column(String(64), nullable=False)
     before: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     after: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Orders the records of an entry when they are added by different attempts.
+    recorded_at: Mapped[datetime.datetime] = mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.func.current_timestamp(),
+    )
 
     __table_args__ = (Index("ix_change_records_object", object_type, object_id),)
