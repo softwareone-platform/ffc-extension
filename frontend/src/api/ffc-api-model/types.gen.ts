@@ -470,6 +470,31 @@ export type ActivityLogDetailRead = {
      */
     message: string;
     /**
+     * ActivityStatus
+     */
+    status: 'in_progress' | 'completed' | 'abandoned';
+    /**
+     * Operation Key
+     */
+    operation_key?: string | null;
+    /**
+     * Notes
+     */
+    notes?: Array<{
+        /**
+         * At
+         */
+        at: string;
+        /**
+         * Actor Id
+         */
+        actor_id: string;
+        /**
+         * Message
+         */
+        message: string;
+    }>;
+    /**
      * Changes
      */
     changes?: Array<{
@@ -493,6 +518,10 @@ export type ActivityLogDetailRead = {
         after?: {
             [key: string]: unknown;
         } | null;
+        /**
+         * Recorded At
+         */
+        recorded_at: string;
     }>;
 };
 
@@ -537,7 +566,34 @@ export type ActivityLogRead = {
      * Message
      */
     message: string;
+    /**
+     * ActivityStatus
+     */
+    status: 'in_progress' | 'completed' | 'abandoned';
 };
+
+/**
+ * ActivityNoteRead
+ */
+export type ActivityNoteRead = {
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * Actor Id
+     */
+    actor_id: string;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
+ * ActivityStatus
+ */
+export type ActivityStatus = 'in_progress' | 'completed' | 'abandoned';
 
 /**
  * ActorReference
@@ -856,6 +912,10 @@ export type ChangeRecordRead = {
     after?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Recorded At
+     */
+    recorded_at: string;
 };
 
 /**
@@ -2383,6 +2443,10 @@ export type LimitOffsetPageActivityLogRead = {
          * Message
          */
         message: string;
+        /**
+         * ActivityStatus
+         */
+        status: 'in_progress' | 'completed' | 'abandoned';
     }>;
     /**
      * Total
@@ -9226,6 +9290,10 @@ export type GetActivityLogsOpsV1ActivityLogsGetResponses = {
              * Message
              */
             message: string;
+            /**
+             * ActivityStatus
+             */
+            status: 'in_progress' | 'completed' | 'abandoned';
         }>;
         /**
          * Total
@@ -9340,6 +9408,31 @@ export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses = {
          */
         message: string;
         /**
+         * ActivityStatus
+         */
+        status: 'in_progress' | 'completed' | 'abandoned';
+        /**
+         * Operation Key
+         */
+        operation_key?: string | null;
+        /**
+         * Notes
+         */
+        notes?: Array<{
+            /**
+             * At
+             */
+            at: string;
+            /**
+             * Actor Id
+             */
+            actor_id: string;
+            /**
+             * Message
+             */
+            message: string;
+        }>;
+        /**
          * Changes
          */
         changes?: Array<{
@@ -9363,6 +9456,10 @@ export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses = {
             after?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Recorded At
+             */
+            recorded_at: string;
         }>;
     };
 };

@@ -2,7 +2,8 @@ from datetime import UTC, datetime
 
 from httpx import AsyncClient
 
-from app.db.models import Account, ActivityLog, ChangeRecord, System
+from app.db.models import Account, ActivityLog, App, ChangeRecord, System
+from app.enums import ActivityStatus
 from tests.types import ModelFactory
 
 # ==================
@@ -50,6 +51,7 @@ async def test_get_all_activity_logs_returns_entries_without_changes(
         },
         "action": "organization.updated",
         "message": "Renamed",
+        "status": "completed",
     }
 
 
@@ -115,6 +117,90 @@ async def test_get_activity_logs_with_object_filter(
     assert data["total"] == 1
     assert data["items"][0]["id"] == matching.id
     assert "changes" not in data["items"][0]
+
+
+async def test_get_activity_logs_with_changes_object_id_filter(
+    activity_log_factory: ModelFactory[ActivityLog],
+    admin_client: AsyncClient,
+) -> None:
+    """`any(changes,eq(changes.object_id,...))` returns only the entries that touched that id."""
+    matching = await activity_log_factory(
+        changes=[ChangeRecord(object_type="organizations", object_id="FORG-1111-1111")]
+    )
+    await activity_log_factory(
+        changes=[ChangeRecord(object_type="organizations", object_id="FORG-2222-2222")]
+    )
+    await activity_log_factory()
+
+    response = await admin_client.get(
+        "/activity-logs?any(changes,eq(changes.object_id,FORG-1111-1111))"
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == matching.id
+
+
+async def test_get_activity_logs_with_actor_type_filter(
+    activity_log_factory: ModelFactory[ActivityLog],
+    app_factory: ModelFactory[App],
+    admin_client: AsyncClient,
+    ffc_extension: System,
+) -> None:
+    """`eq(actor.type,app)` returns only the entries recorded by an app actor."""
+    by_app = await activity_log_factory(actor=await app_factory())
+    await activity_log_factory(actor=ffc_extension)
+
+    response = await admin_client.get("/activity-logs?eq(actor.type,app)")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == by_app.id
+    assert data["items"][0]["actor"]["type"] == "app"
+
+
+async def test_get_activity_logs_with_status_filter(
+    activity_log_factory: ModelFactory[ActivityLog],
+    admin_client: AsyncClient,
+) -> None:
+    """`eq(status,in_progress)` returns only the entries that are still in progress."""
+    in_progress = await activity_log_factory(status=ActivityStatus.IN_PROGRESS)
+    await activity_log_factory(status=ActivityStatus.COMPLETED)
+    await activity_log_factory(status=ActivityStatus.ABANDONED)
+
+    response = await admin_client.get("/activity-logs?eq(status,in_progress)")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == in_progress.id
+    assert data["items"][0]["status"] == "in_progress"
+
+
+async def test_get_activity_logs_with_operation_key_filter(
+    activity_log_factory: ModelFactory[ActivityLog],
+    admin_client: AsyncClient,
+) -> None:
+    """`eq(operation_key,...)` returns every entry of that operation and no other."""
+    abandoned = await activity_log_factory(
+        operation_key="order:ORD-1111", status=ActivityStatus.ABANDONED
+    )
+    in_progress = await activity_log_factory(
+        operation_key="order:ORD-1111", status=ActivityStatus.IN_PROGRESS
+    )
+    await activity_log_factory(operation_key="order:ORD-2222")
+    await activity_log_factory()
+
+    response = await admin_client.get("/activity-logs?eq(operation_key,order:ORD-1111)")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert sorted(item["id"] for item in data["items"]) == sorted([abandoned.id, in_progress.id])
+    assert "operation_key" not in data["items"][0]
+    assert "notes" not in data["items"][0]
 
 
 async def test_get_activity_logs_with_timestamp_range_filter(
@@ -198,6 +284,7 @@ async def test_get_activity_log_by_id_includes_changes(
                 object_id="FORG-1234-5678",
                 before={"name": "Old"},
                 after={"name": "New"},
+                recorded_at=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
             )
         ],
     )
@@ -216,15 +303,87 @@ async def test_get_activity_log_by_id_includes_changes(
         },
         "action": "organization.updated",
         "message": "Renamed",
+        "status": "completed",
+        "operation_key": None,
+        "notes": [],
         "changes": [
             {
                 "object_type": "organizations",
                 "object_id": "FORG-1234-5678",
                 "before": {"name": "Old"},
                 "after": {"name": "New"},
+                "recorded_at": "2026-01-01T12:00:00Z",
             }
         ],
     }
+
+
+async def test_get_activity_log_by_id_includes_operation_fields(
+    activity_log_factory: ModelFactory[ActivityLog],
+    admin_client: AsyncClient,
+    ffc_extension: System,
+) -> None:
+    """The detail response carries the status, the operation key and the notes."""
+    activity_log = await activity_log_factory(
+        status=ActivityStatus.IN_PROGRESS,
+        operation_key="order:ORD-1111",
+        notes=[
+            {
+                "at": "2026-01-01T12:00:00+00:00",
+                "actor_id": ffc_extension.id,
+                "message": "Waiting for the datasource.",
+            },
+            {
+                "at": "2026-01-01T13:00:00+00:00",
+                "actor_id": ffc_extension.id,
+                "message": "Datasource still missing.",
+            },
+        ],
+    )
+
+    response = await admin_client.get(f"/activity-logs/{activity_log.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "in_progress"
+    assert data["operation_key"] == "order:ORD-1111"
+    assert data["notes"] == [
+        {
+            "at": "2026-01-01T12:00:00Z",
+            "actor_id": ffc_extension.id,
+            "message": "Waiting for the datasource.",
+        },
+        {
+            "at": "2026-01-01T13:00:00Z",
+            "actor_id": ffc_extension.id,
+            "message": "Datasource still missing.",
+        },
+    ]
+
+
+async def test_get_activity_log_by_id_orders_changes_by_recorded_at_then_id(
+    activity_log_factory: ModelFactory[ActivityLog],
+    change_record_factory: ModelFactory[ChangeRecord],
+    admin_client: AsyncClient,
+) -> None:
+    """The change records are returned oldest first, with the id breaking ties."""
+    activity_log = await activity_log_factory()
+    later = datetime(2026, 1, 2, 12, 0, tzinfo=UTC)
+    earlier = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+    await change_record_factory(activity_log=activity_log, object_id="FORG-3", recorded_at=later)
+    await change_record_factory(activity_log=activity_log, object_id="FORG-1", recorded_at=earlier)
+    await change_record_factory(activity_log=activity_log, object_id="FORG-2", recorded_at=earlier)
+
+    response = await admin_client.get(f"/activity-logs/{activity_log.id}")
+
+    assert response.status_code == 200
+    changes = response.json()["changes"]
+    assert [change["object_id"] for change in changes] == ["FORG-1", "FORG-2", "FORG-3"]
+    assert [change["recorded_at"] for change in changes] == [
+        "2026-01-01T12:00:00Z",
+        "2026-01-01T12:00:00Z",
+        "2026-01-02T12:00:00Z",
+    ]
 
 
 async def test_get_activity_log_by_id_without_changes(

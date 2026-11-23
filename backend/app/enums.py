@@ -138,3 +138,10 @@ class TagType(enum.StrEnum):
     USER = "user"
     ORGANIZATION = "organization"
     DATA_SOURCE = "data_source"
+
+
+@enum.unique
+class ActivityStatus(enum.StrEnum):
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    ABANDONED = "abandoned"
