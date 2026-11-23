@@ -241,13 +241,35 @@ class GcpDetails(DatasourceUpstreamSchema):
     billing_project_id: Annotated[str | None, Field(examples=["my-billing-project"])] = None
 
 
-DatasourceDetails = AzureSubscriptionDetails | AzureTenantDetails | AwsDetails | GcpDetails
+class FocusDetails(DatasourceUpstreamSchema):
+    """
+    A FOCUS datasource reads FOCUS-formatted cost reports from an S3-compatible bucket:
+    the connection details mirror its bucket configuration, credentials excluded.
+    """
+
+    connected_at: datetime | None = None
+    bucket_name: Annotated[str | None, Field(examples=["focus-reports"])] = None
+    bucket_prefix: Annotated[str | None, Field(examples=["exports/focus"])] = None
+    s3_endpoint: Annotated[
+        str | None, Field(examples=["https://s3.eu-central-1.amazonaws.com"])
+    ] = None
+    region_name: Annotated[str | None, Field(examples=["eu-central-1"])] = None
+    file_pattern: Annotated[str | None, Field(examples=["*.parquet"])] = None
+    mapping: Annotated[dict[str, str] | None, Field(examples=[{"BilledCost": "billed_cost"}])] = (
+        None
+    )
+
+
+DatasourceDetails = (
+    AzureSubscriptionDetails | AzureTenantDetails | AwsDetails | GcpDetails | FocusDetails
+)
 
 DATASOURCE_DETAILS_SCHEMAS: dict[DatasourceType, type[DatasourceUpstreamSchema]] = {
     DatasourceType.AZURE_CNR: AzureSubscriptionDetails,
     DatasourceType.AZURE_TENANT: AzureTenantDetails,
     DatasourceType.AWS_CNR: AwsDetails,
     DatasourceType.GCP_CNR: GcpDetails,
+    DatasourceType.FOCUS: FocusDetails,
 }
 
 
