@@ -335,6 +335,58 @@ async def test_get_datasource_by_id_picks_details_schema_from_type(
     assert response.json()["details"] == datasource_data["details"]
 
 
+async def test_get_datasource_by_id_for_focus_datasource(
+    test_settings: Settings,
+    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
+    admin_client: AsyncClient,
+):
+    org = await organization_factory(
+        linked_organization_id=str(uuid.uuid4()),
+    )
+
+    datasource_data = {
+        **ffc_api_aws_cnr_datasource_detail_response_data(),
+        "type": "focus",
+        "account_id": "44d7a88d-1c56-4f8e-a303-7dfc93c5cfb0",
+        "details": {
+            "connected_at": "2025-08-01T00:00:00Z",
+            "bucket_name": "focus-reports",
+            "bucket_prefix": "exports/focus",
+            "s3_endpoint": "https://s3.eu-central-1.amazonaws.com",
+            "region_name": "eu-central-1",
+            "file_pattern": "*.parquet",
+            "mapping": {"BilledCost": "billed_cost"},
+            # Secrets must never be echoed back.
+            "credentials": {"access_key_id": "AKIAIOSFODNN7EXAMPLE", "secret_access_key": "x"},
+        },
+    }
+
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations/{org.linked_organization_id}/datasources/{datasource_data['id']}",
+        json=datasource_data,
+    )
+
+    response = await admin_client.get(
+        f"/organizations/{org.id}/datasources/{datasource_data['id']}",
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["type"] == DatasourceType.FOCUS.value
+    assert data["datasource_id"] == "44d7a88d-1c56-4f8e-a303-7dfc93c5cfb0"
+    assert data["details"] == {
+        "connected_at": "2025-08-01T00:00:00Z",
+        "bucket_name": "focus-reports",
+        "bucket_prefix": "exports/focus",
+        "s3_endpoint": "https://s3.eu-central-1.amazonaws.com",
+        "region_name": "eu-central-1",
+        "file_pattern": "*.parquet",
+        "mapping": {"BilledCost": "billed_cost"},
+    }
+
+
 async def test_get_datasource_by_id_for_unsupported_type_omits_details(
     test_settings: Settings,
     organization_factory: ModelFactory[Organization],

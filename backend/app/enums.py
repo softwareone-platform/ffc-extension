@@ -68,6 +68,7 @@ class DatasourceType(enum.StrEnum):
     AZURE_TENANT = "azure_tenant"
     GCP_TENANT = "gcp_tenant"
     GCP_CNR = "gcp_cnr"
+    FOCUS = "focus"
     UNKNOWN = "unknown"
 
     @classmethod
