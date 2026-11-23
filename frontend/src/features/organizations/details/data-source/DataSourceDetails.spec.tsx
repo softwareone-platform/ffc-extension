@@ -31,6 +31,11 @@ jest.mock("./properties/AzureProperties", () => ({
     <div data-testid="azure-properties">{entity.id}</div>
   ),
 }));
+jest.mock("./properties/FocusProperties", () => ({
+  FocusProperties: ({ entity }: MockPropertiesProps) => (
+    <div data-testid="focus-properties">{entity.id}</div>
+  ),
+}));
 jest.mock("./properties/GCPProperties", () => ({
   GCPDataSourceProperties: ({ entity }: MockPropertiesProps) => (
     <div data-testid="gcp-properties">{entity.id}</div>
@@ -84,6 +89,7 @@ describe("DataSourceDetails", () => {
     ["azure_cnr", "azure-properties"],
     ["gcp_cnr", "gcp-properties"],
     ["gcp_tenant", "gcp-properties"],
+    ["focus", "focus-properties"],
     ["unknown", "unknown-properties"],
   ])("renders the matching properties for a '%s' data source", (type, testId) => {
     prime({ isLoading: false, data: makeDatasourceDetail({ id: "ds-1", type }) });

@@ -5,6 +5,7 @@ import { useDataSourceApi } from "~features/organizations/api/useDataSourceApi";
 import { DataSourceError } from "./DataSourceError";
 import { AWSDataSourceProperties } from "./properties/AWSProperties";
 import { AzureDataSourceProperties } from "./properties/AzureProperties";
+import { FocusProperties } from "./properties/FocusProperties";
 import { GCPDataSourceProperties } from "./properties/GCPProperties";
 import { LoadingDataSourceProperties } from "./properties/LoadingProperties";
 import { UnknownDataSourceProperties } from "./properties/UnknownProperties";
@@ -30,6 +31,8 @@ export function DataSourceDetails() {
     case "gcp_cnr":
     case "gcp_tenant":
       return <GCPDataSourceProperties entity={entity} />;
+    case "focus":
+      return <FocusProperties entity={entity} />;
     default:
       return <UnknownDataSourceProperties entity={entity} />;
   }

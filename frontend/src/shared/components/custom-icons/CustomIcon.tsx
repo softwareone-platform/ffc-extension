@@ -50,6 +50,7 @@ function CustomIcon({
       "gcp_tenant",
       "google",
       "microsoft",
+      "focus",
       "unknown",
     ];
 
