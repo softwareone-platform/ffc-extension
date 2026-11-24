@@ -37,10 +37,10 @@ describe("AzureDataSourceProperties", () => {
     });
   });
 
-  it("leaves the connection date empty when the data source was never connected", () => {
+  it("shows NO_VALUE for the connection date when the data source was never connected", () => {
     renderProperties({ details: { connected_at: null } });
 
-    expect(highlightValues().connected_at).toBe("");
+    expect(highlightValues().connected_at).toBe(NO_VALUE);
   });
 
   it("links the parent data source to its sibling details page", () => {
@@ -60,6 +60,12 @@ describe("AzureDataSourceProperties", () => {
     renderProperties({ parent: { id: "p-1", name: "Tenant", type: "azure_tenant" } });
 
     expect(screen.getByTestId("secondary")).toHaveTextContent(NO_VALUE);
+  });
+
+  it("falls back to the unknown icon when the parent has no type", () => {
+    renderProperties({ parent: { id: "p-1", name: "Tenant" } as DatasourceDetailRead["parent"] });
+
+    expect(screen.getByTestId("custom-icon")).toHaveTextContent("unknown");
   });
 
   it("shows NO_VALUE for the parent when the data source has none", () => {

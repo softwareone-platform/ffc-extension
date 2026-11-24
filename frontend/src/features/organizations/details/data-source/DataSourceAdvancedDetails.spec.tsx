@@ -5,6 +5,8 @@ import { screen } from "@testing-library/react";
 import type { DatasourceDetailRead } from "~api/ffc-api-model";
 import type { useDataSourceApi } from "~features/organizations/api/useDataSourceApi";
 import { makeDatasourceDetail, renderWithOrganizationRoute } from "~test-utils";
+import { mockDesignSystemNotification } from "~test-utils/mocks/designSystemNotification";
+import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
 
 import { DataSourceAdvancedDetails } from "./DataSourceAdvancedDetails";
 import type { LoadingDataSourceProperties } from "./properties/LoadingProperties";
@@ -18,6 +20,9 @@ const mockUseDataSourceApi = jest.fn() as jest.MockedFunction<typeof useDataSour
 jest.mock("~features/organizations/api/useDataSourceApi", () => ({
   useDataSourceApi: (...args: Parameters<typeof useDataSourceApi>) => mockUseDataSourceApi(...args),
 }));
+
+jest.mock("@swo/design-system/notification", () => mockDesignSystemNotification);
+jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 
 jest.mock("./DataSourceError", () => ({
   DataSourceError: () => <div data-testid="data-source-error" />,
@@ -88,4 +93,36 @@ describe("DataSourceAdvancedDetails", () => {
       expect(screen.getByTestId(testId)).toHaveTextContent("ds-1");
     },
   );
+
+  it("does not render the focus notification for a non-focus data source", () => {
+    prime({ isLoading: false, data: makeDatasourceDetail({ id: "ds-1", type: "aws_cnr" }) });
+
+    renderAdvancedDetails();
+
+    expect(screen.queryByTestId("inline-notification")).not.toBeInTheDocument();
+  });
+
+  describe("for a focus data source", () => {
+    beforeEach(() => {
+      prime({ isLoading: false, data: makeDatasourceDetail({ id: "ds-1", type: "focus" }) });
+    });
+
+    it("renders the billing import section", () => {
+      renderAdvancedDetails();
+
+      expect(screen.getByTestId("billing-import")).toHaveTextContent("ds-1");
+    });
+
+    it.each(["monitoring-metrics", "discovery"])("does not render the %s section", (testId) => {
+      renderAdvancedDetails();
+
+      expect(screen.queryByTestId(testId)).not.toBeInTheDocument();
+    });
+
+    it("renders the limited details notification instead of discovery", () => {
+      renderAdvancedDetails();
+
+      expect(screen.getByTestId("inline-notification")).toHaveTextContent("limitedFocusDetails");
+    });
+  });
 });

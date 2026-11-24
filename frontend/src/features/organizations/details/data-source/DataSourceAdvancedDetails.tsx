@@ -1,5 +1,8 @@
 import { useParams } from "react-router-dom";
 
+import { InlineNotification } from "@swo/design-system/notification";
+import { RegularText } from "@swo/design-system/text";
+
 import { useDataSourceApi } from "~features/organizations/api/useDataSourceApi";
 import { useFixedT } from "~shared/hooks/useFixedT";
 
@@ -27,9 +30,17 @@ export function DataSourceAdvancedDetails() {
     <>
       <div className={styles.advancedDetailsHead}>
         <BillingImport entity={dataSource} />
-        <MonitoringMetrics entity={dataSource} />
+        {dataSource.type !== "focus" && <MonitoringMetrics entity={dataSource} />}
       </div>
-      <Discovery entity={dataSource} />
+      {dataSource.type !== "focus" ? (
+        <Discovery entity={dataSource} />
+      ) : (
+        <div className={styles.focusInfo}>
+          <InlineNotification status="info">
+            <RegularText color="grey-5">{tSharedDetails("limitedFocusDetails")}</RegularText>
+          </InlineNotification>
+        </div>
+      )}
     </>
   );
 }

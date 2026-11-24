@@ -1,18 +1,11 @@
-import { InPageHighlight } from "@swo/design-system/in-page-highlight";
-import { BoldText } from "@swo/design-system/text";
-import { DisplayValue } from "@swo/design-system/utils";
-
 import { DatasourceDetailRead } from "~api/ffc-api-model";
 import { CardSection } from "~shared/components/CardSection";
+import { EntityProperties } from "~shared/components/properties/EntityProperties";
 import { useFixedT } from "~shared/hooks/useFixedT";
-import { useFormatDate } from "~shared/hooks/useFormatDate";
 import { getPropertyValue } from "~shared/utils/PropertiesUtils";
 
 export function AWSDataSourceProperties({ entity }: { readonly entity: DatasourceDetailRead }) {
-  const formatDate = useFormatDate();
   const tSharedDetails = useFixedT("shared:details");
-
-  const tProperties = useFixedT("datasource:details:properties");
   const authenticationType = getPropertyValue(entity, "authentication_type") as string;
   const accountType = getPropertyValue(entity, "account_type");
   const exportType = getPropertyValue(entity, "export_type");
@@ -24,98 +17,94 @@ export function AWSDataSourceProperties({ entity }: { readonly entity: Datasourc
   return (
     <>
       <CardSection title={tSharedDetails("properties")}>
-        <InPageHighlight direction="horizontal" style="block">
-          <InPageHighlight.Item title={tProperties("connected_at")}>
-            <BoldText color="grey-5">
-              {entity?.details?.connected_at && (
-                <DisplayValue value={formatDate(entity?.details?.connected_at)} />
-              )}
-            </BoldText>
-          </InPageHighlight.Item>
-          <InPageHighlight.Item title={tProperties("account_id")}>
-            <BoldText color="grey-5">
-              <DisplayValue value={getPropertyValue(entity, "account_id")} />
-            </BoldText>
-          </InPageHighlight.Item>
-          <InPageHighlight.Item title={tProperties("account_type")}>
-            <BoldText color="grey-5">
-              <DisplayValue value={tAccountType(accountType as string)} />
-            </BoldText>
-          </InPageHighlight.Item>
-        </InPageHighlight>
+        <EntityProperties
+          properties={[
+            {
+              label: "connected_at",
+              value: entity?.details?.connected_at,
+              type: "date",
+            },
+            {
+              label: "account_id",
+              value: getPropertyValue(entity, "account_id"),
+              type: "string",
+            },
+            {
+              label: "account_type",
+              value: tAccountType(accountType as string),
+              type: "string",
+            },
+          ]}
+        />
       </CardSection>
       <CardSection title={tSharedDetails("authentication")}>
-        <InPageHighlight direction="horizontal" style="block">
-          <InPageHighlight.Item title={tProperties("authentication_type")}>
-            <BoldText color="grey-5">
-              <DisplayValue value={tAuthenticationType(authenticationType)} />
-            </BoldText>
-          </InPageHighlight.Item>
-          {authenticationType === "assumed_role" && (
-            <InPageHighlight.Item title={tProperties("assumed_role_name")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={getPropertyValue(entity, "assumed_role_name")} />
-              </BoldText>
-            </InPageHighlight.Item>
-          )}
-          {authenticationType === "access_key" && (
-            <InPageHighlight.Item title={tProperties("access_key")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={getPropertyValue(entity, "access_key_id")} />
-              </BoldText>
-            </InPageHighlight.Item>
-          )}
-        </InPageHighlight>
+        <EntityProperties
+          properties={[
+            {
+              label: "authentication_type",
+              value: tAuthenticationType(authenticationType),
+              type: "string",
+            },
+            {
+              label: "assumed_role_name",
+              value: getPropertyValue(entity, "assumed_role_name"),
+              type: "string",
+              condition: authenticationType === "assumed_role",
+            },
+            {
+              label: "access_key",
+              value: getPropertyValue(entity, "access_key_id"),
+              type: "string",
+              condition: authenticationType === "access_key",
+            },
+          ]}
+        />
       </CardSection>
       {accountType === "management_standalone" && (
         <CardSection title={tSharedDetails("export")}>
-          <InPageHighlight direction="horizontal" style="block">
-            <InPageHighlight.Item title={tProperties("export_type")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={exportType && tAwsExportType(exportType as string)} />
-              </BoldText>
-            </InPageHighlight.Item>
-            <InPageHighlight.Item title={tProperties("use_edp_discount")}>
-              <BoldText color="grey-5">
-                <DisplayValue
-                  value={
-                    getPropertyValue(entity, "use_edp_discount")
-                      ? tEDPDiscount("yes")
-                      : tEDPDiscount("no")
-                  }
-                />
-              </BoldText>
-            </InPageHighlight.Item>
-            <InPageHighlight.Item title={tProperties("export_name")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={getPropertyValue(entity, "export_name")} />
-              </BoldText>
-            </InPageHighlight.Item>
-            <InPageHighlight.Item title={tProperties("bucket_name")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={getPropertyValue(entity, "bucket_name")} />
-              </BoldText>
-            </InPageHighlight.Item>
-            <InPageHighlight.Item title={tProperties("bucket_prefix")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={getPropertyValue(entity, "bucket_prefix")} />
-              </BoldText>
-            </InPageHighlight.Item>
-            <InPageHighlight.Item title={tProperties("region_name")}>
-              <BoldText color="grey-5">
-                <DisplayValue value={getPropertyValue(entity, "region_name")} />
-              </BoldText>
-            </InPageHighlight.Item>
-            <InPageHighlight.Item title={tProperties("included_regions")}>
-              <BoldText color="grey-5">
-                <DisplayValue
-                  value={(
-                    getPropertyValue(entity, "included_regions") as string[] | undefined
-                  )?.join(", ")}
-                />
-              </BoldText>
-            </InPageHighlight.Item>
-          </InPageHighlight>
+          <EntityProperties
+            properties={[
+              {
+                label: "export_type",
+                value: exportType && tAwsExportType(exportType as string),
+                type: "string",
+              },
+              {
+                label: "use_edp_discount",
+                value: getPropertyValue(entity, "use_edp_discount")
+                  ? tEDPDiscount("yes")
+                  : tEDPDiscount("no"),
+                type: "string",
+              },
+              {
+                label: "export_name",
+                value: getPropertyValue(entity, "export_name"),
+                type: "string",
+              },
+              {
+                label: "bucket_name",
+                value: getPropertyValue(entity, "bucket_name"),
+                type: "string",
+              },
+              {
+                label: "bucket_prefix",
+                value: getPropertyValue(entity, "bucket_prefix"),
+                type: "string",
+              },
+              {
+                label: "region_name",
+                value: getPropertyValue(entity, "region_name"),
+                type: "string",
+              },
+              {
+                label: "included_regions",
+                value: (getPropertyValue(entity, "included_regions") as string[] | undefined)?.join(
+                  ", ",
+                ),
+                type: "string",
+              },
+            ]}
+          />
         </CardSection>
       )}
     </>

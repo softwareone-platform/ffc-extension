@@ -100,6 +100,15 @@ describe("DataSourcesGrid.config", () => {
       expect(screen.getByTestId("custom-icon")).toHaveTextContent("aws_cnr");
     });
 
+    it("falls back to the unknown icon in the name column when the type is missing", () => {
+      const columns = getColumns();
+      const item = makeDatasource({ type: undefined as unknown as DatasourceType });
+
+      renderColumnCell(columns, "name", item);
+
+      expect(screen.getByTestId("custom-icon")).toHaveTextContent("unknown");
+    });
+
     it("renders the parent_id column with parent details when parent is set", () => {
       const columns = getColumns();
       const item = makeDatasource({
