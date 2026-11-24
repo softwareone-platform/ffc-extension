@@ -5,13 +5,14 @@ from types import TracebackType
 from typing import Any, Self
 
 from sqlalchemy import Connection, event, select, tuple_
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 from sqlalchemy.orm import Mapper, ORMExecuteState, Session, object_session
 from sqlalchemy.orm.attributes import instance_state
 from sqlalchemy.orm.base import NEVER_SET, NO_VALUE
 from sqlalchemy.orm.state import InstanceState
 
 from app.activity.snapshot import encode_values, mask_sensitive
+from app.db.constants import APP_ACTOR_ID
 from app.db.models import ActivityLog, Base, ChangeRecord
 from app.utils import resolve_actor_id
 
@@ -97,12 +98,27 @@ class ActivityRecorder:
     when the block ends; rows that end up unchanged are left out. If the block raises,
     nothing is recorded.
 
-    The actor is the one authenticated in the current request,
+    The actor is `actor_id` when given, else the one authenticated in the current request,
     else the application itself (commands, event consumers).
 
+    `action` and `message` may be reassigned inside the block, for entries whose wording
+    depends on the outcome; the values at the end of the block are recorded. A blank
+    message at the end of the block raises `ValueError`, as at creation.
+
+    Options:
+
+    * `skip_if_unchanged`: write no entry when the block changed no row. Off by default:
+      an API action with no local change (an order completed on MPT, a reimport requested)
+      is still an activity worth an entry.
+    * `atomic`: run the block in a savepoint. If it raises, every row it wrote is rolled
+      back as well, so the enclosing transaction can be committed without the partial work
+      of a failed step. Without it, rows flushed inside a failing block stay pending in the
+      transaction; only the entry is not written.
+
     A recorder opened on a session that already has one open is a child: its changes go to
-    the root's entry, and its action and message are not recorded (the root's describe the
-    activity).
+    the root's entry, and its action, message and actor are not recorded (the root's
+    describe the activity). An atomic child still gets its own savepoint: when it fails,
+    only its rows are rolled back and the root records the rest.
     """
 
     def __init__(
@@ -110,13 +126,21 @@ class ActivityRecorder:
         session: AsyncSession,
         action: str,
         message: str,
+        *,
+        actor_id: str | None = None,
+        skip_if_unchanged: bool = False,
+        atomic: bool = False,
     ) -> None:
         if not message.strip():
             raise ValueError("An activity needs a message describing what was done.")
         self.session = session
         self.action = action
         self.message = message
+        self.actor_id = actor_id
+        self.skip_if_unchanged = skip_if_unchanged
+        self.atomic = atomic
         self._root: ActivityRecorder | None = None
+        self._savepoint: AsyncSessionTransaction | None = None
         self._changes: dict[RowKey, _Change] = {}
         self._inserted: list[InstanceState] = []  # pending rows seen at the last flush
         self._bulk_touched: set[RowKey] = set()  # rows a bulk statement may have changed
@@ -130,9 +154,13 @@ class ActivityRecorder:
 
     async def __aenter__(self) -> Self:
         self._root = self.active(self.session)
-        if self._root is None:
-            # Write what was pending before the block, so it is not attributed to it.
+        if self._root is None or self.atomic:
+            # Write what was pending before the block, so it is not attributed to it (nor
+            # rolled back with it when the block is atomic).
             await self.session.flush()
+        if self.atomic:
+            self._savepoint = await self.session.begin_nested()
+        if self._root is None:
             self.session.sync_session.info[_SESSION_KEY] = self
         return self
 
@@ -143,22 +171,51 @@ class ActivityRecorder:
         tb: TracebackType | None,
     ) -> None:
         if self._root is not None:
-            return  # a child: its changes are already the root's
+            # A child: its changes are already the root's. Its savepoint, if any, keeps or
+            # discards its rows; the root reads them back when it builds its records.
+            await self._end_savepoint(keep=exc_type is None)
+            return
         try:
-            if exc_type is not None:
-                return  # record nothing; the exception propagates
-            await self.session.flush()  # capture what is still pending
-            changes = await self.session.run_sync(self._build_change_records)
+            if exc_type is None:
+                await self._record()
+        except BaseException:
+            await self._end_savepoint(keep=False)
+            raise
         finally:
             del self.session.sync_session.info[_SESSION_KEY]
+        await self._end_savepoint(keep=exc_type is None)
+
+    async def _record(self) -> None:
+        """Build the change records and add the entry; called by the root block on success."""
+        if not self.message.strip():
+            raise ValueError("An activity needs a message describing what was done.")
+        await self.session.flush()  # capture what is still pending
+        changes = await self.session.run_sync(self._build_change_records)
+        if self.skip_if_unchanged and not changes:
+            return
         self.session.add(
             ActivityLog(
-                actor_id=resolve_actor_id(),
+                actor_id=self.actor_id if self.actor_id is not None else resolve_actor_id(),
                 action=self.action,
                 message=self.message,
                 changes=changes,
             )
         )
+        if self._savepoint is not None:
+            await self.session.flush()  # the entry belongs in the savepoint with its rows
+
+    async def _end_savepoint(self, keep: bool) -> None:
+        """Release the block's savepoint, or roll it back to discard every row it wrote."""
+        savepoint, self._savepoint = self._savepoint, None
+        if savepoint is None:
+            return  # not atomic
+        if keep:
+            await savepoint.commit()
+        elif self.session.sync_session.get_nested_transaction() is savepoint.sync_transaction:
+            # Still the current savepoint, even after a failed flush inside the block left it
+            # inactive: rolling it back makes the enclosing transaction usable again. It is
+            # not when the block already rolled the whole session back.
+            await savepoint.rollback()
 
     # -- capture (called from the session and mapper event listeners below) -----------
 
@@ -258,14 +315,46 @@ class ActivityRecorder:
         return records
 
 
-def activity_recorder(session: AsyncSession, action: str, message: str) -> ActivityRecorder:
+def activity_recorder(
+    session: AsyncSession,
+    action: str,
+    message: str,
+    *,
+    actor_id: str | None = None,
+    skip_if_unchanged: bool = False,
+    atomic: bool = False,
+) -> ActivityRecorder:
     """
     Record one activity on `session`:
 
         async with activity_recorder(session, "organization.terminated", "...") as recorder:
             ...
+
+    See `ActivityRecorder` for the options.
     """
-    return ActivityRecorder(session, action, message)
+    return ActivityRecorder(
+        session,
+        action,
+        message,
+        actor_id=actor_id,
+        skip_if_unchanged=skip_if_unchanged,
+        atomic=atomic,
+    )
+
+
+def system_activity_recorder(session: AsyncSession, action: str, message: str) -> ActivityRecorder:
+    """
+    Record one activity done by the application itself, for events and jobs:
+
+        async with system_activity_recorder(session, "entitlement.terminated", "...") as recorder:
+            ...
+
+    The actor is the application, a block that changes nothing writes no entry, and a
+    block that raises leaves neither rows nor entry behind (see `ActivityRecorder`).
+    """
+    return ActivityRecorder(
+        session, action, message, actor_id=APP_ACTOR_ID, skip_if_unchanged=True, atomic=True
+    )
 
 
 # -- event listeners ------------------------------------------------------------------

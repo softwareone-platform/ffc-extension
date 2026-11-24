@@ -378,6 +378,8 @@ class TerminationFeedback(Base, TimestampMixin, HumanReadablePKMixin):
 
 class DatasourceExpense(Base, HumanReadablePKMixin, TimestampMixin):
     __tablename__ = "datasource_expenses"
+    # Expense rows are imported in bulk by a job; they are data, not activity.
+    __activity_log__ = False
 
     PK_PREFIX = "FDSX"
     PK_NUM_LENGTH = 12

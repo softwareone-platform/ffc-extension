@@ -9,6 +9,7 @@ from app.activity.recorder import (
     ActivityRecorder,
     ActivityRecorderError,
     activity_recorder,
+    system_activity_recorder,
 )
 from app.activity.snapshot import snapshot
 
@@ -19,4 +20,5 @@ __all__ = [
     "ActivityRecorderError",
     "activity_recorder",
     "snapshot",
+    "system_activity_recorder",
 ]
