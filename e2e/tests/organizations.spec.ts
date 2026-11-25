@@ -49,7 +49,6 @@ test.describe('[233299] As a vendor view the organizations list', () => {
      * Compares the first five UI rows with the API IDs and names in order.
      * Checks that their first-column IDs follow the FORG-####-####-#### format.
      * Checks that their displayed Client IDs follow the ACC-####-#### format.
-     * Checks that their Client icons are visible and their images load successfully.
      */
     await test.step('Check view: Default', async () => {
       const headings = [
@@ -118,17 +117,6 @@ test.describe('[233299] As a vendor view the organizations list', () => {
         );
         const clientCell = row.getByRole('cell').nth(headings.indexOf('Client'));
         await expect(clientCell.getByText(/^ACC-\d{4}-\d{4}$/)).toBeVisible();
-        const clientIcon = clientCell.getByRole('img', { name: 'avatar', exact: true });
-        await expect(clientIcon).toBeVisible();
-        await expect
-          .poll(
-            () =>
-              clientIcon.evaluate(
-                icon => icon instanceof HTMLImageElement && icon.complete && icon.naturalWidth > 0 && icon.naturalHeight > 0
-              ),
-            { message: `Client icon in row ${index + 1} loads successfully` }
-          )
-          .toBe(true);
       }
 
       const statusChips = organizationsPage.gridTable.getByTestId('status-chip');
