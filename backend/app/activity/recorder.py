@@ -13,7 +13,7 @@ from sqlalchemy.orm.state import InstanceState
 
 from app.activity.snapshot import encode_values, mask_sensitive
 from app.db.constants import APP_ACTOR_ID
-from app.db.models import ActivityLog, Base, ChangeRecord
+from app.db.models import ActivityLog, ActivityNote, Base, ChangeRecord
 from app.utils import resolve_actor_id
 
 # Key of the root recorder in `Session.info`. Stored on the session, not in a ContextVar:
@@ -38,7 +38,7 @@ class ActivityRecorderError(RuntimeError):
 def _is_recorded(mapper: Mapper) -> bool:
     """False for the activity log's own tables and models opting out with `__activity_log__`."""
     cls = mapper.class_
-    return not issubclass(cls, ActivityLog | ChangeRecord) and getattr(
+    return not issubclass(cls, ActivityLog | ActivityNote | ChangeRecord) and getattr(
         cls, "__activity_log__", True
     )
 
@@ -195,7 +195,7 @@ class ActivityRecorder:
             return
         self.session.add(
             ActivityLog(
-                actor_id=self.actor_id if self.actor_id is not None else resolve_actor_id(),
+                recorded_by_id=self.actor_id if self.actor_id is not None else resolve_actor_id(),
                 action=self.action,
                 message=self.message,
                 changes=changes,

@@ -35,11 +35,11 @@ async def test_main_deletes_entries_older_than_default_retention(
     activity_log_factory: ModelFactory[ActivityLog],
 ) -> None:
     """Entries older than the default 730 days retention are deleted, newer ones are kept."""
-    just_outside = await activity_log_factory(timestamp=DEFAULT_CUTOFF - timedelta(seconds=1))
-    very_old = await activity_log_factory(timestamp=NOW - timedelta(days=2000))
-    at_cutoff = await activity_log_factory(timestamp=DEFAULT_CUTOFF)
-    just_inside = await activity_log_factory(timestamp=DEFAULT_CUTOFF + timedelta(seconds=1))
-    recent = await activity_log_factory(timestamp=NOW)
+    just_outside = await activity_log_factory(recorded_at=DEFAULT_CUTOFF - timedelta(seconds=1))
+    very_old = await activity_log_factory(recorded_at=NOW - timedelta(days=2000))
+    at_cutoff = await activity_log_factory(recorded_at=DEFAULT_CUTOFF)
+    just_inside = await activity_log_factory(recorded_at=DEFAULT_CUTOFF + timedelta(seconds=1))
+    recent = await activity_log_factory(recorded_at=NOW)
 
     await cleanup_activity_logs.main(test_settings)
 
@@ -58,9 +58,9 @@ async def test_main_deletes_entries_older_than_custom_retention(
     """A custom retention period overrides the default when selecting entries to delete."""
     settings = test_settings.model_copy(update={"activity_log_retention_days": 30})
     cutoff = NOW - timedelta(days=30)
-    await activity_log_factory(timestamp=cutoff - timedelta(seconds=1))
-    just_inside = await activity_log_factory(timestamp=cutoff + timedelta(seconds=1))
-    recent = await activity_log_factory(timestamp=NOW)
+    await activity_log_factory(recorded_at=cutoff - timedelta(seconds=1))
+    just_inside = await activity_log_factory(recorded_at=cutoff + timedelta(seconds=1))
+    recent = await activity_log_factory(recorded_at=NOW)
 
     await cleanup_activity_logs.main(settings)
 
@@ -75,10 +75,10 @@ async def test_main_cascades_deletion_to_change_records(
     change_record_factory: ModelFactory[ChangeRecord],
 ) -> None:
     """Change records of deleted entries are removed, those of kept entries are untouched."""
-    old_log = await activity_log_factory(timestamp=NOW - timedelta(days=800))
+    old_log = await activity_log_factory(recorded_at=NOW - timedelta(days=800))
     await change_record_factory(activity_log=old_log)
     await change_record_factory(activity_log=old_log)
-    recent_log = await activity_log_factory(timestamp=NOW - timedelta(days=10))
+    recent_log = await activity_log_factory(recorded_at=NOW - timedelta(days=10))
     kept_record = await change_record_factory(activity_log=recent_log)
 
     await cleanup_activity_logs.main(test_settings)
@@ -97,8 +97,8 @@ async def test_main_deletes_in_batches(
     """Expired entries are deleted in batches no larger than the configured batch size."""
     settings = test_settings.model_copy(update={"activity_log_cleanup_batch_size": 2})
     for days in range(800, 805):
-        await activity_log_factory(timestamp=NOW - timedelta(days=days))
-    recent = await activity_log_factory(timestamp=NOW)
+        await activity_log_factory(recorded_at=NOW - timedelta(days=days))
+    recent = await activity_log_factory(recorded_at=NOW)
 
     with caplog.at_level(logging.DEBUG, logger=cleanup_activity_logs.__name__):
         await cleanup_activity_logs.main(settings)
@@ -119,8 +119,8 @@ async def test_main_logs_number_of_deleted_entries(
     activity_log_factory: ModelFactory[ActivityLog],
 ) -> None:
     """Each run logs the cutoff and the total number of deleted entries."""
-    await activity_log_factory(timestamp=NOW - timedelta(days=800))
-    await activity_log_factory(timestamp=NOW - timedelta(days=900))
+    await activity_log_factory(recorded_at=NOW - timedelta(days=800))
+    await activity_log_factory(recorded_at=NOW - timedelta(days=900))
 
     with caplog.at_level(logging.INFO, logger=cleanup_activity_logs.__name__):
         await cleanup_activity_logs.main(test_settings)
@@ -139,7 +139,7 @@ async def test_main_logs_zero_when_nothing_to_delete(
     activity_log_factory: ModelFactory[ActivityLog],
 ) -> None:
     """A run with no expired entries logs that zero entries were deleted."""
-    await activity_log_factory(timestamp=NOW)
+    await activity_log_factory(recorded_at=NOW)
 
     with caplog.at_level(logging.INFO, logger=cleanup_activity_logs.__name__):
         await cleanup_activity_logs.main(test_settings)

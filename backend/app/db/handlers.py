@@ -19,6 +19,7 @@ from app.db.models import (
     Account,
     AccountUser,
     ActivityLog,
+    ActivityNote,
     AdditionalAdminRequest,
     AuditableMixin,
     ClientAccount,
@@ -761,12 +762,15 @@ class ActivityLogHandler(ModelHandler[ActivityLog]):
     def __init__(self, session):
         super().__init__(session)
         self.default_options = [
-            joinedload(ActivityLog.actor),
+            joinedload(ActivityLog.recorded_by),
         ]
 
     async def get_with_changes(self, id: str) -> ActivityLog:
         entry = await self.first(
-            base_query=select(ActivityLog).options(selectinload(ActivityLog.changes)),
+            base_query=select(ActivityLog).options(
+                selectinload(ActivityLog.changes),
+                selectinload(ActivityLog.notes).selectinload(ActivityNote.recorded_by),
+            ),
             where_clauses=[ActivityLog.id == id],
         )
         if entry is None:

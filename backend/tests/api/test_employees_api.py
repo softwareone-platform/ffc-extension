@@ -350,7 +350,7 @@ async def test_make_employee_admin_records_an_activity_log_entry(
     assert entry.message == (
         f"User 'Ciccio' ({user_id}) promoted to admin for the organization 'Acme' ({org.id})."
     )
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
     assert entry.changes == []
 
 

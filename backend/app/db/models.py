@@ -8,7 +8,6 @@ from __future__ import annotations
 import datetime
 import re
 from decimal import Decimal
-from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy import (
@@ -22,6 +21,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -471,15 +471,18 @@ class ActivityLog(Base, HumanReadablePKMixin):
     PK_PREFIX = "FLOG"
     PK_NUM_LENGTH = 12
 
-    timestamp: Mapped[datetime.datetime] = mapped_column(
+    # Named after the audit fields of `AuditableMixin` (`created_at` / `created_by`).
+    recorded_at: Mapped[datetime.datetime] = mapped_column(
         sa.DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.datetime.now(datetime.UTC),
         server_default=sa.func.current_timestamp(),
         index=True,
     )
-    actor_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ACTOR), nullable=False, index=True)
-    actor: Mapped[Actor] = relationship(foreign_keys=[actor_id], lazy="raise")
+    recorded_by_id: Mapped[str] = mapped_column(
+        ForeignKey(FKEY_ACTOR), name="recorded_by", nullable=False, index=True
+    )
+    recorded_by: Mapped[Actor] = relationship(foreign_keys=[recorded_by_id], lazy="raise")
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     message: Mapped[str] = mapped_column(Text(), nullable=False)
     status: Mapped[str] = mapped_column(
@@ -491,16 +494,18 @@ class ActivityLog(Base, HumanReadablePKMixin):
     # Identifies an operation (a multi-step / multi-attempt activity) so that every attempt
     # can find the entry of the operation it belongs to.
     operation_key: Mapped[str | None] = mapped_column(String(150), nullable=True)
-    # Each note is `{"at": <ISO datetime>, "actor_id": <actor id>, "message": <text>}`.
-    notes: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list, server_default=sa.text("'[]'::jsonb")
-    )
     changes: Mapped[list[ChangeRecord]] = relationship(
         back_populates="activity_log",
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="raise",
         order_by=lambda: (ChangeRecord.recorded_at, ChangeRecord.id),
+    )
+    notes: Mapped[list[ActivityNote]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="raise",
+        order_by=lambda: (ActivityNote.recorded_at, ActivityNote.id),
     )
 
     __table_args__ = (
@@ -536,3 +541,50 @@ class ChangeRecord(Base):
     )
 
     __table_args__ = (Index("ix_change_records_object", object_type, object_id),)
+
+
+class ActivityNote(Base):
+    """A timestamped remark on an activity log entry, written by the actor of one attempt."""
+
+    __tablename__ = "activity_notes"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)  # ty: ignore[invalid-attribute-override]
+    activity_log_id: Mapped[str] = mapped_column(
+        ForeignKey(FKEY_ACTIVITY_LOG, ondelete="CASCADE"), nullable=False, index=True
+    )
+    recorded_at: Mapped[datetime.datetime] = mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(datetime.UTC),
+    )
+    # `key` keeps the column reachable by its attribute name: inside `any(notes, ...)` requela
+    # looks the column up by key, and `recorded_by` would resolve to the relationship.
+    recorded_by_id: Mapped[str] = mapped_column(
+        ForeignKey(FKEY_ACTOR),
+        name="recorded_by",
+        key="recorded_by_id",
+        nullable=False,
+        index=True,
+    )
+    recorded_by: Mapped[Actor] = relationship(foreign_keys=[recorded_by_id], lazy="raise")
+    message: Mapped[str] = mapped_column(Text(), nullable=False)
+
+    @hybrid_property
+    def recorded_by_type(self) -> ActorType:
+        """The type of the actor that recorded the note."""
+        return self.recorded_by.type
+
+    @recorded_by_type.inplace.expression
+    @classmethod
+    def _recorded_by_type_expression(cls) -> sa.Label[ActorType]:
+        # Lets RQL filter on the actor's type inside `any(notes, ...)`, where requela cannot
+        # follow the `recorded_by` relationship.
+        # The `actors` table itself, not the `Actor` entity, which would also join the
+        # tables of its subclasses.
+        actors = Actor.__table__
+        return (
+            sa.select(actors.c.type)
+            .where(actors.c.id == cls.recorded_by_id)
+            .scalar_subquery()
+            .label("recorded_by_type")
+        )

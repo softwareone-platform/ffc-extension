@@ -437,29 +437,36 @@ export type ActivityLogDetailRead = {
      */
     id: string;
     /**
-     * Timestamp
+     * RecordedEventsSchema
      */
-    timestamp: string;
-    /**
-     * ActorReference
-     */
-    actor: {
+    events: {
         /**
-         * Id
+         * AuditFieldSchema
          */
-        id: string;
-        /**
-         * ActorType
-         */
-        type: 'user' | 'system' | 'app';
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Icon
-         */
-        icon?: string | null;
+        recorded: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system' | 'app';
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
+            } | null;
+        };
     };
     /**
      * Action
@@ -482,13 +489,37 @@ export type ActivityLogDetailRead = {
      */
     notes?: Array<{
         /**
-         * At
+         * RecordedEventsSchema
          */
-        at: string;
-        /**
-         * Actor Id
-         */
-        actor_id: string;
+        events: {
+            /**
+             * AuditFieldSchema
+             */
+            recorded: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system' | 'app';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
+                } | null;
+            };
+        };
         /**
          * Message
          */
@@ -534,29 +565,36 @@ export type ActivityLogRead = {
      */
     id: string;
     /**
-     * Timestamp
+     * RecordedEventsSchema
      */
-    timestamp: string;
-    /**
-     * ActorReference
-     */
-    actor: {
+    events: {
         /**
-         * Id
+         * AuditFieldSchema
          */
-        id: string;
-        /**
-         * ActorType
-         */
-        type: 'user' | 'system' | 'app';
-        /**
-         * Name
-         */
-        name: string;
-        /**
-         * Icon
-         */
-        icon?: string | null;
+        recorded: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system' | 'app';
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
+            } | null;
+        };
     };
     /**
      * Action
@@ -577,13 +615,37 @@ export type ActivityLogRead = {
  */
 export type ActivityNoteRead = {
     /**
-     * At
+     * RecordedEventsSchema
      */
-    at: string;
-    /**
-     * Actor Id
-     */
-    actor_id: string;
+    events: {
+        /**
+         * AuditFieldSchema
+         */
+        recorded: {
+            /**
+             * At
+             */
+            at: string;
+            by: {
+                /**
+                 * Id
+                 */
+                id: string;
+                /**
+                 * ActorType
+                 */
+                type: 'user' | 'system' | 'app';
+                /**
+                 * Name
+                 */
+                name: string;
+                /**
+                 * Icon
+                 */
+                icon?: string | null;
+            } | null;
+        };
+    };
     /**
      * Message
      */
@@ -2411,29 +2473,36 @@ export type LimitOffsetPageActivityLogRead = {
          */
         id: string;
         /**
-         * Timestamp
+         * RecordedEventsSchema
          */
-        timestamp: string;
-        /**
-         * ActorReference
-         */
-        actor: {
+        events: {
             /**
-             * Id
+             * AuditFieldSchema
              */
-            id: string;
-            /**
-             * ActorType
-             */
-            type: 'user' | 'system' | 'app';
-            /**
-             * Name
-             */
-            name: string;
-            /**
-             * Icon
-             */
-            icon?: string | null;
+            recorded: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system' | 'app';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
+                } | null;
+            };
         };
         /**
          * Action
@@ -4000,6 +4069,39 @@ export type OrganizationUpdate = {
      * Operations External Id
      */
     operations_external_id?: string | null;
+};
+
+/**
+ * RecordedEventsSchema
+ */
+export type RecordedEventsSchema = {
+    /**
+     * AuditFieldSchema
+     */
+    recorded: {
+        /**
+         * At
+         */
+        at: string;
+        by: {
+            /**
+             * Id
+             */
+            id: string;
+            /**
+             * ActorType
+             */
+            type: 'user' | 'system' | 'app';
+            /**
+             * Name
+             */
+            name: string;
+            /**
+             * Icon
+             */
+            icon?: string | null;
+        } | null;
+    };
 };
 
 /**
@@ -9258,29 +9360,36 @@ export type GetActivityLogsOpsV1ActivityLogsGetResponses = {
              */
             id: string;
             /**
-             * Timestamp
+             * RecordedEventsSchema
              */
-            timestamp: string;
-            /**
-             * ActorReference
-             */
-            actor: {
+            events: {
                 /**
-                 * Id
+                 * AuditFieldSchema
                  */
-                id: string;
-                /**
-                 * ActorType
-                 */
-                type: 'user' | 'system' | 'app';
-                /**
-                 * Name
-                 */
-                name: string;
-                /**
-                 * Icon
-                 */
-                icon?: string | null;
+                recorded: {
+                    /**
+                     * At
+                     */
+                    at: string;
+                    by: {
+                        /**
+                         * Id
+                         */
+                        id: string;
+                        /**
+                         * ActorType
+                         */
+                        type: 'user' | 'system' | 'app';
+                        /**
+                         * Name
+                         */
+                        name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
+                    } | null;
+                };
             };
             /**
              * Action
@@ -9375,29 +9484,36 @@ export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses = {
          */
         id: string;
         /**
-         * Timestamp
+         * RecordedEventsSchema
          */
-        timestamp: string;
-        /**
-         * ActorReference
-         */
-        actor: {
+        events: {
             /**
-             * Id
+             * AuditFieldSchema
              */
-            id: string;
-            /**
-             * ActorType
-             */
-            type: 'user' | 'system' | 'app';
-            /**
-             * Name
-             */
-            name: string;
-            /**
-             * Icon
-             */
-            icon?: string | null;
+            recorded: {
+                /**
+                 * At
+                 */
+                at: string;
+                by: {
+                    /**
+                     * Id
+                     */
+                    id: string;
+                    /**
+                     * ActorType
+                     */
+                    type: 'user' | 'system' | 'app';
+                    /**
+                     * Name
+                     */
+                    name: string;
+                    /**
+                     * Icon
+                     */
+                    icon?: string | null;
+                } | null;
+            };
         };
         /**
          * Action
@@ -9420,13 +9536,37 @@ export type GetActivityLogByIdOpsV1ActivityLogsActivityLogIdGetResponses = {
          */
         notes?: Array<{
             /**
-             * At
+             * RecordedEventsSchema
              */
-            at: string;
-            /**
-             * Actor Id
-             */
-            actor_id: string;
+            events: {
+                /**
+                 * AuditFieldSchema
+                 */
+                recorded: {
+                    /**
+                     * At
+                     */
+                    at: string;
+                    by: {
+                        /**
+                         * Id
+                         */
+                        id: string;
+                        /**
+                         * ActorType
+                         */
+                        type: 'user' | 'system' | 'app';
+                        /**
+                         * Name
+                         */
+                        name: string;
+                        /**
+                         * Icon
+                         */
+                        icon?: string | null;
+                    } | null;
+                };
+            };
             /**
              * Message
              */

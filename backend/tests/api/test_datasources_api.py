@@ -639,7 +639,7 @@ async def test_force_reimport_datasource_records_an_activity_log_entry(
         "Datasource 'AWS prod' (123456789012) re-import triggered "
         f"for organization 'Acme' ({org.id})."
     )
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
     assert entry.changes == []
 
 

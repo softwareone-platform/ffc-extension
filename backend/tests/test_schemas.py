@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.db.models import (
     Account,
     ActivityLog,
+    ActivityNote,
     Actor,
     ChangeRecord,
     Entitlement,
@@ -20,7 +21,7 @@ from app.enums import (
     OrganizationStatus,
     SystemStatus,
 )
-from app.schemas.activity_logs import ActivityLogDetailRead, ActivityLogRead
+from app.schemas.activity_logs import ActivityLogDetailRead, ActivityLogRead, ActivityNoteRead
 from app.schemas.core import (
     ActorRead,
     ActorReference,
@@ -418,8 +419,8 @@ def test_activity_log_read_convert_model_to_schema():
     actor = Actor(id="FUSR-1234-5678", name="Harry Potter", type=ActorType.USER)
     activity_log = ActivityLog(
         id="FLOG-1234-5678-9012",
-        timestamp=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
-        actor=actor,
+        recorded_at=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
+        recorded_by=actor,
         action="organization.updated",
         message="Renamed",
         status=ActivityStatus.IN_PROGRESS,
@@ -428,9 +429,9 @@ def test_activity_log_read_convert_model_to_schema():
     activity_log_read = convert_model_to_schema(ActivityLogRead, activity_log)
 
     assert activity_log_read.id == "FLOG-1234-5678-9012"
-    assert activity_log_read.timestamp == activity_log.timestamp
-    assert activity_log_read.actor.id == "FUSR-1234-5678"
-    assert activity_log_read.actor.name == "Harry Potter"
+    assert activity_log_read.events.recorded.at == activity_log.recorded_at
+    assert activity_log_read.events.recorded.by.id == "FUSR-1234-5678"
+    assert activity_log_read.events.recorded.by.name == "Harry Potter"
     assert activity_log_read.action == "organization.updated"
     assert activity_log_read.message == "Renamed"
     assert activity_log_read.status == ActivityStatus.IN_PROGRESS
@@ -450,18 +451,18 @@ def test_activity_log_detail_read_convert_model_to_schema():
     )
     activity_log = ActivityLog(
         id="FLOG-1234-5678-9012",
-        timestamp=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
-        actor=actor,
+        recorded_at=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
+        recorded_by=actor,
         action="organization.updated",
         message="Renamed",
         status=ActivityStatus.IN_PROGRESS,
         operation_key="order:ORD-1234-5678-9012",
         notes=[
-            {
-                "at": "2026-11-10T12:01:00+00:00",
-                "actor_id": "FUSR-1234-5678",
-                "message": "Waiting for the datasource.",
-            }
+            ActivityNote(
+                recorded_at=datetime(2026, 11, 10, 12, 1, tzinfo=UTC),
+                recorded_by=Actor(id="FUSR-8765-4321", name="Ron Weasley", type=ActorType.USER),
+                message="Waiting for the datasource.",
+            )
         ],
         changes=[change],
     )
@@ -477,8 +478,13 @@ def test_activity_log_detail_read_convert_model_to_schema():
     assert activity_log_read.status == ActivityStatus.IN_PROGRESS
     assert activity_log_read.operation_key == "order:ORD-1234-5678-9012"
     assert len(activity_log_read.notes) == 1
-    assert activity_log_read.notes[0].at == datetime(2026, 11, 10, 12, 1, tzinfo=UTC)
-    assert activity_log_read.notes[0].actor_id == "FUSR-1234-5678"
+    assert activity_log_read.notes[0].events.recorded.at == datetime(
+        2026, 11, 10, 12, 1, tzinfo=UTC
+    )
+    assert activity_log_read.notes[0].events.recorded.by.id == "FUSR-8765-4321"
+    assert activity_log_read.notes[0].events.recorded.by.name == "Ron Weasley"
+    assert activity_log_read.notes[0].events.recorded.by.type == ActorType.USER
+    assert set(ActivityNoteRead.model_fields) == {"events", "message"}
     assert activity_log_read.notes[0].message == "Waiting for the datasource."
 
 
@@ -486,8 +492,8 @@ def test_activity_log_detail_read_without_changes():
     actor = Actor(id="FUSR-1234-5678", name="Harry Potter", type=ActorType.USER)
     activity_log = ActivityLog(
         id="FLOG-1234-5678-9012",
-        timestamp=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
-        actor=actor,
+        recorded_at=datetime(2026, 11, 10, 12, 0, tzinfo=UTC),
+        recorded_by=actor,
         action="organization.updated",
         message="",
         status=ActivityStatus.COMPLETED,

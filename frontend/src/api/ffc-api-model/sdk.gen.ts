@@ -491,18 +491,23 @@ export const meOpsV1MeGet = <ThrowOnError extends boolean = false>(options?: Opt
  * | Field | Operators | Order By |
  * |-------|-----------|----------|
  * |action|eq, ilike, in, like, ne, out|yes|
- * |actor.id|eq, ilike, in, like, ne, out|yes|
- * |actor.name|eq, ilike, in, like, ne, out|yes|
- * |actor.type|eq, in, ne, out|yes|
- * |actor|eq, ne|no|
  * |changes.object_id|eq, ilike, in, like, ne, out|yes|
  * |changes.object_type|eq, ilike, in, like, ne, out|yes|
  * |changes|eq, ne|no|
+ * |events.recorded.at|eq, gt, gte, lt, lte, ne|yes|
+ * |events.recorded.by.id|eq, ilike, in, like, ne, out|yes|
+ * |events.recorded.by.name|eq, ilike, in, like, ne, out|yes|
+ * |events.recorded.by.type|eq, in, ne, out|yes|
+ * |events.recorded.by|eq, ne|no|
  * |id|eq, ilike, in, like, ne, out|yes|
  * |message|eq, ilike, in, like, ne, out|yes|
+ * |notes.events.recorded.at|eq, gt, gte, lt, lte, ne|yes|
+ * |notes.events.recorded.by.id|eq, ilike, in, like, ne, out|yes|
+ * |notes.events.recorded.by.type|eq, in, ne, out|yes|
+ * |notes.message|eq, ilike, in, like, ne, out|yes|
+ * |notes|eq, ne|no|
  * |operation_key|eq, ilike, in, like, ne, out|yes|
  * |status|eq, ilike, in, like, ne, out|yes|
- * |timestamp|eq, gt, gte, lt, lte, ne|yes|
  */
 export const getActivityLogsOpsV1ActivityLogsGet = <ThrowOnError extends boolean = false>(options?: Options<GetActivityLogsOpsV1ActivityLogsGetData, ThrowOnError>) => (options?.client ?? client).get<GetActivityLogsOpsV1ActivityLogsGetResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

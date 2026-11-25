@@ -662,7 +662,7 @@ async def test_activity_log_handler_get_with_changes_loads_actor_and_changes(
     handler = ActivityLogHandler(db_session)
     created = await handler.create(
         ActivityLog(
-            actor=ffc_extension,
+            recorded_by=ffc_extension,
             action="organization.updated",
             message="Renamed",
             changes=[
@@ -680,7 +680,7 @@ async def test_activity_log_handler_get_with_changes_loads_actor_and_changes(
     fetched = await handler.get_with_changes(created.id)
 
     assert fetched.id.startswith(ActivityLog.PK_PREFIX)
-    assert fetched.actor.id == ffc_extension.id
+    assert fetched.recorded_by.id == ffc_extension.id
     assert [change.object_id for change in fetched.changes] == ["FORG-1234-5678"]
     assert fetched.changes[0].before == {"name": "Old"}
     assert fetched.changes[0].after == {"name": "New"}
@@ -699,12 +699,12 @@ async def test_activity_log_handler_get_with_changes_raises_when_missing(
 async def test_activity_log_handler_query_db_loads_actor_but_not_changes(
     db_session: AsyncSession, ffc_extension: System
 ) -> None:
-    """`ActivityLogHandler.query_db()` eagerly loads `actor` and leaves `changes` unloaded."""
+    """`ActivityLogHandler.query_db()` eagerly loads `recorded_by` and leaves `changes` unloaded."""
     handler = ActivityLogHandler(db_session)
     for index in range(2):
         await handler.create(
             ActivityLog(
-                actor=ffc_extension,
+                recorded_by=ffc_extension,
                 action="organization.updated",
                 message=f"Entry {index}",
                 changes=[ChangeRecord(object_type="organizations", object_id=f"FORG-{index}")],
@@ -715,5 +715,5 @@ async def test_activity_log_handler_query_db_loads_actor_but_not_changes(
     entries = await handler.query_db(order_by=[ActivityLog.message])
 
     assert [entry.message for entry in entries] == ["Entry 0", "Entry 1"]
-    assert all(entry.actor.id == ffc_extension.id for entry in entries)
+    assert all(entry.recorded_by.id == ffc_extension.id for entry in entries)
     assert all("changes" in sqlalchemy.inspect(entry).unloaded for entry in entries)

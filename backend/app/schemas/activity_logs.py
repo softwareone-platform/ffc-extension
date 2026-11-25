@@ -1,10 +1,15 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
+from app.db.models import ActivityNote
 from app.enums import ActivityStatus
-from app.schemas.core import ActorReference, BaseSchema, IdSchema
+from app.schemas.core import AuditFieldSchema, BaseSchema, IdSchema, convert_model_to_schema
+
+
+class RecordedEventsSchema(BaseSchema):
+    recorded: AuditFieldSchema
 
 
 class ChangeRecordRead(BaseSchema):
@@ -16,14 +21,21 @@ class ChangeRecordRead(BaseSchema):
 
 
 class ActivityNoteRead(BaseSchema):
-    at: datetime
-    actor_id: Annotated[str, Field(examples=["FAPP-0001"])]
+    events: RecordedEventsSchema
     message: Annotated[str, Field(examples=["Waiting for the datasource to be created."])]
+
+    @model_validator(mode="before")
+    @classmethod
+    def build_events_from_model(cls, data: Any) -> Any:
+        # Notes are serialized as a nested field of an activity log, so they do not go
+        # through `convert_model_to_schema`, which is what builds `events` from a model.
+        if isinstance(data, ActivityNote):
+            return convert_model_to_schema(cls, data)
+        return data
 
 
 class ActivityLogRead(IdSchema):
-    timestamp: datetime
-    actor: ActorReference
+    events: RecordedEventsSchema
     action: Annotated[str, Field(max_length=100, examples=["organization.terminated"])]
     message: Annotated[str, Field(examples=["entitlements terminated"])]
     status: ActivityStatus
