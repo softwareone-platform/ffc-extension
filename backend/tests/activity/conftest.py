@@ -3,14 +3,15 @@ from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
-from sqlalchemy import event
+from sqlalchemy import event, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.handlers import ClientAccountHandler, OrganizationHandler
-from app.db.models import Organization
+from app.db.models import ActivityLog, Organization
 from tests.db.models import ChildForTests, ParentWithChildrenForTests
-from tests.types import ModelFactory
+from tests.types import ActivityLogFetcher, ModelFactory
 
 
 @pytest.fixture
@@ -79,3 +80,21 @@ def opted_out_model(mocker: MockerFixture) -> type[ChildForTests]:
     """`ChildForTests` with `__activity_log__ = False` for one test."""
     mocker.patch.object(ChildForTests, "__activity_log__", False, create=True)
     return ChildForTests
+
+
+@pytest.fixture
+def fetch_operation_entries(db_session: AsyncSession) -> ActivityLogFetcher:
+    """Return a coroutine that loads the entries of an operation key, oldest first, with
+    their change records and notes as they are in the database."""
+
+    async def _fetch(key: str) -> list[ActivityLog]:
+        query = (
+            select(ActivityLog)
+            .where(ActivityLog.operation_key == key)
+            .options(selectinload(ActivityLog.changes), selectinload(ActivityLog.notes))
+            .order_by(ActivityLog.recorded_at, ActivityLog.id)
+            .execution_options(populate_existing=True)
+        )
+        return list((await db_session.scalars(query)).all())
+
+    return _fetch
