@@ -19,8 +19,8 @@ async def delete_batch(cutoff: datetime, batch_size: int) -> int:
     # Change records are removed by the database-level ON DELETE CASCADE.
     batch_ids = (
         select(ActivityLog.id)
-        .where(ActivityLog.timestamp < cutoff)
-        .order_by(ActivityLog.timestamp)
+        .where(ActivityLog.recorded_at < cutoff)
+        .order_by(ActivityLog.recorded_at)
         .limit(batch_size)
         .scalar_subquery()
     )

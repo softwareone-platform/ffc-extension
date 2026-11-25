@@ -48,7 +48,7 @@ async def test_actor_id_overrides_the_actor_of_the_current_request(
         pass
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == APP_ACTOR_ID
+    assert entry.recorded_by_id == APP_ACTOR_ID
 
 
 async def test_actor_id_is_used_when_nobody_is_authenticated(
@@ -61,7 +61,7 @@ async def test_actor_id_is_used_when_nobody_is_authenticated(
         pass
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
 
 
 async def test_actor_id_of_a_child_recorder_is_ignored(
@@ -78,7 +78,7 @@ async def test_actor_id_of_a_child_recorder_is_ignored(
             pass
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
 
 
 # ---------------------------------------------------------------------------
@@ -368,7 +368,7 @@ async def test_system_recorder_records_the_application_as_actor_even_in_a_reques
         await organization_handler.terminate(organization)
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == APP_ACTOR_ID
+    assert entry.recorded_by_id == APP_ACTOR_ID
     assert len(entry.changes) == 1
 
 
@@ -666,7 +666,7 @@ async def test_system_recorder_nested_in_a_request_recorder_keeps_the_request_ac
             await organization_handler.terminate(organization)
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
     assert entry.action == "organization.terminated"
     assert len(entry.changes) == 1
 

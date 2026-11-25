@@ -763,7 +763,7 @@ async def test_update_organization_records_an_activity_log_entry(
     (entry,) = await fetch_activity_logs()
     assert entry.action == "organization.updated"
     assert entry.message == f"Organization 'initial_name' ({db_org.id}) updated."
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
     (change,) = entry.changes
     assert change.object_type == "organizations"
     assert change.object_id == db_org.id
@@ -963,7 +963,7 @@ async def test_delete_organization_records_an_activity_log_entry(
     (entry,) = await fetch_activity_logs()
     assert entry.action == "organization.deleted"
     assert entry.message == f"Organization 'Test organization' ({db_org.id}) deleted."
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
     (change,) = entry.changes
     assert change.object_type == "organizations"
     assert change.object_id == db_org.id

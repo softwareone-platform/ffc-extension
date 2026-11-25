@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.activity import MASK, ActivityRecorder, activity_recorder
@@ -8,7 +9,7 @@ from app.auth.context import AuthenticationContext
 from app.db.base import session_factory
 from app.db.constants import APP_ACTOR_ID
 from app.db.handlers import ClientAccountHandler, OrganizationHandler
-from app.db.models import ClientAccount, Organization, System
+from app.db.models import ActivityLog, ActivityNote, ClientAccount, Organization, System
 from app.enums import OrganizationStatus
 from tests.types import ActivityLogFetcher, ModelFactory
 
@@ -110,6 +111,30 @@ async def test_an_activity_that_changes_nothing_records_an_entry_without_changes
     assert entry.action == "mpt.order.completed"
     assert entry.message == "Order ORD-1234-5678 completed on MPT"
     assert entry.changes == []
+
+
+async def test_adding_an_activity_note_records_no_change(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    fetch_activity_logs: ActivityLogFetcher,
+) -> None:
+    """An `ActivityNote` written inside the block is stored but yields no change record."""
+    operation = await activity_log_factory(action="order.processing")
+
+    async with activity_recorder(db_session, "order.retried", "Order ORD-1234-5678 retried"):
+        db_session.add(
+            ActivityNote(
+                activity_log_id=operation.id,
+                recorded_by_id=APP_ACTOR_ID,
+                message="Attempt failed with 502",
+            )
+        )
+        await db_session.flush()
+
+    (entry,) = await fetch_activity_logs(action="order.retried")
+    assert entry.changes == []
+    notes = (await db_session.scalars(select(ActivityNote))).all()
+    assert [note.message for note in notes] == ["Attempt failed with 502"]
 
 
 async def test_changing_several_objects_records_one_entry_with_one_change_each(
@@ -253,7 +278,7 @@ async def test_actor_falls_back_to_the_application_when_nobody_is_authenticated(
         pass
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == APP_ACTOR_ID
+    assert entry.recorded_by_id == APP_ACTOR_ID
 
 
 async def test_actor_is_the_one_authenticated_in_the_current_request(
@@ -269,7 +294,7 @@ async def test_actor_is_the_one_authenticated_in_the_current_request(
         pass
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
 
 
 async def test_actor_falls_back_to_the_application_when_the_request_has_no_actor(
@@ -284,7 +309,7 @@ async def test_actor_falls_back_to_the_application_when_the_request_has_no_actor
         pass
 
     (entry,) = await fetch_activity_logs()
-    assert entry.actor_id == APP_ACTOR_ID
+    assert entry.recorded_by_id == APP_ACTOR_ID
 
 
 # ---------------------------------------------------------------------------

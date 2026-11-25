@@ -45,6 +45,7 @@ from app.db.models import (
     Account,
     AccountUser,
     ActivityLog,
+    ActivityNote,
     Actor,
     App,
     Base,
@@ -469,7 +470,7 @@ def fetch_activity_logs(db_session: AsyncSession) -> ActivityLogFetcher:
         query = (
             select(ActivityLog)
             .options(selectinload(ActivityLog.changes))
-            .order_by(ActivityLog.timestamp, ActivityLog.id)
+            .order_by(ActivityLog.recorded_at, ActivityLog.id)
         )
         if action is not None:
             query = query.where(ActivityLog.action == action)
@@ -483,34 +484,63 @@ def activity_log_factory(
     faker: Faker, db_session: AsyncSession, system_factory: ModelFactory[System]
 ) -> ModelFactory[ActivityLog]:
     async def _activity_log(
-        actor: Actor | None = None,
+        recorded_by: Actor | None = None,
         action: str = "organization.updated",
         message: str | None = None,
-        timestamp: datetime | None = None,
+        recorded_at: datetime | None = None,
         changes: list[ChangeRecord] | None = None,
         status: ActivityStatus | None = None,
         operation_key: str | None = None,
-        notes: list[dict[str, Any]] | None = None,
+        notes: list[ActivityNote] | None = None,
     ) -> ActivityLog:
         activity_log = ActivityLog(
-            actor=actor or await system_factory(),
+            recorded_by=recorded_by or await system_factory(),
             action=action,
             message=message or faker.sentence(),
             changes=changes or [],
+            notes=notes or [],
             operation_key=operation_key,
         )
-        if timestamp is not None:
-            activity_log.timestamp = timestamp
+        if recorded_at is not None:
+            activity_log.recorded_at = recorded_at
         if status is not None:
             activity_log.status = status
-        if notes is not None:
-            activity_log.notes = notes
         db_session.add(activity_log)
         await db_session.commit()
         await db_session.refresh(activity_log)
         return activity_log
 
     return _activity_log
+
+
+@pytest.fixture
+def activity_note_factory(
+    faker: Faker,
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    system_factory: ModelFactory[System],
+) -> ModelFactory[ActivityNote]:
+    async def _activity_note(
+        activity_log: ActivityLog | None = None,
+        recorded_by: Actor | None = None,
+        message: str | None = None,
+        recorded_at: datetime | None = None,
+    ) -> ActivityNote:
+        activity_log = activity_log or await activity_log_factory()
+        recorded_by = recorded_by or await system_factory()
+        activity_note = ActivityNote(
+            activity_log_id=activity_log.id,
+            recorded_by_id=recorded_by.id,
+            message=message or faker.sentence(),
+        )
+        if recorded_at is not None:
+            activity_note.recorded_at = recorded_at
+        db_session.add(activity_note)
+        await db_session.commit()
+        await db_session.refresh(activity_note)
+        return activity_note
+
+    return _activity_note
 
 
 @pytest.fixture

@@ -1113,7 +1113,7 @@ async def test_create_entitlement_records_an_activity_log_entry(
     assert entry.message == (
         "Entitlement 'AWS' for data source 'SPONSOR_CONTAINER_ID_1234' created."
     )
-    assert entry.actor_id == gcp_extension.id
+    assert entry.recorded_by_id == gcp_extension.id
     (change,) = entry.changes
     assert change.object_type == "entitlements"
     assert change.object_id == response.json()["id"]
@@ -1165,7 +1165,7 @@ async def test_terminate_entitlement_records_an_activity_log_entry(
         f"Entitlement '{entitlement_gcp.name}' ({entitlement_gcp.id}) for data source "
         f"'{entitlement_gcp.datasource_id}' of organization 'Acme' ({redeemer.id}) terminated."
     )
-    assert entry.actor_id == admin_user.id
+    assert entry.recorded_by_id == admin_user.id
     (change,) = entry.changes
     assert change.object_id == entitlement_gcp.id
     assert change.before is not None
@@ -1229,7 +1229,7 @@ async def test_delete_entitlement_records_an_activity_log_entry(
         f"Entitlement '{entitlement.name}' ({entitlement.id}) for data source "
         f"'{entitlement.datasource_id}' deleted."
     )
-    assert entry.actor_id == ffc_extension.id
+    assert entry.recorded_by_id == ffc_extension.id
     (change,) = entry.changes
     assert change.object_id == entitlement.id
     assert change.before is not None

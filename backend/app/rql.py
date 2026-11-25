@@ -8,6 +8,7 @@ from app.db.models import (
     Account,
     AccountUser,
     ActivityLog,
+    ActivityNote,
     Actor,
     ChangeRecord,
     ClientAccount,
@@ -134,17 +135,30 @@ class ChangeRecordRule(ModelRQLRules):
     object_type = FieldRule()
 
 
+class ActivityNoteRules(ModelRQLRules):
+    __model__ = ActivityNote
+
+    message = FieldRule()
+    recorded_at = FieldRule(alias="events.recorded.at")
+    # Plain fields instead of `recorded_by = RelationshipRule(rules=ActorRules())`: notes are
+    # only filterable inside `any(notes, ...)`, where requela cannot follow a nested
+    # relationship.
+    recorded_by_id = FieldRule(alias="events.recorded.by.id")
+    recorded_by_type = FieldRule(alias="events.recorded.by.type")
+
+
 class ActivityLogRules(ModelRQLRules):
     __model__ = ActivityLog
 
     id = FieldRule()
-    timestamp = FieldRule()
     action = FieldRule()
     message = FieldRule()
     status = FieldRule()
     operation_key = FieldRule()
-    actor = RelationshipRule(rules=ActorRules())
+    recorded_at = FieldRule(alias="events.recorded.at")
+    recorded_by = RelationshipRule(alias="events.recorded.by", rules=ActorRules())
     changes = RelationshipRule(rules=ChangeRecordRule())
+    notes = RelationshipRule(rules=ActivityNoteRules())
 
 
 def get_rql_expression_from_querystring(querystring: str) -> str | None:

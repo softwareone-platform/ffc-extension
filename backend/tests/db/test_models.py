@@ -12,6 +12,7 @@ from app.db.human_readable_pk import HumanReadablePKMixin
 from app.db.models import (
     Account,
     ActivityLog,
+    ActivityNote,
     Actor,
     App,
     ChangeRecord,
@@ -259,18 +260,18 @@ async def test_app_can_be_the_actor_of_an_activity_log(
 ) -> None:
     """An activity performed by an app references the app as its actor."""
     app = await app_factory()
-    activity_log = await activity_log_factory(actor=app)
+    activity_log = await activity_log_factory(recorded_by=app)
     db_session.expunge_all()
 
     loaded = await db_session.scalar(
         select(ActivityLog)
-        .options(selectinload(ActivityLog.actor))
+        .options(selectinload(ActivityLog.recorded_by))
         .where(ActivityLog.id == activity_log.id)
     )
 
     assert loaded is not None
-    assert loaded.actor.id == app.id
-    assert loaded.actor.type == ActorType.APP
+    assert loaded.recorded_by.id == app.id
+    assert loaded.recorded_by.type == ActorType.APP
 
 
 # -- activity log --
@@ -286,34 +287,34 @@ async def test_activity_log_gets_a_human_readable_id(
     assert re.fullmatch(ActivityLog.build_id_regex(), activity_log.id)
 
 
-async def test_activity_log_timestamp_defaults_to_now_in_utc(
+async def test_activity_log_recorded_at_defaults_to_now_in_utc(
     activity_log_factory: ModelFactory[ActivityLog],
 ) -> None:
-    """An activity log created without a timestamp is stamped with the current UTC time."""
+    """An activity log created without `recorded_at` is stamped with the current UTC time."""
     before = datetime.now(UTC)
 
     activity_log = await activity_log_factory()
 
-    assert activity_log.timestamp.tzinfo == UTC
-    assert before <= activity_log.timestamp <= datetime.now(UTC)
+    assert activity_log.recorded_at.tzinfo == UTC
+    assert before <= activity_log.recorded_at <= datetime.now(UTC)
 
 
-async def test_activity_log_keeps_an_explicit_timestamp(
+async def test_activity_log_keeps_an_explicit_recorded_at(
     activity_log_factory: ModelFactory[ActivityLog],
 ) -> None:
-    """A timestamp given on creation is stored as is, so past activities can be recorded."""
+    """A `recorded_at` given on creation is stored as is, so past activities can be recorded."""
     happened_at = datetime.now(UTC) - timedelta(days=3)
 
-    activity_log = await activity_log_factory(timestamp=happened_at)
+    activity_log = await activity_log_factory(recorded_at=happened_at)
 
-    assert activity_log.timestamp == happened_at
+    assert activity_log.recorded_at == happened_at
 
 
 async def test_activity_log_requires_an_actor(db_session: AsyncSession) -> None:
     """An activity log cannot be persisted without the actor that performed it."""
     db_session.add(ActivityLog(action="organization.updated", message="Renamed"))
 
-    with pytest.raises(IntegrityError, match='null value in column "actor_id"'):
+    with pytest.raises(IntegrityError, match='null value in column "recorded_by"'):
         await db_session.commit()
 
 
@@ -323,20 +324,20 @@ async def test_activity_log_links_the_actor(
     activity_log_factory: ModelFactory[ActivityLog],
 ) -> None:
     """An eagerly loaded activity log exposes the actor that performed the activity."""
-    activity_log = await activity_log_factory(actor=ffc_extension)
+    activity_log = await activity_log_factory(recorded_by=ffc_extension)
     db_session.expunge_all()
 
     loaded = await db_session.scalar(
         select(ActivityLog)
-        .options(selectinload(ActivityLog.actor))
+        .options(selectinload(ActivityLog.recorded_by))
         .where(ActivityLog.id == activity_log.id)
     )
 
     assert loaded is not None
-    assert loaded.actor.id == ffc_extension.id
+    assert loaded.recorded_by.id == ffc_extension.id
 
 
-@pytest.mark.parametrize("relationship_name", ["actor", "changes"])
+@pytest.mark.parametrize("relationship_name", ["recorded_by", "changes"])
 async def test_activity_log_relationships_are_not_lazy_loaded(
     db_session: AsyncSession,
     activity_log_factory: ModelFactory[ActivityLog],
@@ -436,7 +437,11 @@ async def test_activity_log_defaults_to_completed_without_key_or_notes(
     activity_log = await activity_log_factory()
     db_session.expunge_all()
 
-    loaded = await db_session.get(ActivityLog, activity_log.id)
+    loaded = await db_session.scalar(
+        select(ActivityLog)
+        .options(selectinload(ActivityLog.notes))
+        .where(ActivityLog.id == activity_log.id)
+    )
 
     assert loaded is not None
     assert loaded.status == ActivityStatus.COMPLETED
@@ -514,3 +519,85 @@ async def test_activity_log_changes_are_ordered_by_recorded_at_then_id(
 
     assert loaded is not None
     assert [change.id for change in loaded.changes] == [first.id, second.id, third.id]
+
+
+# -- activity note --
+
+
+async def test_activity_note_at_defaults_to_now_in_utc(
+    activity_note_factory: ModelFactory[ActivityNote],
+) -> None:
+    """An activity note created without `at` is stamped with the current UTC time."""
+    before = datetime.now(UTC)
+
+    activity_note = await activity_note_factory()
+
+    assert activity_note.recorded_at.tzinfo == UTC
+    assert before <= activity_note.recorded_at <= datetime.now(UTC)
+
+
+async def test_activity_note_references_its_actor(
+    db_session: AsyncSession,
+    activity_note_factory: ModelFactory[ActivityNote],
+    app_factory: ModelFactory[App],
+) -> None:
+    """An activity note references the actor that wrote it."""
+    app = await app_factory()
+    activity_note = await activity_note_factory(recorded_by=app)
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ActivityNote)
+        .options(selectinload(ActivityNote.recorded_by))
+        .where(ActivityNote.id == activity_note.id)
+    )
+
+    assert loaded is not None
+    assert loaded.recorded_by.id == app.id
+    assert loaded.recorded_by.type == ActorType.APP
+    assert loaded.recorded_by_type == ActorType.APP
+
+
+async def test_activity_log_notes_are_ordered_by_at_then_id(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    activity_note_factory: ModelFactory[ActivityNote],
+) -> None:
+    """`ActivityLog.notes` loads the notes oldest first, with the id breaking ties."""
+    activity_log = await activity_log_factory()
+    later = datetime(2026, 1, 2, 12, 0, tzinfo=UTC)
+    earlier = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+    third = await activity_note_factory(activity_log=activity_log, recorded_at=later)
+    first = await activity_note_factory(activity_log=activity_log, recorded_at=earlier)
+    second = await activity_note_factory(activity_log=activity_log, recorded_at=earlier)
+    db_session.expunge_all()
+
+    loaded = await db_session.scalar(
+        select(ActivityLog)
+        .options(selectinload(ActivityLog.notes))
+        .where(ActivityLog.id == activity_log.id)
+    )
+
+    assert loaded is not None
+    assert [note.id for note in loaded.notes] == [first.id, second.id, third.id]
+
+
+async def test_deleting_an_activity_log_deletes_its_notes(
+    db_session: AsyncSession,
+    activity_log_factory: ModelFactory[ActivityLog],
+    activity_note_factory: ModelFactory[ActivityNote],
+) -> None:
+    """Deleting an activity log cascades to its notes and leaves other entries' notes alone."""
+    activity_log = await activity_log_factory()
+    await activity_note_factory(activity_log=activity_log)
+    await activity_note_factory(activity_log=activity_log)
+    kept = await activity_note_factory()
+    db_session.expunge_all()
+    loaded = await db_session.get(ActivityLog, activity_log.id)
+    assert loaded is not None
+
+    await db_session.delete(loaded)
+    await db_session.commit()
+
+    remaining = await db_session.scalars(select(ActivityNote.id))
+    assert remaining.all() == [kept.id]
