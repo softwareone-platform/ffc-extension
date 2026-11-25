@@ -31,6 +31,8 @@ export abstract class ExtensionPage extends PlatformPage {
   readonly valueSelectInput: Locator;
 
   readonly gridTable: Locator;
+  readonly gridDataRows: Locator;
+  readonly gridInfoDialog: Locator;
   readonly toolbarDropdown: Locator;
 
   readonly wizardModalHeaderTitle: Locator;
@@ -77,6 +79,11 @@ export abstract class ExtensionPage extends PlatformPage {
     this.valueSelectInput = newestCondition.getByTestId('expression-row__value-input__input__input-text');
 
     this.gridTable = this.extensionFrame.getByTestId('grid__table');
+    // <tbody> also holds rows with no data: skeletons while loading and under every
+    // empty/error dialog, and single `colspan` filler rows that pad a short page.
+    this.gridDataRows = this.gridTable.locator('tbody tr:not(:has([data-testid="skeleton"])):not(:has(> td[colspan]))');
+    // refresh (loading), empty-search (0 rows with a filter), no-data (0 rows, no filter), api-error.
+    this.gridInfoDialog = this.gridTable.getByTestId(/^grid__info-dialog__/);
     this.toolbarDropdown = this.extensionFrame.getByTestId('grid__toolbar__view-selector__dropdown');
 
     // Modals render inside the extension iframe (not a separate wizard iframe). The
@@ -112,6 +119,24 @@ export abstract class ExtensionPage extends PlatformPage {
   async waitForExtensionIframeLoading(timeout: number = 10000): Promise<void> {
     debugLog('Waiting for extension frame to load...');
     await this.extensionFrame.locator('body').waitFor({ timeout: timeout });
+  }
+
+  /**
+   * Waits until the grid has finished loading: either a real data row is shown, or a
+   * final empty/error dialog is. Page load and iframe load both fire before the grid's
+   * API response arrives, so neither proves the data is there. Does not assert which
+   * outcome happened; check `gridDataRows` / `gridInfoDialog` in the spec.
+   */
+  async waitForGridData(timeout: number = LARGE_DATA_TIMEOUT): Promise<void> {
+    const finalDialog = this.gridTable.getByTestId(/^grid__info-dialog__(empty-search|no-data|api-error)$/);
+    await this.gridDataRows.or(finalDialog).first().waitFor({ timeout });
+    await this.dataRefreshSpinner.waitFor({ state: 'hidden', timeout });
+  }
+
+  /** True when the loaded grid shows at least one real row; false for the empty and error states. */
+  async hasGridData(timeout: number = LARGE_DATA_TIMEOUT): Promise<boolean> {
+    await this.waitForGridData(timeout);
+    return (await this.gridDataRows.count()) > 0;
   }
 
   /** Extension-internal routes — not portal menu entries. */

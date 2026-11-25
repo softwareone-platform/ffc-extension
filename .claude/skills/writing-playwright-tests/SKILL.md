@@ -33,8 +33,9 @@ The `e2e/` suite runs true end-to-end tests against a deployed environment. Matc
   ```ts
   import { expect } from '@playwright/test';
 
-  import test from '../fixtures/fixture';
+  import test from '~fixtures/fixture';
   ```
+- Import project files through the path aliases defined in [e2e/tsconfig.json](../../../e2e/tsconfig.json) (`~api-request`, `~fixtures`, `~pages`, `~test-data`, `~types`, `~utils`), not relative `../` paths, so files can move without breaking imports. Add a new alias there when you add a new top-level folder. Some older files still use relative imports; switch them when you touch them.
 - Title the top-level `test.describe` with the test case ID and a description: `test.describe('[233299] As a vendor view the organizations list', ...)`.
 - Structure the body with `await test.step('...', async () => { ... })`, one step per logical phase.
 - Long flows: `test.slow()` or `test.setTimeout(...)`. **Never commit `test.only`.**
@@ -55,7 +56,7 @@ The `e2e/` suite runs true end-to-end tests against a deployed environment. Matc
 - Declare locators as `readonly` and initialize them in the constructor.
 - **Locators are public; click them from the spec.** Only add a method when it wraps a wait or a condition. Never add a one-line `click()` passthrough.
 - Locator priority: prefer `getByTestId` scoped to `main`, then roles, then text/labels. Use CSS/XPath only with a comment saying why.
-- Wait for the extension iframe with `waitForExtensionIframeLoading()` rather than ad hoc sleeps.
+- Wait for the extension iframe with `waitForExtensionIframeLoading()` rather than ad hoc sleeps. It only proves the iframe exists; before reading grid content, call `waitForGridData()`, then assert on `gridDataRows` / `gridInfoDialog`. An empty grid still renders skeleton `<tr>` rows, so never count `tbody tr` to decide whether it has data.
 - For optional elements use `probeVisible()` (inherited from `PlatformPage`), not `try { waitFor() } catch {}`. A caught timeout still paints a failed step in the trace.
 - **No `expect` / assertions in page objects.**
 
@@ -67,6 +68,7 @@ The `e2e/` suite runs true end-to-end tests against a deployed environment. Matc
 
 ## Environment and test data
 
+- **English only.** Tests assume the test user's platform profile language is English. Prefer test IDs, roles and state over UI text; when text must be asserted, it is English. The FinOps Extension supports only English for now.
 - **Real environments only.** Do not add request interception, response stubbing, or mock data. If a test needs data, create it through the API and clean it up in teardown.
 - `ENVIRONMENT` (or `LOCAL_TEST_ENV`) picks the deployment. There is no default, and an unknown value throws.
 - Read config through `env` / `getCurrentEnv()` in `e2e/utils/env.ts`, never `process.env` directly. Use `requireEnv('<key>')` at the point of use so a missing variable names itself.

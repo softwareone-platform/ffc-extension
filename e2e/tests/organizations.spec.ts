@@ -1,21 +1,25 @@
 import { expect } from '@playwright/test';
 
-import test from '../fixtures/fixture';
-import type { OrganizationsResponse } from '../types/organizations-response';
-
-const ROWS_PER_PAGE = 10;
-
-/** Reads the total from the pager text, e.g. "1-10 of 74 rows", and returns the number of pages. */
-function pagesFromText(text: string): number {
-  const totalRows = Number(/of\s+(\d+)/.exec(text)?.[1] ?? 0);
-  return Math.ceil(totalRows / ROWS_PER_PAGE);
-}
+import test from '~fixtures/fixture';
+import type { OrganizationsResponse } from '~types/organizations-response';
 
 test.describe('[233299] As a vendor view the organizations list', () => {
+  test.beforeEach(async ({ organizationsPage }) => {
+    await organizationsPage.navigateToURL();
+    await organizationsPage.waitForExtensionIframeLoading();
+  });
+
+  test('Check Organizations list is not empty', async ({ organizationsPage }) => {
+    expect(await organizationsPage.hasGridData(), 'Organizations grid has rows').toBe(true);
+    await expect(organizationsPage.gridDataRows.first().getByRole('link').first()).toHaveAttribute(
+      'href',
+      /\/organizations\/FORG-\d{4}-\d{4}-\d{4}\/general$/
+    );
+    await expect(organizationsPage.grid.getByText(/^\d+-\d+ of [1-9]\d* rows$/)).toBeVisible();
+  });
+
   test('Check Organizations views and paging', async ({ organizationsPage }) => {
     await test.step('Check view: Active Organizations', async () => {
-      await organizationsPage.navigateToURL();
-      await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.activeNavLink).toHaveText('Organizations');
 
       await organizationsPage.viewSelectorButton.click();
@@ -23,6 +27,7 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.viewSelectorButton).toHaveText('Active Organizations');
 
+      await organizationsPage.waitForGridData();
       const orgItemStatusItems = organizationsPage.gridTable.getByTestId('status-chip');
       await expect(orgItemStatusItems.filter({ hasNotText: /^Active$/ })).toHaveCount(0);
     });
@@ -33,6 +38,7 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.viewSelectorButton).toHaveText('Deleted Organizations');
 
+      await organizationsPage.waitForGridData();
       const orgItemStatusItems = organizationsPage.gridTable.getByTestId('status-chip');
       await expect(orgItemStatusItems.filter({ hasNotText: /^Deleted$/ })).toHaveCount(0);
     });
@@ -95,13 +101,13 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       }
       expect(updatedTimes, 'API organizations are ordered by updated time descending').toEqual([...updatedTimes].sort((a, b) => b - a));
 
-      await organizationsPage.waitForExtensionIframeLoading();
+      await organizationsPage.waitForGridData();
 
       await expect(organizationsPage.columnHeaders).toContainText(headings);
-      await expect(organizationsPage.rows).toHaveCount(organizations.items.length);
+      await expect(organizationsPage.gridDataRows).toHaveCount(organizations.items.length);
       for (let index = 0; index < Math.min(5, organizations.items.length); index++) {
         const organization = organizations.items[index];
-        const row = organizationsPage.rows.nth(index);
+        const row = organizationsPage.gridDataRows.nth(index);
         const organizationCell = row.getByRole('cell').first();
         await expect(organizationCell.getByText(/^FORG-\d{4}-\d{4}-\d{4} \| /)).toBeVisible();
         const organizationLink = organizationCell.getByRole('link', { name: organization.name, exact: true });
@@ -135,10 +141,11 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.viewSelectorButton).toHaveText('Default');
 
-      const pageCount = pagesFromText((await organizationsPage.pageCount.textContent()) ?? '');
+      await organizationsPage.waitForGridData();
+      const pageCount = Number(await organizationsPage.pageCount.textContent());
       if (pageCount > 1) {
         await organizationsPage.nextPageButton.click();
-        await organizationsPage.waitForExtensionIframeLoading();
+        await organizationsPage.waitForGridData();
       }
 
       const targetPage = '3';
@@ -150,20 +157,19 @@ test.describe('[233299] As a vendor view the organizations list', () => {
 
       await organizationsPage.waitForExtensionIframeLoading();
       await organizationsPage.selectPageSize(10);
-
       await expect(organizationsPage.pageSizeButton).toHaveText('10');
-      await expect.poll(() => organizationsPage.rows.count()).toBeLessThanOrEqual(10);
+      await organizationsPage.waitForGridData();
+      await expect.poll(() => organizationsPage.gridDataRows.count()).toBeLessThanOrEqual(10);
 
-      const finalPageCount = pagesFromText((await organizationsPage.pageCount.textContent()) ?? '');
-      if (finalPageCount > 1) {
-        const currentPage = Number(await organizationsPage.pageInput.inputValue());
-
+      const finalPageCount = Number(await organizationsPage.pageCount.textContent());
+      const currentPage = Number(await organizationsPage.pageInput.inputValue());
+      if (currentPage < finalPageCount) {
         await organizationsPage.nextPageButton.click();
-        await organizationsPage.waitForExtensionIframeLoading();
+        await organizationsPage.waitForGridData();
         await expect(organizationsPage.pageInput).toHaveValue(String(currentPage + 1));
 
         await organizationsPage.previousPageButton.click();
-        await organizationsPage.waitForExtensionIframeLoading();
+        await organizationsPage.waitForGridData();
         await expect(organizationsPage.pageInput).toHaveValue(String(currentPage));
       }
     });
