@@ -1,7 +1,28 @@
 import { expect } from '@playwright/test';
 
 import test from '~fixtures/fixture';
+import type { OrganizationsPage } from '~pages/organizations-page';
 import type { OrganizationsResponse } from '~types/organizations-response';
+
+const PAGE_SIZE = 5;
+
+/** The API error dialog can only be judged once loading has settled; before that it is hidden. */
+async function expectGridLoadedWithoutError(organizationsPage: OrganizationsPage): Promise<void> {
+  await organizationsPage.waitForGridData();
+  await expect(organizationsPage.apiErrorDialog).toBeHidden();
+}
+
+/** Reads the total from the pager range, e.g. "6-10 of 76 rows" → 76. */
+function totalRowsFromRange(range: string): number {
+  return Number(/of (\d+) rows$/.exec(range)?.[1] ?? 0);
+}
+
+/** The pager range expected on a page, e.g. for page 2 from 76 rows → "6-10 of 76 rows". */
+function rangeText(page: number, totalRows: number): string {
+  const first = (page - 1) * PAGE_SIZE + 1;
+  const last = Math.min(page * PAGE_SIZE, totalRows);
+  return `${first}-${last} of ${totalRows} rows`;
+}
 
 test.describe('[233299] As a vendor view the organizations list', () => {
   test.beforeEach(async ({ organizationsPage }) => {
@@ -10,6 +31,7 @@ test.describe('[233299] As a vendor view the organizations list', () => {
   });
 
   test('Check Organizations list is not empty', async ({ organizationsPage }) => {
+    await expectGridLoadedWithoutError(organizationsPage);
     expect(await organizationsPage.hasGridData(), 'Organizations grid has rows').toBe(true);
     await expect(organizationsPage.gridDataRows.first().getByRole('link').first()).toHaveAttribute(
       'href',
@@ -27,7 +49,7 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.viewSelectorButton).toHaveText('Active Organizations');
 
-      await organizationsPage.waitForGridData();
+      await expectGridLoadedWithoutError(organizationsPage);
       const orgItemStatusItems = organizationsPage.gridTable.getByTestId('status-chip');
       await expect(orgItemStatusItems.filter({ hasNotText: /^Active$/ })).toHaveCount(0);
     });
@@ -38,7 +60,7 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.viewSelectorButton).toHaveText('Deleted Organizations');
 
-      await organizationsPage.waitForGridData();
+      await expectGridLoadedWithoutError(organizationsPage);
       const orgItemStatusItems = organizationsPage.gridTable.getByTestId('status-chip');
       await expect(orgItemStatusItems.filter({ hasNotText: /^Deleted$/ })).toHaveCount(0);
     });
@@ -47,8 +69,8 @@ test.describe('[233299] As a vendor view the organizations list', () => {
      * Refreshes the Default view and captures the live API response for page 1:
      * 10 rows, excluding deleted organizations, newest updated first.
      * Compares the first five UI rows with the API IDs and names in order.
-     * Checks that their first-column IDs follow the FORG-####-####-#### format.
-     * Checks that their displayed Client IDs follow the ACC-####-#### format.
+     * Checks that first-column IDs follow the FORG-####-####-#### format.
+     * Checks that displayed Client IDs follow the ACC-####-#### format.
      */
     await test.step('Check view: Default', async () => {
       const headings = [
@@ -100,8 +122,7 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       }
       expect(updatedTimes, 'API organizations are ordered by updated time descending').toEqual([...updatedTimes].sort((a, b) => b - a));
 
-      await organizationsPage.waitForGridData();
-
+      await expectGridLoadedWithoutError(organizationsPage);
       await expect(organizationsPage.columnHeaders).toContainText(headings);
       await expect(organizationsPage.gridDataRows).toHaveCount(organizations.items.length);
       for (let index = 0; index < Math.min(5, organizations.items.length); index++) {
@@ -123,43 +144,46 @@ test.describe('[233299] As a vendor view the organizations list', () => {
       await expect(statusChips.filter({ hasText: /^Deleted$/ })).toHaveCount(0);
     });
 
-    await test.step('Check paging', async () => {
+    await test.step('Check paging: next, previous page buttons, enter specific page number, ', async () => {
       await organizationsPage.viewSelectorButton.click();
       await organizationsPage.toolbarDropdown.getByText('Default', { exact: true }).click();
-      await organizationsPage.waitForExtensionIframeLoading();
       await expect(organizationsPage.viewSelectorButton).toHaveText('Default');
 
-      await organizationsPage.waitForGridData();
-      const pageCount = Number(await organizationsPage.pageCount.textContent());
-      if (pageCount > 1) {
-        await organizationsPage.nextPageButton.click();
-        await organizationsPage.waitForGridData();
-      }
+      await organizationsPage.selectPageSize(PAGE_SIZE);
+      await expectGridLoadedWithoutError(organizationsPage);
+      await expect(organizationsPage.pageSizeButton).toHaveText(String(PAGE_SIZE));
+      await expect(organizationsPage.gridDataRows).toHaveCount(PAGE_SIZE);
+      await organizationsPage.pageInput.fill('1');
+      await organizationsPage.pageInput.press('Enter');
+      await expectGridLoadedWithoutError(organizationsPage);
+      await expect(organizationsPage.pageInput).toHaveValue('1');
 
-      const targetPage = '3';
-      if (pageCount > 2) {
-        await organizationsPage.pageInput.fill(targetPage);
-        await organizationsPage.pageInput.press('Enter');
-        await expect(organizationsPage.pageInput).toHaveValue(targetPage);
-      }
+      const totalRows = totalRowsFromRange(await organizationsPage.pageRange.innerText());
+      expect(totalRows, `Paging needs more than ${2 * PAGE_SIZE} organizations to reach page 3`).toBeGreaterThan(2 * PAGE_SIZE);
+      await expect(organizationsPage.pageRange).toHaveText(rangeText(1, totalRows));
+      await expect(organizationsPage.pageCount).toHaveText(String(Math.ceil(totalRows / PAGE_SIZE)));
 
-      await organizationsPage.waitForExtensionIframeLoading();
-      await organizationsPage.selectPageSize(10);
-      await expect(organizationsPage.pageSizeButton).toHaveText('10');
-      await organizationsPage.waitForGridData();
-      await expect.poll(() => organizationsPage.gridDataRows.count()).toBeLessThanOrEqual(10);
+      const firstRowLink = organizationsPage.gridDataRows.first().getByRole('link').first();
+      const firstPageHref = String(await firstRowLink.getAttribute('href'));
 
-      const finalPageCount = Number(await organizationsPage.pageCount.textContent());
-      const currentPage = Number(await organizationsPage.pageInput.inputValue());
-      if (currentPage < finalPageCount) {
-        await organizationsPage.nextPageButton.click();
-        await organizationsPage.waitForGridData();
-        await expect(organizationsPage.pageInput).toHaveValue(String(currentPage + 1));
+      await organizationsPage.nextPageButton.click();
+      await expectGridLoadedWithoutError(organizationsPage);
+      await expect(organizationsPage.pageInput).toHaveValue('2');
+      await expect(organizationsPage.pageRange).toHaveText(rangeText(2, totalRows));
+      await expect(firstRowLink).not.toHaveAttribute('href', firstPageHref);
 
-        await organizationsPage.previousPageButton.click();
-        await organizationsPage.waitForGridData();
-        await expect(organizationsPage.pageInput).toHaveValue(String(currentPage));
-      }
+      await organizationsPage.previousPageButton.click();
+      await expectGridLoadedWithoutError(organizationsPage);
+      await expect(organizationsPage.pageInput).toHaveValue('1');
+      await expect(organizationsPage.pageRange).toHaveText(rangeText(1, totalRows));
+      await expect(firstRowLink).toHaveAttribute('href', firstPageHref);
+
+      await organizationsPage.pageInput.fill('3');
+      await organizationsPage.pageInput.press('Enter');
+      await expectGridLoadedWithoutError(organizationsPage);
+      await expect(organizationsPage.pageInput).toHaveValue('3');
+      await expect(organizationsPage.pageRange).toHaveText(rangeText(3, totalRows));
+      await expect(organizationsPage.gridDataRows).toHaveCount(PAGE_SIZE);
     });
   });
 });
