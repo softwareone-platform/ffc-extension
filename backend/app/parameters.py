@@ -143,6 +143,15 @@ def set_fulfillment_parameter(order: dict[str, Any], parameter: str, value: Any)
     return updated_order
 
 
+def get_ordering_parameter_errors(order: dict[str, Any]) -> list[str]:
+    """The messages of the validation errors set on the ordering parameters of `order`."""
+    return [
+        param["error"]["message"]
+        for param in order["parameters"][PARAM_PHASE_ORDERING]
+        if param.get("error")
+    ]
+
+
 def reset_ordering_parameters_error(order: dict[str, Any]) -> dict[str, Any]:
     """
     Reset errors for all ordering parameters

@@ -4,11 +4,16 @@ import secrets
 import traceback
 from abc import ABC
 from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, ClassVar
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.activity import ActivityOperation
 from app.api_clients.mpt import MPTClient
 from app.api_clients.optscale import UserDoesNotExist
+from app.db.constants import APP_ACTOR_ID
 from app.db.models import ClientAccount, Organization
 from app.dependencies.api_clients import (
     FFCAPIClient,
@@ -65,6 +70,7 @@ from app.parameters import (
     get_due_date,
     get_fulfillment_parameter,
     get_ordering_parameter,
+    get_ordering_parameter_errors,
     get_termination_comments,
     get_termination_reason,
     set_is_new_user,
@@ -77,7 +83,23 @@ ParametersValidator = Callable[[dict[str, Any]], tuple[dict[str, Any], bool]]
 
 
 class OrderProcessor(EventProcessor, ABC):
+    """
+    Process one order event.
+
+    An order type with an `operation_action` is recorded in the activity log as one
+    operation (`ActivityOperation`) keyed by the order id: every attempt of the order,
+    across retries, writes to the same entry, done by the application. It stays in
+    progress until the order is completed, or failed in Marketplace (abandoned).
+    `operation_message` is its message until then, formatted with the `order_id`.
+
+    The operation is not durable: the event's transaction is committed when an attempt
+    fails (`recover` reschedules), so the entry, its notes and the records of the steps
+    that went through are kept.
+    """
+
     object_type = "order"
+    operation_action: ClassVar[str | None] = None
+    operation_message: ClassVar[str] = ""
 
     def __init__(
         self,
@@ -86,6 +108,7 @@ class OrderProcessor(EventProcessor, ABC):
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
+        db_session: AsyncSession,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
         termination_feedback_repo: TerminationFeedbackRepository,
@@ -98,6 +121,7 @@ class OrderProcessor(EventProcessor, ABC):
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
+        self.db_session = db_session
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
         self.termination_feedback_repo = termination_feedback_repo
@@ -105,10 +129,41 @@ class OrderProcessor(EventProcessor, ABC):
         self.settings = settings
         self.order = order
         self.template_cache = {}
+        self._operation: ActivityOperation | None = None
+        if self.operation_action is not None:
+            self._operation = ActivityOperation(
+                db_session,
+                key=f"order:{order['id']}",
+                action=self.operation_action,
+                message=self.operation_message.format(order_id=order["id"]),
+                actor_id=APP_ACTOR_ID,
+            )
 
     @property
     def object_id(self) -> str:
         return self.order["id"]
+
+    @property
+    def operation(self) -> ActivityOperation:
+        """The activity operation that records the order."""
+        if self._operation is None:
+            raise RuntimeError(f"{type(self).__name__} does not record its orders.")
+        return self._operation
+
+    def attempt(self) -> AbstractAsyncContextManager[None]:
+        """
+        One attempt of the order's operation: finds or starts its entry, and notes why the
+        attempt failed when `handle` raises. Validation runs before it, so an order moved to
+        Querying leaves the activity log untouched.
+        """
+        if self._operation is None:
+            return super().attempt()
+        return self._operation.attempt()
+
+    async def abandon_operation(self, reason: str) -> None:
+        """Close the order's entry as abandoned, if the order type records one."""
+        if self._operation is not None:
+            await self._operation.abandon(reason)
 
     async def on_event_error(self, exc: EventError) -> ProcessingResult:
         """
@@ -166,7 +221,8 @@ class OrderProcessor(EventProcessor, ABC):
     async def validate_order_parameters(self, parameters_validator_fn: ParametersValidator) -> bool:
         """
         Check the ordering parameters with `parameters_validator_fn`: if they are invalid, write the
-        errors back to the order and move it to Querying.
+        errors back to the order and move it to Querying. The order is then the one in Querying,
+        with the errors on its parameters.
 
         :return: True if the parameters are valid, False if the order was moved to Querying.
         """
@@ -182,6 +238,7 @@ class OrderProcessor(EventProcessor, ABC):
                 order_id=order_id, payload={"template": {"id": template_id}}
             )
             querying_order["parameters"] = order_with_validation_errors["parameters"]
+            self.order = querying_order
             logger.info(
                 "%s: ordering parameters are invalid, move to querying", querying_order["id"]
             )
@@ -252,30 +309,34 @@ class OrderProcessor(EventProcessor, ABC):
         """
         Get or create the organization, link it to the order's client account and
         link it back to the marketplace agreement.
+
+        Each step is safe to repeat when a previous attempt failed half-way: the
+        agreement is linked whenever its vendor id is not the organization's yet.
         """
         agreement_id = self.order["agreement"]["id"]
         agreement = await self.installation_client.get_agreement(
-            agreement_id, select=["authorization"]
+            agreement_id, select=["authorization", "externalIds"]
         )
 
         org_name = get_ordering_parameter(self.order, PARAM_ORGANIZATION_NAME)["value"]
         org_currency = get_ordering_parameter(self.order, PARAM_CURRENCY)["value"]
         billing_currency = agreement["authorization"]["currency"]  # marketplace billing currency
-        client_account = await self.update_or_create_client_account()
 
-        organization, created = await self.organization_repo.get_or_create(
-            operations_external_id=agreement_id,
-            defaults={
-                "name": org_name,
-                "currency": org_currency,
-                "billing_currency": billing_currency,
-                "client_account": client_account,
-            },
-        )
-        if organization.client_account_id != client_account.id:
-            organization = await self.organization_repo.update(
-                organization, {"client_account": client_account}
+        async with self.operation.step():
+            client_account = await self.update_or_create_client_account()
+            organization, created = await self.organization_repo.get_or_create(
+                operations_external_id=agreement_id,
+                defaults={
+                    "name": org_name,
+                    "currency": org_currency,
+                    "billing_currency": billing_currency,
+                    "client_account": client_account,
+                },
             )
+            if organization.client_account_id != client_account.id:
+                organization = await self.organization_repo.update(
+                    organization, {"client_account": client_account}
+                )
 
         if created or not organization.linked_organization_id:
             organization_on_optscale = await self.ffc_api_client.create_organization(
@@ -283,17 +344,16 @@ class OrderProcessor(EventProcessor, ABC):
             )
             optscale_organization = organization_on_optscale.json()
             logger.info("Organization on OptScale created with id %s ", optscale_organization["id"])
-            await self.organization_repo.update(
-                organization.id,
-                {
-                    "linked_organization_id": optscale_organization["id"],
-                },
+            await self.operation.note(
+                f"FinOps for Cloud organization {optscale_organization['id']} created."
             )
-            await self.installation_client.update_agreement(
-                agreement_id,
-                externalIds={"vendor": organization.id},
-            )
-
+            async with self.operation.step():
+                await self.organization_repo.update(
+                    organization.id,
+                    {
+                        "linked_organization_id": optscale_organization["id"],
+                    },
+                )
             logger.info(
                 "%s: Updating organization %s with external id to %s ",
                 self.order["id"],
@@ -303,6 +363,21 @@ class OrderProcessor(EventProcessor, ABC):
             logger.info("Organization created with id %s ", organization.id)
         else:
             logger.info("Organization already exists with id %s ", organization.id)
+
+        if agreement.get("externalIds", {}).get("vendor") != organization.id:
+            await self.installation_client.update_agreement(
+                agreement_id,
+                externalIds={"vendor": organization.id},
+            )
+            logger.info(
+                "%s: agreement %s linked to organization %s",
+                self.order["id"],
+                agreement_id,
+                organization.id,
+            )
+            await self.operation.note(
+                f"Agreement {agreement_id} linked to organization {organization.id} in Marketplace."
+            )
 
         return organization
 
@@ -317,6 +392,9 @@ class OrderProcessor(EventProcessor, ABC):
             employee_id = response_json["user_info"]["id"]
             is_new = False
             logger.info("Employee exists with id %s for order %s", employee_id, self.order["id"])
+            await self.operation.note(
+                f"FinOps for Cloud user {employee_id} ({email}) already exists."
+            )
         except UserDoesNotExist:
             response = await self.ffc_api_client.create_user(
                 email=email,
@@ -327,6 +405,7 @@ class OrderProcessor(EventProcessor, ABC):
             employee_id = response_json["id"]
             is_new = True
             logger.info("Employee created with id %s for order %s", employee_id, self.order["id"])
+            await self.operation.note(f"FinOps for Cloud user {employee_id} ({email}) created.")
         updated_order = set_is_new_user(self.order, is_new=is_new)
         self.order = await self.installation_client.update_order(
             self.order["id"],
@@ -364,15 +443,25 @@ class OrderProcessor(EventProcessor, ABC):
                     line["id"],
                     subscription["id"],
                 )
+                await self.operation.note(
+                    f"Marketplace subscription {subscription['id']} created for order line "
+                    f"{line['id']}."
+                )
 
     async def recover(self, exc: Exception) -> ProcessingResult:
-        """Retry until the due date is reached, then fail the order."""
+        """
+        Retry until the due date is reached, then fail the order. A failed order abandons
+        its activity log entry, with the reason given to Marketplace.
+        """
         due_date: date | None = get_due_date(self.order)
         if due_date is None:
             # No due date to retry against: fail the order and cancel.
             await self.installation_client.fail_order(
                 order_id=self.order["id"],
                 payload={"statusNotes": ERR_DUE_DATE_NOT_SET.to_dict()},
+            )
+            await self.abandon_operation(
+                f"Order failed in Marketplace: {ERR_DUE_DATE_NOT_SET.message}"
             )
             return ProcessingResult(
                 status=ProcessingStatus.CANCEL,
@@ -394,6 +483,7 @@ class OrderProcessor(EventProcessor, ABC):
             order_id=self.order["id"],
             payload={"statusNotes": status_notes},
         )
+        await self.abandon_operation(f"Order failed in Marketplace: {status_notes['message']}")
         return ProcessingResult(
             status=ProcessingStatus.COMPLETE,
             severity="Error",
@@ -402,19 +492,26 @@ class OrderProcessor(EventProcessor, ABC):
 
 
 class PurchaseOrderProcessor(OrderProcessor):
+    operation_action = "organization.provisioned"
+    operation_message = "Provisioning FinOps for Cloud for purchase order {order_id}."
+
     async def on_event_error(self, exc: EventError) -> ProcessingResult:
         """Missing or invalid ordering parameters mean skip: the customer has to answer."""
 
         return exc.to_result()
 
     async def send_reset_password(self, employee_email: str, is_new: bool):
+        """Best effort: a failure is noted on the order's entry and processing goes on."""
         if is_new:
             try:
                 await self.optscale_client.reset_password(employee_email)
                 logger.info("Employee %s password reset sent", employee_email)
-
+                await self.operation.note(f"Password reset email sent to {employee_email}.")
             except Exception:
                 logger.exception("Failed to reset password")
+                await self.operation.note(
+                    f"Password reset email to {employee_email} could not be sent."
+                )
         else:
             logger.info("No need to send reset password for %s", employee_email)
 
@@ -452,9 +549,15 @@ class PurchaseOrderProcessor(OrderProcessor):
         return self.order
 
     async def validate(self) -> None:
+        """
+        Check the order. One moved to Querying is noted on its entry, outside any attempt:
+        the processing is not tried, it waits for the customer.
+        """
         await self.validate_order_status()
         is_valid = await self.validate_order_parameters(check_purchase_order_parameters)
         if not is_valid:
+            errors = "; ".join(get_ordering_parameter_errors(self.order))
+            await self.operation.note(f"Order moved to Querying: {errors}.")
             raise OrderMovedToQuery(
                 f"Order {self.order['id']} parameters are missing or invalid. Order Skipped."
             )
@@ -476,8 +579,13 @@ class PurchaseOrderProcessor(OrderProcessor):
                 "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
             },
         )
-
         await self.send_reset_password(employee_email, is_new)
+        await self.operation.complete(
+            f"FinOps for Cloud service provisioned for organization '{organization.name}' "
+            f"({organization.id}), agreement {self.order['agreement']['id']}: admin "
+            f"{employee_email}{' (new user)' if is_new else ''}. "
+            f"Purchase order {self.order['id']}."
+        )
         logger.info("Order %s has been completed", self.order["id"])
         return ProcessingResult(
             status=ProcessingStatus.COMPLETE,
@@ -501,6 +609,9 @@ class ChangeOrderProcessor(OrderProcessor):
 
 
 class TerminationOrderProcessor(OrderProcessor):
+    operation_action = "organization.terminated"
+    operation_message = "Terminating FinOps for Cloud for termination order {order_id}."
+
     async def validate(self) -> None:
         await self.validate_order_status()
         is_valid = await self.validate_order_parameters(check_termination_order_parameters)
@@ -525,18 +636,22 @@ class TerminationOrderProcessor(OrderProcessor):
             ]
         )
         if organization is None:
+            message = (
+                f"The organization {organization_id} linked to agreement {agreement_id}"
+                f" was not found."
+            )
+            await self.operation.abandon(message)
             return ProcessingResult(
-                status=ProcessingStatus.CANCEL,
-                severity="Error",
-                message=f"The organization {organization_id} linked to agreement {agreement_id}"
-                f" was not found.",
+                status=ProcessingStatus.CANCEL, severity="Error", message=message
             )
         if not organization.linked_organization_id:
+            message = (
+                f"The organization {organization_id} is not linked to a FinOps "
+                f"for Cloud Organization."
+            )
+            await self.operation.abandon(message)
             return ProcessingResult(
-                status=ProcessingStatus.CANCEL,
-                severity="Error",
-                message=f"The organization {organization_id} is not linked to a FinOps "
-                f"for Cloud Organization.",
+                status=ProcessingStatus.CANCEL, severity="Error", message=message
             )
         optscale_org_id = organization.linked_organization_id
 
@@ -551,24 +666,25 @@ class TerminationOrderProcessor(OrderProcessor):
             message = f"The Organization {organization_id} was already terminated."
         else:
             await self.optscale_client.suspend_organization(optscale_org_id)
+            await self.operation.note(f"FinOps for Cloud organization {optscale_org_id} suspended.")
             severity = "Info"
             message = f"The Organization {organization_id} was successfully suspended."
 
-        # The local termination doesn't rely on the OptScale status: a previous attempt
-        # could have suspended the organization and failed before terminating it locally.
-        if organization.status != OrganizationStatus.TERMINATED:
-            if is_disabled:
-                logger.info(
-                    "%s: OptScale organization %s is already disabled, "
-                    "terminating organization %s.",
-                    self.order["id"],
-                    optscale_org_id,
-                    organization.id,
-                )
-            await self.organization_repo.terminate(organization)
-        await self.entitlement_repo.terminate_active_for_organization(organization)
-
-        await self._store_termination_feedback(organization, reason, comments)
+        async with self.operation.step():
+            # The local termination doesn't rely on the OptScale status: a previous attempt
+            # could have suspended the organization and failed before terminating it locally.
+            if organization.status != OrganizationStatus.TERMINATED:
+                if is_disabled:
+                    logger.info(
+                        "%s: OptScale organization %s is already disabled, "
+                        "terminating organization %s.",
+                        self.order["id"],
+                        optscale_org_id,
+                        organization.id,
+                    )
+                await self.organization_repo.terminate(organization)
+            await self.entitlement_repo.terminate_active_for_organization(organization)
+            await self._store_termination_feedback(organization, reason, comments)
 
         await self.installation_client.complete_order(
             order_id=self.order["id"],
@@ -576,6 +692,11 @@ class TerminationOrderProcessor(OrderProcessor):
                 "template": {"id": template_id},
                 "parameters": {"fulfillment": [{"externalId": PARAM_DUE_DATE, "value": None}]},
             },
+        )
+        await self.operation.complete(
+            f"FinOps for Cloud service terminated for organization '{organization.name}' "
+            f"({organization.id}), agreement {agreement_id}. "
+            f"Termination order {self.order['id']}."
         )
         return ProcessingResult(
             status=ProcessingStatus.COMPLETE,
@@ -627,6 +748,7 @@ class OrderEventHandler(EventHandler):
         ext_client: MPTClient,
         optscale_auth_client: OptscaleAuthClient,
         optscale_client: OptscaleClient,
+        db_session: AsyncSession,
         organization_repo: OrganizationRepository,
         entitlement_repo: EntitlementRepository,
         termination_feedback_repo: TerminationFeedbackRepository,
@@ -638,6 +760,7 @@ class OrderEventHandler(EventHandler):
         self.ext_client = ext_client
         self.optscale_auth_client = optscale_auth_client
         self.optscale_client = optscale_client
+        self.db_session = db_session
         self.organization_repo = organization_repo
         self.entitlement_repo = entitlement_repo
         self.termination_feedback_repo = termination_feedback_repo
@@ -676,6 +799,7 @@ class OrderEventHandler(EventHandler):
             ext_client=self.ext_client,
             optscale_auth_client=self.optscale_auth_client,
             optscale_client=self.optscale_client,
+            db_session=self.db_session,
             organization_repo=self.organization_repo,
             entitlement_repo=self.entitlement_repo,
             termination_feedback_repo=self.termination_feedback_repo,

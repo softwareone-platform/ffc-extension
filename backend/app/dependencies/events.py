@@ -13,6 +13,7 @@ from app.dependencies.auth import CurrentAuthContext
 from app.dependencies.core import AppSettings
 from app.dependencies.db import (
     ClientAccountRepository,
+    DBSession,
     EntitlementRepository,
     OrganizationRepository,
     TerminationFeedbackRepository,
@@ -32,6 +33,7 @@ def get_order_event_handler(
     ext_client: ExtensionClient,
     optscale_auth_client: OptscaleAuthClient,
     optscale_client: OptscaleClient,
+    db_session: DBSession,
     organization_repo: OrganizationRepository,
     entitlement_repo: EntitlementRepository,
     termination_feedback_repo: TerminationFeedbackRepository,
@@ -44,6 +46,7 @@ def get_order_event_handler(
         ext_client=ext_client,
         optscale_auth_client=optscale_auth_client,
         optscale_client=optscale_client,
+        db_session=db_session,
         organization_repo=organization_repo,
         entitlement_repo=entitlement_repo,
         termination_feedback_repo=termination_feedback_repo,

@@ -862,7 +862,7 @@ async def test_get_or_create_organization(
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
-        match_params={"select": "authorization"},
+        match_params={"select": "authorization,externalIds"},
         json={
             "id": agreement_id,
             "authorization": {
@@ -939,7 +939,7 @@ async def test_get_or_create_organization_already_exists(
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
-        match_params={"select": "authorization"},
+        match_params={"select": "authorization,externalIds"},
         json={
             "id": agreement_id,
             "authorization": {
@@ -947,6 +947,7 @@ async def test_get_or_create_organization_already_exists(
                 "name": "SoftwareOne FinOps for Cloud (USD)",
                 "currency": "USD",
             },
+            "externalIds": {"vendor": existing_organization.id},
         },
     )
     processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
@@ -970,6 +971,38 @@ async def test_get_or_create_organization_already_exists(
     assert existing_organization.status == OrganizationStatus.ACTIVE
     assert f"Organization already exists with id {existing_organization.id}" in caplog.text
     assert "Organization on OptScale created" not in caplog.text
+
+
+async def test_get_or_create_organization_links_the_agreement_of_a_linked_organization(
+    purchase_order: dict[str, Any],
+    organization_provisioning_mocker: Callable[..., None],
+    order_event_handler: OrderEventHandler,
+    organization_factory: ModelFactory[Organization],
+    httpx_mock: HTTPXMock,
+    test_settings: Settings,
+) -> None:
+    """An organization already linked in FinOps for Cloud whose agreement has no vendor id
+    yet, as after a failed agreement update, gets its agreement linked without being
+    provisioned again."""
+    existing_organization = await organization_factory(
+        operations_external_id=purchase_order["agreement"]["id"],
+        linked_organization_id="already-linked-optscale-org-id",
+    )
+    organization_provisioning_mocker(provision=False)
+    processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
+
+    organization = await processor.get_or_create_organization(employee_id="employee-id")
+
+    assert organization.id == existing_organization.id
+    assert httpx_mock.get_request(
+        method="PUT",
+        url=(
+            f"{test_settings.mpt_api_base_url}/commerce/agreements/"
+            f"{purchase_order['agreement']['id']}"
+        ),
+        match_json={"externalIds": {"vendor": existing_organization.id}},
+    )
+    assert httpx_mock.get_requests(method="POST") == []
 
 
 async def test_get_or_create_organization_links_existing_unlinked_organization(
@@ -1001,7 +1034,7 @@ async def test_get_or_create_organization_links_existing_unlinked_organization(
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
-        match_params={"select": "authorization"},
+        match_params={"select": "authorization,externalIds"},
         json={
             "id": agreement_id,
             "authorization": {"id": "AUT-3727-1184", "currency": "USD"},
@@ -1115,7 +1148,7 @@ async def test_get_or_create_organization_links_client_account_to_existing_organ
         operations_external_id=purchase_order["agreement"]["id"],
         linked_organization_id="already-linked-optscale-org-id",
     )
-    organization_provisioning_mocker(provision=False)
+    organization_provisioning_mocker(provision=False, vendor_id=existing_organization.id)
     processor = await order_event_handler.get_processor(object_id=purchase_order["id"])
 
     organization = await processor.get_or_create_organization(employee_id="employee-id")
@@ -1540,7 +1573,7 @@ async def test_purchase_order_process_completes_order(
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
-        match_params={"select": "authorization"},
+        match_params={"select": "authorization,externalIds"},
         json={"id": agreement_id, "authorization": {"id": "AUT-3727-1184", "currency": "USD"}},
     )
     httpx_mock.add_response(
@@ -1675,7 +1708,7 @@ async def test_purchase_order_process_new_user_branch(
     httpx_mock.add_response(
         method="GET",
         url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
-        match_params={"select": "authorization"},
+        match_params={"select": "authorization,externalIds"},
         json={"id": agreement_id, "authorization": {"id": "AUT-3727-1184", "currency": "USD"}},
     )
     httpx_mock.add_response(
