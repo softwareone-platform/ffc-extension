@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any, Self
@@ -119,6 +119,9 @@ class ActivityRecorder:
     the root's entry, and its action, message and actor are not recorded (the root's
     describe the activity). An atomic child still gets its own savepoint: when it fails,
     only its rows are rolled back and the root records the rest.
+
+    `entry_sink` is for `ActivityOperation.step()`: instead of adding a new entry, a root
+    recorder hands its change records to the sink, which attaches them to an existing one.
     """
 
     def __init__(
@@ -130,6 +133,7 @@ class ActivityRecorder:
         actor_id: str | None = None,
         skip_if_unchanged: bool = False,
         atomic: bool = False,
+        entry_sink: Callable[[list[ChangeRecord]], Awaitable[None]] | None = None,
     ) -> None:
         if not message.strip():
             raise ValueError("An activity needs a message describing what was done.")
@@ -139,6 +143,7 @@ class ActivityRecorder:
         self.actor_id = actor_id
         self.skip_if_unchanged = skip_if_unchanged
         self.atomic = atomic
+        self._entry_sink = entry_sink
         self._root: ActivityRecorder | None = None
         self._savepoint: AsyncSessionTransaction | None = None
         self._changes: dict[RowKey, _Change] = {}
@@ -193,14 +198,19 @@ class ActivityRecorder:
         changes = await self.session.run_sync(self._build_change_records)
         if self.skip_if_unchanged and not changes:
             return
-        self.session.add(
-            ActivityLog(
-                recorded_by_id=self.actor_id if self.actor_id is not None else resolve_actor_id(),
-                action=self.action,
-                message=self.message,
-                changes=changes,
+        if self._entry_sink is not None:
+            await self._entry_sink(changes)
+        else:
+            self.session.add(
+                ActivityLog(
+                    recorded_by_id=(
+                        self.actor_id if self.actor_id is not None else resolve_actor_id()
+                    ),
+                    action=self.action,
+                    message=self.message,
+                    changes=changes,
+                )
             )
-        )
         if self._savepoint is not None:
             await self.session.flush()  # the entry belongs in the savepoint with its rows
 
