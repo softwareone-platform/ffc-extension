@@ -96,6 +96,7 @@ from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import (
     ActivityLogFetcher,
+    AddAdminMocker,
     ModelFactory,
     MPTAccountFactory,
     MPTAccountMocker,
@@ -3287,3 +3288,86 @@ def mock_sync_users_installation_client(mocker: MockerFixture, mpt_client: MPTCl
 async def operations_account(account_factory: ModelFactory[Account]) -> Account:
     """The Operations account whose installation is used to sync users."""
     return await account_factory(type=AccountType.OPERATIONS, external_id="ACC-0000-OPS")
+
+
+@pytest.fixture
+async def add_admin_organization(organization_factory: ModelFactory[Organization]) -> Organization:
+    """The organization that `add_admin_mocker` adds Peter Parker to as admin."""
+    return await organization_factory(
+        name="ACME CO", currency="EUR", linked_organization_id="1bf8f888-d88b-8d88-8e8f-88fefa8f888"
+    )
+
+
+@pytest.fixture
+def add_admin_mocker(httpx_mock: HTTPXMock, test_settings: Settings) -> AddAdminMocker:
+    """
+    Mock, in order, the FinOps for Cloud calls that adding Peter Parker as admin of an
+    organization makes. Each call answers the given status, and the calls after a failed
+    one are not mocked. Returns the FinOps for Cloud id of the user.
+    """
+    user_id = "1bf6f063-d90b-4d45-8e7f-62fefa9f5471"
+
+    def _mock(
+        organization: Organization,
+        *,
+        email: str = "peter.parker@spiderman.com",
+        user_exists: bool = True,
+        create_user_status: int = 201,
+        employee_status: int = 201,
+        admin_role_status: int = 201,
+        reset_password_status: int = 201,
+    ) -> str:
+        user = {"id": user_id, "email": email, "display_name": "Peter Parker"}
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{test_settings.optscale_auth_api_base_url}/user_existence",
+            match_params={"email": email, "user_info": "true"},
+            match_headers={"Secret": test_settings.optscale_cluster_secret},
+            json={"exists": True, "user_info": user} if user_exists else {"exists": False},
+        )
+        if not user_exists:
+            if create_user_status >= 400:
+                httpx_mock.add_response(
+                    method="POST",
+                    url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
+                    status_code=create_user_status,
+                    text="Error",
+                )
+                return user_id
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
+                status_code=create_user_status,
+                json=user,
+            )
+        httpx_mock.add_response(
+            method="POST",
+            url=(
+                f"{test_settings.optscale_rest_api_base_url}/organizations/"
+                f"{organization.linked_organization_id}/employees"
+            ),
+            match_json={"name": "Peter Parker", "auth_user_id": user_id},
+            status_code=employee_status,
+            text="Error" if employee_status >= 400 else "",
+        )
+        # 409: the user is already an employee of the organization, which is tolerated.
+        if employee_status >= 400 and employee_status != 409:
+            return user_id
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{test_settings.optscale_auth_api_base_url}/users/{user_id}/assignment_register",
+            status_code=admin_role_status,
+            text="Error" if admin_role_status >= 400 else "",
+        )
+        if admin_role_status >= 400 or user_exists:
+            return user_id
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{test_settings.optscale_rest_api_base_url}/restore_password",
+            match_json={"email": email},
+            status_code=reset_password_status,
+            text="Error" if reset_password_status >= 400 else "",
+        )
+        return user_id
+
+    return _mock

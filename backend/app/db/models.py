@@ -453,18 +453,6 @@ class Entitlement(Base, HumanReadablePKMixin, AuditableMixin):
     redeem_at: Mapped[datetime.datetime | None] = mapped_column(sa.DateTime(timezone=True))
 
 
-class AdditionalAdminRequest(Base, HumanReadablePKMixin, AuditableMixin):
-    __tablename__ = "additionaladminrequests"
-    PK_PREFIX = "FAAR"
-    PK_NUM_LENGTH = 8
-
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
-    notes: Mapped[str] = mapped_column(Text(), nullable=False)
-    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    organization_id: Mapped[str] = mapped_column(ForeignKey(FKEY_ORGANIZATION))
-    organization: Mapped[Organization] = relationship(foreign_keys=[organization_id], lazy="joined")
-
-
 class ActivityLog(Base, HumanReadablePKMixin):
     __tablename__ = "activity_logs"
 

@@ -20,7 +20,6 @@ from app.schemas.core import (
     AuditEventsSchema,
     AuditFieldSchema,
     BaseSchema,
-    CommonEventsSchema,
     IdSchema,
 )
 from app.utils import get_organization_deletable_at
@@ -363,15 +362,7 @@ class OrganizationEventRead(BaseSchema):
     initiator_name: str | None = None
 
 
-class AdditionalAdminRequestBase(BaseSchema):
+class AdditionalAdminRequestCreate(BaseSchema):
     email: str
     notes: Annotated[str, Field(min_length=1, max_length=100, examples=["What a wonderful world"])]
     display_name: Annotated[str, Field(min_length=1, max_length=50, examples=["Perter Parker"])]
-
-
-class AdditionalAdminRequestCreate(AdditionalAdminRequestBase):
-    pass
-
-
-class AdditionalAdminRequestRead(IdSchema, CommonEventsSchema, AdditionalAdminRequestBase):
-    pass

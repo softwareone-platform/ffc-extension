@@ -363,6 +363,10 @@ export const makeOrganizationUserAdminOpsV1OrganizationsOrganizationIdEmployeesU
  * If the user to be added as an admin does not exist, it will be created and added to
  * the given organization's id, and the reset flow will also be triggered
  * to allow the user to set a new password.
+ *
+ * The request is recorded in the Activity Log as one operation per organization and
+ * email: a failed request leaves the entry in progress, with a note saying what failed,
+ * and the request that succeeds completes it.
  */
 export const addAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPost = <ThrowOnError extends boolean = false>(options: Options<AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostData, ThrowOnError>) => (options.client ?? client).post<AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostResponses, AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

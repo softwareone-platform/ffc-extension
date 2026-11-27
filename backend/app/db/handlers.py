@@ -20,7 +20,6 @@ from app.db.models import (
     AccountUser,
     ActivityLog,
     ActivityNote,
-    AdditionalAdminRequest,
     AuditableMixin,
     ClientAccount,
     DatasourceExpense,
@@ -748,10 +747,6 @@ class DatasourceExpenseHandler(ModelHandler[DatasourceExpense]):
             ],
         ):
             yield expense
-
-
-class AdditionalAdminRequestHandler(ModelHandler[AdditionalAdminRequest]):
-    pass
 
 
 class ActivityLogHandler(ModelHandler[ActivityLog]):

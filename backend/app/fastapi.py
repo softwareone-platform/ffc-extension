@@ -59,6 +59,11 @@ tags_metadata = [
 
 
 def setup_custom_serialization(router: APIRouter):
+    """
+    Omit the attributes whose value is null from the responses of `router`'s routes, at
+    every level of the response model. The content of `dict` fields (like the `before` and
+    `after` of a change record) is kept as is.
+    """
     for api_route in router.routes:
         if (
             isinstance(api_route, APIRoute)
@@ -95,12 +100,14 @@ def setup_app():
     v1_router = APIRouter(prefix="/ops/v1")
     events_router = APIRouter(prefix="/events")
 
+    # Every REST API response omits its null attributes: this is our API standard.
     for router in (
         entitlements.router,
         organizations.router,
         me.router,
         accounts.router,
         expenses.router,
+        activity_logs.router,
     ):
         setup_custom_serialization(router)
 
