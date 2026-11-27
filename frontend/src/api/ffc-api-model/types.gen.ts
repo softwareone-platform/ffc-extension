@@ -651,7 +651,7 @@ export type AzureSubscriptionDetails = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
         /**
          * Datasource Id
          */
@@ -748,7 +748,7 @@ export type DatasourceBase = {
     /**
      * DatasourceType
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
     /**
      * Datasource Id
      */
@@ -796,7 +796,7 @@ export type DatasourceDetailRead = {
     /**
      * DatasourceType
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
     /**
      * Datasource Id
      */
@@ -813,7 +813,7 @@ export type DatasourceDetailRead = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
         /**
          * Datasource Id
          */
@@ -871,7 +871,7 @@ export type DatasourceDetailRead = {
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
             /**
              * Datasource Id
              */
@@ -977,6 +977,37 @@ export type DatasourceDetailRead = {
          * Billing Project Id
          */
         billing_project_id?: string | null;
+    } | {
+        /**
+         * Connected At
+         */
+        connected_at?: string | null;
+        /**
+         * Bucket Name
+         */
+        bucket_name?: string | null;
+        /**
+         * Bucket Prefix
+         */
+        bucket_prefix?: string | null;
+        /**
+         * S3 Endpoint
+         */
+        s3_endpoint?: string | null;
+        /**
+         * Region Name
+         */
+        region_name?: string | null;
+        /**
+         * File Pattern
+         */
+        file_pattern?: string | null;
+        /**
+         * Mapping
+         */
+        mapping?: {
+            [key: string]: string;
+        } | null;
     } | null;
     /**
      * DatasourceBillingInfo
@@ -1179,7 +1210,7 @@ export type DatasourceExpenseRead = {
     /**
      * DatasourceType
      */
-    linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
     /**
      * OrganizationReference
      */
@@ -1273,7 +1304,7 @@ export type DatasourceRead = {
     /**
      * DatasourceType
      */
-    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+    type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
     /**
      * Datasource Id
      */
@@ -1290,7 +1321,7 @@ export type DatasourceRead = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
         /**
          * Datasource Id
          */
@@ -1333,7 +1364,7 @@ export type DatasourceRead = {
 /**
  * DatasourceType
  */
-export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+export type DatasourceType = 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
 
 /**
  * EmployeeRead
@@ -1443,7 +1474,7 @@ export type EntitlementRead = {
      * Linked Datasource Name
      */
     linked_datasource_name?: string | null;
-    linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
+    linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown' | null;
     /**
      * AccountReference
      */
@@ -1775,6 +1806,45 @@ export type EntitlementsEventsSchema = {
  * EventLevel
  */
 export type EventLevel = 'INFO' | 'WARNING' | 'ERROR' | 'UNKNOWN';
+
+/**
+ * FocusDetails
+ *
+ * A FOCUS datasource reads FOCUS-formatted cost reports from an S3-compatible bucket:
+ * the connection details mirror its bucket configuration, credentials excluded.
+ */
+export type FocusDetails = {
+    /**
+     * Connected At
+     */
+    connected_at?: string | null;
+    /**
+     * Bucket Name
+     */
+    bucket_name?: string | null;
+    /**
+     * Bucket Prefix
+     */
+    bucket_prefix?: string | null;
+    /**
+     * S3 Endpoint
+     */
+    s3_endpoint?: string | null;
+    /**
+     * Region Name
+     */
+    region_name?: string | null;
+    /**
+     * File Pattern
+     */
+    file_pattern?: string | null;
+    /**
+     * Mapping
+     */
+    mapping?: {
+        [key: string]: string;
+    } | null;
+};
 
 /**
  * GcpDetails
@@ -2141,7 +2211,7 @@ export type LimitOffsetPageDatasourceExpenseRead = {
         /**
          * DatasourceType
          */
-        linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
         /**
          * OrganizationReference
          */
@@ -2213,7 +2283,7 @@ export type LimitOffsetPageDatasourceRead = {
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
         /**
          * Datasource Id
          */
@@ -2230,7 +2300,7 @@ export type LimitOffsetPageDatasourceRead = {
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
             /**
              * Datasource Id
              */
@@ -2370,7 +2440,7 @@ export type LimitOffsetPageEntitlementRead = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -4318,7 +4388,7 @@ export type ListDatasourceExpensesOpsV1ExpensesGetResponses = {
             /**
              * DatasourceType
              */
-            linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            linked_datasource_type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
             /**
              * OrganizationReference
              */
@@ -4420,7 +4490,7 @@ export type GetEntitlementsOpsV1EntitlementsGetResponses = {
              * Linked Datasource Name
              */
             linked_datasource_name?: string | null;
-            linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
+            linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown' | null;
             /**
              * AccountReference
              */
@@ -4706,7 +4776,7 @@ export type CreateEntitlementOpsV1EntitlementsPostResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -5018,7 +5088,7 @@ export type GetEntitlementByIdOpsV1EntitlementsIdGetResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -5270,7 +5340,7 @@ export type TerminateEntitlementOpsV1EntitlementsIdTerminatePostResponses = {
          * Linked Datasource Name
          */
         linked_datasource_name?: string | null;
-        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown' | null;
+        linked_datasource_type?: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown' | null;
         /**
          * AccountReference
          */
@@ -6301,7 +6371,7 @@ export type GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDataso
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
             /**
              * Datasource Id
              */
@@ -6318,7 +6388,7 @@ export type GetDatasourcesByOrganizationIdOpsV1OrganizationsOrganizationIdDataso
                 /**
                  * DatasourceType
                  */
-                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
                 /**
                  * Datasource Id
                  */
@@ -6447,7 +6517,7 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
         /**
          * DatasourceType
          */
-        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+        type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
         /**
          * Datasource Id
          */
@@ -6464,7 +6534,7 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
             /**
              * DatasourceType
              */
-            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+            type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
             /**
              * Datasource Id
              */
@@ -6522,7 +6592,7 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
                 /**
                  * DatasourceType
                  */
-                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'unknown';
+                type: 'aws_cnr' | 'azure_cnr' | 'azure_tenant' | 'gcp_tenant' | 'gcp_cnr' | 'focus' | 'unknown';
                 /**
                  * Datasource Id
                  */
@@ -6628,6 +6698,37 @@ export type GetDatasourceByIdOpsV1OrganizationsOrganizationIdDatasourcesDatasour
              * Billing Project Id
              */
             billing_project_id?: string | null;
+        } | {
+            /**
+             * Connected At
+             */
+            connected_at?: string | null;
+            /**
+             * Bucket Name
+             */
+            bucket_name?: string | null;
+            /**
+             * Bucket Prefix
+             */
+            bucket_prefix?: string | null;
+            /**
+             * S3 Endpoint
+             */
+            s3_endpoint?: string | null;
+            /**
+             * Region Name
+             */
+            region_name?: string | null;
+            /**
+             * File Pattern
+             */
+            file_pattern?: string | null;
+            /**
+             * Mapping
+             */
+            mapping?: {
+                [key: string]: string;
+            } | null;
         } | null;
         /**
          * DatasourceBillingInfo
