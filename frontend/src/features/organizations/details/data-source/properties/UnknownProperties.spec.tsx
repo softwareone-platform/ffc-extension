@@ -3,7 +3,10 @@ import { render } from "@testing-library/react";
 import type { DatasourceDetailRead } from "~api/ffc-api-model";
 import { highlightValues, makeDatasourceDetail } from "~test-utils";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
-import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
+import {
+  mockDesignSystemUtils,
+  mockDesignSystemUtilsGlobals,
+} from "~test-utils/mocks/designSystemUtils";
 import { mockFormatDateModule } from "~test-utils/mocks/formatDate";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
@@ -13,6 +16,8 @@ jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHi
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 jest.mock("@swo/design-system/utils", () => mockDesignSystemUtils);
 jest.mock("~shared/hooks/useFormatDate", () => mockFormatDateModule);
+
+const { NO_VALUE } = mockDesignSystemUtilsGlobals;
 
 function renderProperties(details: DatasourceDetailRead["details"]) {
   return render(
@@ -27,9 +32,9 @@ describe("UnknownDataSourceProperties", () => {
     expect(highlightValues()).toEqual({ connected_at: "date(2026-01-15T10:00:00Z)" });
   });
 
-  it("leaves the connection date empty when the data source has no details", () => {
+  it("shows NO_VALUE for the connection date when the data source has no details", () => {
     renderProperties(undefined);
 
-    expect(highlightValues()).toEqual({ connected_at: "" });
+    expect(highlightValues()).toEqual({ connected_at: NO_VALUE });
   });
 });

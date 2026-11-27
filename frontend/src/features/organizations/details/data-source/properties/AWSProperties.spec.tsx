@@ -3,7 +3,10 @@ import { render, screen } from "@testing-library/react";
 import type { DatasourceDetailRead } from "~api/ffc-api-model";
 import { highlightValues, makeDatasourceDetail } from "~test-utils";
 import { mockDesignSystemText } from "~test-utils/mocks/designSystemText";
-import { mockDesignSystemUtils } from "~test-utils/mocks/designSystemUtils";
+import {
+  mockDesignSystemUtils,
+  mockDesignSystemUtilsGlobals,
+} from "~test-utils/mocks/designSystemUtils";
 import { mockFormatDateModule } from "~test-utils/mocks/formatDate";
 import { mockDesignSystemInPageHighlight } from "~test-utils/mocks/inPageHighlight";
 
@@ -13,6 +16,8 @@ jest.mock("@swo/design-system/in-page-highlight", () => mockDesignSystemInPageHi
 jest.mock("@swo/design-system/text", () => mockDesignSystemText);
 jest.mock("@swo/design-system/utils", () => mockDesignSystemUtils);
 jest.mock("~shared/hooks/useFormatDate", () => mockFormatDateModule);
+
+const { NO_VALUE } = mockDesignSystemUtilsGlobals;
 
 function renderProperties(details: Record<string, unknown>) {
   const entity = makeDatasourceDetail({ details: details as DatasourceDetailRead["details"] });
@@ -34,10 +39,10 @@ describe("AWSDataSourceProperties", () => {
     });
   });
 
-  it("leaves the connection date empty when the data source was never connected", () => {
+  it("shows NO_VALUE for the connection date when the data source was never connected", () => {
     renderProperties({ connected_at: null });
 
-    expect(highlightValues().connected_at).toBe("");
+    expect(highlightValues().connected_at).toBe(NO_VALUE);
   });
 
   it("shows the assumed role name for assumed-role authentication", () => {
@@ -76,6 +81,18 @@ describe("AWSDataSourceProperties", () => {
       region_name: "eu-west-1",
     });
   });
+
+  it.each([
+    [true, "yes"],
+    [false, "no"],
+  ])(
+    "shows whether the EDP discount is used when use_edp_discount is %s",
+    (useEdpDiscount, expected) => {
+      renderProperties({ account_type: "management_standalone", use_edp_discount: useEdpDiscount });
+
+      expect(highlightValues().use_edp_discount).toBe(expected);
+    },
+  );
 
   it("omits the export section for other account types", () => {
     renderProperties({ account_type: "linked", export_name: "finops-export" });

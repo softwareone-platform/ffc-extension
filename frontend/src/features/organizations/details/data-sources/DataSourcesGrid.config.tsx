@@ -64,7 +64,7 @@ export function useColumns(): Columns {
               primaryContent={<Link to={`${item.id}/details`}>{item.name}</Link>}
               secondaryContent={item.datasource_id || ""}
               secondaryContentMaxHeight={50}
-              icon={<DataSourceIcon name={item.type} size={48} />}
+              icon={<DataSourceIcon name={item.type || "unknown"} size={48} />}
             />
           </GridCellSimple>
         ),
