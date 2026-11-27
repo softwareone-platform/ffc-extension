@@ -1,6 +1,7 @@
 import logging
 import traceback
 from abc import ABC, abstractmethod
+from contextlib import AbstractAsyncContextManager, nullcontext
 from typing import ClassVar
 
 import httpx
@@ -22,6 +23,9 @@ class EventProcessor(ABC):
       * `validate` rejects what must not be processed, by raising an `EventError`;
       * `handle` does the domain work and returns the terminal result;
       * `recover` decides what to do with an unexpected failure (retry, by default).
+
+    `handle` runs inside `attempt()`, one try of the processing, which does nothing unless a
+    subclass records its attempts (orders, in the activity log).
     """
 
     object_type: ClassVar[str]
@@ -39,6 +43,14 @@ class EventProcessor(ABC):
     @abstractmethod
     async def handle(self) -> ProcessingResult:
         raise NotImplementedError()
+
+    def attempt(self) -> AbstractAsyncContextManager[None]:
+        """
+        The context `handle` runs in. Whatever `handle` raises must leave it unchanged, to
+        reach `on_event_error` or `recover`.
+        """
+
+        return nullcontext()
 
     async def recover(self, exc: Exception) -> ProcessingResult:
         """Turn an unexpected failure into a result: retry the event by default."""
@@ -63,7 +75,8 @@ class EventProcessor(ABC):
     async def process(self) -> ProcessingResult:
         try:
             await self.validate()
-            return await self.handle()
+            async with self.attempt():
+                return await self.handle()
         except EventError as exc:
             logger.info("%s: %s", self.object_id, exc)
             return await self.on_event_error(exc)

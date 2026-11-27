@@ -1,3 +1,4 @@
+import copy
 import inspect
 import secrets
 import tempfile
@@ -81,6 +82,7 @@ from app.events.orders.constants import (
     PURCHASE_EXISTING_TEMPLATE_NAME,
     PURCHASE_TEMPLATE_NAME,
     QUERYING_TEMPLATE_TYPE,
+    TERMINATE_TEMPLATE_NAME,
 )
 from app.events.orders.processing import (
     OrderEventHandler,
@@ -89,6 +91,7 @@ from app.events.orders.processing import (
 from app.events.subscriptions.constants import ACTIVE_SUBSCRIPTION_STATUS
 from app.events.subscriptions.processing import SubscriptionEventHandler
 from app.fastapi import setup_app
+from app.parameters import set_is_new_user
 from app.schemas.core import Details, Event, ExtensionContext, Object, Task
 from tests.db.models import ModelForTests, ParentModelForTests  # noqa: F401
 from tests.types import (
@@ -98,6 +101,7 @@ from tests.types import (
     MPTAccountMocker,
     MPTSubscriptionFactory,
     OrderFactory,
+    OrderMocker,
     SubscriptionMocker,
 )
 
@@ -474,6 +478,24 @@ def fetch_activity_logs(db_session: AsyncSession) -> ActivityLogFetcher:
         )
         if action is not None:
             query = query.where(ActivityLog.action == action)
+        return list((await db_session.scalars(query)).all())
+
+    return _fetch
+
+
+@pytest.fixture
+def fetch_operation_entries(db_session: AsyncSession) -> ActivityLogFetcher:
+    """Return a coroutine that loads the entries of an operation key, oldest first, with
+    their change records and notes as they are in the database."""
+
+    async def _fetch(key: str) -> list[ActivityLog]:
+        query = (
+            select(ActivityLog)
+            .where(ActivityLog.operation_key == key)
+            .options(selectinload(ActivityLog.changes), selectinload(ActivityLog.notes))
+            .order_by(ActivityLog.recorded_at, ActivityLog.id)
+            .execution_options(populate_existing=True)
+        )
         return list((await db_session.scalars(query)).all())
 
     return _fetch
@@ -2762,6 +2784,7 @@ def order_event_handler(
         ext_client=mpt_client,
         optscale_auth_client=OptscaleAuthClient(test_settings),
         optscale_client=OptscaleClient(test_settings),
+        db_session=db_session,
         organization_repo=OrganizationHandler(db_session),
         entitlement_repo=EntitlementHandler(db_session),
         termination_feedback_repo=TerminationFeedbackHandler(db_session),
@@ -2778,11 +2801,19 @@ def organization_provisioning_mocker(
 ) -> Callable[..., None]:
     """
     Register the marketplace and OptScale responses `get_or_create_organization` needs
-    for `purchase_order`; with `provision=False` only the read calls are registered.
+    for `purchase_order`; with `provision=False` the OptScale organization is not created.
+    `vendor_id` is the organization the agreement is already linked to: without one, the
+    agreement is linked, as many times as it is read.
     """
 
-    def _mock(provision: bool = True) -> None:
+    def _mock(provision: bool = True, vendor_id: str | None = None) -> None:
         agreement_id = purchase_order["agreement"]["id"]
+        agreement: dict[str, Any] = {
+            "id": agreement_id,
+            "authorization": {"id": "AUT-3727-1184", "currency": "USD"},
+        }
+        if vendor_id is not None:
+            agreement["externalIds"] = {"vendor": vendor_id}
         httpx_mock.add_response(
             method="GET",
             url=f"{test_settings.mpt_api_base_url}/commerce/orders/{purchase_order['id']}",
@@ -2792,8 +2823,8 @@ def organization_provisioning_mocker(
         httpx_mock.add_response(
             method="GET",
             url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
-            match_params={"select": "authorization"},
-            json={"id": agreement_id, "authorization": {"id": "AUT-3727-1184", "currency": "USD"}},
+            match_params={"select": "authorization,externalIds"},
+            json=agreement,
             is_reusable=True,
         )
         if provision:
@@ -2803,13 +2834,241 @@ def organization_provisioning_mocker(
                 json={"id": "OPT-ORG-0001"},
                 status_code=201,
             )
+        if vendor_id is None:
             httpx_mock.add_response(
                 method="PUT",
                 url=f"{test_settings.mpt_api_base_url}/commerce/agreements/{agreement_id}",
                 json={"id": agreement_id},
+                is_reusable=True,
             )
 
     return _mock
+
+
+@pytest.fixture
+def purchase_order_mocker(
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    purchase_order: dict[str, Any],
+    product_templates: list[dict[str, Any]],
+) -> OrderMocker:
+    """
+    Register the Marketplace and FinOps for Cloud responses of one processing of
+    `purchase_order`, up to its completion.
+
+    * `new_user`: the admin contact has no FinOps for Cloud user yet (`employee-id` is
+      created, and sent a password reset); else it is the existing `employee-id`.
+    * `provision`: the FinOps for Cloud organization `OPT-ORG-0001` is created; else the
+      organization is already linked to it.
+    * `agreement_update_status`: the status of the agreement update. On an error, the
+      processing stops there and nothing after it is registered.
+    * `reset_password_status`: the status of the password reset of a new user.
+    """
+
+    def _mock(
+        *,
+        new_user: bool = True,
+        provision: bool = True,
+        agreement_update_status: int = 200,
+        reset_password_status: int = 200,
+    ) -> None:
+        mpt_url = test_settings.mpt_api_base_url
+        order_id = purchase_order["id"]
+        agreement_id = purchase_order["agreement"]["id"]
+        processing_order = copy.deepcopy(purchase_order)
+        processing_order["template"]["id"] = "TPL-0001"
+        provisioned_order = set_is_new_user(processing_order, is_new=new_user)
+
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{mpt_url}/commerce/orders/{order_id}",
+            match_params={"select": "subscriptions.lines"},
+            json=purchase_order,
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=(
+                f"{mpt_url}/catalog/products/{test_settings.mpt_product_id}/templates"
+                f"?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+            ),
+            json={
+                "data": product_templates,
+                "$meta": {"pagination": {"total": len(product_templates)}},
+            },
+        )
+        httpx_mock.add_response(
+            method="PUT",
+            url=f"{mpt_url}/commerce/orders/{order_id}",
+            match_json={"template": {"id": "TPL-0001"}},
+            json=processing_order,
+        )
+        httpx_mock.add_response(
+            method="PUT",
+            url=f"{mpt_url}/commerce/orders/{order_id}",
+            match_json={"parameters": provisioned_order["parameters"]},
+            json=provisioned_order,
+        )
+        if new_user:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{test_settings.optscale_auth_api_base_url}/user_existence",
+                match_params={"email": "pl@example.com", "user_info": "true"},
+                json={"exists": False},
+            )
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{test_settings.optscale_ffc_api_base_url}/admin/users",
+                json={"id": "employee-id", "email": "pl@example.com"},
+            )
+        else:
+            httpx_mock.add_response(
+                method="GET",
+                url=f"{test_settings.optscale_auth_api_base_url}/user_existence",
+                match_params={"email": "pl@example.com", "user_info": "true"},
+                json={"exists": True, "user_info": {"id": "employee-id"}},
+            )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{mpt_url}/commerce/agreements/{agreement_id}",
+            match_params={"select": "authorization,externalIds"},
+            json={"id": agreement_id, "authorization": {"id": "AUT-3727-1184", "currency": "USD"}},
+        )
+        if provision:
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{test_settings.optscale_ffc_api_base_url}/admin/organizations",
+                match_json={"name": "ACME Inc", "user_id": "employee-id", "currency": "USD"},
+                json={"id": "OPT-ORG-0001"},
+                status_code=201,
+            )
+        httpx_mock.add_response(
+            method="PUT",
+            url=f"{mpt_url}/commerce/agreements/{agreement_id}",
+            json={"id": agreement_id},
+            status_code=agreement_update_status,
+        )
+        if agreement_update_status >= 400:
+            return
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{mpt_url}/commerce/orders/{order_id}/complete",
+            match_json={
+                "template": {"id": "TPL-0005" if new_user else "TPL-0006"},
+                "parameters": {"fulfillment": [{"externalId": "dueDate", "value": None}]},
+            },
+            json=provisioned_order,
+        )
+        if new_user:
+            httpx_mock.add_response(
+                method="POST",
+                url=f"{test_settings.optscale_rest_api_base_url}/restore_password",
+                match_json={"email": "pl@example.com"},
+                json={"email": "pl@example.com"},
+                status_code=reset_password_status,
+            )
+
+    return _mock
+
+
+@pytest.fixture
+def termination_order_mocker(
+    test_settings: Settings,
+    httpx_mock: HTTPXMock,
+    terminate_order: dict[str, Any],
+) -> OrderMocker:
+    """
+    Register the Marketplace and FinOps for Cloud responses of one processing of
+    `terminate_order` for `organization`, the one its agreement is linked to.
+
+    * `disabled`: the FinOps for Cloud organization is already suspended; else it is
+      suspended.
+    * `complete_status`: the status of the order completion in Marketplace.
+    """
+
+    def _mock(
+        organization: Organization, *, disabled: bool = False, complete_status: int = 200
+    ) -> None:
+        mpt_url = test_settings.mpt_api_base_url
+        order_id = terminate_order["id"]
+        optscale_organization_url = (
+            f"{test_settings.optscale_rest_api_base_url}"
+            f"/organizations/{organization.linked_organization_id}"
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{mpt_url}/commerce/orders/{order_id}",
+            match_params={"select": "subscriptions.lines"},
+            json=terminate_order,
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=f"{mpt_url}/commerce/agreements/{terminate_order['agreement']['id']}",
+            json={"externalIds": {"client": "", "vendor": organization.id}},
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=optscale_organization_url,
+            json={"id": organization.linked_organization_id, "disabled": disabled},
+        )
+        httpx_mock.add_response(
+            method="GET",
+            url=(
+                f"{mpt_url}/catalog/products/{test_settings.mpt_product_id}/templates"
+                f"?limit={test_settings.mpt_api_rows_per_page}&offset=0"
+            ),
+            json={
+                "data": [
+                    {
+                        "id": "TPL-1234-5678-0001",
+                        "type": COMPLETED_TEMPLATE_TYPE,
+                        "name": TERMINATE_TEMPLATE_NAME,
+                        "default": True,
+                    }
+                ],
+                "$meta": {"pagination": {"total": 1}},
+            },
+        )
+        if not disabled:
+            httpx_mock.add_response(
+                method="PATCH",
+                url=optscale_organization_url,
+                match_json={"disabled": True},
+                json={"disabled": True},
+            )
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{mpt_url}/commerce/orders/{order_id}/complete",
+            match_json={
+                "template": {"id": "TPL-1234-5678-0001"},
+                "parameters": {"fulfillment": [{"externalId": "dueDate", "value": None}]},
+            },
+            json=terminate_order,
+            status_code=complete_status,
+        )
+
+    return _mock
+
+
+@pytest.fixture
+async def organization_to_terminate(
+    terminate_order: dict[str, Any],
+    termination_parameters_factory: Callable[..., list[dict]],
+    organization_factory: ModelFactory[Organization],
+    entitlement_factory: ModelFactory[Entitlement],
+) -> Organization:
+    """The organization `terminate_order` terminates, with two active entitlements; the
+    order carries a termination reason."""
+    terminate_order["parameters"]["ordering"] = termination_parameters_factory(
+        reason="cost_or_pricing"
+    )
+    organization = await organization_factory(
+        name="ACME Inc",
+        operations_external_id=terminate_order["agreement"]["id"],
+        linked_organization_id="OPT-ORG-0001",
+    )
+    for _ in range(2):
+        await entitlement_factory(status=EntitlementStatus.ACTIVE, redeemed_by=organization)
+    return organization
 
 
 @pytest.fixture
