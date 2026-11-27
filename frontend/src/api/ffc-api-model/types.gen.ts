@@ -7992,8 +7992,10 @@ export type AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostRespon
     /**
      * Successful Response
      */
-    200: unknown;
+    204: void;
 };
+
+export type AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostResponse = AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostResponses[keyof AddAdditionalAdminOpsV1OrganizationsOrganizationIdAddAdminPostResponses];
 
 export type GetAccountsOpsV1AccountsGetData = {
     body?: never;

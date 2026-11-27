@@ -9,21 +9,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import create_page
 from sqlalchemy import Select
 
-from app.activity import activity_recorder
+from app.activity import ActivityOperation, activity_recorder
 from app.api_clients.optscale import UserDoesNotExist
 from app.db.handlers import ConstraintViolationError, NotFoundError, OrganizationHandler
-from app.db.models import AdditionalAdminRequest, Organization
+from app.db.models import Organization
 from app.dependencies.api_clients import (
     FFCAPIClient,
     OptscaleAuthClient,
     OptscaleClient,
 )
 from app.dependencies.auth import AuthorizedAccountTypes
-from app.dependencies.db import (
-    AdditionalAdminRequestRepository,
-    DBSession,
-    OrganizationRepository,
-)
+from app.dependencies.db import DBSession, OrganizationRepository
 from app.dependencies.path import OrganizationId
 from app.enums import AccountType, OrganizationStatus
 from app.openapi import examples
@@ -33,7 +29,6 @@ from app.schemas.core import convert_model_to_schema
 from app.schemas.employees import EmployeeRead
 from app.schemas.organizations import (
     AdditionalAdminRequestCreate,
-    AdditionalAdminRequestRead,
     DatasourceDetailRead,
     DatasourceForceReimport,
     DatasourceRead,
@@ -495,7 +490,7 @@ async def delete_organization_by_id(
 
 @router.post(
     "/{organization_id}/add-admin",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(AuthorizedAccountTypes(AccountType.ADMIN))],
 )
 async def add_additional_admin(
@@ -503,14 +498,18 @@ async def add_additional_admin(
     optscale_client: OptscaleClient,
     optscale_auth_client: OptscaleAuthClient,
     ffc_api_client: FFCAPIClient,
-    additional_admin_repo: AdditionalAdminRequestRepository,
+    db_session: DBSession,
     data: AdditionalAdminRequestCreate,
-):
+) -> None:
     """
     This endpoint adds additional admins to FinOps for Cloud.
     If the user to be added as an admin does not exist, it will be created and added to
     the given organization's id, and the reset flow will also be triggered
     to allow the user to set a new password.
+
+    The request is recorded in the Activity Log as one operation per organization and
+    email: a failed request leaves the entry in progress, with a note saying what failed,
+    and the request that succeeds completes it.
     """
     new_user_created = False
     if db_organization.status == OrganizationStatus.DELETED:
@@ -518,58 +517,86 @@ async def add_additional_admin(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot add administrator: organization {db_organization.name} is deleted.",
         )
-    # fetch user by email
-    with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
-        try:
-            response = await optscale_auth_client.get_existing_user_info(data.email)
-            user_data = response.json()["user_info"]
-        except UserDoesNotExist:
-            response = await ffc_api_client.create_user(
-                email=data.email,
-                display_name=data.display_name,
-                password=secrets.token_urlsafe(128),
+    # Durable: a failed request rolls back, but the entry and its notes must stay to show
+    # what was left behind in FinOps for Cloud.
+    operation = ActivityOperation(
+        db_session,
+        key=f"add-admin:{db_organization.id}:{data.email.lower()}",
+        action="organization.admin_added",
+        message=(
+            f"Adding '{data.display_name}' ({data.email}) as admin of '{db_organization.name}'."
+        ),
+        durable=True,
+    )
+    async with operation.attempt():
+        # fetch user by email
+        with wrap_http_error_in_502("Error checking or creating user in FinOps for Cloud"):
+            try:
+                response = await optscale_auth_client.get_existing_user_info(data.email)
+                user_data = response.json()["user_info"]
+            except UserDoesNotExist:
+                response = await ffc_api_client.create_user(
+                    email=data.email,
+                    display_name=data.display_name,
+                    password=secrets.token_urlsafe(128),
+                )
+
+                logger.info(f"User {data.display_name} - {data.email} created in FinOps for Cloud.")
+                new_user_created = True
+                user_data = response.json()
+        user_id = user_data["id"]
+        linked_organization_id = db_organization.linked_organization_id
+        if new_user_created:
+            await operation.note(f"FinOps for Cloud user {user_id} ({data.email}) created.")
+        else:
+            await operation.note(f"FinOps for Cloud user {user_id} ({data.email}) already exists.")
+
+        with wrap_http_error_in_502(
+            f"Error Adding Employee {data.display_name} "
+            f"to FinOps for Cloud Organization {db_organization.name}."
+        ):
+            response = await optscale_client.create_org_employee(
+                organization_id=linked_organization_id,  # type: ignore
+                user_id=user_id,
+                name=data.display_name,
+            )
+        if response.status_code == httpx.codes.CONFLICT:
+            await operation.note(
+                f"User {user_id} is already an employee of FinOps for Cloud organization "
+                f"{linked_organization_id}."
+            )
+        else:
+            await operation.note(
+                f"User {user_id} added as employee of FinOps for Cloud organization "
+                f"{linked_organization_id}."
             )
 
-            logger.info(f"User {data.display_name} - {data.email} created in FinOps for Cloud.")
-            new_user_created = True
-            user_data = response.json()
-
-    with wrap_http_error_in_502(
-        f"Error Adding Employee {data.display_name} "
-        f"to FinOps for Cloud Organization {db_organization.name}."
-    ):
-        await optscale_client.create_org_employee(
-            organization_id=db_organization.linked_organization_id,  # type: ignore
-            user_id=user_data["id"],
-            name=data.display_name,
-        )
-
-    with wrap_http_error_in_502(
-        f"Error Promoting User {data.display_name} "
-        f"to Admin in FinOps for Cloud {db_organization.name}."
-    ):
-        # promote the new user to admin
-        await optscale_auth_client.make_user_admin(
-            organization_id=db_organization.linked_organization_id,  # type: ignore
-            user_id=user_data["id"],
-        )
-    if new_user_created:
-        # start the reset password processes for the new created user
         with wrap_http_error_in_502(
-            "Error resetting the password for employee in FinOps for Cloud"
+            f"Error Promoting User {data.display_name} "
+            f"to Admin in FinOps for Cloud {db_organization.name}."
         ):
-            await optscale_client.reset_password(data.email)
+            # promote the new user to admin
+            await optscale_auth_client.make_user_admin(
+                organization_id=linked_organization_id,  # type: ignore
+                user_id=user_id,
+            )
+        await operation.note(
+            f"User {user_id} made admin of FinOps for Cloud organization {linked_organization_id}."
+        )
 
-    logger.info(
-        f"The user {data.display_name} - {data.email} has been successfully added as "
-        f"admin to the organization {db_organization.id} ."
-    )
+        if new_user_created:
+            # start the reset password processes for the new created user
+            with wrap_http_error_in_502(
+                "Error resetting the password for employee in FinOps for Cloud"
+            ):
+                await optscale_client.reset_password(data.email)
+            await operation.note(f"Password reset email sent to {data.email}.")
 
-    user_admin_data = AdditionalAdminRequest(
-        email=data.email,
-        display_name=data.display_name,
-        notes=data.notes,
-        organization_id=db_organization.id,
-    )
-    additional_admin = await additional_admin_repo.create(user_admin_data)
-    return convert_model_to_schema(AdditionalAdminRequestRead, additional_admin)
+        logger.info(
+            f"The user {data.display_name} - {data.email} has been successfully added as "
+            f"admin to the organization {db_organization.id} ."
+        )
+        await operation.complete(
+            f"'{data.display_name}' ({data.email}) added as admin of "
+            f"'{db_organization.name}' ({db_organization.id}). Reason: {data.notes}"
+        )

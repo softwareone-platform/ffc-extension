@@ -57,7 +57,6 @@ async def test_get_all_activity_logs_returns_entries_without_changes(
                     "id": ffc_extension.id,
                     "type": "system",
                     "name": ffc_extension.name,
-                    "icon": None,
                 },
             },
         },
@@ -431,14 +430,12 @@ async def test_get_activity_log_by_id_includes_changes(
                     "id": ffc_extension.id,
                     "type": "system",
                     "name": ffc_extension.name,
-                    "icon": None,
                 },
             },
         },
         "action": "organization.updated",
         "message": "Renamed",
         "status": "completed",
-        "operation_key": None,
         "notes": [],
         "changes": [
             {
@@ -492,7 +489,6 @@ async def test_get_activity_log_by_id_includes_operation_fields(
                         "id": ffc_extension.id,
                         "type": "system",
                         "name": ffc_extension.name,
-                        "icon": None,
                     },
                 },
             },
@@ -571,6 +567,33 @@ async def test_get_activity_log_by_id_without_changes(
 
     assert response.status_code == 200
     assert response.json()["changes"] == []
+
+
+async def test_get_activity_log_by_id_omits_a_null_before_but_keeps_nulls_inside_after(
+    activity_log_factory: ModelFactory[ActivityLog],
+    change_record_factory: ModelFactory[ChangeRecord],
+    admin_client: AsyncClient,
+) -> None:
+    """A change record without `before` omits it; null values inside `after` are kept as is."""
+    activity_log = await activity_log_factory()
+    await change_record_factory(
+        activity_log=activity_log,
+        object_id="FORG-1234-5678",
+        after={"name": "ACME", "operations_external_id": None},
+        recorded_at=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
+    )
+
+    response = await admin_client.get(f"/activity-logs/{activity_log.id}")
+
+    assert response.status_code == 200
+    assert response.json()["changes"] == [
+        {
+            "object_type": "organization",
+            "object_id": "FORG-1234-5678",
+            "after": {"name": "ACME", "operations_external_id": None},
+            "recorded_at": "2026-01-01T12:00:00Z",
+        }
+    ]
 
 
 async def test_get_activity_log_by_id_not_found(admin_client: AsyncClient) -> None:
