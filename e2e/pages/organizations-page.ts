@@ -11,9 +11,16 @@ export class OrganizationsPage extends ExtensionPage {
 
   readonly pageInput: Locator;
   readonly pageCount: Locator;
+  /** The "1-10 of 76 rows" text; it has no test ID of its own. */
+  readonly pageRange: Locator;
   readonly nextPageButton: Locator;
   readonly previousPageButton: Locator;
   readonly pageSizeButton: Locator;
+  readonly viewSelectorPopup: Locator;
+  /** Shown over the grid when the organizations request fails. */
+  readonly apiErrorDialog: Locator;
+  /** All header cells, including the duplicate sticky (pinned) header row. */
+  readonly columnHeaders: Locator;
 
   constructor(page: Page) {
     super(page, extensionRoute('organizations'));
@@ -21,10 +28,14 @@ export class OrganizationsPage extends ExtensionPage {
     this.grid = this.extensionFrame.getByTestId('ffc-extension__organizations-grid');
     this.rows = this.grid.locator('tbody tr');
     this.viewSelectorButton = this.grid.getByTestId('grid__toolbar__view-selector__selector-button');
+    this.viewSelectorPopup = this.grid.getByTestId('grid__toolbar__view-selector__dropdown__popover__content');
+    this.columnHeaders = this.gridTable.locator('thead th');
+    this.apiErrorDialog = this.gridTable.getByTestId('grid__info-dialog__api-error');
 
     const pagination = this.grid.getByTestId('pagination');
     this.pageInput = pagination.getByTestId('pagination__page-input');
     this.pageCount = pagination.getByTestId('pagination__page-count');
+    this.pageRange = pagination.getByText(/^\d+-\d+ of \d+ rows$/);
     this.nextPageButton = pagination.getByTestId('pagination__navigation__next__button');
     this.previousPageButton = pagination.getByTestId('pagination__navigation__previous__button');
     this.pageSizeButton = pagination.getByTestId('pagination__page-size-selector__button');
@@ -49,7 +60,7 @@ export class OrganizationsPage extends ExtensionPage {
 
   firstRowWithStatus(status: string): Locator {
     return this.rows.filter({ has: this.grid.getByTestId('status-chip').filter({ hasText: status }) }).first();
-  }
+  } 
 
   /**
    * `<thead>` holds a duplicate sticky copy of every header (`grid-fixed-row`),
@@ -57,6 +68,13 @@ export class OrganizationsPage extends ExtensionPage {
    */
   columnHeaderMenu(field: string): Locator {
     return this.grid.locator('thead tr:not([data-is-pinned="true"])').getByTestId(`${field}__Action-Dropdown__popover`);
+  }
+
+  /** The page-size options render in a popover outside `pagination`, so they are found on the frame. */
+  async selectPageSize(size: number): Promise<void> {
+    await this.pageSizeButton.click();
+    await this.extensionFrame.getByRole('option', { name: String(size), exact: true }).click();
+    await this.waitForDataRefreshingMessageToDetach();
   }
 
   /** Replaces whatever the view brought with Status = Active and Name containing orgName. */

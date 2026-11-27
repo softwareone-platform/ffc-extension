@@ -3,7 +3,16 @@
     "target": "es5",
     "strict": true,
     "esModuleInterop": true,
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "~api-request/*": ["api-request/*"],
+      "~fixtures/*": ["fixtures/*"],
+      "~pages/*": ["pages/*"],
+      "~test-data/*": ["test-data/*"],
+      "~types/*": ["types/*"],
+      "~utils/*": ["utils/*"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]
